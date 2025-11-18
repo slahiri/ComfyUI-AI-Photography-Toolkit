@@ -86,6 +86,25 @@ AI-powered prompt generator that analyzes images using Anthropic's Claude API (w
      - `SDXL`: Optimized for Stable Diffusion XL (moderate negatives)
      - `SD 1.5`: Optimized for SD 1.5 (comprehensive negatives)
      - `Universal`: Works across all models
+   - **color_style**: ⭐ NEW! Choose color treatment
+     - `None`: Based on image analysis (default)
+     - `Black and White`: B&W photography
+     - `Color`: Vibrant color photography
+     - `Monochrome`: Single color tone
+     - `Sepia`: Vintage sepia tone
+     - `Cross-Processed`: Experimental color treatment
+     - `High Contrast B&W`: Dramatic black and white
+     - `Low Key`: Dark, moody tones
+     - `High Key`: Bright, airy feel
+   - **photographer_style**: ⭐ NEW! Emulate famous photographer
+     - `None`: No specific photographer style (default)
+     - 20 Famous photographers including:
+       - Helmut Newton (bold, provocative, high contrast B&W)
+       - Peter Lindbergh (raw, intimate, cinematic B&W)
+       - Annie Leibovitz (dramatic environmental portraits)
+       - Richard Avedon (stark white backgrounds, psychological depth)
+       - And 16 more legendary photographers!
+   - **seed**: ⭐ NEW! Randomization seed (change for variations)
    - **temperature**: Control creativity (0.0 = focused, 1.0 = creative)
    - **max_tokens**: Maximum response length (1024 recommended)
 
@@ -271,6 +290,22 @@ MIT License - See LICENSE file for details
 - Discord: [ComfyUI Community](https://discord.gg/comfyui)
 
 ## Changelog
+
+### Version 1.3.0 (2025-01-18)
+- **NEW FEATURE**: Color Style dropdown
+  - 9 color treatment options: None, B&W, Color, Monochrome, Sepia, Cross-Processed, High Contrast B&W, Low Key, High Key
+  - Automatically incorporates color treatment into prompts
+- **NEW FEATURE**: Photographer Style dropdown
+  - 20 famous photographers to emulate their signature style
+  - Includes: Helmut Newton, Peter Lindbergh, Annie Leibovitz, Richard Avedon, Irving Penn, Herb Ritts, Mario Testino, Steven Meisel, Patrick Demarchelier, Paolo Roversi, Tim Walker, Ellen von Unwerth, David LaChapelle, Steven Klein, Mert and Marcus, Juergen Teller, Bruce Weber, Terry Richardson, Rankin, Albert Watson
+  - Each photographer's style includes specific lighting, composition, and post-processing characteristics
+  - "None" option to skip photographer styling
+- **NEW FEATURE**: Seed parameter for randomization
+  - Use different seeds to get variations on the same image
+  - Standard ComfyUI seed system (0 to max int64)
+- **IMPROVED**: System prompts now incorporate color and photographer styles throughout
+- Enhanced logging to show color style, photographer style, and seed
+- All new features have "None" options to maintain backward compatibility
 
 ### Version 1.2.0 (2025-01-18)
 - **MAJOR UPDATE**: Complete redesign based on professional photography workflow

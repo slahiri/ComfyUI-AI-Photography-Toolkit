@@ -16,8 +16,9 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
     AI-powered prompt generator that analyzes an image using Anthropic's Claude API
     and generates comprehensive ComfyUI prompts for image generation workflows.
 
-    Features multiple photography styles (Artistic, Technical, Minimal, Ultra-Detailed)
-    and model-specific optimization (FLUX, SDXL, SD 1.5, Universal).
+    Features multiple photography styles (Artistic, Technical, Minimal, Ultra-Detailed),
+    model-specific optimization (FLUX, SDXL, SD 1.5, Universal), color styles,
+    and famous photographer aesthetics.
 
     Inputs:
     - image: The input image to analyze
@@ -26,11 +27,14 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
     - user_prompt: Additional context or specific instructions
     - photography_style: Style of prompt (Artistic, Technical, Minimal, Ultra-Detailed)
     - target_model: Target image generation model (FLUX, SDXL, SD 1.5, Universal)
+    - color_style: Color treatment (None, B&W, Color, Sepia, etc.)
+    - photographer_style: Emulate famous photographer (None, Helmut Newton, Peter Lindbergh, etc.)
+    - seed: Seed for randomization (use different seeds for variation)
     - temperature: Creativity level (0.0-1.0)
     - max_tokens: Maximum response length
 
     Outputs:
-    - positive_prompt: Comprehensive positive prompt optimized for selected style and model
+    - positive_prompt: Comprehensive positive prompt optimized for selected style, model, and photographer
     - negative_prompt: Categorized negative prompt with quality/lighting/composition/subject/style/technical exclusions
     """
 
@@ -81,6 +85,32 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
                     default="FLUX",
                     tooltip="Target image generation model (affects prompt format and negative prompt style)"
                 ),
+                comfy_io.Combo.Input(
+                    "color_style",
+                    options=["None", "Black and White", "Color", "Monochrome", "Sepia", "Cross-Processed", "High Contrast B&W", "Low Key", "High Key"],
+                    default="None",
+                    tooltip="Photography color treatment (None = based on image analysis)"
+                ),
+                comfy_io.Combo.Input(
+                    "photographer_style",
+                    options=[
+                        "None",
+                        "Helmut Newton", "Peter Lindbergh", "Annie Leibovitz", "Richard Avedon",
+                        "Irving Penn", "Herb Ritts", "Mario Testino", "Steven Meisel",
+                        "Patrick Demarchelier", "Paolo Roversi", "Tim Walker", "Ellen von Unwerth",
+                        "David LaChapelle", "Steven Klein", "Mert and Marcus", "Juergen Teller",
+                        "Bruce Weber", "Terry Richardson", "Rankin", "Albert Watson"
+                    ],
+                    default="None",
+                    tooltip="Style after a famous photographer (None = no specific photographer style)"
+                ),
+                comfy_io.Int.Input(
+                    "seed",
+                    default=0,
+                    min=0,
+                    max=0xffffffffffffffff,
+                    tooltip="Seed for randomization (use different seeds for variation)"
+                ),
                 comfy_io.Float.Input(
                     "temperature",
                     default=0.7,
@@ -116,6 +146,9 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
         user_prompt,
         photography_style,
         target_model,
+        color_style,
+        photographer_style,
+        seed,
         temperature,
         max_tokens
     ) -> comfy_io.NodeOutput:
@@ -139,8 +172,8 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
             # Convert image tensor to base64
             base64_image = cls._image_to_base64(image)
 
-            # Build the system prompt based on photography style and target model
-            system_prompt = cls._build_system_prompt(photography_style, target_model)
+            # Build the system prompt based on photography style, target model, color style, and photographer
+            system_prompt = cls._build_system_prompt(photography_style, target_model, color_style, photographer_style, seed)
 
             # Initialize Anthropic client
             client = anthropic.Anthropic(api_key=api_key.strip())
@@ -185,6 +218,9 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
             print(f"Model: {model}")
             print(f"Photography Style: {photography_style}")
             print(f"Target Model: {target_model}")
+            print(f"Color Style: {color_style}")
+            print(f"Photographer Style: {photographer_style}")
+            print(f"Seed: {seed}")
             print(f"\nPOSITIVE PROMPT:")
             print(f"{positive_prompt}")
             print(f"\nNEGATIVE PROMPT:")
@@ -229,9 +265,9 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
         return img_base64
 
     @staticmethod
-    def _build_system_prompt(photography_style: str, target_model: str) -> str:
+    def _build_system_prompt(photography_style: str, target_model: str, color_style: str, photographer_style: str, seed: int) -> str:
         """
-        Build the system prompt based on the requested photography style and target model.
+        Build the system prompt based on the requested photography style, target model, color style, and photographer.
         """
         base_prompt = """You are an expert professional photographer and prompt engineer specializing in creating comprehensive ComfyUI/Stable Diffusion/FLUX prompts for AI image generation.
 
@@ -246,6 +282,65 @@ POSITIVE:
 
 NEGATIVE:
 [Your categorized negative prompt here]"""
+
+        # Add color style instruction if specified
+        color_style_instruction = ""
+        if color_style != "None":
+            color_style_instruction = f"""
+
+COLOR STYLE REQUIREMENT:
+The prompt MUST incorporate "{color_style}" photography style.
+- If "Black and White" or "Monochrome": Specify B&W, monochrome, black and white photography
+- If "Color": Emphasize vibrant colors, color photography, RGB
+- If "Sepia": Include sepia tone, vintage sepia photography
+- If "Cross-Processed": Mention cross-processing, experimental color treatment
+- If "High Contrast B&W": Emphasize high contrast black and white, dramatic tones
+- If "Low Key": Focus on low key lighting, dark moody tones, minimal highlights
+- If "High Key": Focus on high key lighting, bright airy feel, minimal shadows
+
+IMPORTANT: Make sure this color treatment is prominent in the positive prompt."""
+
+        # Add photographer style instruction if specified
+        photographer_style_instruction = ""
+        if photographer_style != "None":
+            photographer_descriptions = {
+                "Helmut Newton": "Helmut Newton style: bold, provocative, high contrast black and white, strong shadows, powerful poses, fashion noir, dramatic lighting, Berlin school aesthetic",
+                "Peter Lindbergh": "Peter Lindbergh style: raw, intimate black and white, natural beauty, minimal retouching, cinematic quality, film noir influenced, emotional depth, authentic portraiture",
+                "Annie Leibovitz": "Annie Leibovitz style: dramatic environmental portraits, rich color, elaborate setups, storytelling, celebrity portraiture, bold compositions, Vanity Fair aesthetic",
+                "Richard Avedon": "Richard Avedon style: stark white backgrounds, intense close-ups, psychological depth, minimalist approach, high fashion, raw emotion, museum-quality prints",
+                "Irving Penn": "Irving Penn style: elegant simplicity, neutral backgrounds, perfect lighting, modernist approach, still life mastery, platinum prints, timeless sophistication",
+                "Herb Ritts": "Herb Ritts style: classical Greek influence, sculptural bodies, high contrast, outdoor locations, natural light, minimalist black and white, athletic elegance",
+                "Mario Testino": "Mario Testino style: vibrant colors, glamorous, sensual, warm tones, joyful energy, Vogue aesthetic, Peruvian influence, sun-drenched locations",
+                "Steven Meisel": "Steven Meisel style: editorial perfection, trend-setting, high fashion, versatile aesthetics, avant-garde, cinematic references, Vogue Italia influence",
+                "Patrick Demarchelier": "Patrick Demarchelier style: soft elegant lighting, natural beauty, romantic feel, classic portraiture, Harper's Bazaar aesthetic, timeless grace",
+                "Paolo Roversi": "Paolo Roversi style: dreamlike, soft focus, ethereal quality, Polaroid large format, romantic, painterly, muted colors, nostalgic beauty",
+                "Tim Walker": "Tim Walker style: fantastical, surreal, whimsical, elaborate sets, fairy tale aesthetic, British Vogue, theatrical, magical realism",
+                "Ellen von Unwerth": "Ellen von Unwerth style: playful, feminine, vintage-inspired, bold colors, Paris nightlife, provocative yet fun, candid energy, film aesthetic",
+                "David LaChapelle": "David LaChapelle style: hyper-saturated colors, pop surrealism, baroque maximalism, celebrity culture commentary, elaborate staging, kitsch aesthetic",
+                "Steven Klein": "Steven Klein style: dark, edgy, provocative, fashion as art, surreal elements, controversial themes, high contrast, avant-garde fashion",
+                "Mert and Marcus": "Mert and Marcus style: high glamour, digital perfection, saturated colors, retouched to perfection, fashion maximalism, bold makeup, Vogue covers",
+                "Juergen Teller": "Juergen Teller style: raw, unpolished, snapshot aesthetic, flash photography, anti-fashion fashion, controversial, authentic moments, artistic irreverence",
+                "Bruce Weber": "Bruce Weber style: American classics, nostalgic, romantic, athletic bodies, natural settings, Abercrombie & Fitch aesthetic, golden era Hollywood",
+                "Terry Richardson": "Terry Richardson style: snapshot flash aesthetic, raw energy, white backdrop, amateur look, controversial, direct flash, candid provocative",
+                "Rankin": "Rankin style: bold, graphic, high impact, British aesthetic, celebrity portraiture, fashion editorial, vibrant colors, strong personality",
+                "Albert Watson": "Albert Watson style: dramatic lighting, technical mastery, diverse subjects, intense contrast, fashion and celebrity, powerful black and white, iconic imagery"
+            }
+
+            photographer_desc = photographer_descriptions.get(photographer_style, f"{photographer_style} style photography")
+            photographer_style_instruction = f"""
+
+PHOTOGRAPHER STYLE REQUIREMENT:
+Style the prompt to emulate: {photographer_desc}
+
+IMPORTANT: Incorporate the photographer's signature style, techniques, and aesthetic throughout the positive prompt. This should influence:
+- Lighting approach
+- Composition style
+- Post-processing aesthetic
+- Subject treatment
+- Overall mood and feel
+- Technical approach"""
+
+        base_prompt += color_style_instruction + photographer_style_instruction
 
         photography_style_instructions = {
             "Artistic": """
