@@ -1,0 +1,11 @@
+# ComfyUI-AI-Photography-Toolkit Dependencies
+
+# Anthropic Claude API
+anthropic>=0.39.0
+
+# Image processing (usually included with ComfyUI, but listed for completeness)
+pillow>=10.0.0
+numpy>=1.24.0
+
+# Future dependencies for additional nodes
+# openai>=1.0.0  # For OpenAI integration (future)
