@@ -297,6 +297,12 @@ MIT License - See LICENSE file for details
 
 ## Changelog
 
+### Version 1.3.4 (2025-01-18)
+- **BUGFIX**: Fixed seed parameter widget rendering
+  - Added `control_after_generate=True` parameter to seed input (standard ComfyUI randomization control)
+  - Seed now displays correctly with increment/decrement/randomize buttons
+  - Cleared Python cache to ensure proper node definition loading
+
 ### Version 1.3.3 (2025-01-18)
 - **BUGFIX**: Fixed backward compatibility with old workflows
   - Added None value handling for seed, lighting_condition, color_style, and photographer_style parameters

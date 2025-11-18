@@ -4,10 +4,10 @@ A collection of AI-powered photography and image generation tools for ComfyUI.
 All nodes are prefixed with SID_ for easy identification.
 
 Author: Siddhartha Lahiri
-Version: 1.3.3
+Version: 1.3.4
 """
 
-__version__ = "1.3.3"
+__version__ = "1.3.4"
 
 import os
 import sys

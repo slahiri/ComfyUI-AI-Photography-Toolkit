@@ -38,7 +38,7 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
     - positive_prompt: Comprehensive positive prompt optimized for selected style, model, and photographer
     - negative_prompt: Categorized negative prompt with quality/lighting/composition/subject/style/technical exclusions
 
-    Version: 1.3.3
+    Version: 1.3.4
     """
 
     @classmethod
@@ -133,6 +133,7 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
                     default=0,
                     min=0,
                     max=2147483647,
+                    control_after_generate=True,
                     tooltip="Seed for randomization (use different seeds for variation)"
                 ),
                 comfy_io.Float.Input(
