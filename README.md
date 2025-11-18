@@ -297,6 +297,39 @@ MIT License - See LICENSE file for details
 
 ## Changelog
 
+### Version 3.0.0 (2025-01-18) - INTELLIGENT PROMPTING AGENT
+- **🚀 NEW**: Intelligent model research agent
+  - Automatically detects and researches target model type (FLUX, SDXL, SD 1.5)
+  - Infers model characteristics from model name
+  - Ready for CivitAI and HuggingFace MCP integration
+  - Tailors prompts based on specific model capabilities
+- **🚀 NEW**: Sampler configuration output (3rd output)
+  - Automatically generates optimal sampler settings for target model
+  - Markdown-formatted with pretty tables
+  - Model-specific recommendations (sampler, steps, CFG scale, clip_skip)
+  - Contextual guidance based on model type
+- **BREAKING CHANGE**: Output names changed
+  - `positive_prompt` → `positive` (cleaner naming)
+  - `negative_prompt` → `negative` (cleaner naming)
+  - NEW: `sampler_config` (markdown format)
+- **BREAKING CHANGE**: Target model input
+  - Changed from dropdown (FLUX/SDXL/SD 1.5/Universal) to text input
+  - Now accepts ANY model name (e.g., "FLUX.1-dev", "juggernaut_reborn", "realistic_vision_v5")
+  - Agent intelligently detects model type and optimizes accordingly
+- **IMPROVED**: Model-specific prompt tailoring
+  - System prompts now include detected model characteristics
+  - Token limits adjusted based on actual model type
+  - Negative prompt strategy optimized per model
+- **IMPROVED**: Console logging
+  - Now shows complete model research results
+  - Displays detected model type, base model, token limits
+  - Shows model characteristics and sampler config
+- **USE CASE**: Intelligent prompting workflow
+  - Agent researches your specific model
+  - Generates perfectly optimized prompts for that model
+  - Provides sampler recommendations you can apply
+  - All automated - just provide the model name!
+
 ### Version 2.0.0 (2025-01-18) - MAJOR UPDATE
 - **BREAKING CHANGE**: Complete prompt generation rewrite
   - Now generates clean comma-separated prompts instead of markdown-formatted text
