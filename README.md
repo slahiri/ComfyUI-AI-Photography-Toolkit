@@ -297,6 +297,29 @@ MIT License - See LICENSE file for details
 
 ## Changelog
 
+### Version 2.0.0 (2025-01-18) - MAJOR UPDATE
+- **BREAKING CHANGE**: Complete prompt generation rewrite
+  - Now generates clean comma-separated prompts instead of markdown-formatted text
+  - Single-line output for both positive and negative prompts
+  - NO more section headers, bullet points, or structured formatting in prompts
+- **NEW FEATURE**: Token limit management based on research
+  - **FLUX**: 200-256 tokens optimal (max 512), concise negatives (30-50 tokens)
+  - **SDXL**: 27-75 tokens optimal (max 75), moderate negatives (40-60 tokens)
+  - **SD 1.5**: 50-75 tokens optimal (max 75), comprehensive negatives (75-100 tokens)
+  - **Universal**: 100-120 tokens optimal, balanced negatives (50-70 tokens)
+- **NEW FEATURE**: Priority-based prompt sequencing
+  - Priority 1: User instructions + Style requirements (color, photographer, lighting)
+  - Priority 2: Subject description (pose, expression, clothing)
+  - Priority 3: Technical details (camera, settings, composition)
+  - Priority 4: Quality terms (professional, high detail, sharp focus)
+  - Most important terms placed FIRST for maximum model attention
+- **IMPROVED**: Streamlined system prompts (reduced from 800+ to 327 lines)
+- **IMPROVED**: Model-specific negative prompt guidance
+  - FLUX: Concise, targeted exclusions
+  - SDXL: Moderate, focused exclusions
+  - SD 1.5: Comprehensive, extensive exclusions
+- **WHY THIS UPDATE**: Markdown-formatted prompts don't work well with image generation models. This update ensures prompts are in the proper comma-separated format that FLUX, SDXL, and SD 1.5 expect.
+
 ### Version 1.3.4 (2025-01-18)
 - **BUGFIX**: Fixed seed parameter widget rendering
   - Added `control_after_generate=True` parameter to seed input (standard ComfyUI randomization control)

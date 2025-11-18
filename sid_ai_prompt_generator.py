@@ -35,10 +35,10 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
     - max_tokens: Maximum response length
 
     Outputs:
-    - positive_prompt: Comprehensive positive prompt optimized for selected style, model, and photographer
-    - negative_prompt: Categorized negative prompt with quality/lighting/composition/subject/style/technical exclusions
+    - positive_prompt: Comma-separated prompt optimized for selected style and model with strict token limits
+    - negative_prompt: Comma-separated negative terms with model-specific length (concise for FLUX, comprehensive for SD 1.5)
 
-    Version: 1.3.4
+    Version: 2.0.0 - Major rewrite for comma-separated format with token management
     """
 
     @classmethod
@@ -304,507 +304,329 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
     @staticmethod
     def _build_system_prompt(photography_style: str, target_model: str, color_style: str, photographer_style: str, lighting_condition: str, seed: int) -> str:
         """
-        Build the system prompt based on the requested photography style, target model, color style, photographer, and lighting condition.
+        Build the system prompt for comma-separated output with token limits based on target model.
+        Token limits: FLUX (200-256 optimal, max 512), SDXL (27-75), SD 1.5 (75), Universal (100-120)
         """
-        base_prompt = """You are an expert professional photographer and prompt engineer specializing in creating comprehensive ComfyUI/Stable Diffusion/FLUX prompts for AI image generation.
 
-Your task is to:
-1. Analyze the provided image in extreme detail
-2. Generate a POSITIVE PROMPT optimized for the specified photography style and target model
-3. Generate a comprehensive NEGATIVE PROMPT with categorized exclusions
+        # Model-specific token limits
+        token_limits = {
+            "FLUX": {"optimal": "200-256 tokens", "max": "512 tokens", "negative": "concise (30-50 tokens)"},
+            "SDXL": {"optimal": "27-75 tokens", "max": "75 tokens", "negative": "moderate (40-60 tokens)"},
+            "SD 1.5": {"optimal": "50-75 tokens", "max": "75 tokens", "negative": "comprehensive (75-100 tokens)"},
+            "Universal": {"optimal": "100-120 tokens", "max": "120 tokens", "negative": "balanced (50-70 tokens)"}
+        }
 
-Format your response EXACTLY as follows:
+        limits = token_limits.get(target_model, token_limits["Universal"])
+
+        # Photographer style descriptions (kept as-is per requirements)
+        photographer_descriptions = {
+            "Helmut Newton": "Helmut Newton style: bold, provocative, high contrast black and white, strong shadows, powerful poses, fashion noir, dramatic lighting, Berlin school aesthetic",
+            "Peter Lindbergh": "Peter Lindbergh style: raw, intimate black and white, natural beauty, minimal retouching, cinematic quality, film noir influenced, emotional depth, authentic portraiture",
+            "Annie Leibovitz": "Annie Leibovitz style: dramatic environmental portraits, rich color, elaborate setups, storytelling, celebrity portraiture, bold compositions, Vanity Fair aesthetic",
+            "Richard Avedon": "Richard Avedon style: stark white backgrounds, intense close-ups, psychological depth, minimalist approach, high fashion, raw emotion, museum-quality prints",
+            "Irving Penn": "Irving Penn style: elegant simplicity, neutral backgrounds, perfect lighting, modernist approach, still life mastery, platinum prints, timeless sophistication",
+            "Herb Ritts": "Herb Ritts style: classical Greek influence, sculptural bodies, high contrast, outdoor locations, natural light, minimalist black and white, athletic elegance",
+            "Mario Testino": "Mario Testino style: vibrant colors, glamorous, sensual, warm tones, joyful energy, Vogue aesthetic, Peruvian influence, sun-drenched locations",
+            "Steven Meisel": "Steven Meisel style: editorial perfection, trend-setting, high fashion, versatile aesthetics, avant-garde, cinematic references, Vogue Italia influence",
+            "Patrick Demarchelier": "Patrick Demarchelier style: soft elegant lighting, natural beauty, romantic feel, classic portraiture, Harper's Bazaar aesthetic, timeless grace",
+            "Paolo Roversi": "Paolo Roversi style: dreamlike, soft focus, ethereal quality, Polaroid large format, romantic, painterly, muted colors, nostalgic beauty",
+            "Tim Walker": "Tim Walker style: fantastical, surreal, whimsical, elaborate sets, fairy tale aesthetic, British Vogue, theatrical, magical realism",
+            "Ellen von Unwerth": "Ellen von Unwerth style: playful, feminine, vintage-inspired, bold colors, Paris nightlife, provocative yet fun, candid energy, film aesthetic",
+            "David LaChapelle": "David LaChapelle style: hyper-saturated colors, pop surrealism, baroque maximalism, celebrity culture commentary, elaborate staging, kitsch aesthetic",
+            "Steven Klein": "Steven Klein style: dark, edgy, provocative, fashion as art, surreal elements, controversial themes, high contrast, avant-garde fashion",
+            "Mert and Marcus": "Mert and Marcus style: high glamour, digital perfection, saturated colors, retouched to perfection, fashion maximalism, bold makeup, Vogue covers",
+            "Juergen Teller": "Juergen Teller style: raw, unpolished, snapshot aesthetic, flash photography, anti-fashion fashion, controversial, authentic moments, artistic irreverence",
+            "Bruce Weber": "Bruce Weber style: American classics, nostalgic, romantic, athletic bodies, natural settings, Abercrombie & Fitch aesthetic, golden era Hollywood",
+            "Terry Richardson": "Terry Richardson style: snapshot flash aesthetic, raw energy, white backdrop, amateur look, controversial, direct flash, candid provocative",
+            "Rankin": "Rankin style: bold, graphic, high impact, British aesthetic, celebrity portraiture, fashion editorial, vibrant colors, strong personality",
+            "Albert Watson": "Albert Watson style: dramatic lighting, technical mastery, diverse subjects, intense contrast, fashion and celebrity, powerful black and white, iconic imagery"
+        }
+
+        # Lighting descriptions (kept as-is per requirements)
+        lighting_descriptions = {
+            # Studio Lighting
+            "Natural Window Light": "soft directional natural window light, diffused daylight, organic shadows, window as main light source, authentic natural feel",
+            "Studio Strobes": "professional studio flash/strobe lighting, controlled power output, precise lighting control, sharp shadows, frozen motion",
+            "Softbox Lighting": "large softbox modifier, soft diffused light, even illumination, gentle shadows, professional studio setup, flattering skin tones",
+            "Beauty Dish": "beauty dish modifier, focused yet soft light, circular catchlights, glamour/beauty lighting, moderate contrast",
+            "Ring Light": "ring light/ring flash, shadowless frontal lighting, distinctive circular catchlights, even illumination, fashion/beauty aesthetic",
+            "Umbrella Lighting": "umbrella modifier, broad soft light source, budget-friendly studio lighting, wide coverage, soft shadows",
+            "Grid Spot": "grid spot/honeycomb grid modifier, focused directional light, controlled spill, dramatic accent lighting, hair/rim light",
+            "Reflector Fill": "reflector fill light, bounced natural light, subtle fill, reduced shadows, cost-effective lighting solution",
+            # Studio Techniques
+            "Rembrandt Lighting": "Rembrandt lighting technique, triangular light patch on cheek, 45-degree key light, dramatic portrait lighting, classic technique",
+            "Split Lighting": "split lighting, half face illuminated half in shadow, 90-degree side lighting, dramatic contrasty look, moody atmosphere",
+            "Butterfly Lighting": "butterfly lighting (Paramount lighting), key light above and in front, butterfly shadow under nose, glamour lighting, beauty aesthetic",
+            "Loop Lighting": "loop lighting, small nose shadow, key light 30-45 degrees, natural flattering light, versatile portrait technique",
+            "Broad Lighting": "broad lighting, illuminates side of face toward camera, wider face appearance, side lighting technique",
+            "Short Lighting": "short lighting, illuminates side of face away from camera, slimming effect, dimensional modeling",
+            "High Key Studio": "high key lighting setup, bright even illumination, minimal shadows, light airy feel, white/light backgrounds, optimistic mood",
+            "Low Key Studio": "low key lighting setup, dramatic shadows, minimal fill light, dark moody atmosphere, black backgrounds, cinematic feel",
+            "Clamshell Lighting": "clamshell lighting (butterfly + reflector), beauty lighting setup, soft wraparound light, glamour photography",
+            "Edge/Rim Lighting": "edge/rim lighting, backlight creating luminous outline, subject separation from background, dramatic halo effect",
+            # Outdoor/Natural Lighting
+            "Golden Hour": "golden hour lighting, warm soft sunlight, low sun angle, magical quality, long shadows, amber/golden tones, 1 hour after sunrise or before sunset",
+            "Blue Hour": "blue hour lighting, deep blue twilight, soft even light, no direct sun, magical atmosphere, civil twilight period",
+            "Harsh Midday Sun": "harsh midday sun, direct overhead sunlight, hard shadows, high contrast, bright highlights, challenging lighting",
+            "Overcast Diffused": "overcast sky diffused lighting, soft even illumination, natural softbox effect, no harsh shadows, muted colors, gentle flattering light",
+            "Open Shade": "open shade lighting, subject in shadow with open sky, soft directional light, even skin tones, outdoor portrait technique",
+            "Backlit": "backlit/backlighting, subject with light source behind, rim light effect, lens flare potential, silhouette or halo lighting",
+            "Dusk/Twilight": "dusk/twilight lighting, transitional light quality, soft ambient glow, blue hour approaching, romantic atmosphere",
+            "Sunrise": "sunrise lighting, warm directional light, fresh morning quality, soft shadows, optimistic mood, low angle sun",
+            "Sunset": "sunset lighting, warm golden/orange tones, dramatic sky colors, low angle directional light, romantic mood, long shadows",
+            # Special/Creative Lighting
+            "Chiaroscuro": "chiaroscuro lighting technique, dramatic contrast between light and dark, Renaissance painting influence, sculptural lighting, artistic shadows",
+            "Dramatic Side Light": "dramatic side lighting, strong directional light from 90 degrees, high contrast, depth and dimension, moody atmospheric",
+            "Silhouette": "silhouette lighting, backlit subject, solid dark shape against bright background, no subject detail visible, graphic effect",
+            "Candlelight": "candlelight/warm practical light, warm amber glow, soft flickering quality, intimate atmosphere, low light romantic mood",
+            "Neon/Colorful": "neon/colorful lighting, vibrant colored lights, urban night aesthetic, cyan/magenta/RGB, creative color grading, cyberpunk mood",
+            "Practical Lights": "practical lights visible in scene, lamps/fixtures as light sources, natural motivation, environmental lighting, realistic setup",
+            "Mixed Lighting": "mixed lighting sources, combination of natural and artificial, multiple color temperatures, complex realistic lighting",
+            "Night Photography": "night photography lighting, artificial lights in darkness, long exposure potential, high ISO, city lights or moon/stars"
+        }
+
+        # Build base prompt
+        base_prompt = f"""You are an expert prompt engineer for AI image generation. Your task is to analyze the provided image and generate COMMA-SEPARATED prompts optimized for {target_model}.
+
+CRITICAL OUTPUT FORMAT:
+- Generate ONE LINE of comma-separated terms for positive prompt
+- Generate ONE LINE of comma-separated terms for negative prompt
+- NO markdown, NO bullet points, NO structured lists
+- Format EXACTLY as:
+
 POSITIVE:
-[Your detailed positive prompt here]
+term1, term2, term3, term4, etc
 
 NEGATIVE:
-[Your categorized negative prompt here]"""
+term1, term2, term3, term4, etc
 
-        # Add color style instruction if specified
-        color_style_instruction = ""
+TOKEN LIMITS FOR {target_model}:
+- Positive prompt: {limits["optimal"]} (maximum {limits["max"]})
+- Negative prompt: {limits["negative"]}
+
+PROMPT SEQUENCING PRIORITY (CRITICAL):
+Priority 1: User instructions + Style requirements (color, photographer, lighting)
+Priority 2: Subject description (pose, expression, clothing)
+Priority 3: Technical details (camera, settings, composition)
+Priority 4: Quality terms (professional, high detail, sharp focus)
+
+Place the MOST IMPORTANT terms FIRST in the sequence."""
+
+        # Add color style requirement if specified
         if color_style != "None":
-            color_style_instruction = f"""
+            base_prompt += f"""
 
-COLOR STYLE REQUIREMENT:
-The prompt MUST incorporate "{color_style}" photography style.
-- If "Black and White" or "Monochrome": Specify B&W, monochrome, black and white photography
-- If "Color": Emphasize vibrant colors, color photography, RGB
-- If "Sepia": Include sepia tone, vintage sepia photography
-- If "Cross-Processed": Mention cross-processing, experimental color treatment
-- If "High Contrast B&W": Emphasize high contrast black and white, dramatic tones
-- If "Low Key": Focus on low key lighting, dark moody tones, minimal highlights
-- If "High Key": Focus on high key lighting, bright airy feel, minimal shadows
+COLOR STYLE REQUIREMENT (Priority 1):
+Include "{color_style}" as a PRIMARY term early in the prompt.
+Examples: "black and white photography", "vibrant color", "sepia tone", "high contrast monochrome"."""
 
-IMPORTANT: Make sure this color treatment is prominent in the positive prompt."""
-
-        # Add photographer style instruction if specified
-        photographer_style_instruction = ""
+        # Add photographer style requirement if specified
         if photographer_style != "None":
-            photographer_descriptions = {
-                "Helmut Newton": "Helmut Newton style: bold, provocative, high contrast black and white, strong shadows, powerful poses, fashion noir, dramatic lighting, Berlin school aesthetic",
-                "Peter Lindbergh": "Peter Lindbergh style: raw, intimate black and white, natural beauty, minimal retouching, cinematic quality, film noir influenced, emotional depth, authentic portraiture",
-                "Annie Leibovitz": "Annie Leibovitz style: dramatic environmental portraits, rich color, elaborate setups, storytelling, celebrity portraiture, bold compositions, Vanity Fair aesthetic",
-                "Richard Avedon": "Richard Avedon style: stark white backgrounds, intense close-ups, psychological depth, minimalist approach, high fashion, raw emotion, museum-quality prints",
-                "Irving Penn": "Irving Penn style: elegant simplicity, neutral backgrounds, perfect lighting, modernist approach, still life mastery, platinum prints, timeless sophistication",
-                "Herb Ritts": "Herb Ritts style: classical Greek influence, sculptural bodies, high contrast, outdoor locations, natural light, minimalist black and white, athletic elegance",
-                "Mario Testino": "Mario Testino style: vibrant colors, glamorous, sensual, warm tones, joyful energy, Vogue aesthetic, Peruvian influence, sun-drenched locations",
-                "Steven Meisel": "Steven Meisel style: editorial perfection, trend-setting, high fashion, versatile aesthetics, avant-garde, cinematic references, Vogue Italia influence",
-                "Patrick Demarchelier": "Patrick Demarchelier style: soft elegant lighting, natural beauty, romantic feel, classic portraiture, Harper's Bazaar aesthetic, timeless grace",
-                "Paolo Roversi": "Paolo Roversi style: dreamlike, soft focus, ethereal quality, Polaroid large format, romantic, painterly, muted colors, nostalgic beauty",
-                "Tim Walker": "Tim Walker style: fantastical, surreal, whimsical, elaborate sets, fairy tale aesthetic, British Vogue, theatrical, magical realism",
-                "Ellen von Unwerth": "Ellen von Unwerth style: playful, feminine, vintage-inspired, bold colors, Paris nightlife, provocative yet fun, candid energy, film aesthetic",
-                "David LaChapelle": "David LaChapelle style: hyper-saturated colors, pop surrealism, baroque maximalism, celebrity culture commentary, elaborate staging, kitsch aesthetic",
-                "Steven Klein": "Steven Klein style: dark, edgy, provocative, fashion as art, surreal elements, controversial themes, high contrast, avant-garde fashion",
-                "Mert and Marcus": "Mert and Marcus style: high glamour, digital perfection, saturated colors, retouched to perfection, fashion maximalism, bold makeup, Vogue covers",
-                "Juergen Teller": "Juergen Teller style: raw, unpolished, snapshot aesthetic, flash photography, anti-fashion fashion, controversial, authentic moments, artistic irreverence",
-                "Bruce Weber": "Bruce Weber style: American classics, nostalgic, romantic, athletic bodies, natural settings, Abercrombie & Fitch aesthetic, golden era Hollywood",
-                "Terry Richardson": "Terry Richardson style: snapshot flash aesthetic, raw energy, white backdrop, amateur look, controversial, direct flash, candid provocative",
-                "Rankin": "Rankin style: bold, graphic, high impact, British aesthetic, celebrity portraiture, fashion editorial, vibrant colors, strong personality",
-                "Albert Watson": "Albert Watson style: dramatic lighting, technical mastery, diverse subjects, intense contrast, fashion and celebrity, powerful black and white, iconic imagery"
-            }
-
             photographer_desc = photographer_descriptions.get(photographer_style, f"{photographer_style} style photography")
-            photographer_style_instruction = f"""
+            base_prompt += f"""
 
-PHOTOGRAPHER STYLE REQUIREMENT:
-Style the prompt to emulate: {photographer_desc}
+PHOTOGRAPHER STYLE REQUIREMENT (Priority 1):
+Style: {photographer_desc}
+Incorporate the photographer's signature aesthetic as PRIMARY terms early in the prompt."""
 
-IMPORTANT: Incorporate the photographer's signature style, techniques, and aesthetic throughout the positive prompt. This should influence:
-- Lighting approach
-- Composition style
-- Post-processing aesthetic
-- Subject treatment
-- Overall mood and feel
-- Technical approach"""
-
-        # Add lighting condition instruction if specified
-        lighting_instruction = ""
+        # Add lighting requirement if specified
         if lighting_condition != "None":
-            lighting_descriptions = {
-                # Studio Lighting
-                "Natural Window Light": "soft directional natural window light, diffused daylight, organic shadows, window as main light source, authentic natural feel",
-                "Studio Strobes": "professional studio flash/strobe lighting, controlled power output, precise lighting control, sharp shadows, frozen motion",
-                "Softbox Lighting": "large softbox modifier, soft diffused light, even illumination, gentle shadows, professional studio setup, flattering skin tones",
-                "Beauty Dish": "beauty dish modifier, focused yet soft light, circular catchlights, glamour/beauty lighting, moderate contrast",
-                "Ring Light": "ring light/ring flash, shadowless frontal lighting, distinctive circular catchlights, even illumination, fashion/beauty aesthetic",
-                "Umbrella Lighting": "umbrella modifier, broad soft light source, budget-friendly studio lighting, wide coverage, soft shadows",
-                "Grid Spot": "grid spot/honeycomb grid modifier, focused directional light, controlled spill, dramatic accent lighting, hair/rim light",
-                "Reflector Fill": "reflector fill light, bounced natural light, subtle fill, reduced shadows, cost-effective lighting solution",
-
-                # Studio Lighting Techniques
-                "Rembrandt Lighting": "Rembrandt lighting technique, triangular light patch on cheek, 45-degree key light, dramatic portrait lighting, classic technique",
-                "Split Lighting": "split lighting, half face illuminated half in shadow, 90-degree side lighting, dramatic contrasty look, moody atmosphere",
-                "Butterfly Lighting": "butterfly lighting (Paramount lighting), key light above and in front, butterfly shadow under nose, glamour lighting, beauty aesthetic",
-                "Loop Lighting": "loop lighting, small nose shadow, key light 30-45 degrees, natural flattering light, versatile portrait technique",
-                "Broad Lighting": "broad lighting, illuminates side of face toward camera, wider face appearance, side lighting technique",
-                "Short Lighting": "short lighting, illuminates side of face away from camera, slimming effect, dimensional modeling",
-                "High Key Studio": "high key lighting setup, bright even illumination, minimal shadows, light airy feel, white/light backgrounds, optimistic mood",
-                "Low Key Studio": "low key lighting setup, dramatic shadows, minimal fill light, dark moody atmosphere, black backgrounds, cinematic feel",
-                "Clamshell Lighting": "clamshell lighting (butterfly + reflector), beauty lighting setup, soft wraparound light, glamour photography",
-                "Edge/Rim Lighting": "edge/rim lighting, backlight creating luminous outline, subject separation from background, dramatic halo effect",
-
-                # Outdoor/Natural Lighting
-                "Golden Hour": "golden hour lighting, warm soft sunlight, low sun angle, magical quality, long shadows, amber/golden tones, 1 hour after sunrise or before sunset",
-                "Blue Hour": "blue hour lighting, deep blue twilight, soft even light, no direct sun, magical atmosphere, civil twilight period",
-                "Harsh Midday Sun": "harsh midday sun, direct overhead sunlight, hard shadows, high contrast, bright highlights, challenging lighting",
-                "Overcast Diffused": "overcast sky diffused lighting, soft even illumination, natural softbox effect, no harsh shadows, muted colors, gentle flattering light",
-                "Open Shade": "open shade lighting, subject in shadow with open sky, soft directional light, even skin tones, outdoor portrait technique",
-                "Backlit": "backlit/backlighting, subject with light source behind, rim light effect, lens flare potential, silhouette or halo lighting",
-                "Dusk/Twilight": "dusk/twilight lighting, transitional light quality, soft ambient glow, blue hour approaching, romantic atmosphere",
-                "Sunrise": "sunrise lighting, warm directional light, fresh morning quality, soft shadows, optimistic mood, low angle sun",
-                "Sunset": "sunset lighting, warm golden/orange tones, dramatic sky colors, low angle directional light, romantic mood, long shadows",
-
-                # Special/Creative Lighting
-                "Chiaroscuro": "chiaroscuro lighting technique, dramatic contrast between light and dark, Renaissance painting influence, sculptural lighting, artistic shadows",
-                "Dramatic Side Light": "dramatic side lighting, strong directional light from 90 degrees, high contrast, depth and dimension, moody atmospheric",
-                "Silhouette": "silhouette lighting, backlit subject, solid dark shape against bright background, no subject detail visible, graphic effect",
-                "Candlelight": "candlelight/warm practical light, warm amber glow, soft flickering quality, intimate atmosphere, low light romantic mood",
-                "Neon/Colorful": "neon/colorful lighting, vibrant colored lights, urban night aesthetic, cyan/magenta/RGB, creative color grading, cyberpunk mood",
-                "Practical Lights": "practical lights visible in scene, lamps/fixtures as light sources, natural motivation, environmental lighting, realistic setup",
-                "Mixed Lighting": "mixed lighting sources, combination of natural and artificial, multiple color temperatures, complex realistic lighting",
-                "Night Photography": "night photography lighting, artificial lights in darkness, long exposure potential, high ISO, city lights or moon/stars"
-            }
-
             lighting_desc = lighting_descriptions.get(lighting_condition, lighting_condition)
-            lighting_instruction = f"""
+            base_prompt += f"""
 
-LIGHTING CONDITION REQUIREMENT:
-The prompt MUST incorporate this specific lighting: {lighting_condition}
+LIGHTING REQUIREMENT (Priority 1):
+Lighting: {lighting_desc}
+Include lighting characteristics as PRIMARY terms early in the prompt."""
 
-Lighting characteristics: {lighting_desc}
-
-IMPORTANT: Make the lighting setup/condition a prominent element of the positive prompt. This should specify:
-- Type of light source
-- Quality of light (hard/soft)
-- Direction and position
-- Color temperature if relevant
-- Shadow characteristics
-- Overall mood created by the lighting"""
-
-        base_prompt += color_style_instruction + photographer_style_instruction + lighting_instruction
-
+        # Photography style-specific instructions
         photography_style_instructions = {
-            "Artistic": """
+            "Artistic": f"""
+
 PHOTOGRAPHY STYLE: ARTISTIC FOCUS
+Generate comma-separated terms emphasizing:
+- Mood and atmosphere terms
+- Artistic style references
+- Emotional tone descriptors
+- Scene and environment
+- Photography aesthetic terms
 
-Create a descriptive, mood-focused prompt that emphasizes:
-- Subject description with emotional/artistic context
-- Pose, expression, and body language details
-- Clothing/styling/accessories description
-- Setting and environment (indoor/outdoor, specific location)
-- Lighting quality and atmosphere (dramatic, soft, natural, etc.)
-- Artistic style references (film noir, editorial, fine art, etc.)
-- Mood and emotional tone
-- Color palette or B&W specification
-- Photography aesthetic (cinematic, elegant, intimate, etc.)
+Target length: {limits["optimal"]}
+Example sequence: style terms, mood, subject, setting, lighting, artistic references, quality""",
 
-Structure: Subject + Pose/Expression + Clothing + Setting + Lighting + Artistic Style + Mood + Quality
-Keep it flowing and descriptive, like describing a scene to an artist.
-""",
+            "Technical": f"""
 
-            "Technical": """
-PHOTOGRAPHY STYLE: TECHNICAL WITH CAMERA & STUDIO DETAILS
+PHOTOGRAPHY STYLE: TECHNICAL DETAILS
+Generate comma-separated terms including:
+- Camera specifications (Hasselblad H6D-100c, Canon EOS R5, etc)
+- Lens details (85mm f/1.4, 50mm f/1.2, etc)
+- Camera settings (ISO 100, f/2.8, 1/125)
+- Lighting setup terms
+- Studio equipment mentions
+- Post-processing terms
 
-Create a comprehensive technical prompt including:
+Target length: {limits["optimal"]}
+Example sequence: camera model, lens, settings, subject, lighting setup, technical terms, quality""",
 
-CAMERA EQUIPMENT:
-- Specific camera body (e.g., Hasselblad H6D-100c, Canon EOS R5, Sony A7R V)
-- Specific lens (e.g., HC 100mm f/2.2, 85mm f/1.4, 50mm f/1.8)
-- Camera settings: ISO (e.g., ISO 100), Aperture (e.g., f/2.8), Shutter speed (e.g., 1/125)
-- Medium format/full frame/crop sensor specification
+            "Minimal": f"""
 
-STUDIO SETUP (if applicable):
-- Backdrop type and color (seamless, textured, size like 12ft)
-- Studio dimensions and floor type
-- Shooting environment details
-
-LIGHTING SETUP:
-- Main/key light: type (Profoto, Godox), modifier (softbox size), position, power
-- Fill light: type, position, power ratio
-- Rim/hair light: position, modifier (snoot, grid), purpose
-- Background light (if used)
-- Light ratios (e.g., 1:3 key to fill)
-- Color temperature (e.g., 5500K daylight)
-
-SUBJECT & COMPOSITION:
-- Detailed subject description
-- Pose and positioning
-- Clothing/styling specifics
-- Composition and framing
-- Depth of field notes
-
-POST-PROCESSING:
-- Software used (Capture One, Lightroom, Photoshop)
-- B&W conversion method (Silver Efex Pro, etc.)
-- Specific adjustments (contrast, grain, dodging/burning)
-- Film simulation if applicable
-
-AESTHETIC:
-- Photography style (fashion, editorial, fine art)
-- Photographer references (Helmut Newton, Peter Lindbergh, etc.)
-- Technical approach (chiaroscuro, high key, low key)
-
-Structure: Technical specs + Studio setup + Lighting details + Subject + Post-processing + Aesthetic
-""",
-
-            "Minimal": """
-PHOTOGRAPHY STYLE: MINIMAL/OPTIMIZED (BEST FOR FLUX)
-
-Create a concise, efficient prompt with essential elements only:
-- Core subject description (brief)
-- Key pose/expression
-- Essential clothing/styling
-- Setting (brief - studio, outdoor, location)
+PHOTOGRAPHY STYLE: MINIMAL/CONCISE
+Generate essential comma-separated terms only:
+- Core subject descriptor
+- Key pose or action
+- Primary setting
 - Main lighting characteristic
-- Style/aesthetic (1-2 words)
-- Quality markers (2-3 terms)
+- Style aesthetic
+- 2-3 quality terms
 
-Structure: Subject, pose, clothing, setting, lighting, style, quality
-Target: 30-50 words maximum
-Example format: "Medium format portrait, woman in black dress, elegant pose, studio lighting, dark backdrop, fashion editorial, high contrast"
-""",
+Target length: {limits["optimal"]}
+Example sequence: subject, pose, setting, lighting, style, quality""",
 
-            "Ultra-Detailed": """
-PHOTOGRAPHY STYLE: ULTRA-DETAILED COMPREHENSIVE REALISM
+            "Ultra-Detailed": f"""
 
-Create an exhaustively detailed prompt covering EVERY aspect:
+PHOTOGRAPHY STYLE: ULTRA-DETAILED COMPREHENSIVE
+Generate extensive comma-separated terms covering:
+- Exact camera model and specifications
+- Precise lens details
+- Complete lighting setup description
+- Detailed subject characteristics
+- Composition specifics
+- Post-processing workflow terms
+- Technical excellence terms
 
-CAMERA & TECHNICAL SPECIFICATIONS:
-- Exact camera model with sensor details (e.g., Hasselblad H6D-100c medium format, 100MP sensor)
-- Exact lens model with specifications (e.g., Hasselblad HC 100mm f/2.2 lens)
-- Precise camera settings: ISO value, f-stop, shutter speed, color depth, RAW format
-- Tethered workflow if applicable
-- Processing software with version
-
-STUDIO ENVIRONMENT:
-- Exact backdrop specifications (type, color, dimensions like 15x20ft seamless)
-- Studio size and layout
-- Floor type and color
-- Climate/environment details
-- Shooting space dimensions
-
-LIGHTING SETUP (EXTREMELY DETAILED):
-- Main key light: exact model (Profoto D2 1000Ws), modifier type and size (3x4ft softbox), exact position (45-degrees camera left, 6ft from subject), power output
-- Fill light: exact model, modifier, position, power ratio to key (e.g., 1:3)
-- Rim/hair light: exact model, modifier (snoot, grid, etc.), position (clock position like 7 o'clock), purpose (separation, highlight)
-- Background light (if any): specifications
-- Light meter reading
-- Exact color temperature (e.g., 5500K daylight balanced)
-
-SUBJECT DESCRIPTION (COMPREHENSIVE):
-- Physical characteristics (physique, build, specific features)
-- Exact pose description (every limb, hand position, head tilt angle)
-- Facial expression (eyes, mouth, emotional state)
-- Hair (length, style, flow, movement)
-- Clothing (exact items, materials, textures, colors, fit, details like straps, seams)
-- Accessories (if any)
-- Skin tone and texture
-
-COMPOSITION & FRAMING:
-- Aspect ratio (2:3, 16:9, etc.)
-- Framing (full body, 3/4, torso, etc.)
-- Subject position in frame (centered, rule of thirds, etc.)
-- Negative space usage
-- Foreground/background elements
-
-POST-PROCESSING WORKFLOW:
-- Capture/processing software (Phase One Capture One Pro, Adobe Lightroom Classic, etc.)
-- Black and white conversion method (Silver Efex Pro with specific preset)
-- Tonal curve adjustments (high contrast, specific curve shape)
-- Dodging and burning specifics
-- Film grain simulation (type like Tri-X 400, grain size)
-- Sharpening method (unsharp mask with radius/amount)
-- Skin retouching approach (natural texture preserved, smoothing level)
-
-AESTHETIC & STYLE:
-- Specific photography style (fine art, fashion editorial, commercial, etc.)
-- Lighting technique name (chiaroscuro, Rembrandt, split lighting, etc.)
-- Photographer/artist references (2-3 names)
-- Film era or style references
-- Mood descriptors (intimate, dramatic, serene, powerful, etc.)
-- Print/output quality (museum quality, gallery print, etc.)
-
-QUALITY & TECHNICAL EXCELLENCE:
-- Resolution details
-- Tonal range (pure black to white, mid-tone handling)
-- Sharpness and focus areas
-- Depth of field specifics
-- Color/monochrome treatment details
-- Final output specifications
-
-Structure: Camera specs → Studio environment → Complete lighting setup → Detailed subject → Composition → Post-processing workflow → Aesthetic → Quality
-Target: 200-400 words for maximum detail and realism
-"""
+Target length: {limits["optimal"]} (can approach {limits["max"]} for this style)
+Example sequence: camera specs, lens, lighting details, subject description, composition, post-processing, quality"""
         }
 
-        # Model-specific positive prompt guidance
-        positive_prompt_guidance = {
-            "FLUX": """
-POSITIVE PROMPT GUIDELINES FOR FLUX:
-- FLUX excels with natural language descriptions - write as you would describe the image to a person
-- Use clear, specific descriptive phrases rather than keyword lists
-- Structure: Subject + Action/Pose + Setting + Lighting + Style + Quality
-- Lighting is crucial: specify direction, quality (soft/hard), color temperature (warm/cool/neutral)
-- Be specific about materials and textures (e.g., "brushed metal", "rough canvas", "smooth silk")
-- Style descriptors work well: "cinematic", "photorealistic", "dramatic", "ethereal", "vibrant"
-- Camera/lens terms: "wide angle", "telephoto compression", "shallow depth of field", "bokeh"
-- Quality boosters: "high detail", "sharp focus", "professional photography", "8k uhd", "masterpiece"
-- Avoid over-stuffing keywords - FLUX understands context and relationships
-- Example structure: "A portrait of [subject] [doing what] in [location], [lighting description], [style], [quality terms]"
-""",
+        base_prompt += photography_style_instructions.get(photography_style, photography_style_instructions["Technical"])
 
-            "SDXL": """
-POSITIVE PROMPT GUIDELINES FOR SDXL (Stable Diffusion XL):
-- SDXL works well with both natural language and weighted keywords
-- Effective structure: Main subject + Details + Environment + Lighting + Style + Quality
-- Use commas to separate distinct concepts and elements
-- Emphasis syntax available: (keyword:1.2) increases weight, (keyword:0.8) decreases
-- Art style references work excellently: mention specific artists, art movements, or periods
-- Photography terms: specify camera type (DSLR, mirrorless), lens (50mm, 85mm), settings (f/1.8, ISO 100)
-- Lighting descriptors: "golden hour", "studio lighting", "rim light", "backlighting", "diffused light"
-- Quality terms: "highly detailed", "sharp focus", "professional", "award-winning", "trending on artstation"
-- Medium specification: "oil painting", "digital art", "photograph", "3D render", "watercolor"
-- Include aspect ratio preferences if important to composition
-- SDXL understands context well - you can be descriptive without excessive keywords
-""",
+        # Model-specific guidance
+        model_specific_guidance = {
+            "FLUX": f"""
 
-            "SD 1.5": """
-POSITIVE PROMPT GUIDELINES FOR SD 1.5 (Stable Diffusion 1.5):
-- SD 1.5 works best with structured, keyword-based prompts
-- Use clear keyword separation with commas
-- Front-load important elements - put the most important concepts first
-- Heavy use of quality boosters: "highly detailed", "intricate", "sharp focus", "professional", "8k", "hdr"
-- Emphasis syntax: (keyword:1.3) or ((keyword)) for importance, [keyword] to reduce weight
-- Artist references are powerful: mention 2-3 artists whose styles match your vision
-- Specific technical terms: "unreal engine", "octane render", "physically based rendering"
-- Lighting keywords: "dramatic lighting", "volumetric lighting", "studio lighting", "cinematic lighting"
-- Style modifiers: "hyperrealistic", "photorealistic", "concept art", "fantasy art", "sci-fi"
-- Common effective additions: "trending on artstation", "winner of award", "featured on behance"
-- Include medium: "digital painting", "oil on canvas", "photograph", "3d render"
-- SD 1.5 benefits from more keywords - be comprehensive but organized
-""",
+FLUX OPTIMIZATION:
+- Use natural descriptive terms in logical sequence
+- Lighting terms are crucial - be specific
+- Material and texture descriptors work well
+- Style terms: cinematic, photorealistic, dramatic, ethereal
+- Camera terms: wide angle, shallow depth of field, bokeh
+- Quality terms: high detail, sharp focus, professional photography, 8k uhd, masterpiece
+- Keep to {limits["optimal"]} for optimal results""",
 
-            "Universal": """
-POSITIVE PROMPT GUIDELINES (UNIVERSAL):
-- Create prompts that work across multiple model types
-- Clear structure: Subject + Context + Style + Quality
-- Be descriptive but not overly verbose
-- Include: main subject, action/pose, environment, lighting, artistic style, quality terms
-- Use natural descriptive language mixed with effective keywords
-- Specify medium (photo, painting, digital art, etc.)
+            "SDXL": f"""
+
+SDXL OPTIMIZATION:
+- Comma-separated weighted terms work best
+- Can use emphasis syntax: (term:1.2) for importance
+- Art style and artist references effective
+- Photography terms: DSLR, 85mm lens, f/1.8, ISO 100
+- Lighting: golden hour, studio lighting, rim light, backlighting
+- Quality terms: highly detailed, sharp focus, professional, award-winning
+- Medium specification: photograph, digital art, oil painting
+- Keep to {limits["optimal"]} tokens""",
+
+            "SD 1.5": f"""
+
+SD 1.5 OPTIMIZATION:
+- Structured keyword-based comma-separated terms
+- Front-load most important concepts first
+- Heavy quality boosters: highly detailed, intricate, sharp focus, 8k, hdr
+- Emphasis syntax: (term:1.3) or ((term)) for importance
+- Artist references powerful: mention 2-3 artists
+- Technical terms: unreal engine, octane render, physically based rendering
+- Style modifiers: hyperrealistic, photorealistic, concept art
+- Common additions: trending on artstation, award winner
+- Maximum {limits["max"]} tokens""",
+
+            "Universal": f"""
+
+UNIVERSAL OPTIMIZATION:
+- Balanced comma-separated terms for cross-model compatibility
+- Clear sequence: style, subject, context, lighting, quality
+- Natural descriptive language mixed with keywords
+- Specify medium: photo, painting, digital art
 - Include lighting direction and quality
-- Add 2-4 quality enhancers (detailed, sharp, professional, high quality)
-- Mention camera/artistic technique if relevant
-- Balance between natural language (FLUX-friendly) and keywords (SD-friendly)
-"""
+- Add 3-5 quality enhancers
+- Camera/artistic technique terms
+- Keep to {limits["optimal"]} tokens"""
         }
 
-        # Model-specific negative prompt guidance - CATEGORIZED AND COMPREHENSIVE
+        base_prompt += model_specific_guidance.get(target_model, model_specific_guidance["Universal"])
+
+        # Negative prompt guidance
         negative_prompt_guidance = {
-            "FLUX": """
-NEGATIVE PROMPT GUIDELINES FOR FLUX (CATEGORIZED):
+            "FLUX": f"""
 
-Create a comprehensive negative prompt organized by categories. FLUX works best with specific, targeted exclusions.
+NEGATIVE PROMPT FOR FLUX ({limits["negative"]}):
+Generate concise comma-separated exclusion terms:
+- Quality issues: low quality, blurry, out of focus, pixelated, compression artifacts
+- Lighting issues: flat lighting, harsh flash, overexposed, underexposed
+- Composition issues: cluttered background, cropped face, poor framing
+- Anatomical issues (if people): bad anatomy, extra limbs, deformed hands, distorted proportions
+- Style issues: cartoon, anime, 3D render (if photo intended)
+- Technical issues: watermark, text, signature, lens flare
+Keep concise, comma-separated, one line.""",
 
-QUALITY ISSUES:
-low quality, low resolution, blurry, out of focus, soft focus, motion blur, compression artifacts, jpeg artifacts, pixelated, poor quality, amateur photography, smartphone photo
+            "SDXL": f"""
 
-LIGHTING ISSUES:
-flat lighting, overhead lighting, harsh direct flash, on-camera flash, overexposed, underexposed, blown highlights, crushed blacks, low contrast, washed out, muddy midtones, mixed lighting, fluorescent lighting
+NEGATIVE PROMPT FOR SDXL ({limits["negative"]}):
+Generate moderate comma-separated exclusion terms:
+- Quality: low quality, worst quality, blurry, pixelated, compression artifacts, poor quality
+- Lighting: flat lighting, harsh flash, overexposed, underexposed, poor lighting, washed out
+- Composition: cluttered, busy background, cropped, poorly framed
+- Subject: poorly rendered face, poorly drawn hands, plastic skin, over-retouched
+- Anatomy: bad anatomy, bad proportions, deformed, extra limbs, malformed
+- Style: cartoon, anime, 3D render, CGI, illustration (if photo)
+- Technical: watermark, signature, text, logo, timestamp
+Moderate length, comma-separated, one line.""",
 
-COMPOSITION ISSUES:
-cluttered background, busy background, cropped face, cropped head, tilted horizon, off-center (unless intended), too much negative space, cramped composition, poor framing
+            "SD 1.5": f"""
 
-SUBJECT ISSUES (if applicable):
-stiff pose, awkward pose, unnatural pose, looking at camera (unless intended), smiling (unless intended), heavy makeup, shiny skin, oily skin, sweaty, over-smoothed skin, plastic skin, airbrushed
+NEGATIVE PROMPT FOR SD 1.5 ({limits["negative"]}):
+Generate comprehensive comma-separated exclusion terms:
+- Quality: low quality, worst quality, blurry, bad art, out of focus, pixelated, poor quality, amateur, grainy, dull, washed out
+- Lighting: flat lighting, harsh flash, overexposed, underexposed, poor lighting, low contrast, muddy midtones
+- Composition: cluttered, busy, poorly cropped, bad composition, tilted, poorly framed, cut off, out of frame
+- Subject/Pose: ugly, poorly drawn, stiff pose, awkward pose, bad expression, blank stare
+- Anatomy: bad anatomy, poorly drawn face, poorly drawn hands, deformed, extra limbs, missing limbs, fused fingers, long neck, distorted proportions
+- Skin: shiny skin, oily skin, plastic skin, waxy skin, airbrushed, fake skin, mannequin
+- Style: cartoon, anime, illustration, painting, drawing, 3D render, CGI (if photo)
+- Technical: watermark, text, signature, logo, frame, border, chromatic aberration, distortion
+- Artifacts: tiling, repetition, duplicated elements, glitchy, corrupted
+- Processing: oversharpened, over-processed, artificial, filters, fake depth of field
+Comprehensive length up to {limits["negative"]}, comma-separated, one line.""",
 
-ANATOMICAL ISSUES (if people):
-bad anatomy, extra limbs, missing limbs, deformed hands, bad hands, fused fingers, extra fingers, missing fingers, malformed hands, poorly drawn face, distorted proportions, unrealistic proportions, long neck, asymmetrical face (unless natural)
+            "Universal": f"""
 
-STYLE ISSUES:
-cartoon, anime, illustration, 3D render, CGI, painting, drawing, oil painting (if photo), sketch, watercolor (if photo)
-
-TECHNICAL ISSUES:
-text, watermark, logo, signature, timestamp, frame, border, lens flare, vignetting (unless intended), chromatic aberration, barrel distortion, fisheye effect, wide angle distortion
-
-UNWANTED ELEMENTS:
-Based on image analysis, exclude specific unwanted elements like: wrong setting, incorrect props, mismatched clothing style, wrong time period, anachronistic elements, visible equipment, backdrop wrinkles
-
-Format: Organize negative terms with commas, keep concise but comprehensive
-""",
-
-            "SDXL": """
-NEGATIVE PROMPT GUIDELINES FOR SDXL (CATEGORIZED):
-
-SDXL requires moderate negative prompts - more focused than Universal but less than SD 1.5.
-
-QUALITY ISSUES:
-low quality, worst quality, low resolution, blurry, out of focus, soft focus, compression artifacts, jpeg artifacts, pixelated, poor quality, grainy (unless film grain intended), bad detail, blurry-image, bad contrast
-
-LIGHTING ISSUES:
-flat lighting, harsh flash, on-camera flash, overexposed, underexposed, poor lighting, mixed color temperature, overhead fluorescent lighting, low contrast lighting, washed out
-
-COMPOSITION ISSUES:
-cluttered, busy background, cropped (unless intended), poor composition, off-center (unless rule of thirds), tilted, poorly framed
-
-SUBJECT ISSUES:
-poorly rendered face, poorly drawn hands, poorly drawn feet, heavy makeup (unless intended), shiny oily skin, over-retouched, plastic skin, unnatural skin texture
-
-ANATOMICAL ISSUES:
-bad anatomy, bad proportions, deformed, duplicate, extra arms, extra legs, extra limbs, missing limbs, cloned face, malformed, disfigured, mutated
-
-STYLE ISSUES:
-cartoon, anime, 3D render, CGI, illustration, painting (if photo intended), drawing, sketch
-
-TECHNICAL ISSUES:
-watermark, signature, username, text, logo, error, cropped edges, frame border, timestamp
-
-UNWANTED ELEMENTS:
-Specific exclusions based on image content - wrong setting, incorrect objects, mismatched style elements
-
-Format: Comma-separated, focused on main issues, avoid over-stuffing
-""",
-
-            "SD 1.5": """
-NEGATIVE PROMPT GUIDELINES FOR SD 1.5 (COMPREHENSIVE - CATEGORIZED):
-
-SD 1.5 REQUIRES extensive negative prompts. Include ALL relevant categories.
-
-QUALITY ISSUES:
-low quality, worst quality, normal quality, low resolution, low res, blurry, bad art, blurred, out of focus, soft focus, motion blur, compression artifacts, jpeg artifacts, noise, pixelated, poor quality, amateur, bad quality, grainy (unless film grain), dull, washed out, undersaturated (unless B&W)
-
-LIGHTING ISSUES:
-flat lighting, overhead lighting, harsh flash, direct flash, on-camera flash, red eye, overexposed, underexposed, blown out, dark, too bright, poor lighting, bad lighting, muddy midtones, low contrast, high contrast (unless intended), mixed lighting, fluorescent, tungsten mismatch
-
-COMPOSITION ISSUES:
-cluttered, busy, cropped, poorly cropped, bad composition, bad framing, tilted horizon, dutch angle (unless intended), too much negative space, cramped, off-center (unless thirds rule), poorly framed, cut off, out of frame, bad angle
-
-SUBJECT & POSE ISSUES:
-ugly, poorly drawn, stiff posture, stiff pose, awkward pose, awkward hands, unnatural pose, bad expression, blank stare, dead eyes, looking away (unless intended), looking at camera (unless intended), smiling (unless intended), teeth showing (unless intended)
-
-ANATOMICAL ISSUES (COMPREHENSIVE):
-bad anatomy, poorly drawn face, poorly drawn hands, poorly drawn feet, bad hands, bad feet, deformed, disfigured, extra limbs, missing limbs, extra arms, missing arms, extra legs, missing legs, extra fingers, missing fingers, fused fingers, too many fingers, long neck, short neck, thick neck, malformed, mutated, mutation, body horror, duplicate, cloned face, asymmetrical eyes, asymmetrical face (unless natural), distorted proportions, wrong proportions, elongated, compressed, stretched
-
-SKIN & TEXTURE ISSUES:
-shiny skin, oily skin, greasy, sweaty, blemished (unless intended), acne (unless intended), over-smoothed, plastic skin, waxy skin, airbrushed, fake skin, unnatural skin, mannequin, doll-like
-
-STYLE ISSUES (if realistic photo intended):
-cartoon, anime, manga, illustration, digital art, painting, drawing, sketch, oil painting, watercolor, 3D render, CGI, computer generated, render, clay, sculpture, comic book, graphic novel, stylized
-
-TECHNICAL ISSUES:
-watermark, text, signature, username, logo, copyright, watermark text, artist name, photographer credit, timestamp, date, frame, border, vignetting (unless intended), lens flare (unless intended), chromatic aberration, purple fringing, barrel distortion, fisheye, wide angle distortion, perspective distortion
-
-ARTIFACTS & ERRORS:
-tiling, repetition, tessellation, mirrored, duplicated elements, copy-paste artifacts, seams, stitching errors, blending errors, morphing, melting, dissolving, fragmented, glitchy, corrupted, artifacting
-
-UNWANTED ELEMENTS:
-Multiple people (unless intended), crowd (unless intended), other faces, hands in frame (unless intended), props (unless intended), furniture (except intended), visible equipment, studio equipment, light stands, backdrop wrinkles, backdrop seams, cables, reflections (unless intended), shadows (unless intended)
-
-PROCESSING ISSUES:
-oversharpened, over-processed, over-saturated (unless intended), HDR effect (unless intended), artificial, fake, filters, Instagram filter, beauty filter, Snapchat filter, face app, artificial bokeh, fake depth of field
-
-Format: Comprehensive comma-separated list, front-load most important exclusions, longer is better for SD 1.5
-""",
-
-            "Universal": """
-NEGATIVE PROMPT GUIDELINES (UNIVERSAL - CATEGORIZED):
-
-Create a balanced negative prompt with essential categories that work across all models.
-
-QUALITY ISSUES:
-low quality, low resolution, blurry, out of focus, pixelated, compression artifacts, poor quality, amateur
-
-LIGHTING ISSUES:
-flat lighting, harsh flash, overexposed, underexposed, poor lighting
-
-COMPOSITION ISSUES:
-cluttered background, busy, poorly framed, cropped (unless intended)
-
-SUBJECT ISSUES:
-stiff pose, awkward pose, poorly drawn
-
-ANATOMICAL ISSUES (if applicable):
-bad anatomy, extra limbs, deformed hands, poorly drawn face, bad proportions, distorted proportions
-
-STYLE ISSUES:
-cartoon, anime, 3D render, CGI, illustration (if photo intended)
-
-TECHNICAL ISSUES:
-watermark, signature, text, logo, lens flare, distortion
-
-UNWANTED ELEMENTS:
-Context-specific exclusions based on image analysis
-
-Format: Balanced, moderate length, works across FLUX/SDXL/SD 1.5
-"""
+NEGATIVE PROMPT UNIVERSAL ({limits["negative"]}):
+Generate balanced comma-separated exclusion terms:
+- Quality: low quality, blurry, out of focus, pixelated, poor quality, amateur
+- Lighting: flat lighting, harsh flash, overexposed, underexposed
+- Composition: cluttered background, busy, poorly framed
+- Subject: stiff pose, awkward pose, poorly drawn
+- Anatomy: bad anatomy, extra limbs, deformed hands, bad proportions
+- Style: cartoon, anime, 3D render, CGI (if photo intended)
+- Technical: watermark, signature, text, logo, distortion
+Balanced length, comma-separated, one line."""
         }
 
-        # Combine all parts
-        full_prompt = base_prompt + "\n\n" + photography_style_instructions.get(photography_style, photography_style_instructions["Technical"])
-        full_prompt += "\n\n" + positive_prompt_guidance.get(target_model, positive_prompt_guidance["Universal"])
-        full_prompt += "\n\n" + negative_prompt_guidance.get(target_model, negative_prompt_guidance["Universal"])
+        base_prompt += negative_prompt_guidance.get(target_model, negative_prompt_guidance["Universal"])
 
-        return full_prompt
+        base_prompt += """
+
+FINAL REMINDER:
+- Output ONLY comma-separated terms on ONE LINE each for positive and negative
+- NO markdown formatting, NO lists, NO categories in the output
+- Respect token limits strictly
+- Sequence by priority: style requirements first, then subject, then technical, then quality
+- Format as:
+
+POSITIVE:
+comma, separated, terms, here
+
+NEGATIVE:
+comma, separated, terms, here"""
+
+        return base_prompt
 
     @staticmethod
     def _parse_response(response_text: str) -> tuple[str, str]:
