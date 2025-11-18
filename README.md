@@ -104,6 +104,12 @@ AI-powered prompt generator that analyzes images using Anthropic's Claude API (w
        - Annie Leibovitz (dramatic environmental portraits)
        - Richard Avedon (stark white backgrounds, psychological depth)
        - And 16 more legendary photographers!
+   - **lighting_condition**: ⭐ NEW! Specific lighting setup
+     - `None`: Based on image analysis (default)
+     - **Studio Lighting (8 options)**: Natural Window Light, Studio Strobes, Softbox Lighting, Beauty Dish, Ring Light, Umbrella Lighting, Grid Spot, Reflector Fill
+     - **Studio Techniques (10 options)**: Rembrandt, Split, Butterfly, Loop, Broad, Short, High Key Studio, Low Key Studio, Clamshell, Edge/Rim Lighting
+     - **Outdoor/Natural (9 options)**: Golden Hour, Blue Hour, Harsh Midday Sun, Overcast Diffused, Open Shade, Backlit, Dusk/Twilight, Sunrise, Sunset
+     - **Special/Creative (8 options)**: Chiaroscuro, Dramatic Side Light, Silhouette, Candlelight, Neon/Colorful, Practical Lights, Mixed Lighting, Night Photography
    - **seed**: ⭐ NEW! Randomization seed (change for variations)
    - **temperature**: Control creativity (0.0 = focused, 1.0 = creative)
    - **max_tokens**: Maximum response length (1024 recommended)
@@ -290,6 +296,19 @@ MIT License - See LICENSE file for details
 - Discord: [ComfyUI Community](https://discord.gg/comfyui)
 
 ## Changelog
+
+### Version 1.3.1 (2025-01-18)
+- **NEW FEATURE**: Lighting Condition dropdown
+  - 31 lighting options across 4 categories
+  - **Studio Lighting (8)**: Natural Window Light, Studio Strobes, Softbox, Beauty Dish, Ring Light, Umbrella, Grid Spot, Reflector Fill
+  - **Studio Techniques (10)**: Rembrandt, Split, Butterfly, Loop, Broad, Short, High/Low Key Studio, Clamshell, Edge/Rim
+  - **Outdoor/Natural (9)**: Golden Hour, Blue Hour, Harsh Midday, Overcast, Open Shade, Backlit, Dusk/Twilight, Sunrise, Sunset
+  - **Special/Creative (8)**: Chiaroscuro, Dramatic Side Light, Silhouette, Candlelight, Neon/Colorful, Practical, Mixed, Night
+  - Each lighting type includes detailed characteristics (light source, quality, direction, color temperature, shadows, mood)
+  - Automatically incorporates lighting setup into positive prompts
+  - "None" option to skip specific lighting instructions
+- **IMPROVED**: System prompts now incorporate lighting conditions with comprehensive technical details
+- Enhanced logging to show selected lighting condition
 
 ### Version 1.3.0 (2025-01-18)
 - **NEW FEATURE**: Color Style dropdown

@@ -18,7 +18,7 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
 
     Features multiple photography styles (Artistic, Technical, Minimal, Ultra-Detailed),
     model-specific optimization (FLUX, SDXL, SD 1.5, Universal), color styles,
-    and famous photographer aesthetics.
+    famous photographer aesthetics, and lighting conditions.
 
     Inputs:
     - image: The input image to analyze
@@ -29,6 +29,7 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
     - target_model: Target image generation model (FLUX, SDXL, SD 1.5, Universal)
     - color_style: Color treatment (None, B&W, Color, Sepia, etc.)
     - photographer_style: Emulate famous photographer (None, Helmut Newton, Peter Lindbergh, etc.)
+    - lighting_condition: Specific lighting setup (None, Studio, Outdoor, Techniques, Special)
     - seed: Seed for randomization (use different seeds for variation)
     - temperature: Creativity level (0.0-1.0)
     - max_tokens: Maximum response length
@@ -36,6 +37,8 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
     Outputs:
     - positive_prompt: Comprehensive positive prompt optimized for selected style, model, and photographer
     - negative_prompt: Categorized negative prompt with quality/lighting/composition/subject/style/technical exclusions
+
+    Version: 1.3.1
     """
 
     @classmethod
@@ -104,6 +107,27 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
                     default="None",
                     tooltip="Style after a famous photographer (None = no specific photographer style)"
                 ),
+                comfy_io.Combo.Input(
+                    "lighting_condition",
+                    options=[
+                        "None",
+                        # Studio Lighting
+                        "Natural Window Light", "Studio Strobes", "Softbox Lighting", "Beauty Dish",
+                        "Ring Light", "Umbrella Lighting", "Grid Spot", "Reflector Fill",
+                        # Studio Techniques
+                        "Rembrandt Lighting", "Split Lighting", "Butterfly Lighting", "Loop Lighting",
+                        "Broad Lighting", "Short Lighting", "High Key Studio", "Low Key Studio",
+                        "Clamshell Lighting", "Edge/Rim Lighting",
+                        # Outdoor/Natural
+                        "Golden Hour", "Blue Hour", "Harsh Midday Sun", "Overcast Diffused",
+                        "Open Shade", "Backlit", "Dusk/Twilight", "Sunrise", "Sunset",
+                        # Special/Creative
+                        "Chiaroscuro", "Dramatic Side Light", "Silhouette", "Candlelight",
+                        "Neon/Colorful", "Practical Lights", "Mixed Lighting", "Night Photography"
+                    ],
+                    default="None",
+                    tooltip="Lighting setup/condition (None = based on image analysis)"
+                ),
                 comfy_io.Int.Input(
                     "seed",
                     default=0,
@@ -148,6 +172,7 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
         target_model,
         color_style,
         photographer_style,
+        lighting_condition,
         seed,
         temperature,
         max_tokens
@@ -172,8 +197,8 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
             # Convert image tensor to base64
             base64_image = cls._image_to_base64(image)
 
-            # Build the system prompt based on photography style, target model, color style, and photographer
-            system_prompt = cls._build_system_prompt(photography_style, target_model, color_style, photographer_style, seed)
+            # Build the system prompt based on photography style, target model, color style, photographer, and lighting
+            system_prompt = cls._build_system_prompt(photography_style, target_model, color_style, photographer_style, lighting_condition, seed)
 
             # Initialize Anthropic client
             client = anthropic.Anthropic(api_key=api_key.strip())
@@ -220,6 +245,7 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
             print(f"Target Model: {target_model}")
             print(f"Color Style: {color_style}")
             print(f"Photographer Style: {photographer_style}")
+            print(f"Lighting Condition: {lighting_condition}")
             print(f"Seed: {seed}")
             print(f"\nPOSITIVE PROMPT:")
             print(f"{positive_prompt}")
@@ -265,9 +291,9 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
         return img_base64
 
     @staticmethod
-    def _build_system_prompt(photography_style: str, target_model: str, color_style: str, photographer_style: str, seed: int) -> str:
+    def _build_system_prompt(photography_style: str, target_model: str, color_style: str, photographer_style: str, lighting_condition: str, seed: int) -> str:
         """
-        Build the system prompt based on the requested photography style, target model, color style, and photographer.
+        Build the system prompt based on the requested photography style, target model, color style, photographer, and lighting condition.
         """
         base_prompt = """You are an expert professional photographer and prompt engineer specializing in creating comprehensive ComfyUI/Stable Diffusion/FLUX prompts for AI image generation.
 
@@ -340,7 +366,71 @@ IMPORTANT: Incorporate the photographer's signature style, techniques, and aesth
 - Overall mood and feel
 - Technical approach"""
 
-        base_prompt += color_style_instruction + photographer_style_instruction
+        # Add lighting condition instruction if specified
+        lighting_instruction = ""
+        if lighting_condition != "None":
+            lighting_descriptions = {
+                # Studio Lighting
+                "Natural Window Light": "soft directional natural window light, diffused daylight, organic shadows, window as main light source, authentic natural feel",
+                "Studio Strobes": "professional studio flash/strobe lighting, controlled power output, precise lighting control, sharp shadows, frozen motion",
+                "Softbox Lighting": "large softbox modifier, soft diffused light, even illumination, gentle shadows, professional studio setup, flattering skin tones",
+                "Beauty Dish": "beauty dish modifier, focused yet soft light, circular catchlights, glamour/beauty lighting, moderate contrast",
+                "Ring Light": "ring light/ring flash, shadowless frontal lighting, distinctive circular catchlights, even illumination, fashion/beauty aesthetic",
+                "Umbrella Lighting": "umbrella modifier, broad soft light source, budget-friendly studio lighting, wide coverage, soft shadows",
+                "Grid Spot": "grid spot/honeycomb grid modifier, focused directional light, controlled spill, dramatic accent lighting, hair/rim light",
+                "Reflector Fill": "reflector fill light, bounced natural light, subtle fill, reduced shadows, cost-effective lighting solution",
+
+                # Studio Lighting Techniques
+                "Rembrandt Lighting": "Rembrandt lighting technique, triangular light patch on cheek, 45-degree key light, dramatic portrait lighting, classic technique",
+                "Split Lighting": "split lighting, half face illuminated half in shadow, 90-degree side lighting, dramatic contrasty look, moody atmosphere",
+                "Butterfly Lighting": "butterfly lighting (Paramount lighting), key light above and in front, butterfly shadow under nose, glamour lighting, beauty aesthetic",
+                "Loop Lighting": "loop lighting, small nose shadow, key light 30-45 degrees, natural flattering light, versatile portrait technique",
+                "Broad Lighting": "broad lighting, illuminates side of face toward camera, wider face appearance, side lighting technique",
+                "Short Lighting": "short lighting, illuminates side of face away from camera, slimming effect, dimensional modeling",
+                "High Key Studio": "high key lighting setup, bright even illumination, minimal shadows, light airy feel, white/light backgrounds, optimistic mood",
+                "Low Key Studio": "low key lighting setup, dramatic shadows, minimal fill light, dark moody atmosphere, black backgrounds, cinematic feel",
+                "Clamshell Lighting": "clamshell lighting (butterfly + reflector), beauty lighting setup, soft wraparound light, glamour photography",
+                "Edge/Rim Lighting": "edge/rim lighting, backlight creating luminous outline, subject separation from background, dramatic halo effect",
+
+                # Outdoor/Natural Lighting
+                "Golden Hour": "golden hour lighting, warm soft sunlight, low sun angle, magical quality, long shadows, amber/golden tones, 1 hour after sunrise or before sunset",
+                "Blue Hour": "blue hour lighting, deep blue twilight, soft even light, no direct sun, magical atmosphere, civil twilight period",
+                "Harsh Midday Sun": "harsh midday sun, direct overhead sunlight, hard shadows, high contrast, bright highlights, challenging lighting",
+                "Overcast Diffused": "overcast sky diffused lighting, soft even illumination, natural softbox effect, no harsh shadows, muted colors, gentle flattering light",
+                "Open Shade": "open shade lighting, subject in shadow with open sky, soft directional light, even skin tones, outdoor portrait technique",
+                "Backlit": "backlit/backlighting, subject with light source behind, rim light effect, lens flare potential, silhouette or halo lighting",
+                "Dusk/Twilight": "dusk/twilight lighting, transitional light quality, soft ambient glow, blue hour approaching, romantic atmosphere",
+                "Sunrise": "sunrise lighting, warm directional light, fresh morning quality, soft shadows, optimistic mood, low angle sun",
+                "Sunset": "sunset lighting, warm golden/orange tones, dramatic sky colors, low angle directional light, romantic mood, long shadows",
+
+                # Special/Creative Lighting
+                "Chiaroscuro": "chiaroscuro lighting technique, dramatic contrast between light and dark, Renaissance painting influence, sculptural lighting, artistic shadows",
+                "Dramatic Side Light": "dramatic side lighting, strong directional light from 90 degrees, high contrast, depth and dimension, moody atmospheric",
+                "Silhouette": "silhouette lighting, backlit subject, solid dark shape against bright background, no subject detail visible, graphic effect",
+                "Candlelight": "candlelight/warm practical light, warm amber glow, soft flickering quality, intimate atmosphere, low light romantic mood",
+                "Neon/Colorful": "neon/colorful lighting, vibrant colored lights, urban night aesthetic, cyan/magenta/RGB, creative color grading, cyberpunk mood",
+                "Practical Lights": "practical lights visible in scene, lamps/fixtures as light sources, natural motivation, environmental lighting, realistic setup",
+                "Mixed Lighting": "mixed lighting sources, combination of natural and artificial, multiple color temperatures, complex realistic lighting",
+                "Night Photography": "night photography lighting, artificial lights in darkness, long exposure potential, high ISO, city lights or moon/stars"
+            }
+
+            lighting_desc = lighting_descriptions.get(lighting_condition, lighting_condition)
+            lighting_instruction = f"""
+
+LIGHTING CONDITION REQUIREMENT:
+The prompt MUST incorporate this specific lighting: {lighting_condition}
+
+Lighting characteristics: {lighting_desc}
+
+IMPORTANT: Make the lighting setup/condition a prominent element of the positive prompt. This should specify:
+- Type of light source
+- Quality of light (hard/soft)
+- Direction and position
+- Color temperature if relevant
+- Shadow characteristics
+- Overall mood created by the lighting"""
+
+        base_prompt += color_style_instruction + photographer_style_instruction + lighting_instruction
 
         photography_style_instructions = {
             "Artistic": """
