@@ -297,6 +297,11 @@ MIT License - See LICENSE file for details
 
 ## Changelog
 
+### Version 1.3.2 (2025-01-18)
+- **BUGFIX**: Fixed seed parameter displaying "nan"
+  - Changed seed max value from 0xffffffffffffffff to 2147483647 (standard 32-bit int max)
+  - Seed now displays correctly in ComfyUI interface
+
 ### Version 1.3.1 (2025-01-18)
 - **NEW FEATURE**: Lighting Condition dropdown
   - 31 lighting options across 4 categories
