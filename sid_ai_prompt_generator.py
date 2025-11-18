@@ -38,7 +38,7 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
     - positive_prompt: Comprehensive positive prompt optimized for selected style, model, and photographer
     - negative_prompt: Categorized negative prompt with quality/lighting/composition/subject/style/technical exclusions
 
-    Version: 1.3.2
+    Version: 1.3.3
     """
 
     @classmethod
@@ -180,6 +180,16 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
         """
         Execute the node - analyze image and generate prompts using Claude API.
         """
+
+        # Handle None values for backward compatibility with old workflows
+        if seed is None:
+            seed = 0
+        if lighting_condition is None:
+            lighting_condition = "None"
+        if color_style is None:
+            color_style = "None"
+        if photographer_style is None:
+            photographer_style = "None"
 
         # Validate API key
         if not api_key or api_key.strip() == "":

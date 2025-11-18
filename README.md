@@ -297,6 +297,12 @@ MIT License - See LICENSE file for details
 
 ## Changelog
 
+### Version 1.3.3 (2025-01-18)
+- **BUGFIX**: Fixed backward compatibility with old workflows
+  - Added None value handling for seed, lighting_condition, color_style, and photographer_style parameters
+  - Old workflows saved before these parameters were added will now work without validation errors
+  - Parameters default to safe values (seed=0, others="None") when not present in workflow
+
 ### Version 1.3.2 (2025-01-18)
 - **BUGFIX**: Fixed seed parameter displaying "nan"
   - Changed seed max value from 0xffffffffffffffff to 2147483647 (standard 32-bit int max)
