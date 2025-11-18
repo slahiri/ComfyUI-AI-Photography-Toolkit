@@ -297,6 +297,26 @@ MIT License - See LICENSE file for details
 
 ## Changelog
 
+### Version 3.0.1 (2025-01-18) - Critical Fixes
+- **🐛 FIXED**: Color style not being applied correctly
+  - Completely rewrote color style enforcement with explicit comma-separated terms
+  - Now uses ⚠️ CRITICAL warnings to Claude with MANDATORY requirements
+  - Added explicit color term mappings (B&W → "black and white photography, monochrome, grayscale, B&W, no color")
+  - Added contradictory term exclusions (if B&W selected, explicitly forbids "color", "colorful", etc.)
+  - Color terms now MUST be first in the prompt sequence
+- **✨ IMPROVED**: Model input now supports connections
+  - Added `force_input=False` to target_model input
+  - Can now type model name OR connect from model loader nodes
+  - Tooltip updated to clarify connection capability
+- **✨ IMPROVED**: Enhanced model detection with 20+ model patterns
+  - SDXL: Added pony, animagine, realvis xl, zavychroma, hellonijicute, counterfeit xl, etc.
+  - SD 1.5: Added deliberate, epicrealism, cyberrealistic, majicmix, chilloutmix, revanimated, etc.
+  - More accurate automatic model type detection
+- **📝 CLARIFIED**: Model research methodology
+  - Updated documentation to clarify using intelligent pattern matching (not live web search)
+  - Added note about future CivitAI/HuggingFace API integration potential
+  - Changed "research_source" to "pattern_matching" for accuracy
+
 ### Version 3.0.0 (2025-01-18) - INTELLIGENT PROMPTING AGENT
 - **🚀 NEW**: Intelligent model research agent
   - Automatically detects and researches target model type (FLUX, SDXL, SD 1.5)

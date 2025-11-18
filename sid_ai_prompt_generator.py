@@ -48,7 +48,7 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
     - negative: Model-appropriate negative terms (concise/moderate/comprehensive)
     - sampler_config: Markdown-formatted optimal sampler settings for the target model
 
-    Version: 3.0.0 - Intelligent prompting agent with model research and sampler recommendations
+    Version: 3.0.1 - Fixed color style enforcement and enhanced model detection
     """
 
     @classmethod
@@ -96,7 +96,8 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
                     "target_model",
                     default="FLUX.1-dev",
                     multiline=False,
-                    tooltip="Target image generation model name (e.g., FLUX.1-dev, SDXL 1.0, SD 1.5, juggernaut_reborn). Agent will research and optimize prompts for this specific model."
+                    force_input=False,
+                    tooltip="Target image generation model name (e.g., FLUX.1-dev, SDXL 1.0, SD 1.5, juggernaut_reborn). Can be typed or connected from model loader. Agent will research and optimize prompts for this specific model."
                 ),
                 comfy_io.Combo.Input(
                     "color_style",
@@ -331,7 +332,13 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
     @staticmethod
     def _research_model(model_name: str) -> dict:
         """
-        Research the target model using WebSearch and available MCP tools.
+        Research the target model using pattern matching and inference.
+
+        NOTE: Currently uses intelligent pattern matching. Real-time WebSearch/MCP integration
+        requires access to external APIs which are not available in node execution context.
+
+        Future enhancement: Can be extended with CivitAI/HuggingFace API calls if API keys provided.
+
         Returns comprehensive model information for prompt tailoring.
         """
         print(f"\n{'='*60}")
@@ -347,14 +354,11 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
             "prompt_style": "comma-separated",
             "token_limit": 120,
             "negative_strategy": "moderate",
-            "research_source": "inference"
+            "research_source": "pattern_matching"
         }
 
         try:
-            # Try WebSearch first for general information
-            print(f"[WebSearch] Searching for: {model_name}")
-            # Note: WebSearch is not directly accessible from static methods
-            # We'll need to pass search results from execute method or use inference
+            print(f"[Pattern Matching] Analyzing model name: {model_name}")
 
             # Infer model type from name
             model_name_lower = model_name.lower()
@@ -379,8 +383,12 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
                 }
                 print(f"[Detected] FLUX model - optimizing for natural language prompts")
 
-            # Detect SDXL models
-            elif any(x in model_name_lower for x in ["sdxl", "xl", "juggernaut", "proteus", "copax"]):
+            # Detect SDXL models (expanded pattern list)
+            elif any(x in model_name_lower for x in [
+                "sdxl", "xl", "juggernaut", "proteus", "copax", "pony", "animagine",
+                "realvis xl", "realism engine", "zavychroma", "duchaiten", "dreamshaper xl",
+                "crystal clear", "hellonijicute", "counterfeit xl"
+            ]):
                 model_info["type"] = "SDXL"
                 model_info["base_model"] = "SDXL"
                 model_info["token_limit"] = 75
@@ -399,8 +407,12 @@ class SID_AIPromptGenerator(comfy_io.ComfyNode):
                 }
                 print(f"[Detected] SDXL model - optimizing for balanced prompts")
 
-            # Detect SD 1.5 models
-            elif any(x in model_name_lower for x in ["sd15", "sd 1.5", "v1-5", "1.5", "realistic vision", "dreamshaper"]):
+            # Detect SD 1.5 models (expanded pattern list)
+            elif any(x in model_name_lower for x in [
+                "sd15", "sd 1.5", "sd1.5", "v1-5", "v1.5", "1.5", "realistic vision", "dreamshaper",
+                "deliberate", "epicrealism", "cyberrealistic", "majicmix", "chilloutmix",
+                "revanimated", "absolutereality", "analog madness", "perfect world"
+            ]):
                 model_info["type"] = "SD 1.5"
                 model_info["base_model"] = "SD 1.5"
                 model_info["token_limit"] = 75
@@ -564,11 +576,30 @@ Place the MOST IMPORTANT terms FIRST in the sequence."""
 
         # Add color style requirement if specified
         if color_style != "None":
+            color_terms_map = {
+                "Black and White": "black and white photography, monochrome, grayscale, B&W, no color",
+                "Color": "vibrant color photography, full color, saturated colors, colorful, RGB color",
+                "Monochrome": "monochrome photography, single color tone, monotone",
+                "Sepia": "sepia tone, vintage sepia photography, warm brown tones, sepia tinted",
+                "Cross-Processed": "cross-processed, experimental color grading, color shifted",
+                "High Contrast B&W": "high contrast black and white, dramatic monochrome, stark B&W",
+                "Low Key": "low key lighting, dark moody tones, predominantly dark, minimal highlights",
+                "High Key": "high key lighting, bright airy, predominantly bright, minimal shadows"
+            }
+            color_terms = color_terms_map.get(color_style, color_style)
             base_prompt += f"""
 
-COLOR STYLE REQUIREMENT (Priority 1):
-Include "{color_style}" as a PRIMARY term early in the prompt.
-Examples: "black and white photography", "vibrant color", "sepia tone", "high contrast monochrome"."""
+⚠️ CRITICAL COLOR REQUIREMENT (HIGHEST PRIORITY):
+The image MUST be {color_style.upper()}.
+
+MANDATORY: Start your positive prompt with these EXACT comma-separated terms:
+{color_terms}
+
+ENFORCE: Do NOT include contradicting color terms. If "{color_style}" is specified:
+- For B&W/Monochrome: DO NOT include "color", "colorful", "vibrant colors", "RGB"
+- For Color: DO NOT include "black and white", "monochrome", "B&W", "grayscale"
+
+This is NON-NEGOTIABLE. The color style MUST be the FIRST terms in the prompt."""
 
         # Add photographer style requirement if specified
         if photographer_style != "None":
