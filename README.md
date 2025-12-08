@@ -2,6 +2,8 @@
 
 A collection of AI-powered photography and image generation tools for ComfyUI. All nodes are prefixed with `SID_` for easy identification.
 
+![Workflow Screenshot](docs/images/workflow-screenshot.png)
+
 ## Features
 
 ### Current Nodes
