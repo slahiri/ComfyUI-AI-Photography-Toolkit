@@ -237,7 +237,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             ],
             outputs=[
                 comfy_io.Image.Output(
-                    "image",
+                    "output_image",
                     display_name="image",
                     tooltip="Pass-through of input image"
                 ),
