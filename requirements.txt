@@ -3,12 +3,15 @@
 # Anthropic Claude API
 anthropic>=0.39.0
 
+# OpenAI-compatible API (for Grok/xAI)
+openai>=1.0.0
+
+# HTTP requests (for Ollama local API)
+requests>=2.28.0
+
 # YAML config parsing
 pyyaml>=6.0
 
 # Image processing (usually included with ComfyUI, but listed for completeness)
 pillow>=10.0.0
 numpy>=1.24.0
-
-# Future dependencies for additional nodes
-# openai>=1.0.0  # For OpenAI integration (future)
