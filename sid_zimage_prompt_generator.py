@@ -217,6 +217,11 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     default="fixed",
                     tooltip="Seed behavior: fixed (deterministic), randomize (new each run), increment/decrement"
                 ),
+                comfy_io.Boolean.Input(
+                    "cache_prompt",
+                    default=True,
+                    tooltip="Cache results locally. Same image + settings = instant cached result (saves API calls)"
+                ),
             ],
             outputs=[
                 comfy_io.String.Output(
@@ -263,6 +268,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         temperature: float,
         seed: int,
         seed_mode: str,
+        cache_prompt: bool,
     ) -> comfy_io.NodeOutput:
         """Execute the agentic pipeline to generate Z-Image prompt."""
 
@@ -283,6 +289,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         # Handle seed mode
         actual_seed = cls._process_seed(seed, seed_mode)
         log(f"Seed: {actual_seed} (mode: {seed_mode})")
+        log(f"Cache: {'enabled' if cache_prompt else 'disabled'}")
 
         # Validate API key
         if not api_key or api_key.strip() == "":
@@ -295,8 +302,8 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             error_msg = "ERROR: anthropic library not installed. Run: pip install anthropic"
             return comfy_io.NodeOutput(error_msg, "{}", "{}", error_msg)
 
-        # Check cache for fixed seed mode
-        if seed_mode == "fixed":
+        # Check cache if caching is enabled
+        if cache_prompt:
             image_hash = hash_image_tensor(image)
             cache_key = get_cache_key(
                 image_hash, actual_seed,
