@@ -194,62 +194,129 @@ facial_hair: (if applicable)
 ### Upper Body (MCU, MS)
 
 ```yaml
+body_upper:
+  shoulders: narrow, average, broad, sloped
+  bust:
+    size: small, medium, large, very large
+    shape: natural, rounded, perky
+    cleavage: none, subtle, moderate, prominent, deep
+  torso:
+    type: slim, toned, athletic, soft, muscular
+    waist: narrow, defined, average, wide
+    midriff: covered, partially visible, fully exposed
+  back:
+    visible: yes/no
+    exposure: none, upper back, full back, backless
+
 clothing_upper:
-  type: shirt, blouse, t-shirt, sweater, jacket, coat, dress, tank top, crop top, swimwear
-  neckline: crew, v-neck, scoop, off-shoulder, halter, turtleneck, collared
-  sleeves: sleeveless, short, 3/4, long, rolled up
+  type: shirt, blouse, t-shirt, sweater, jacket, coat, dress, tank top, crop top,
+        bralette, bikini top, lingerie, corset, bodysuit, swimwear
+  neckline:
+    style: crew, v-neck, deep-v, plunging, scoop, sweetheart, off-shoulder,
+           halter, strapless, turtleneck, collared, keyhole, cowl
+    depth: high, moderate, low, very low
+  sleeves: sleeveless, spaghetti strap, cap, short, 3/4, long, rolled up
+  coverage:
+    chest: full, moderate, minimal, sheer
+    shoulders: covered, one exposed, both exposed
+    midriff: covered, peek, cropped, exposed
+    back: covered, low-back, backless, cutout
   color: specific colors and patterns
-  pattern: solid, striped, floral, plaid, abstract, printed
-  material: cotton, silk, satin, lace, knit, denim, leather, mesh
-  fit: loose, relaxed, fitted, tight, oversized
-  condition: pristine, casual, rumpled, wet
+  pattern: solid, striped, floral, plaid, abstract, printed, sheer
+  material: cotton, silk, satin, lace, mesh, sheer, leather, latex, knit, denim
+  fit: loose, relaxed, fitted, tight, form-fitting, oversized
+  condition: pristine, casual, rumpled, wet, see-through when wet
+  cutouts: none, side, front, back, multiple
+  straps: thick, thin, spaghetti, halter, criss-cross, none
 
 accessories:
-  necklace: none, choker, pendant, chain, statement
+  necklace: none, choker, pendant, chain, statement, body chain
   earrings: none, studs, hoops, dangles, statement
   glasses: none, prescription, sunglasses (describe style)
   watch: none, casual, luxury, smart
   hat: none, baseball cap, beanie, fedora, sun hat
   scarf: none, describe style and drape
+  body_jewelry: none, belly piercing, body chain, anklet
 
 pose_upper:
   shoulders: squared, angled, one raised, relaxed, tense
-  arms: at sides, crossed, raised, one on hip
-  hands: visible/hidden, gesturing, touching face, in pockets
-  head_position: straight, tilted, turned
-  body_angle: frontal, 3/4, profile
+  arms: at sides, crossed, raised, one on hip, behind head, covering chest
+  hands: visible/hidden, gesturing, touching face, in hair, on body
+  head_position: straight, tilted, turned, thrown back
+  body_angle: frontal, 3/4, profile, back view
+  chest_position: straight, turned, arched, leaning forward
 ```
 
 ### Full Body (MLS, FS, LS)
 
 ```yaml
 body:
-  build: slim, athletic, toned, average, curvy, plus-size, muscular
+  build: slim, petite, athletic, toned, average, curvy, hourglass, plus-size, muscular
   height: appears short, average, tall
-  posture: upright, relaxed, slouched, dynamic
+  posture: upright, relaxed, slouched, dynamic, arched
+  proportions:
+    bust: small, medium, large, very large
+    waist: narrow, defined, average
+    hips: narrow, average, wide, curvy
+    legs: slim, toned, athletic, curvy, long
+
+body_exposure:
+  chest: fully covered, cleavage visible, sideboob, underboob
+  stomach: covered, midriff visible, navel visible, fully exposed
+  back: covered, lower back visible, full back exposed
+  hips: covered, hip bones visible, side hip exposed
+  legs:
+    thigh: covered, partially visible, fully visible, inner thigh visible
+    coverage_level: full, knee, mid-thigh, high-thigh, minimal
+  buttocks: fully covered, outlined, partially visible, cheeks visible
 
 clothing_full:
-  outfit_style: casual, formal, business, athletic, beachwear, evening
+  outfit_style: casual, formal, business, athletic, beachwear, evening,
+                lingerie, swimwear, bodycon, revealing
   top: [reference clothing_upper]
   bottom:
-    type: pants, jeans, skirt, shorts, leggings, dress
-    fit: skinny, straight, wide-leg, A-line, mini, midi, maxi
+    type: pants, jeans, skirt, shorts, mini skirt, micro skirt,
+          leggings, bikini bottom, thong, boyshorts, g-string
+    fit: skinny, straight, wide-leg, A-line, bodycon, high-cut
+    length: full, ankle, calf, knee, mid-thigh, mini, micro
+    rise: high-waist, mid-rise, low-rise, very low
+    slit: none, side slit, front slit, high slit, double slit
     color: specific
+  dress_specifics: (if applicable)
+    length: floor, midi, knee, above-knee, mini, micro
+    neckline: [reference clothing_upper neckline]
+    back: covered, low-back, backless, cutout
+    slit: none, side, front, high slit to hip
+  swimwear: (if applicable)
+    top_style: triangle, bandeau, halter, underwire, string, micro
+    bottom_style: brief, bikini, high-cut, brazilian, thong, g-string, micro
+    coverage: full, moderate, minimal, micro
+    tie_details: side-tie, back-tie, front-tie
+  lingerie: (if applicable)
+    type: bra, bralette, teddy, bodysuit, babydoll, corset
+    style: push-up, balconette, demi, full coverage, sheer
+    matching: yes/no, set description
   footwear:
-    type: barefoot, sneakers, heels, boots, sandals, flats
+    type: barefoot, sneakers, heels, stilettos, platform, boots, sandals, flats
     color: specific
-    heel_height: flat, low, medium, high
+    heel_height: flat, low, medium, high, very high
+    style: strappy, platform, pointed, open-toe, thigh-high
 
 pose_full:
-  stance: standing, sitting, lying, kneeling, crouching, walking, running
+  stance: standing, sitting, lying, kneeling, crouching, bending, walking, running
   weight: centered, shifted left, shifted right, contrapposto
-  legs: together, apart, crossed, one bent
-  feet: together, apart, one forward
-  dynamic: static, in motion, jumping, leaning
+  legs: together, apart, crossed, one bent, spread, wrapped
+  feet: together, apart, one forward, pointed, flexed
+  hips: straight, cocked to side, tilted, thrust forward/back
+  back: straight, arched, curved, twisted
+  dynamic: static, in motion, jumping, leaning, stretching, lounging
+  sensuality: none, subtle, moderate, pronounced
 
 interaction:
-  with_props: holding, sitting on, leaning against
-  with_environment: integrated, isolated
+  with_props: holding, sitting on, leaning against, straddling, embracing
+  with_environment: integrated, isolated, interacting
+  with_clothing: natural, adjusting, pulling, lifting, sliding off
+  with_body: hands on hips, touching hair, touching face, arms wrapped
 ```
 
 ### Environment/Background
@@ -413,8 +480,11 @@ arrangement:
 │                  ├─ Food/Beverage                               │
 │                  └─ Architecture/Interior                       │
 │                                                                 │
-│  [☑] Include lighting description                               │
-│  [☑] Quote text elements ("text")                               │
+│  Content Detail [standard                        ▼]            │
+│                  ├─ minimal (basic description)                 │
+│                  ├─ standard (normal detail) ✓                  │
+│                  ├─ detailed (body proportions, clothing cuts)  │
+│                  └─ explicit (full NSFW detail for Z-Image)     │
 │                                                                 │
 │  ═══════════════════ PROMPT DIRECTION ════════════════════     │
 │                                                                 │
@@ -474,18 +544,92 @@ arrangement:
 | 3 | `model` | COMBO | claude-sonnet-4-5 | Claude model |
 | 4 | `detail_level` | COMBO | "Standard" | Quick/Standard/Deep |
 | 5 | `focus_override` | COMBO | "Auto-detect" | Force genre focus |
-| 6 | `user_prompt` | STRING | "" | Guide or override the analysis |
-| 7 | `prompt_mode` | COMBO | "enhance" | How to use user_prompt |
-| 8 | `focus_subject` | BOOL | True | Include subject details |
-| 9 | `focus_environment` | BOOL | True | Include background/environment |
-| 10 | `focus_lighting` | BOOL | True | Include lighting description |
-| 11 | `focus_colors` | BOOL | True | Include colors and materials |
-| 12 | `focus_mood` | BOOL | False | Include mood/atmosphere |
-| 13 | `include_text_quotes` | BOOL | True | Quote visible text |
-| 14 | `max_tokens` | INT | 300 | Target output tokens |
-| 15 | `temperature` | FLOAT | 0.7 | Creativity (0-1) |
-| 16 | `seed` | INT | 0 | Random seed |
-| 17 | `seed_mode` | COMBO | "fixed" | Seed behavior control |
+| 6 | `content_detail` | COMBO | "standard" | Body/clothing detail level |
+| 7 | `user_prompt` | STRING | "" | Guide or override the analysis |
+| 8 | `prompt_mode` | COMBO | "enhance" | How to use user_prompt |
+| 9 | `focus_subject` | BOOL | True | Include subject details |
+| 10 | `focus_environment` | BOOL | True | Include background/environment |
+| 11 | `focus_lighting` | BOOL | True | Include lighting description |
+| 12 | `focus_colors` | BOOL | True | Include colors and materials |
+| 13 | `focus_mood` | BOOL | False | Include mood/atmosphere |
+| 14 | `include_text_quotes` | BOOL | True | Quote visible text |
+| 15 | `max_tokens` | INT | 300 | Target output tokens |
+| 16 | `temperature` | FLOAT | 0.7 | Creativity (0-1) |
+| 17 | `seed` | INT | 0 | Random seed |
+| 18 | `seed_mode` | COMBO | "fixed" | Seed behavior control |
+
+---
+
+## Content Detail Levels
+
+Controls how much body and clothing detail is captured.
+
+| Level | Body Detail | Clothing Detail | Use Case |
+|-------|-------------|-----------------|----------|
+| **minimal** | Basic build only | Type and color | SFW, quick |
+| **standard** | Build, posture | Type, fit, color, material | General use |
+| **detailed** | Proportions, exposure areas | Cuts, coverage, reveals | Fashion, glamour |
+| **explicit** | Full NSFW attributes | Full exposure mapping | Adult content (Z-Image) |
+
+### Minimal Level
+
+```yaml
+body: "slim build"
+clothing: "black dress"
+```
+
+### Standard Level
+
+```yaml
+body: "slim athletic build, upright posture"
+clothing: "fitted black mini dress, off-shoulder neckline, satin material"
+```
+
+### Detailed Level
+
+```yaml
+body:
+  build: "slim athletic, hourglass proportions"
+  bust: "medium"
+  waist: "narrow, defined"
+  exposure: "midriff visible, cleavage subtle"
+clothing:
+  type: "bodycon mini dress"
+  neckline: "sweetheart, low"
+  back: "low-back"
+  slit: "high slit on left"
+  material: "black satin"
+  coverage: "minimal shoulders, exposed back"
+```
+
+### Explicit Level (NSFW)
+
+```yaml
+body:
+  build: "slim athletic, hourglass figure"
+  proportions:
+    bust: "large, rounded"
+    waist: "narrow"
+    hips: "curvy"
+  exposure:
+    chest: "deep cleavage, sideboob visible"
+    stomach: "navel exposed, toned midriff"
+    back: "fully exposed"
+    buttocks: "partially visible through slit"
+clothing:
+  type: "micro bikini"
+  top:
+    style: "string triangle"
+    coverage: "minimal"
+  bottom:
+    style: "brazilian cut, high-cut legs"
+    coverage: "minimal"
+    tie: "side-tie"
+pose:
+  sensuality: "pronounced"
+  back: "arched"
+  hips: "thrust to side"
+```
 
 ---
 
