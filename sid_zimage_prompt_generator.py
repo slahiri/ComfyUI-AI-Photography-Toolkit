@@ -2,8 +2,13 @@
 SID_ZImagePromptGenerator Node
 Agentic multi-stage image analysis for Z-Image prompt generation.
 
-This node analyzes an input image using Claude's vision capabilities and generates
+This node analyzes an input image using vision LLM capabilities and generates
 a Z-Image compatible narrative prompt through a multi-stage agentic pipeline.
+
+Supports multiple AI providers:
+- Anthropic (Claude models)
+- Ollama (local models: llava, moondream, bakllava)
+- Grok (xAI vision models)
 """
 
 import base64
@@ -86,32 +91,46 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 # API Settings
                 comfy_io.Combo.Input(
                     "ai_provider",
-                    options=["Anthropic"],
+                    options=["Anthropic", "Ollama", "Grok"],
                     default="Anthropic",
-                    tooltip="AI provider for image analysis (more providers coming soon)"
+                    tooltip="AI provider for image analysis. Anthropic=Claude API, Ollama=Local models, Grok=xAI API"
                 ),
                 comfy_io.String.Input(
                     "api_key",
                     default="",
                     multiline=False,
-                    tooltip="Anthropic API key (get from https://console.anthropic.com/)"
+                    tooltip="API key: Anthropic (console.anthropic.com), Grok (console.x.ai). Leave empty for Ollama."
                 ),
                 comfy_io.Combo.Input(
                     "model",
                     options=[
+                        # Anthropic models
                         "claude-sonnet-4-5-20250929",
                         "claude-haiku-4-5-20251001",
                         "claude-opus-4-1-20250805",
                         "claude-3-5-haiku-20241022",
+                        # Ollama models - Low VRAM (~4-8GB)
+                        "ollama/moondream",
+                        "ollama/llava:7b",
+                        "ollama/bakllava",
+                        # Ollama models - Mid VRAM (~12-16GB)
+                        "ollama/llava:13b",
+                        "ollama/llava-llama3",
+                        # Ollama models - High VRAM (~24GB+)
+                        "ollama/llava:34b",
+                        "ollama/llama3.2-vision",
+                        # Grok models
+                        "grok-2-vision-1212",
+                        "grok-vision-beta",
                     ],
                     default="claude-sonnet-4-5-20250929",
-                    tooltip="Claude model to use for analysis"
+                    tooltip="Model: Claude (Anthropic), ollama/* (local), grok-* (xAI). Ollama models sorted by VRAM: moondream/llava:7b (Low), llava:13b (Mid), llava:34b (High)"
                 ),
                 comfy_io.String.Input(
                     "api_url",
-                    default="https://api.anthropic.com",
+                    default="",
                     multiline=False,
-                    tooltip="API endpoint URL (not used for Anthropic, for future providers)"
+                    tooltip="API URL override. Ollama: http://localhost:11434 (default if empty). Grok: https://api.x.ai (default). Anthropic: ignored."
                 ),
 
                 # Analysis Options
@@ -315,28 +334,54 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         log(f"Mode: {detail_level} ({get_detail_level_config(detail_level).get('llm_calls', 2)} LLM calls)")
         log("")
 
-        # Handle seed mode
-        actual_seed = cls._process_seed(seed, seed_mode)
-        log(f"Seed: {actual_seed} (mode: {seed_mode})")
-        log(f"Cache: {'enabled' if cache_prompt else 'disabled'}")
-        log(f"Provider: {ai_provider}")
-
         # Get image dimensions early for all return paths
         if len(image.shape) == 4:
             img_height, img_width = image.shape[1], image.shape[2]
         else:
             img_height, img_width = image.shape[0], image.shape[1]
 
-        # Validate API key
-        if not api_key or api_key.strip() == "":
-            error_msg = "ERROR: Anthropic API key is required. Get one at https://console.anthropic.com/"
+        # Determine provider from model selection
+        if model.startswith("ollama/"):
+            actual_provider = "Ollama"
+        elif model.startswith("grok-"):
+            actual_provider = "Grok"
+        else:
+            actual_provider = "Anthropic"
+
+        # Handle seed mode
+        actual_seed = cls._process_seed(seed, seed_mode)
+        log(f"Seed: {actual_seed} (mode: {seed_mode})")
+        log(f"Cache: {'enabled' if cache_prompt else 'disabled'}")
+        log(f"Provider: {actual_provider}")
+        log(f"Model: {model}")
+
+        # Validate API key (not required for Ollama)
+        if actual_provider != "Ollama" and (not api_key or api_key.strip() == ""):
+            if actual_provider == "Anthropic":
+                error_msg = "ERROR: Anthropic API key is required. Get one at https://console.anthropic.com/"
+            else:
+                error_msg = "ERROR: Grok API key is required. Get one at https://console.x.ai/"
             return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
 
-        try:
-            import anthropic
-        except ImportError:
-            error_msg = "ERROR: anthropic library not installed. Run: pip install anthropic"
-            return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
+        # Import provider libraries
+        if actual_provider == "Anthropic":
+            try:
+                import anthropic
+            except ImportError:
+                error_msg = "ERROR: anthropic library not installed. Run: pip install anthropic"
+                return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
+        elif actual_provider == "Grok":
+            try:
+                import openai
+            except ImportError:
+                error_msg = "ERROR: openai library not installed. Run: pip install openai"
+                return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
+        else:  # Ollama
+            try:
+                import requests
+            except ImportError:
+                error_msg = "ERROR: requests library not installed. Run: pip install requests"
+                return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
 
         # Check cache if caching is enabled
         if cache_prompt:
@@ -378,8 +423,18 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             cache_key = None
 
         try:
-            # Initialize Anthropic client
-            client = anthropic.Anthropic(api_key=api_key.strip())
+            # Initialize client based on provider
+            if actual_provider == "Anthropic":
+                import anthropic
+                client = anthropic.Anthropic(api_key=api_key.strip())
+            elif actual_provider == "Grok":
+                import openai
+                grok_url = api_url.strip() if api_url.strip() else "https://api.x.ai/v1"
+                client = openai.OpenAI(api_key=api_key.strip(), base_url=grok_url)
+            else:  # Ollama
+                import requests
+                ollama_url = api_url.strip() if api_url.strip() else "http://localhost:11434"
+                client = {"url": ollama_url, "session": requests.Session()}
 
             # Convert image to base64
             base64_image = cls._image_to_base64(image)
@@ -541,12 +596,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 debug_log,
             )
 
-        except anthropic.APIError as e:
-            error_msg = f"Anthropic API Error: {str(e)}"
-            log(f"ERROR: {error_msg}")
-            return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", "\n".join(debug_lines))
         except Exception as e:
-            error_msg = f"Error generating prompt: {str(e)}"
+            error_type = type(e).__name__
+            error_msg = f"API Error ({error_type}): {str(e)}"
             log(f"ERROR: {error_msg}")
             import traceback
             log(traceback.format_exc())
@@ -581,6 +633,147 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         pil_image.save(buffered, format="PNG")
         img_bytes = buffered.getvalue()
         return base64.b64encode(img_bytes).decode("utf-8")
+
+    @classmethod
+    def _call_vision_llm(
+        cls,
+        client,
+        model: str,
+        base64_image: str,
+        system_prompt: str,
+        user_message: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> str:
+        """
+        Unified vision LLM call that handles Anthropic, Ollama, and Grok providers.
+        Returns the text response from the model.
+        """
+        # Determine provider from model name
+        if model.startswith("ollama/"):
+            # Ollama API call
+            import requests
+            ollama_model = model.replace("ollama/", "")
+            url = f"{client['url']}/api/chat"
+
+            payload = {
+                "model": ollama_model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user",
+                        "content": user_message,
+                        "images": [base64_image]
+                    }
+                ],
+                "stream": False,
+                "options": {
+                    "temperature": temperature,
+                    "num_predict": max_tokens,
+                }
+            }
+
+            response = client["session"].post(url, json=payload, timeout=120)
+            response.raise_for_status()
+            result = response.json()
+            return result.get("message", {}).get("content", "")
+
+        elif model.startswith("grok-"):
+            # Grok (OpenAI-compatible) API call
+            response = client.chat.completions.create(
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{base64_image}"}
+                            },
+                            {"type": "text", "text": user_message}
+                        ]
+                    }
+                ]
+            )
+            return response.choices[0].message.content
+
+        else:
+            # Anthropic API call
+            message = client.messages.create(
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system=system_prompt,
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": base64_image}},
+                        {"type": "text", "text": user_message}
+                    ],
+                }],
+            )
+            return message.content[0].text
+
+    @classmethod
+    def _call_text_llm(
+        cls,
+        client,
+        model: str,
+        system_prompt: str,
+        user_message: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> str:
+        """
+        Unified text-only LLM call (no image) for refinement stages.
+        """
+        if model.startswith("ollama/"):
+            import requests
+            ollama_model = model.replace("ollama/", "")
+            url = f"{client['url']}/api/chat"
+
+            payload = {
+                "model": ollama_model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message}
+                ],
+                "stream": False,
+                "options": {
+                    "temperature": temperature,
+                    "num_predict": max_tokens,
+                }
+            }
+
+            response = client["session"].post(url, json=payload, timeout=120)
+            response.raise_for_status()
+            result = response.json()
+            return result.get("message", {}).get("content", "")
+
+        elif model.startswith("grok-"):
+            response = client.chat.completions.create(
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message}
+                ]
+            )
+            return response.choices[0].message.content
+
+        else:
+            message = client.messages.create(
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_message}],
+            )
+            return message.content[0].text
 
     @classmethod
     def _stage1_classification(
@@ -631,21 +824,12 @@ Output ONLY valid JSON (no markdown, no explanation):
             if override_config:
                 user_message = f"Classify this image. Hint: Focus on {focus_override} characteristics."
 
-        message = client.messages.create(
-            model=model,
+        response_text = cls._call_vision_llm(
+            client, model, base64_image,
+            system_prompt, user_message,
             max_tokens=500,
-            temperature=temperature * 0.5,  # Lower temp for classification
-            system=system_prompt,
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": base64_image}},
-                    {"type": "text", "text": user_message}
-                ],
-            }],
+            temperature=temperature * 0.5  # Lower temp for classification
         )
-
-        response_text = message.content[0].text
 
         # Parse JSON response
         try:
@@ -725,21 +909,13 @@ RULES:
 
 Output ONLY valid JSON with the extracted attributes. Use the category names as keys."""
 
-        message = client.messages.create(
-            model=model,
+        response_text = cls._call_vision_llm(
+            client, model, base64_image,
+            system_prompt,
+            "Extract all visible attributes from this image according to the schema.",
             max_tokens=1500,
-            temperature=temperature,
-            system=system_prompt,
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": base64_image}},
-                    {"type": "text", "text": "Extract all visible attributes from this image according to the schema."}
-                ],
-            }],
+            temperature=temperature
         )
-
-        response_text = message.content[0].text
 
         try:
             # Clean up any markdown
@@ -852,21 +1028,13 @@ STRUCTURE:
 6. Style hints (photography style)
 {user_context}"""
 
-        message = client.messages.create(
-            model=model,
+        return cls._call_vision_llm(
+            client, model, base64_image,
+            system_prompt,
+            "Generate the Z-Image narrative prompt based on this image and the analysis.",
             max_tokens=max_tokens * 2,
-            temperature=temperature,
-            system=system_prompt,
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": base64_image}},
-                    {"type": "text", "text": "Generate the Z-Image narrative prompt based on this image and the analysis."}
-                ],
-            }],
+            temperature=temperature
         )
-
-        return message.content[0].text
 
     @classmethod
     def _stage5_prompt_composition_llm(
@@ -918,15 +1086,10 @@ REFINEMENT RULES:
 
 Output ONLY the refined prompt, nothing else."""
 
-        message = client.messages.create(
-            model=model,
+        return cls._call_text_llm(
+            client, model,
+            "You are a prompt refinement expert for Z-Image-Turbo.",
+            refine_prompt,
             max_tokens=max_tokens * 2,
-            temperature=temperature * 0.5,
-            system="You are a prompt refinement expert for Z-Image-Turbo.",
-            messages=[{
-                "role": "user",
-                "content": refine_prompt
-            }],
+            temperature=temperature * 0.5
         )
-
-        return message.content[0].text
