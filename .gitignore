@@ -55,3 +55,6 @@ htmlcov/
 *.ckpt
 *.pt
 models/
+
+# Prompt cache
+cache/

@@ -229,12 +229,23 @@ def truncate_at_sentence(text: str, max_length: int) -> str:
 
 
 # =============================================================================
-# CACHING UTILITIES
+# CACHING UTILITIES (Persistent Disk Cache)
 # =============================================================================
 
-# In-memory output cache for deterministic mode
-_OUTPUT_CACHE: dict[str, Any] = {}
-_MAX_CACHE_SIZE = 100
+# In-memory cache for fast repeated access within session
+_MEMORY_CACHE: dict[str, Any] = {}
+_MAX_MEMORY_CACHE_SIZE = 50
+
+# Disk cache settings
+_MAX_DISK_CACHE_SIZE = 500  # Max number of cached entries on disk
+_CACHE_VERSION = "1"  # Increment to invalidate old caches
+
+
+def get_cache_dir() -> Path:
+    """Get the cache directory path, creating it if needed."""
+    cache_dir = Path(__file__).parent.parent / "cache" / "prompts"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir
 
 
 def hash_image_tensor(image_tensor) -> str:
@@ -282,32 +293,178 @@ def get_cache_key(
     param_str = json.dumps(sorted_params, sort_keys=True)
     param_hash = hashlib.md5(param_str.encode()).hexdigest()[:8]
 
-    return f"{image_hash}_{seed}_{param_hash}"
+    return f"v{_CACHE_VERSION}_{image_hash}_{seed}_{param_hash}"
+
+
+def _get_cache_file_path(cache_key: str) -> Path:
+    """Get the file path for a cache entry."""
+    # Use first 2 chars as subdirectory for better file distribution
+    subdir = cache_key[:2] if len(cache_key) >= 2 else "00"
+    cache_dir = get_cache_dir() / subdir
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir / f"{cache_key}.json"
 
 
 def get_cached_output(cache_key: str) -> Optional[dict]:
-    """Get cached output if it exists."""
-    return _OUTPUT_CACHE.get(cache_key)
+    """
+    Get cached output if it exists (checks memory first, then disk).
+
+    Args:
+        cache_key: The cache key to look up
+
+    Returns:
+        Cached output dict or None if not found
+    """
+    global _MEMORY_CACHE
+
+    # Check memory cache first (fast path)
+    if cache_key in _MEMORY_CACHE:
+        return _MEMORY_CACHE[cache_key]
+
+    # Check disk cache
+    cache_file = _get_cache_file_path(cache_key)
+    if cache_file.exists():
+        try:
+            with open(cache_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            # Validate cache version
+            if data.get("_cache_version") == _CACHE_VERSION:
+                output = data.get("output")
+                # Store in memory cache for faster subsequent access
+                _MEMORY_CACHE[cache_key] = output
+                return output
+            else:
+                # Old cache version, delete it
+                cache_file.unlink(missing_ok=True)
+        except (json.JSONDecodeError, IOError):
+            # Corrupted cache file, delete it
+            cache_file.unlink(missing_ok=True)
+
+    return None
 
 
 def set_cached_output(cache_key: str, output: dict) -> None:
-    """Cache an output result."""
-    global _OUTPUT_CACHE
+    """
+    Cache an output result (both memory and disk).
 
-    # Simple LRU-like cleanup
-    if len(_OUTPUT_CACHE) >= _MAX_CACHE_SIZE:
+    Args:
+        cache_key: The cache key
+        output: The output dict to cache
+    """
+    global _MEMORY_CACHE
+
+    # Store in memory cache
+    if len(_MEMORY_CACHE) >= _MAX_MEMORY_CACHE_SIZE:
         # Remove oldest entries (first 20%)
-        keys_to_remove = list(_OUTPUT_CACHE.keys())[:_MAX_CACHE_SIZE // 5]
+        keys_to_remove = list(_MEMORY_CACHE.keys())[:_MAX_MEMORY_CACHE_SIZE // 5]
         for key in keys_to_remove:
-            del _OUTPUT_CACHE[key]
+            del _MEMORY_CACHE[key]
 
-    _OUTPUT_CACHE[cache_key] = output
+    _MEMORY_CACHE[cache_key] = output
+
+    # Store on disk
+    cache_file = _get_cache_file_path(cache_key)
+    try:
+        cache_data = {
+            "_cache_version": _CACHE_VERSION,
+            "_created": str(Path(cache_file).stat().st_mtime if cache_file.exists() else "new"),
+            "output": output
+        }
+        with open(cache_file, "w", encoding="utf-8") as f:
+            json.dump(cache_data, f, indent=2)
+
+        # Cleanup old cache files if needed
+        _cleanup_disk_cache()
+    except IOError as e:
+        # Log but don't fail if disk cache write fails
+        print(f"Warning: Failed to write cache file: {e}")
 
 
-def clear_cache() -> None:
-    """Clear the output cache."""
-    global _OUTPUT_CACHE
-    _OUTPUT_CACHE = {}
+def _cleanup_disk_cache() -> None:
+    """Remove oldest cache files if over limit."""
+    cache_dir = get_cache_dir()
+
+    # Get all cache files with their modification times
+    cache_files = []
+    for subdir in cache_dir.iterdir():
+        if subdir.is_dir():
+            for cache_file in subdir.glob("*.json"):
+                try:
+                    mtime = cache_file.stat().st_mtime
+                    cache_files.append((cache_file, mtime))
+                except OSError:
+                    pass
+
+    # If over limit, remove oldest files
+    if len(cache_files) > _MAX_DISK_CACHE_SIZE:
+        # Sort by modification time (oldest first)
+        cache_files.sort(key=lambda x: x[1])
+
+        # Remove oldest 20%
+        files_to_remove = cache_files[:len(cache_files) // 5]
+        for cache_file, _ in files_to_remove:
+            try:
+                cache_file.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+def clear_cache(memory_only: bool = False) -> int:
+    """
+    Clear the output cache.
+
+    Args:
+        memory_only: If True, only clear memory cache. If False, clear both.
+
+    Returns:
+        Number of entries cleared
+    """
+    global _MEMORY_CACHE
+
+    count = len(_MEMORY_CACHE)
+    _MEMORY_CACHE = {}
+
+    if not memory_only:
+        cache_dir = get_cache_dir()
+        if cache_dir.exists():
+            for subdir in cache_dir.iterdir():
+                if subdir.is_dir():
+                    for cache_file in subdir.glob("*.json"):
+                        try:
+                            cache_file.unlink()
+                            count += 1
+                        except OSError:
+                            pass
+
+    return count
+
+
+def get_cache_stats() -> dict[str, Any]:
+    """Get cache statistics."""
+    cache_dir = get_cache_dir()
+
+    disk_count = 0
+    disk_size = 0
+
+    if cache_dir.exists():
+        for subdir in cache_dir.iterdir():
+            if subdir.is_dir():
+                for cache_file in subdir.glob("*.json"):
+                    try:
+                        disk_count += 1
+                        disk_size += cache_file.stat().st_size
+                    except OSError:
+                        pass
+
+    return {
+        "memory_entries": len(_MEMORY_CACHE),
+        "memory_max": _MAX_MEMORY_CACHE_SIZE,
+        "disk_entries": disk_count,
+        "disk_max": _MAX_DISK_CACHE_SIZE,
+        "disk_size_mb": round(disk_size / (1024 * 1024), 2),
+        "cache_dir": str(cache_dir),
+    }
 
 
 # =============================================================================

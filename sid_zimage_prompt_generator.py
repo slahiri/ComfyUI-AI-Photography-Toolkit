@@ -33,6 +33,7 @@ from .utils.zimage_utils import (
     get_cache_key,
     get_cached_output,
     set_cached_output,
+    get_cache_stats,
     get_image_metadata,
     get_zimage_recommendations,
     build_attribute_schema_for_scene,
@@ -138,9 +139,14 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 ),
                 comfy_io.Combo.Input(
                     "prompt_mode",
-                    options=["analyze", "enhance", "priority", "override"],
-                    default="enhance",
-                    tooltip="How to use user_prompt: analyze (ignore), enhance (guide), priority (prompt first), override (prompt dominates)"
+                    options=[
+                        "Image Only (ignore prompt)",
+                        "Prompt Guides Analysis",
+                        "Prompt First, Image Fills Gaps",
+                        "Prompt Dominates",
+                    ],
+                    default="Prompt Guides Analysis",
+                    tooltip="How user_prompt interacts with image analysis"
                 ),
 
                 # Focus Area Toggles
@@ -312,13 +318,15 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
 
             cached = get_cached_output(cache_key)
             if cached:
-                log("[CACHE HIT] Returning cached output")
+                cache_stats = get_cache_stats()
+                log("[CACHE HIT] Returning cached output (persistent disk cache)")
+                log(f"  Cache: {cache_stats['disk_entries']} entries, {cache_stats['disk_size_mb']} MB")
                 log("=" * 60)
                 return comfy_io.NodeOutput(
                     cached["prompt"],
                     cached["structured_data"],
                     cached["metadata"],
-                    cached["debug_log"] + "\n[CACHE HIT]"
+                    cached["debug_log"] + "\n\n[CACHE HIT - Loaded from persistent disk cache]"
                 )
         else:
             cache_key = None
@@ -461,9 +469,6 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             total_time = time.time() - start_time
             log("=" * 60)
             log(f"Total duration: {total_time:.1f}s")
-            log("=" * 60)
-
-            debug_log = "\n".join(debug_lines)
 
             # Cache the result for fixed seed mode
             if cache_key:
@@ -471,8 +476,14 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     "prompt": prompt,
                     "structured_data": json.dumps(structured_data, indent=2),
                     "metadata": json.dumps(metadata_output, indent=2),
-                    "debug_log": debug_log,
+                    "debug_log": "\n".join(debug_lines),  # Log before cache info
                 })
+                cache_stats = get_cache_stats()
+                log(f"[CACHED] Result saved to persistent disk cache")
+                log(f"  Cache: {cache_stats['disk_entries']} entries, {cache_stats['disk_size_mb']} MB")
+
+            log("=" * 60)
+            debug_log = "\n".join(debug_lines)
 
             return comfy_io.NodeOutput(
                 prompt,
@@ -741,16 +752,16 @@ Output ONLY valid JSON with the extracted attributes. Use the category names as 
         focus_instruction = "Focus on: " + ", ".join(focus_parts) if focus_parts else "Provide a balanced description."
 
         # Build prompt mode instruction
-        if prompt_mode == "analyze":
+        if prompt_mode == "Image Only (ignore prompt)":
             mode_instruction = "Analyze the image directly. Ignore any user prompt."
             user_context = ""
-        elif prompt_mode == "enhance":
+        elif prompt_mode == "Prompt Guides Analysis":
             mode_instruction = "Analyze the image. Use the user prompt as guidance for emphasis."
             user_context = f"\nUser guidance: {user_prompt}" if user_prompt else ""
-        elif prompt_mode == "priority":
+        elif prompt_mode == "Prompt First, Image Fills Gaps":
             mode_instruction = "Use the user prompt as primary structure. Fill gaps with image analysis."
             user_context = f"\nUser prompt (primary): {user_prompt}" if user_prompt else ""
-        else:  # override
+        else:  # Prompt Dominates
             mode_instruction = "Use the user prompt as foundation. Add minimal visual details from image."
             user_context = f"\nUser prompt (override): {user_prompt}" if user_prompt else ""
 

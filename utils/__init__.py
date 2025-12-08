@@ -11,6 +11,10 @@ from .zimage_utils import (
     clean_zimage_output,
     hash_image_tensor,
     get_cache_key,
+    get_cached_output,
+    set_cached_output,
+    clear_cache,
+    get_cache_stats,
 )
 
 __all__ = [
@@ -22,4 +26,8 @@ __all__ = [
     "clean_zimage_output",
     "hash_image_tensor",
     "get_cache_key",
+    "get_cached_output",
+    "set_cached_output",
+    "clear_cache",
+    "get_cache_stats",
 ]
