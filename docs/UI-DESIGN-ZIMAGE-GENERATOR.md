@@ -1,140 +1,463 @@
-# UI Design: SID_Z_Image_Prompt_Generator
+# UI Design: SID_Z_Image_Prompt_Generator (Agentic)
 
-> Visual design specification for the Z-Image Prompt Generator node
-
----
-
-## Node Overview
-
-**Node ID:** `SID_ZImagePromptGenerator`
-**Display Name:** `SID Z-Image Prompt Generator`
-**Category:** `SID Photography Toolkit/Z-Image`
-
-**Purpose:** Analyze an input image and generate a Z-Image compatible narrative prompt
+> Multi-stage agentic image analysis for Z-Image prompt generation
 
 ---
 
-## UI Layout (Top to Bottom)
+## Design Philosophy
+
+**Agentic Multi-Stage Analysis:**
+1. **Stage 1:** Classify scene type, shot framing, and photography genre
+2. **Stage 2:** Extract image dimensions and metadata
+3. **Stage 3:** Based on scene type, identify relevant attributes
+4. **Stage 4:** Generate structured descriptions per attribute category
+5. **Stage 5:** Compile final prompt with token tracking
+6. **Stage 6:** Generate Z-Image recommendations
+
+**No camera/technology details** - pure visual description only.
+Technology details added by Enhancer node.
+
+---
+
+## Comprehensive Scene Classification
+
+### A. Shot Framing (Distance to Subject)
+
+| Code | Name | Frame Coverage | Primary Use |
+|------|------|----------------|-------------|
+| **ECU** | Extreme Close-Up | Single feature (eye, lips, detail) | Emotion, texture, detail |
+| **BCU** | Big Close-Up | Face only (forehead to chin) | Intense emotion, beauty |
+| **CU** | Close-Up | Head and neck | Expression, portrait |
+| **MCU** | Medium Close-Up | Head and shoulders | Conversation, headshot |
+| **MS** | Medium Shot | Waist up | Upper body, gestures |
+| **MCS** | Medium Cowboy Shot | Mid-thigh up | Western style, holster visible |
+| **MLS** | Medium Long Shot | Knees up (3/4 shot) | Body language, outfit |
+| **FS** | Full Shot | Head to toe | Complete figure, fashion |
+| **LS** | Long Shot | Full body + surroundings | Context, environment |
+| **ELS** | Extreme Long Shot | Wide vista, tiny subject | Landscape, establishing |
+| **VLS** | Very Long Shot | Subject small in frame | Scale, isolation |
+
+### B. Photography Genre Classification
+
+#### People Photography
+
+| Genre | Code | Description | Key Attributes |
+|-------|------|-------------|----------------|
+| **Portrait** | PRT | Face-focused, expressive | Face, eyes, expression, lighting |
+| **Headshot** | HST | Professional/actor portrait | Face, shoulders, clean background |
+| **Fashion** | FSH | Style/clothing focused | Outfit, pose, styling, editorial |
+| **Beauty** | BTY | Makeup/skincare focused | Skin, makeup, lighting, closeup |
+| **Glamour** | GLM | Sensual, elegant | Pose, lighting, mood, styling |
+| **Boudoir** | BDR | Intimate, private setting | Mood, fabric, soft light |
+| **Fitness** | FIT | Athletic, body-focused | Muscle definition, action, sweat |
+| **Maternity** | MTR | Pregnancy portraits | Belly, soft light, emotion |
+| **Newborn** | NBN | Baby photography | Soft, delicate, props |
+| **Family** | FAM | Group/family portraits | Arrangement, interaction |
+| **Couple** | CPL | Two people together | Connection, pose, emotion |
+| **Senior** | SNR | Graduation/milestone | Achievement, personality |
+| **Corporate** | CRP | Business professional | Clean, confident, branded |
+
+#### Event Photography
+
+| Genre | Code | Description | Key Attributes |
+|-------|------|-------------|----------------|
+| **Wedding** | WED | Ceremony/celebration | Emotion, dress, venue |
+| **Concert** | CON | Live music/performance | Stage lighting, action |
+| **Sports** | SPT | Athletic events | Motion, peak action, emotion |
+| **Event** | EVT | General gatherings | Candid, venue, crowd |
+| **Street** | STR | Urban candid | Spontaneous, context, story |
+| **Documentary** | DOC | Real-life storytelling | Authentic, narrative |
+| **Photojournalism** | PJR | News events | Action, story, impact |
+
+#### Nature & Environment
+
+| Genre | Code | Description | Key Attributes |
+|-------|------|-------------|----------------|
+| **Landscape** | LND | Wide natural vistas | Horizon, sky, depth, light |
+| **Seascape** | SEA | Ocean/water scenes | Water, waves, horizon |
+| **Cityscape** | CTY | Urban skylines | Buildings, lights, atmosphere |
+| **Architecture** | ARC | Buildings/structures | Lines, perspective, detail |
+| **Interior** | INT | Indoor spaces | Room, furniture, light |
+| **Nature** | NAT | Natural world | Plants, elements, organic |
+| **Wildlife** | WLD | Animals in habitat | Animal, behavior, environment |
+| **Bird** | BRD | Avian subjects | Bird, plumage, action |
+| **Pet** | PET | Domestic animals | Animal, expression, personality |
+| **Macro** | MAC | Extreme close-up | Texture, detail, magnification |
+| **Flower** | FLR | Botanical subjects | Petals, color, arrangement |
+| **Underwater** | UNW | Below water surface | Blue tones, marine life |
+| **Aerial/Drone** | AER | Bird's eye view | Patterns, scale, perspective |
+| **Astro** | AST | Night sky/stars | Stars, milky way, long exposure |
+| **Storm** | STM | Weather phenomena | Clouds, lightning, drama |
+
+#### Commercial & Product
+
+| Genre | Code | Description | Key Attributes |
+|-------|------|-------------|----------------|
+| **Product** | PRD | Commercial items | Object, lighting, clean |
+| **Food** | FOD | Culinary subjects | Appetizing, styling, fresh |
+| **Beverage** | BEV | Drinks photography | Liquid, condensation, glass |
+| **Jewelry** | JWL | Precious items | Sparkle, detail, luxury |
+| **Automotive** | AUT | Vehicles | Curves, reflections, power |
+| **Real Estate** | RLE | Property listing | Rooms, space, features |
+| **Advertising** | ADV | Commercial campaigns | Message, brand, appeal |
+
+#### Artistic & Creative
+
+| Genre | Code | Description | Key Attributes |
+|-------|------|-------------|----------------|
+| **Fine Art** | ART | Artistic expression | Concept, mood, unique |
+| **Abstract** | ABS | Non-representational | Shapes, colors, patterns |
+| **Surreal** | SUR | Dreamlike imagery | Unusual, manipulated |
+| **Conceptual** | CNC | Idea-driven | Symbolism, meaning |
+| **Still Life** | STL | Arranged objects | Composition, light, objects |
+| **Black & White** | BNW | Monochrome | Contrast, tones, shadow |
+| **Double Exposure** | DBL | Layered images | Blend, ghosting |
+| **Long Exposure** | LNG | Extended shutter | Motion blur, light trails |
+| **Silhouette** | SIL | Backlit outline | Shape, contrast |
+| **Minimalist** | MIN | Simple, clean | Negative space, single element |
+
+#### Lifestyle & Travel
+
+| Genre | Code | Description | Key Attributes |
+|-------|------|-------------|----------------|
+| **Lifestyle** | LIF | Curated living | Aspirational, authentic feel |
+| **Travel** | TRV | Destinations | Culture, landmarks, adventure |
+| **Candid** | CND | Unposed moments | Natural, spontaneous |
+| **Self-Portrait/Selfie** | SLF | Self-captured | Personal, casual |
+
+---
+
+## Attribute Categories by Scene Type
+
+### Portrait/People (ECU, CU, MCU)
+
+```yaml
+subject:
+  gender: male, female, non-binary
+  age_range: child, teen, young adult, adult, middle-aged, elderly
+  ethnicity: descriptive skin tone only
+
+face:
+  shape: oval, round, heart, square, oblong, diamond
+  angle: frontal, 3/4 left, 3/4 right, profile left, profile right
+  tilt: level, tilted left, tilted right, chin up, chin down
+
+eyes:
+  color: specific shade (hazel, deep brown, steel blue, etc.)
+  shape: almond, round, hooded, upturned, downturned, monolid
+  state: open, half-lidded, closed, squinting
+  gaze: direct at camera, looking left/right/up/down, distant
+  expression: soft, intense, playful, serious, tired
+  makeup: none, natural, bold, smokey, colorful (describe colors)
+  lashes: natural, mascara, false lashes
+  brows: natural, groomed, bold, thin
+
+skin:
+  tone: porcelain, ivory, fair, light, medium, olive, tan, brown, deep brown, dark
+  undertone: warm, cool, neutral
+  texture: smooth, freckled, textured, weathered
+  condition: natural, dewy, matte, glowing, oily
+  features: beauty marks, scars, dimples, wrinkles
+
+nose:
+  shape: straight, curved, button, prominent
+
+lips:
+  shape: full, thin, heart, wide, cupid's bow
+  color: natural pink, nude, red, berry, coral (if makeup)
+  state: closed, slightly parted, smiling, pursed
+
+teeth:
+  visibility: not visible, slightly visible, showing
+
+expression:
+  overall: happy, sad, serious, thoughtful, surprised, neutral
+  intensity: subtle, moderate, dramatic
+  authenticity: genuine, posed
+
+hair:
+  color: black, dark brown, chestnut, auburn, red, blonde, platinum, gray, white
+  highlights: none, subtle, balayage, streaks
+  length: bald, buzz, short, medium, shoulder-length, long, very long
+  texture: straight, wavy, curly, coily, kinky
+  style: loose, ponytail, bun, braids, updo, messy, slicked
+  state: clean, wet, windswept, disheveled
+  parting: center, side left, side right, none
+  bangs: none, full, side-swept, curtain
+
+facial_hair: (if applicable)
+  type: none, stubble, beard, mustache, goatee
+  length: short, medium, long
+  grooming: neat, rugged, styled
+```
+
+### Upper Body (MCU, MS)
+
+```yaml
+clothing_upper:
+  type: shirt, blouse, t-shirt, sweater, jacket, coat, dress, tank top, crop top, swimwear
+  neckline: crew, v-neck, scoop, off-shoulder, halter, turtleneck, collared
+  sleeves: sleeveless, short, 3/4, long, rolled up
+  color: specific colors and patterns
+  pattern: solid, striped, floral, plaid, abstract, printed
+  material: cotton, silk, satin, lace, knit, denim, leather, mesh
+  fit: loose, relaxed, fitted, tight, oversized
+  condition: pristine, casual, rumpled, wet
+
+accessories:
+  necklace: none, choker, pendant, chain, statement
+  earrings: none, studs, hoops, dangles, statement
+  glasses: none, prescription, sunglasses (describe style)
+  watch: none, casual, luxury, smart
+  hat: none, baseball cap, beanie, fedora, sun hat
+  scarf: none, describe style and drape
+
+pose_upper:
+  shoulders: squared, angled, one raised, relaxed, tense
+  arms: at sides, crossed, raised, one on hip
+  hands: visible/hidden, gesturing, touching face, in pockets
+  head_position: straight, tilted, turned
+  body_angle: frontal, 3/4, profile
+```
+
+### Full Body (MLS, FS, LS)
+
+```yaml
+body:
+  build: slim, athletic, toned, average, curvy, plus-size, muscular
+  height: appears short, average, tall
+  posture: upright, relaxed, slouched, dynamic
+
+clothing_full:
+  outfit_style: casual, formal, business, athletic, beachwear, evening
+  top: [reference clothing_upper]
+  bottom:
+    type: pants, jeans, skirt, shorts, leggings, dress
+    fit: skinny, straight, wide-leg, A-line, mini, midi, maxi
+    color: specific
+  footwear:
+    type: barefoot, sneakers, heels, boots, sandals, flats
+    color: specific
+    heel_height: flat, low, medium, high
+
+pose_full:
+  stance: standing, sitting, lying, kneeling, crouching, walking, running
+  weight: centered, shifted left, shifted right, contrapposto
+  legs: together, apart, crossed, one bent
+  feet: together, apart, one forward
+  dynamic: static, in motion, jumping, leaning
+
+interaction:
+  with_props: holding, sitting on, leaning against
+  with_environment: integrated, isolated
+```
+
+### Environment/Background
+
+```yaml
+setting:
+  type: studio, indoor, outdoor, mixed
+  location: bedroom, living room, office, cafe, street, beach, forest, mountain, urban, rural
+
+background:
+  clarity: sharp, soft, very blurred (bokeh)
+  complexity: simple, moderate, complex
+  color: neutral, colorful, dark, light
+  elements: wall, window, nature, architecture, crowd, none
+
+lighting:
+  type: natural, artificial, mixed
+  source: sun, window, studio lights, practical lights, neon
+  direction: front, side, back, top, bottom, rim
+  quality: hard, soft, diffused, dramatic
+  color_temperature: warm, neutral, cool, mixed
+  time_of_day: morning, midday, golden hour, blue hour, night
+  shadows: minimal, soft, dramatic, hard
+
+atmosphere:
+  mood: bright, moody, dreamy, dramatic, intimate, energetic
+  weather: clear, cloudy, foggy, rainy, snowy (if outdoor)
+  depth: shallow, moderate, deep
+```
+
+### Objects/Products
+
+```yaml
+object:
+  type: specific item category
+  shape: geometric, organic, complex
+  size: small, medium, large
+
+material:
+  type: metal, glass, plastic, fabric, wood, stone, ceramic
+  finish: matte, glossy, textured, brushed
+  transparency: opaque, translucent, transparent
+
+surface:
+  texture: smooth, rough, patterned
+  reflectivity: none, subtle, mirror-like
+
+color:
+  primary: main color
+  secondary: accent colors
+  pattern: solid, gradient, patterned
+
+arrangement:
+  composition: centered, rule of thirds, asymmetric
+  props: supporting elements
+  surface: table, fabric, transparent, floating
+```
+
+---
+
+## Agentic Processing Pipeline
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    STAGE 1: CLASSIFICATION                      │
+├─────────────────────────────────────────────────────────────────┤
+│  LLM Call #1: Analyze and classify                              │
+│  Outputs:                                                       │
+│    - shot_framing: ECU/CU/MCU/MS/MLS/FS/LS/ELS                  │
+│    - genre: PRT/FSH/LND/PRD/etc                                 │
+│    - secondary_tags: selfie, candid, editorial, etc             │
+│    - subject_count: 0, 1, 2, group                              │
+│    - confidence: 0.0-1.0                                        │
+│  Tokens: ~50-100                                                │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    STAGE 2: METADATA                            │
+├─────────────────────────────────────────────────────────────────┤
+│  Direct extraction (no LLM):                                    │
+│    - dimensions: width × height                                 │
+│    - aspect_ratio: calculated                                   │
+│    - orientation: portrait/landscape/square                     │
+│    - color_space: RGB/RGBA                                      │
+│  Tokens: 0                                                      │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    STAGE 3: ATTRIBUTE MAPPING                   │
+├─────────────────────────────────────────────────────────────────┤
+│  Rule-based selection based on classification:                  │
+│                                                                 │
+│  ECU/BCU/CU + PRT → face, eyes, skin, lips, expression, hair   │
+│  MCU/MS + FSH → face, hair, clothing_upper, accessories, pose  │
+│  FS/LS + FSH → body, clothing_full, pose_full, environment     │
+│  LND/SEA/CTY → scene, composition, atmosphere, lighting         │
+│  PRD/FOD → object, material, surface, arrangement               │
+│  Tokens: 0 (deterministic)                                      │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    STAGE 4: DETAILED ANALYSIS                   │
+├─────────────────────────────────────────────────────────────────┤
+│  LLM Call #2: Structured attribute extraction                   │
+│  Input: Image + attribute schema for this scene type            │
+│  Output: JSON with specific values for each attribute           │
+│  Tokens: ~200-400                                               │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    STAGE 5: PROMPT COMPOSITION                  │
+├─────────────────────────────────────────────────────────────────┤
+│  Template-based narrative generation                            │
+│  Order: Shot → Subject → Key Details → Environment → Lighting   │
+│  Tokens: output ~100-300                                        │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    STAGE 6: Z-IMAGE OPTIMIZATION                │
+├─────────────────────────────────────────────────────────────────┤
+│  Generate recommendations:                                      │
+│    - optimal_resolution for Z-Image                             │
+│    - resize_needed: true/false                                  │
+│    - resize_method: lanczos/bicubic                             │
+│    - aspect_ratio_suggestion                                    │
+│    - quality_estimate: low/medium/high                          │
+│    - suggested_steps: 8-9                                       │
+│    - guidance_scale: 0.0                                        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## UI Layout
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  SID Z-Image Prompt Generator                                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  IMAGE INPUT                                    [●]      │   │
-│  │  ○ image                                                 │   │
-│  └─────────────────────────────────────────────────────────┘   │
+│  ○ image ─────────────────────────────────────────────── [●]    │
 │                                                                 │
-│  ════════════════════ API SETTINGS ═══════════════════════     │
+│  ═══════════════════ API SETTINGS ════════════════════════     │
 │                                                                 │
 │  API Key        [••••••••••••••••••••••••••••••••]              │
-│                                                                 │
 │  Model          [claude-sonnet-4-5-20250929      ▼]            │
 │                                                                 │
-│  ════════════════════ STYLE PRESETS ══════════════════════     │
+│  ═══════════════════ ANALYSIS OPTIONS ════════════════════     │
 │                                                                 │
-│  Detail Level   [Detailed                        ▼]            │
-│                  ├─ Minimal (50-80 words)                      │
-│                  ├─ Detailed (100-180 words) ✓                 │
-│                  ├─ Technical (150-220 words)                  │
-│                  └─ Comprehensive (200-300 words)              │
+│  Detail Level   [Standard                        ▼]            │
+│                  ├─ Quick (1 LLM call, ~100 tokens)             │
+│                  ├─ Standard (2 calls, ~300 tokens) ✓           │
+│                  └─ Deep (3 calls, ~500 tokens)                 │
 │                                                                 │
-│  Color Style    [None                            ▼]            │
-│                  ├─ None (analyze from image) ✓                │
-│                  ├─ Black and White                            │
-│                  ├─ Color                                      │
-│                  ├─ Monochrome                                 │
-│                  ├─ Sepia                                      │
-│                  ├─ High Contrast B&W                          │
-│                  ├─ Low Key                                    │
-│                  └─ High Key                                   │
+│  Focus Override [Auto-detect                     ▼]            │
+│                  ├─ Auto-detect ✓                               │
+│                  ├─ Portrait/People                             │
+│                  ├─ Full Body/Fashion                           │
+│                  ├─ Landscape/Environment                       │
+│                  ├─ Product/Object                              │
+│                  ├─ Food/Beverage                               │
+│                  └─ Architecture/Interior                       │
 │                                                                 │
-│  Photographer   [None                            ▼]            │
-│                  ├─ None ✓                                     │
-│                  ├─ Helmut Newton                              │
-│                  ├─ Peter Lindbergh                            │
-│                  ├─ Annie Leibovitz                            │
-│                  ├─ Richard Avedon                             │
-│                  └─ ... (20 options)                           │
+│  [☑] Include lighting description                               │
+│  [☑] Quote text elements ("text")                               │
 │                                                                 │
-│  Lighting       [None                            ▼]            │
-│                  ├─ None (analyze from image) ✓                │
-│                  ├─ ─── Studio ───                             │
-│                  ├─ Natural Window Light                       │
-│                  ├─ Studio Strobes                             │
-│                  ├─ Softbox Lighting                           │
-│                  ├─ ─── Techniques ───                         │
-│                  ├─ Rembrandt Lighting                         │
-│                  ├─ Butterfly Lighting                         │
-│                  ├─ ─── Outdoor ───                            │
-│                  ├─ Golden Hour                                │
-│                  ├─ Blue Hour                                  │
-│                  └─ ... (31 options)                           │
+│  ═══════════════════ OUTPUT SETTINGS ═════════════════════     │
 │                                                                 │
-│  ════════════════════ OUTPUT OPTIONS ═════════════════════     │
+│  Max Tokens     [═══════════════●══════] 300                   │
+│                  50                    500                     │
 │                                                                 │
-│  Text Quoting   [☑] Quote text elements ("text")               │
-│                                                                 │
-│  Max Length     [═══════════════════●════] 2000                │
-│                  0                      4000                   │
-│                                                                 │
-│  ════════════════════ GENERATION ═════════════════════════     │
-│                                                                 │
-│  User Prompt    ┌─────────────────────────────────────────┐    │
-│  (optional)     │ Add any specific instructions...        │    │
-│                 │                                         │    │
+│  User Context   ┌─────────────────────────────────────────┐    │
+│  (optional)     │ Any additional context...               │    │
 │                 └─────────────────────────────────────────┘    │
 │                                                                 │
-│  Temperature    [═════════●═══════════════] 0.7                │
-│                  0.0                       1.0                 │
+│  ═══════════════════ GENERATION ══════════════════════════     │
 │                                                                 │
+│  Temperature    [═════════●═══════════════] 0.7                │
 │  Seed           [0                              ] [🎲]          │
 │                                                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │  OUTPUTS                                                        │
 │                                                                 │
-│  prompt ○────────────────────────────────────────────────────   │
-│  debug_log ○─────────────────────────────────────────────────   │
+│  prompt ○─────────────────────── Z-Image ready narrative        │
+│  structured_data ○───────────── JSON with all attributes        │
+│  metadata ○──────────────────── Image info + recommendations    │
+│  debug_log ○─────────────────── Processing details              │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Input Parameters Specification
+## Input Parameters
 
-### Required Inputs
-
-| # | Parameter | Type | Widget | Default | Description |
-|---|-----------|------|--------|---------|-------------|
-| 1 | `image` | IMAGE | Input slot | - | Input image to analyze |
-| 2 | `api_key` | STRING | Password field | "" | Anthropic API key |
-
-### Style Presets (Combo Dropdowns)
-
-| # | Parameter | Type | Default | Options | Tooltip |
-|---|-----------|------|---------|---------|---------|
-| 3 | `model` | COMBO | claude-sonnet-4-5 | See models list | Claude model for analysis |
-| 4 | `detail_level` | COMBO | "Detailed" | Minimal, Detailed, Technical, Comprehensive | Output detail and word count |
-| 5 | `color_style` | COMBO | "None" | None + 8 styles | Color treatment to apply |
-| 6 | `photographer_style` | COMBO | "None" | None + 20 photographers | Emulate famous photographer |
-| 7 | `lighting_style` | COMBO | "None" | None + 31 lighting setups | Specific lighting to describe |
-
-### Output Options
-
-| # | Parameter | Type | Widget | Default | Description |
-|---|-----------|------|--------|---------|-------------|
-| 8 | `include_text_quotes` | BOOLEAN | Checkbox | True | Wrap text elements in "quotes" |
-| 9 | `max_length` | INT | Slider | 2000 | Maximum output characters (0-4000) |
-
-### Generation Settings
-
-| # | Parameter | Type | Widget | Default | Description |
-|---|-----------|------|--------|---------|-------------|
-| 10 | `user_prompt` | STRING | Multiline text | "" | Additional instructions (optional) |
-| 11 | `temperature` | FLOAT | Slider | 0.7 | Creativity level (0.0-1.0) |
-| 12 | `seed` | INT | Number + randomize | 0 | Random seed for reproducibility |
+| # | Parameter | Type | Default | Description |
+|---|-----------|------|---------|-------------|
+| 1 | `image` | IMAGE | required | Input image to analyze |
+| 2 | `api_key` | STRING | "" | Anthropic API key |
+| 3 | `model` | COMBO | claude-sonnet-4-5 | Claude model |
+| 4 | `detail_level` | COMBO | "Standard" | Quick/Standard/Deep |
+| 5 | `focus_override` | COMBO | "Auto-detect" | Force genre focus |
+| 6 | `include_lighting` | BOOL | True | Add lighting descriptions |
+| 7 | `include_text_quotes` | BOOL | True | Quote visible text |
+| 8 | `max_tokens` | INT | 300 | Target output tokens |
+| 9 | `user_context` | STRING | "" | Additional context |
+| 10 | `temperature` | FLOAT | 0.7 | Creativity (0-1) |
+| 11 | `seed` | INT | 0 | Random seed |
 
 ---
 
@@ -142,253 +465,185 @@
 
 | Output | Type | Description |
 |--------|------|-------------|
-| `prompt` | STRING | Z-Image compatible narrative prompt |
-| `debug_log` | STRING | Debug information and API response details |
+| `prompt` | STRING | Z-Image narrative prompt |
+| `structured_data` | STRING | JSON with categorized attributes |
+| `metadata` | STRING | JSON with image info + Z-Image recommendations |
+| `debug_log` | STRING | Stage-by-stage processing log |
 
 ---
 
-## Model Options
+## Output Examples
 
-```python
-CLAUDE_MODELS = [
-    "claude-sonnet-4-5-20250929",    # Latest Sonnet (default)
-    "claude-haiku-4-5-20251001",     # Fast, economical
-    "claude-opus-4-1-20250805",      # Most capable
-    "claude-3-5-haiku-20241022",     # Previous gen fast
-    "claude-3-haiku-20240307",       # Previous gen economical
-]
+### prompt (STRING)
+```
+A close-up portrait of a young adult woman with warm olive skin
+and long wavy chestnut brown hair flowing over her right shoulder.
+Her dark brown almond-shaped eyes feature bold teal-green eyeshadow
+blended across the lids, with defined natural brows. Natural pink
+lips slightly parted. She wears a white zip-front jacket. Soft
+diffused natural daylight from the front-left creates subtle
+warmth on her face. Shallow depth of field with blurred car
+interior in background. Intimate selfie composition.
 ```
 
----
-
-## Detail Level Specifications
-
-| Level | Word Count | Use Case | Description |
-|-------|------------|----------|-------------|
-| **Minimal** | 50-80 | Quick tests, simple scenes | Core elements only: subject, setting, lighting, style |
-| **Detailed** | 100-180 | Standard use (default) | Balanced: composition, subject details, lighting, atmosphere |
-| **Technical** | 150-220 | Photography recreation | Includes camera feel, lens characteristics, technical aspects |
-| **Comprehensive** | 200-300 | Maximum detail | Full description: every visible element, materials, textures, spatial relationships |
-
----
-
-## Color Style Options
-
-| Option | Description | When to Use |
-|--------|-------------|-------------|
-| None | Analyze from image | Let AI determine color treatment |
-| Black and White | Monochrome, grayscale | Classic B&W photography |
-| Color | Full color, vibrant | Standard color photography |
-| Monochrome | Single color tone | Artistic monotone |
-| Sepia | Warm brown vintage | Nostalgic, historical feel |
-| High Contrast B&W | Dramatic monochrome | Bold, graphic B&W |
-| Low Key | Dark, moody tones | Dramatic, shadowy |
-| High Key | Bright, airy | Light, ethereal |
-
----
-
-## Photographer Style Options (20)
-
-Organized by aesthetic:
-
-**Classic Masters:**
-- Helmut Newton, Richard Avedon, Irving Penn, Herb Ritts
-
-**Natural/Intimate:**
-- Peter Lindbergh, Annie Leibovitz, Patrick Demarchelier, Paolo Roversi
-
-**Fashion Editorial:**
-- Mario Testino, Steven Meisel, Mert and Marcus, Bruce Weber
-
-**Creative/Artistic:**
-- Tim Walker, David LaChapelle, Steven Klein, Ellen von Unwerth
-
-**Contemporary/Raw:**
-- Juergen Teller, Terry Richardson, Rankin, Albert Watson
-
----
-
-## Lighting Style Options (31)
-
-**Studio Lighting (8):**
-- Natural Window Light, Studio Strobes, Softbox Lighting, Beauty Dish
-- Ring Light, Umbrella Lighting, Grid Spot, Reflector Fill
-
-**Studio Techniques (10):**
-- Rembrandt, Split, Butterfly, Loop, Broad, Short Lighting
-- High Key Studio, Low Key Studio, Clamshell, Edge/Rim Lighting
-
-**Outdoor/Natural (9):**
-- Golden Hour, Blue Hour, Harsh Midday Sun, Overcast Diffused
-- Open Shade, Backlit, Dusk/Twilight, Sunrise, Sunset
-
-**Special/Creative (4):**
-- Chiaroscuro, Dramatic Side Light, Silhouette, Candlelight
-- Neon/Colorful, Practical Lights, Mixed Lighting, Night Photography
-
----
-
-## Tooltips
-
-```python
-TOOLTIPS = {
-    "image": "Input image to analyze and generate a Z-Image prompt from",
-    "api_key": "Anthropic API key (get from https://console.anthropic.com/)",
-    "model": "Claude model for image analysis. Sonnet recommended for balance of speed/quality",
-    "detail_level": "Controls output length and detail. Minimal=50-80 words, Comprehensive=200-300 words",
-    "color_style": "Override color treatment. 'None' analyzes from image",
-    "photographer_style": "Emulate a famous photographer's aesthetic. 'None' for neutral style",
-    "lighting_style": "Specify lighting description. 'None' analyzes from image",
-    "include_text_quotes": "Wrap any text elements in double quotes for Z-Image text rendering",
-    "max_length": "Maximum output characters. Z-Image works best with 1500-3000 chars",
-    "user_prompt": "Additional instructions to guide the prompt generation",
-    "temperature": "Creativity level. Lower=focused, Higher=creative. 0.7 recommended",
-    "seed": "Random seed for reproducible results. Use different seeds for variation",
+### structured_data (JSON)
+```json
+{
+  "classification": {
+    "shot_framing": "CU",
+    "shot_label": "Close-Up",
+    "genre": "PRT",
+    "genre_label": "Portrait",
+    "secondary": ["selfie", "beauty"],
+    "subject_count": 1,
+    "confidence": 0.94
+  },
+  "attributes": {
+    "subject": {
+      "gender": "female",
+      "age_range": "young adult",
+      "ethnicity": "South Asian"
+    },
+    "face": {
+      "shape": "oval",
+      "angle": "frontal"
+    },
+    "eyes": {
+      "color": "dark brown",
+      "shape": "almond",
+      "gaze": "direct at camera",
+      "makeup": "bold teal-green eyeshadow",
+      "brows": "natural, defined"
+    },
+    "skin": {
+      "tone": "warm olive",
+      "texture": "smooth",
+      "condition": "natural glow"
+    },
+    "lips": {
+      "color": "natural pink",
+      "state": "slightly parted"
+    },
+    "hair": {
+      "color": "chestnut brown",
+      "length": "long",
+      "texture": "wavy",
+      "style": "loose, flowing right"
+    },
+    "clothing_visible": {
+      "type": "zip jacket",
+      "color": "white",
+      "neckline": "v-neck with zipper"
+    },
+    "lighting": {
+      "type": "natural",
+      "direction": "front-left",
+      "quality": "soft diffused"
+    },
+    "background": {
+      "type": "car interior",
+      "clarity": "very blurred"
+    }
+  },
+  "prompt_stats": {
+    "word_count": 89,
+    "estimated_tokens": 118
+  }
 }
 ```
 
----
-
-## Visual Grouping (UI Sections)
-
-### Section 1: Input
-- Image input slot (required)
-
-### Section 2: API Settings
-- API Key (password field)
-- Model selector
-
-### Section 3: Style Presets
-- Detail Level
-- Color Style
-- Photographer Style
-- Lighting Style
-
-### Section 4: Output Options
-- Text Quoting checkbox
-- Max Length slider
-
-### Section 5: Generation
-- User Prompt (multiline, optional)
-- Temperature slider
-- Seed with randomize button
-
-### Section 6: Outputs
-- prompt (STRING)
-- debug_log (STRING)
-
----
-
-## Widget Specifications
-
-### Sliders
-
-```python
-# Temperature
-"temperature": ("FLOAT", {
-    "default": 0.7,
-    "min": 0.0,
-    "max": 1.0,
-    "step": 0.05,
-    "round": 0.01,
-    "display": "slider",
-})
-
-# Max Length
-"max_length": ("INT", {
-    "default": 2000,
-    "min": 0,
-    "max": 4000,
-    "step": 100,
-    "display": "slider",
-})
+### metadata (JSON)
+```json
+{
+  "image_info": {
+    "width": 1080,
+    "height": 1350,
+    "aspect_ratio": "4:5",
+    "aspect_decimal": 0.8,
+    "orientation": "portrait",
+    "megapixels": 1.46
+  },
+  "z_image_recommendations": {
+    "optimal_resolution": [1024, 1280],
+    "current_compatible": false,
+    "resize_needed": true,
+    "resize_direction": "downscale",
+    "resize_method": "lanczos",
+    "aspect_ratio_ok": true,
+    "nearest_native": "1024x1280 (4:5)",
+    "quality_estimate": "high",
+    "suggested_settings": {
+      "steps": 9,
+      "guidance_scale": 0.0,
+      "sampler": "euler"
+    }
+  },
+  "content_flags": {
+    "has_text": false,
+    "has_multiple_subjects": false,
+    "complexity": "medium"
+  }
+}
 ```
 
-### Seed with Control
-
-```python
-"seed": ("INT", {
-    "default": 0,
-    "min": 0,
-    "max": 2147483647,
-    "control_after_generate": True,  # Adds randomize button
-})
+### debug_log (STRING)
 ```
+═══════════════════════════════════════════════════════════════
+SID Z-Image Prompt Generator - Debug Log
+═══════════════════════════════════════════════════════════════
+Timestamp: 2025-12-08 14:32:15
+Mode: Standard (2 LLM calls)
 
-### Multiline Text
+[STAGE 1] Classification (LLM Call #1)
+  Shot Framing: CU (Close-Up) - 94% confidence
+  Genre: PRT (Portrait)
+  Secondary: selfie, beauty
+  Subject Count: 1
+  Tokens used: 67
+  Duration: 0.9s
 
-```python
-"user_prompt": ("STRING", {
-    "default": "",
-    "multiline": True,
-    "placeholder": "Add specific instructions (optional)...",
-})
-```
+[STAGE 2] Metadata Extraction
+  Dimensions: 1080 × 1350 px
+  Aspect Ratio: 4:5 (0.80)
+  Orientation: Portrait
 
----
+[STAGE 3] Attribute Mapping
+  Scene: CU + PRT
+  Selected categories: subject, face, eyes, skin, lips, hair,
+                       clothing_visible, lighting, background
 
-## Node Colors (Suggested)
+[STAGE 4] Detailed Analysis (LLM Call #2)
+  Attributes extracted: 9 categories, 28 properties
+  Tokens used: 289
+  Duration: 2.3s
 
-Following ComfyUI conventions:
-- **Header:** Purple/Violet (`#6B5B95`) - indicates AI/LLM node
-- **Body:** Dark gray (`#353535`)
-- **Inputs:** Green connection dots
-- **Outputs:** Blue/Cyan connection dots
+[STAGE 5] Prompt Composition
+  Template: portrait_closeup
+  Word count: 89
+  Estimated tokens: 118
 
----
+[STAGE 6] Z-Image Recommendations
+  Resize: 1080×1350 → 1024×1280 (lanczos downscale)
+  Quality estimate: HIGH
 
-## Comparison with Existing Nodes
-
-| Feature | SID_AIPromptGenerator | Z-Image Utilities | SID_ZImagePromptGenerator |
-|---------|----------------------|-------------------|---------------------------|
-| Image Input | ✓ | Optional | ✓ (required) |
-| Keyword Output | ✓ | ✗ | ✗ |
-| Narrative Output | ✗ | ✓ | ✓ |
-| Photography Presets | ✓ | ✗ | ✓ |
-| Multi-Provider | ✗ | ✓ | ✗ (Claude only) |
-| Detail Levels | 4 styles | ✗ | 4 levels |
-| Text Quoting | ✗ | Built-in | ✓ (toggle) |
-| Session Support | ✗ | ✓ | ✗ (future) |
-
----
-
-## Example Usage Flow
-
-```
-1. User loads image
-2. Connects to SID_ZImagePromptGenerator
-3. Selects:
-   - Detail Level: "Detailed"
-   - Photographer Style: "Peter Lindbergh"
-   - Lighting: "None" (auto-detect)
-4. Node analyzes image
-5. Outputs narrative prompt like:
-
-   "A medium shot portrait of an adult woman in her early thirties
-    with shoulder-length dark wavy hair and olive skin. She wears
-    a simple white cotton t-shirt, looking directly at camera with
-    a relaxed, natural expression. Soft diffused window light from
-    the left creates gentle shadows on her face, emphasizing natural
-    skin texture. The background is a blurred neutral gray studio
-    backdrop. The image has a raw, intimate quality reminiscent of
-    Peter Lindbergh's authentic portraiture style - minimal retouching,
-    natural beauty, film noir influenced lighting. Shallow depth of
-    field, centered composition, candid documentary feel."
-
-6. User connects prompt output to Z-Image model
+═══════════════════════════════════════════════════════════════
+Total LLM tokens: 356
+Total duration: 3.4s
+═══════════════════════════════════════════════════════════════
 ```
 
 ---
 
-## Implementation Notes
+## Sources
 
-1. **API Key Security:** Use password field type, never log the key
-2. **Image Processing:** Reuse `_image_to_base64()` from existing node
-3. **Error Handling:** Return error message in both outputs on failure
-4. **Debug Log:** Include all settings, API response time, token counts
-5. **Validation:** Check API key before making request
+- [Adobe: 28 Types of Photography](https://www.adobe.com/creativecloud/photography/type.html)
+- [Pixpa: 33 Types of Photography](https://www.pixpa.com/blog/types-of-photography)
+- [Shutterstock: 30 Types of Photography](https://www.shutterstock.com/blog/types-of-photography)
+- [StudioBinder: Camera Shot Types](https://www.studiobinder.com/blog/ultimate-guide-to-camera-shots/)
+- [MasterClass: 15 Types of Photography](https://www.masterclass.com/articles/15-different-types-of-photography-explained)
+- [Photography Life: 26 Types of Photography](https://photographylife.com/types-of-photography)
 
 ---
 
-*Created: December 2025*
-*For: ComfyUI-AI-Photography-Toolkit Z-Image Integration*
+*Updated: December 2025*
+*Branch: dev/z-image*
