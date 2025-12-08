@@ -213,10 +213,26 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 ),
             ],
             outputs=[
-                comfy_io.String.Output("prompt"),
-                comfy_io.String.Output("structured_data"),
-                comfy_io.String.Output("metadata"),
-                comfy_io.String.Output("debug_log"),
+                comfy_io.String.Output(
+                    "prompt",
+                    display_name="Z-Image Prompt",
+                    tooltip="Z-Image compatible narrative prompt ready for generation"
+                ),
+                comfy_io.String.Output(
+                    "structured_data",
+                    display_name="Structured Data",
+                    tooltip="JSON with classification and extracted attributes"
+                ),
+                comfy_io.String.Output(
+                    "metadata",
+                    display_name="Image Metadata",
+                    tooltip="JSON with image info and Z-Image recommendations"
+                ),
+                comfy_io.String.Output(
+                    "debug_log",
+                    display_name="Debug Log",
+                    tooltip="Stage-by-stage processing details"
+                ),
             ],
         )
 
