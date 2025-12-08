@@ -3,6 +3,9 @@
 # Anthropic Claude API
 anthropic>=0.39.0
 
+# YAML config parsing
+pyyaml>=6.0
+
 # Image processing (usually included with ComfyUI, but listed for completeness)
 pillow>=10.0.0
 numpy>=1.24.0

@@ -1,0 +1,869 @@
+# Z-Image Prompt Generator Configuration
+# All metadata for shot framings, photography genres, and attribute schemas
+
+version: "1.0.0"
+
+# =============================================================================
+# SHOT FRAMINGS (Distance to Subject)
+# =============================================================================
+shot_framings:
+  ECU:
+    name: "Extreme Close-Up"
+    description: "Single feature (eye, lips, detail)"
+    use_case: "Emotion, texture, detail"
+    attributes: ["face_detail", "skin", "eyes", "lips"]
+
+  BCU:
+    name: "Big Close-Up"
+    description: "Face only (forehead to chin)"
+    use_case: "Intense emotion, beauty"
+    attributes: ["face", "eyes", "skin", "lips", "expression", "hair_partial"]
+
+  CU:
+    name: "Close-Up"
+    description: "Head and neck"
+    use_case: "Expression, portrait"
+    attributes: ["face", "eyes", "skin", "lips", "expression", "hair", "neck"]
+
+  MCU:
+    name: "Medium Close-Up"
+    description: "Head and shoulders"
+    use_case: "Conversation, headshot"
+    attributes: ["face", "eyes", "skin", "lips", "expression", "hair", "clothing_upper_partial", "accessories"]
+
+  MS:
+    name: "Medium Shot"
+    description: "Waist up"
+    use_case: "Upper body, gestures"
+    attributes: ["face", "expression", "hair", "body_upper", "clothing_upper", "pose_upper", "accessories"]
+
+  MCS:
+    name: "Medium Cowboy Shot"
+    description: "Mid-thigh up"
+    use_case: "Western style, holster visible"
+    attributes: ["face", "expression", "hair", "body_upper", "clothing_upper", "clothing_lower_partial", "pose_upper"]
+
+  MLS:
+    name: "Medium Long Shot"
+    description: "Knees up (3/4 shot)"
+    use_case: "Body language, outfit"
+    attributes: ["face", "body", "clothing_full", "pose_full", "accessories"]
+
+  FS:
+    name: "Full Shot"
+    description: "Head to toe"
+    use_case: "Complete figure, fashion"
+    attributes: ["face", "body", "body_exposure", "clothing_full", "pose_full", "footwear", "accessories"]
+
+  LS:
+    name: "Long Shot"
+    description: "Full body + surroundings"
+    use_case: "Context, environment"
+    attributes: ["body", "clothing_full", "pose_full", "environment", "lighting"]
+
+  ELS:
+    name: "Extreme Long Shot"
+    description: "Wide vista, tiny subject"
+    use_case: "Landscape, establishing"
+    attributes: ["environment", "atmosphere", "lighting", "subject_placement"]
+
+  VLS:
+    name: "Very Long Shot"
+    description: "Subject small in frame"
+    use_case: "Scale, isolation"
+    attributes: ["environment", "atmosphere", "lighting", "subject_silhouette"]
+
+
+# =============================================================================
+# PHOTOGRAPHY GENRES
+# =============================================================================
+photography_genres:
+  # --- People Photography ---
+  people:
+    PRT:
+      name: "Portrait"
+      description: "Face-focused, expressive"
+      key_attributes: ["face", "eyes", "expression", "lighting"]
+
+    HST:
+      name: "Headshot"
+      description: "Professional/actor portrait"
+      key_attributes: ["face", "shoulders", "clean_background"]
+
+    FSH:
+      name: "Fashion"
+      description: "Style/clothing focused"
+      key_attributes: ["outfit", "pose", "styling", "editorial"]
+
+    BTY:
+      name: "Beauty"
+      description: "Makeup/skincare focused"
+      key_attributes: ["skin", "makeup", "lighting", "closeup"]
+
+    GLM:
+      name: "Glamour"
+      description: "Sensual, elegant"
+      key_attributes: ["pose", "lighting", "mood", "styling"]
+
+    BDR:
+      name: "Boudoir"
+      description: "Intimate, private setting"
+      key_attributes: ["mood", "fabric", "soft_light"]
+
+    FIT:
+      name: "Fitness"
+      description: "Athletic, body-focused"
+      key_attributes: ["muscle_definition", "action", "sweat"]
+
+    MTR:
+      name: "Maternity"
+      description: "Pregnancy portraits"
+      key_attributes: ["belly", "soft_light", "emotion"]
+
+    NBN:
+      name: "Newborn"
+      description: "Baby photography"
+      key_attributes: ["soft", "delicate", "props"]
+
+    FAM:
+      name: "Family"
+      description: "Group/family portraits"
+      key_attributes: ["arrangement", "interaction"]
+
+    CPL:
+      name: "Couple"
+      description: "Two people together"
+      key_attributes: ["connection", "pose", "emotion"]
+
+    SNR:
+      name: "Senior"
+      description: "Graduation/milestone"
+      key_attributes: ["achievement", "personality"]
+
+    CRP:
+      name: "Corporate"
+      description: "Business professional"
+      key_attributes: ["clean", "confident", "branded"]
+
+  # --- Event Photography ---
+  event:
+    WED:
+      name: "Wedding"
+      description: "Ceremony/celebration"
+      key_attributes: ["emotion", "dress", "venue"]
+
+    CON:
+      name: "Concert"
+      description: "Live music/performance"
+      key_attributes: ["stage_lighting", "action"]
+
+    SPT:
+      name: "Sports"
+      description: "Athletic events"
+      key_attributes: ["motion", "peak_action", "emotion"]
+
+    EVT:
+      name: "Event"
+      description: "General gatherings"
+      key_attributes: ["candid", "venue", "crowd"]
+
+    STR:
+      name: "Street"
+      description: "Urban candid"
+      key_attributes: ["spontaneous", "context", "story"]
+
+    DOC:
+      name: "Documentary"
+      description: "Real-life storytelling"
+      key_attributes: ["authentic", "narrative"]
+
+    PJR:
+      name: "Photojournalism"
+      description: "News events"
+      key_attributes: ["action", "story", "impact"]
+
+  # --- Nature & Environment ---
+  nature:
+    LND:
+      name: "Landscape"
+      description: "Wide natural vistas"
+      key_attributes: ["horizon", "sky", "depth", "light"]
+
+    SEA:
+      name: "Seascape"
+      description: "Ocean/water scenes"
+      key_attributes: ["water", "waves", "horizon"]
+
+    CTY:
+      name: "Cityscape"
+      description: "Urban skylines"
+      key_attributes: ["buildings", "lights", "atmosphere"]
+
+    ARC:
+      name: "Architecture"
+      description: "Buildings/structures"
+      key_attributes: ["lines", "perspective", "detail"]
+
+    INT:
+      name: "Interior"
+      description: "Indoor spaces"
+      key_attributes: ["room", "furniture", "light"]
+
+    NAT:
+      name: "Nature"
+      description: "Natural world"
+      key_attributes: ["plants", "elements", "organic"]
+
+    WLD:
+      name: "Wildlife"
+      description: "Animals in habitat"
+      key_attributes: ["animal", "behavior", "environment"]
+
+    BRD:
+      name: "Bird"
+      description: "Avian subjects"
+      key_attributes: ["bird", "plumage", "action"]
+
+    PET:
+      name: "Pet"
+      description: "Domestic animals"
+      key_attributes: ["animal", "expression", "personality"]
+
+    MAC:
+      name: "Macro"
+      description: "Extreme close-up"
+      key_attributes: ["texture", "detail", "magnification"]
+
+    FLR:
+      name: "Flower"
+      description: "Botanical subjects"
+      key_attributes: ["petals", "color", "arrangement"]
+
+    UNW:
+      name: "Underwater"
+      description: "Below water surface"
+      key_attributes: ["blue_tones", "marine_life"]
+
+    AER:
+      name: "Aerial/Drone"
+      description: "Bird's eye view"
+      key_attributes: ["patterns", "scale", "perspective"]
+
+    AST:
+      name: "Astro"
+      description: "Night sky/stars"
+      key_attributes: ["stars", "milky_way", "long_exposure"]
+
+    STM:
+      name: "Storm"
+      description: "Weather phenomena"
+      key_attributes: ["clouds", "lightning", "drama"]
+
+  # --- Commercial & Product ---
+  commercial:
+    PRD:
+      name: "Product"
+      description: "Commercial items"
+      key_attributes: ["object", "lighting", "clean"]
+
+    FOD:
+      name: "Food"
+      description: "Culinary subjects"
+      key_attributes: ["appetizing", "styling", "fresh"]
+
+    BEV:
+      name: "Beverage"
+      description: "Drinks photography"
+      key_attributes: ["liquid", "condensation", "glass"]
+
+    JWL:
+      name: "Jewelry"
+      description: "Precious items"
+      key_attributes: ["sparkle", "detail", "luxury"]
+
+    AUT:
+      name: "Automotive"
+      description: "Vehicles"
+      key_attributes: ["curves", "reflections", "power"]
+
+    RLE:
+      name: "Real Estate"
+      description: "Property listing"
+      key_attributes: ["rooms", "space", "features"]
+
+    ADV:
+      name: "Advertising"
+      description: "Commercial campaigns"
+      key_attributes: ["message", "brand", "appeal"]
+
+  # --- Artistic & Creative ---
+  artistic:
+    ART:
+      name: "Fine Art"
+      description: "Artistic expression"
+      key_attributes: ["concept", "mood", "unique"]
+
+    ABS:
+      name: "Abstract"
+      description: "Non-representational"
+      key_attributes: ["shapes", "colors", "patterns"]
+
+    SUR:
+      name: "Surreal"
+      description: "Dreamlike imagery"
+      key_attributes: ["unusual", "manipulated"]
+
+    CNC:
+      name: "Conceptual"
+      description: "Idea-driven"
+      key_attributes: ["symbolism", "meaning"]
+
+    STL:
+      name: "Still Life"
+      description: "Arranged objects"
+      key_attributes: ["composition", "light", "objects"]
+
+    BNW:
+      name: "Black & White"
+      description: "Monochrome"
+      key_attributes: ["contrast", "tones", "shadow"]
+
+    DBL:
+      name: "Double Exposure"
+      description: "Layered images"
+      key_attributes: ["blend", "ghosting"]
+
+    LNG:
+      name: "Long Exposure"
+      description: "Extended shutter"
+      key_attributes: ["motion_blur", "light_trails"]
+
+    SIL:
+      name: "Silhouette"
+      description: "Backlit outline"
+      key_attributes: ["shape", "contrast"]
+
+    MIN:
+      name: "Minimalist"
+      description: "Simple, clean"
+      key_attributes: ["negative_space", "single_element"]
+
+  # --- Lifestyle & Travel ---
+  lifestyle:
+    LIF:
+      name: "Lifestyle"
+      description: "Curated living"
+      key_attributes: ["aspirational", "authentic_feel"]
+
+    TRV:
+      name: "Travel"
+      description: "Destinations"
+      key_attributes: ["culture", "landmarks", "adventure"]
+
+    CND:
+      name: "Candid"
+      description: "Unposed moments"
+      key_attributes: ["natural", "spontaneous"]
+
+    SLF:
+      name: "Self-Portrait/Selfie"
+      description: "Self-captured"
+      key_attributes: ["personal", "casual"]
+
+
+# =============================================================================
+# ATTRIBUTE SCHEMAS BY CONTENT DETAIL LEVEL
+# =============================================================================
+content_detail_levels:
+  minimal:
+    description: "Basic description only"
+    body: ["build"]
+    clothing: ["type", "color"]
+
+  standard:
+    description: "Normal detail level"
+    body: ["build", "posture"]
+    clothing: ["type", "fit", "color", "material"]
+
+  detailed:
+    description: "Body proportions, clothing cuts"
+    body: ["build", "posture", "proportions", "exposure_areas"]
+    clothing: ["type", "fit", "color", "material", "neckline", "coverage", "cutouts"]
+
+  explicit:
+    description: "Full NSFW detail for Z-Image"
+    body: ["build", "posture", "proportions", "exposure_full", "sensuality"]
+    clothing: ["type", "fit", "color", "material", "neckline", "coverage", "cutouts", "underwear", "swimwear_detail"]
+
+
+# =============================================================================
+# ATTRIBUTE DEFINITIONS
+# =============================================================================
+attributes:
+  # --- Subject ---
+  subject:
+    gender:
+      options: ["male", "female", "non-binary"]
+    age_range:
+      options: ["child", "teen", "young adult", "adult", "middle-aged", "elderly"]
+    ethnicity:
+      note: "Describe skin tone only"
+
+  # --- Face ---
+  face:
+    shape:
+      options: ["oval", "round", "heart", "square", "oblong", "diamond"]
+    angle:
+      options: ["frontal", "3/4 left", "3/4 right", "profile left", "profile right"]
+    tilt:
+      options: ["level", "tilted left", "tilted right", "chin up", "chin down"]
+
+  # --- Eyes ---
+  eyes:
+    color:
+      examples: ["hazel", "deep brown", "steel blue", "amber", "green", "gray"]
+    shape:
+      options: ["almond", "round", "hooded", "upturned", "downturned", "monolid"]
+    state:
+      options: ["open", "half-lidded", "closed", "squinting"]
+    gaze:
+      options: ["direct at camera", "looking left", "looking right", "looking up", "looking down", "distant"]
+    expression:
+      options: ["soft", "intense", "playful", "serious", "tired"]
+    makeup:
+      options: ["none", "natural", "bold", "smokey", "colorful"]
+    lashes:
+      options: ["natural", "mascara", "false lashes"]
+    brows:
+      options: ["natural", "groomed", "bold", "thin"]
+
+  # --- Skin ---
+  skin:
+    tone:
+      options: ["porcelain", "ivory", "fair", "light", "medium", "olive", "tan", "brown", "deep brown", "dark"]
+    undertone:
+      options: ["warm", "cool", "neutral"]
+    texture:
+      options: ["smooth", "freckled", "textured", "weathered"]
+    condition:
+      options: ["natural", "dewy", "matte", "glowing", "oily"]
+    features:
+      options: ["beauty marks", "scars", "dimples", "wrinkles"]
+
+  # --- Lips ---
+  lips:
+    shape:
+      options: ["full", "thin", "heart", "wide", "cupid's bow"]
+    color:
+      options: ["natural pink", "nude", "red", "berry", "coral"]
+    state:
+      options: ["closed", "slightly parted", "smiling", "pursed"]
+
+  # --- Expression ---
+  expression:
+    overall:
+      options: ["happy", "sad", "serious", "thoughtful", "surprised", "neutral", "sensual", "confident"]
+    intensity:
+      options: ["subtle", "moderate", "dramatic"]
+    authenticity:
+      options: ["genuine", "posed"]
+
+  # --- Hair ---
+  hair:
+    color:
+      options: ["black", "dark brown", "chestnut", "auburn", "red", "blonde", "platinum", "gray", "white"]
+    highlights:
+      options: ["none", "subtle", "balayage", "streaks"]
+    length:
+      options: ["bald", "buzz", "short", "medium", "shoulder-length", "long", "very long"]
+    texture:
+      options: ["straight", "wavy", "curly", "coily", "kinky"]
+    style:
+      options: ["loose", "ponytail", "bun", "braids", "updo", "messy", "slicked"]
+    state:
+      options: ["clean", "wet", "windswept", "disheveled"]
+    parting:
+      options: ["center", "side left", "side right", "none"]
+    bangs:
+      options: ["none", "full", "side-swept", "curtain"]
+
+  # --- Facial Hair ---
+  facial_hair:
+    type:
+      options: ["none", "stubble", "beard", "mustache", "goatee"]
+    length:
+      options: ["short", "medium", "long"]
+    grooming:
+      options: ["neat", "rugged", "styled"]
+
+  # --- Body Upper ---
+  body_upper:
+    shoulders:
+      options: ["narrow", "average", "broad", "sloped"]
+    bust:
+      size:
+        options: ["small", "medium", "large", "very large"]
+      shape:
+        options: ["natural", "rounded", "perky"]
+      cleavage:
+        options: ["none", "subtle", "moderate", "prominent", "deep"]
+    torso:
+      type:
+        options: ["slim", "toned", "athletic", "soft", "muscular"]
+      waist:
+        options: ["narrow", "defined", "average", "wide"]
+      midriff:
+        options: ["covered", "partially visible", "fully exposed"]
+    back:
+      exposure:
+        options: ["none", "upper back", "full back", "backless"]
+
+  # --- Body Full ---
+  body:
+    build:
+      options: ["slim", "petite", "athletic", "toned", "average", "curvy", "hourglass", "plus-size", "muscular"]
+    height:
+      options: ["appears short", "average", "tall"]
+    posture:
+      options: ["upright", "relaxed", "slouched", "dynamic", "arched"]
+    proportions:
+      bust:
+        options: ["small", "medium", "large", "very large"]
+      waist:
+        options: ["narrow", "defined", "average"]
+      hips:
+        options: ["narrow", "average", "wide", "curvy"]
+      legs:
+        options: ["slim", "toned", "athletic", "curvy", "long"]
+
+  # --- Body Exposure (NSFW detail) ---
+  body_exposure:
+    chest:
+      options: ["fully covered", "cleavage visible", "sideboob", "underboob"]
+    stomach:
+      options: ["covered", "midriff visible", "navel visible", "fully exposed"]
+    back:
+      options: ["covered", "lower back visible", "full back exposed"]
+    hips:
+      options: ["covered", "hip bones visible", "side hip exposed"]
+    thigh:
+      options: ["covered", "partially visible", "fully visible", "inner thigh visible"]
+    thigh_coverage:
+      options: ["full", "knee", "mid-thigh", "high-thigh", "minimal"]
+    buttocks:
+      options: ["fully covered", "outlined", "partially visible", "cheeks visible"]
+
+  # --- Clothing Upper ---
+  clothing_upper:
+    type:
+      options: ["shirt", "blouse", "t-shirt", "sweater", "jacket", "coat", "dress", "tank top", "crop top", "bralette", "bikini top", "lingerie", "corset", "bodysuit", "swimwear"]
+    neckline:
+      style:
+        options: ["crew", "v-neck", "deep-v", "plunging", "scoop", "sweetheart", "off-shoulder", "halter", "strapless", "turtleneck", "collared", "keyhole", "cowl"]
+      depth:
+        options: ["high", "moderate", "low", "very low"]
+    sleeves:
+      options: ["sleeveless", "spaghetti strap", "cap", "short", "3/4", "long", "rolled up"]
+    coverage:
+      chest:
+        options: ["full", "moderate", "minimal", "sheer"]
+      shoulders:
+        options: ["covered", "one exposed", "both exposed"]
+      midriff:
+        options: ["covered", "peek", "cropped", "exposed"]
+      back:
+        options: ["covered", "low-back", "backless", "cutout"]
+    color:
+      note: "Specific colors and patterns"
+    pattern:
+      options: ["solid", "striped", "floral", "plaid", "abstract", "printed", "sheer"]
+    material:
+      options: ["cotton", "silk", "satin", "lace", "mesh", "sheer", "leather", "latex", "knit", "denim"]
+    fit:
+      options: ["loose", "relaxed", "fitted", "tight", "form-fitting", "oversized"]
+    condition:
+      options: ["pristine", "casual", "rumpled", "wet", "see-through when wet"]
+    cutouts:
+      options: ["none", "side", "front", "back", "multiple"]
+    straps:
+      options: ["thick", "thin", "spaghetti", "halter", "criss-cross", "none"]
+
+  # --- Clothing Lower ---
+  clothing_lower:
+    type:
+      options: ["pants", "jeans", "skirt", "shorts", "mini skirt", "micro skirt", "leggings", "bikini bottom", "thong", "boyshorts", "g-string"]
+    fit:
+      options: ["skinny", "straight", "wide-leg", "A-line", "bodycon", "high-cut"]
+    length:
+      options: ["full", "ankle", "calf", "knee", "mid-thigh", "mini", "micro"]
+    rise:
+      options: ["high-waist", "mid-rise", "low-rise", "very low"]
+    slit:
+      options: ["none", "side slit", "front slit", "high slit", "double slit"]
+
+  # --- Dress Specifics ---
+  dress:
+    length:
+      options: ["floor", "midi", "knee", "above-knee", "mini", "micro"]
+    back:
+      options: ["covered", "low-back", "backless", "cutout"]
+    slit:
+      options: ["none", "side", "front", "high slit to hip"]
+
+  # --- Swimwear ---
+  swimwear:
+    top_style:
+      options: ["triangle", "bandeau", "halter", "underwire", "string", "micro"]
+    bottom_style:
+      options: ["brief", "bikini", "high-cut", "brazilian", "thong", "g-string", "micro"]
+    coverage:
+      options: ["full", "moderate", "minimal", "micro"]
+    tie_details:
+      options: ["side-tie", "back-tie", "front-tie"]
+
+  # --- Lingerie ---
+  lingerie:
+    type:
+      options: ["bra", "bralette", "teddy", "bodysuit", "babydoll", "corset"]
+    style:
+      options: ["push-up", "balconette", "demi", "full coverage", "sheer"]
+    matching:
+      options: ["yes", "no"]
+
+  # --- Footwear ---
+  footwear:
+    type:
+      options: ["barefoot", "sneakers", "heels", "stilettos", "platform", "boots", "sandals", "flats"]
+    heel_height:
+      options: ["flat", "low", "medium", "high", "very high"]
+    style:
+      options: ["strappy", "platform", "pointed", "open-toe", "thigh-high"]
+
+  # --- Accessories ---
+  accessories:
+    necklace:
+      options: ["none", "choker", "pendant", "chain", "statement", "body chain"]
+    earrings:
+      options: ["none", "studs", "hoops", "dangles", "statement"]
+    glasses:
+      options: ["none", "prescription", "sunglasses"]
+    watch:
+      options: ["none", "casual", "luxury", "smart"]
+    hat:
+      options: ["none", "baseball cap", "beanie", "fedora", "sun hat"]
+    body_jewelry:
+      options: ["none", "belly piercing", "body chain", "anklet"]
+
+  # --- Pose Upper ---
+  pose_upper:
+    shoulders:
+      options: ["squared", "angled", "one raised", "relaxed", "tense"]
+    arms:
+      options: ["at sides", "crossed", "raised", "one on hip", "behind head", "covering chest"]
+    hands:
+      options: ["visible", "hidden", "gesturing", "touching face", "in hair", "on body"]
+    head_position:
+      options: ["straight", "tilted", "turned", "thrown back"]
+    body_angle:
+      options: ["frontal", "3/4", "profile", "back view"]
+    chest_position:
+      options: ["straight", "turned", "arched", "leaning forward"]
+
+  # --- Pose Full ---
+  pose_full:
+    stance:
+      options: ["standing", "sitting", "lying", "kneeling", "crouching", "bending", "walking", "running"]
+    weight:
+      options: ["centered", "shifted left", "shifted right", "contrapposto"]
+    legs:
+      options: ["together", "apart", "crossed", "one bent", "spread", "wrapped"]
+    feet:
+      options: ["together", "apart", "one forward", "pointed", "flexed"]
+    hips:
+      options: ["straight", "cocked to side", "tilted", "thrust forward", "thrust back"]
+    back:
+      options: ["straight", "arched", "curved", "twisted"]
+    dynamic:
+      options: ["static", "in motion", "jumping", "leaning", "stretching", "lounging"]
+    sensuality:
+      options: ["none", "subtle", "moderate", "pronounced"]
+
+  # --- Interaction ---
+  interaction:
+    with_props:
+      options: ["holding", "sitting on", "leaning against", "straddling", "embracing"]
+    with_environment:
+      options: ["integrated", "isolated", "interacting"]
+    with_clothing:
+      options: ["natural", "adjusting", "pulling", "lifting", "sliding off"]
+    with_body:
+      options: ["hands on hips", "touching hair", "touching face", "arms wrapped"]
+
+  # --- Environment ---
+  environment:
+    setting_type:
+      options: ["studio", "indoor", "outdoor", "mixed"]
+    location:
+      options: ["bedroom", "living room", "office", "cafe", "street", "beach", "forest", "mountain", "urban", "rural", "pool", "bathroom", "rooftop"]
+
+  # --- Background ---
+  background:
+    clarity:
+      options: ["sharp", "soft", "very blurred (bokeh)"]
+    complexity:
+      options: ["simple", "moderate", "complex"]
+    color:
+      options: ["neutral", "colorful", "dark", "light"]
+    elements:
+      options: ["wall", "window", "nature", "architecture", "crowd", "none"]
+
+  # --- Lighting ---
+  lighting:
+    type:
+      options: ["natural", "artificial", "mixed"]
+    source:
+      options: ["sun", "window", "studio lights", "practical lights", "neon", "candles", "fire"]
+    direction:
+      options: ["front", "side", "back", "top", "bottom", "rim"]
+    quality:
+      options: ["hard", "soft", "diffused", "dramatic"]
+    color_temperature:
+      options: ["warm", "neutral", "cool", "mixed"]
+    time_of_day:
+      options: ["morning", "midday", "golden hour", "blue hour", "night"]
+    shadows:
+      options: ["minimal", "soft", "dramatic", "hard"]
+
+  # --- Atmosphere ---
+  atmosphere:
+    mood:
+      options: ["bright", "moody", "dreamy", "dramatic", "intimate", "energetic", "romantic", "sultry"]
+    weather:
+      options: ["clear", "cloudy", "foggy", "rainy", "snowy"]
+    depth:
+      options: ["shallow", "moderate", "deep"]
+
+
+# =============================================================================
+# Z-IMAGE RECOMMENDATIONS
+# =============================================================================
+zimage_settings:
+  optimal_resolution:
+    native: [1024, 1024]
+    portrait: [1024, 1280]
+    landscape: [1280, 1024]
+
+  inference:
+    steps: 9
+    guidance_scale: 0.0
+    max_sequence_length: 1024
+
+  token_limits:
+    online_demo: 512
+    local_usage: 1024
+    sweet_spot: [80, 250]  # words
+
+  resize_methods:
+    - lanczos
+    - bicubic
+
+
+# =============================================================================
+# PROMPT TEMPLATES
+# =============================================================================
+prompt_templates:
+  # System prompts for each stage
+  classification:
+    system: |
+      You are an expert image analyst. Classify this image precisely.
+
+      Output JSON only:
+      {
+        "shot_framing": "<ECU|BCU|CU|MCU|MS|MCS|MLS|FS|LS|ELS|VLS>",
+        "genre": "<3-letter code>",
+        "genre_category": "<people|event|nature|commercial|artistic|lifestyle>",
+        "secondary_tags": ["<tag1>", "<tag2>"],
+        "subject_count": <0|1|2|"group">,
+        "has_text": <true|false>,
+        "confidence": <0.0-1.0>
+      }
+
+  detailed_analysis:
+    system: |
+      You are an expert visual analyst for Z-Image prompt generation.
+      Analyze the image and extract attributes according to the provided schema.
+
+      RULES:
+      - Only describe VISIBLE elements
+      - Use concrete, objective language
+      - No abstract adjectives (beautiful, mysterious)
+      - Be specific about colors, materials, textures
+
+      Output JSON matching the attribute schema provided.
+
+  prompt_composition:
+    system: |
+      You are an expert prompt composer for Z-Image-Turbo.
+
+      Convert the structured attributes into a flowing narrative prompt.
+
+      RULES:
+      - Single flowing paragraph
+      - {min_words}-{max_words} words
+      - Natural language, NOT keyword lists
+      - NO meta-tags (8K, masterpiece, best quality)
+      - NO negative prompts
+      - Quote any visible text with "quotes"
+
+      STRUCTURE:
+      1. Shot type and composition
+      2. Subject description
+      3. Clothing/materials
+      4. Environment/background
+      5. Lighting description
+      6. Style and mood (if enabled)
+
+
+# =============================================================================
+# FOCUS OVERRIDE MAPPINGS
+# =============================================================================
+focus_overrides:
+  "Auto-detect": null
+  "Portrait/People":
+    shot_framings: ["ECU", "BCU", "CU", "MCU", "MS"]
+    genres: ["PRT", "HST", "BTY", "GLM"]
+  "Full Body/Fashion":
+    shot_framings: ["MLS", "FS", "LS"]
+    genres: ["FSH", "GLM", "FIT"]
+  "Landscape/Environment":
+    shot_framings: ["LS", "ELS", "VLS"]
+    genres: ["LND", "SEA", "CTY", "NAT"]
+  "Product/Object":
+    shot_framings: ["CU", "MCU", "MS"]
+    genres: ["PRD", "STL", "JWL"]
+  "Food/Beverage":
+    shot_framings: ["CU", "MCU", "MS"]
+    genres: ["FOD", "BEV"]
+  "Architecture/Interior":
+    shot_framings: ["MS", "LS", "ELS"]
+    genres: ["ARC", "INT", "RLE"]
+
+
+# =============================================================================
+# DETAIL LEVEL SETTINGS
+# =============================================================================
+detail_levels:
+  Quick:
+    llm_calls: 1
+    tokens: 100
+    description: "Fast classification and basic prompt"
+
+  Standard:
+    llm_calls: 2
+    tokens: 300
+    description: "Classification + detailed analysis"
+
+  Deep:
+    llm_calls: 3
+    tokens: 500
+    description: "Full multi-stage agentic analysis"

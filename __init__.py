@@ -4,10 +4,10 @@ A collection of AI-powered photography and image generation tools for ComfyUI.
 All nodes are prefixed with SID_ for easy identification.
 
 Author: Siddhartha Lahiri
-Version: 3.0.1
+Version: 3.1.0
 """
 
-__version__ = "3.0.1"
+__version__ = "3.1.0"
 
 import os
 import sys
@@ -21,6 +21,7 @@ def install_dependencies():
     """
     dependencies = {
         "anthropic": "anthropic>=0.39.0",
+        "yaml": "pyyaml>=6.0",
     }
 
     python_exe = sys.executable
@@ -52,6 +53,7 @@ from comfy_api.latest import ComfyExtension, io
 
 # Import all node classes
 from .sid_ai_prompt_generator import SID_AIPromptGenerator
+from .sid_zimage_prompt_generator import SID_ZImagePromptGenerator
 
 
 class SIDPhotographyToolkitExtension(ComfyExtension):
@@ -68,10 +70,9 @@ class SIDPhotographyToolkitExtension(ComfyExtension):
         """
         return [
             SID_AIPromptGenerator,
+            SID_ZImagePromptGenerator,
             # Future nodes will be added here
-            # SID_ImageAnalyzer,
-            # SID_StyleTransfer,
-            # etc.
+            # SID_ZImagePromptEnhancer,
         ]
 
 
@@ -85,6 +86,7 @@ async def comfy_entrypoint() -> SIDPhotographyToolkitExtension:
     print("="*60)
     print("Nodes loaded:")
     print("  - SID_AIPromptGenerator: AI-powered prompt generation from images")
+    print("  - SID_ZImagePromptGenerator: Z-Image compatible narrative prompts")
     print("="*60 + "\n")
 
     return SIDPhotographyToolkitExtension()
