@@ -23,6 +23,7 @@ import numpy as np
 from PIL import Image
 from typing_extensions import override
 from comfy_api.latest import ComfyExtension, io as comfy_io
+import comfy.utils
 
 from .utils.zimage_utils import (
     load_zimage_config,
@@ -439,6 +440,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             # Convert image to base64
             base64_image = cls._image_to_base64(image)
 
+            # Initialize progress bar (6 stages)
+            pbar = comfy.utils.ProgressBar(6)
+
             # ===== STAGE 1: CLASSIFICATION =====
             log("[STAGE 1] Classification (LLM Call #1)")
             stage1_start = time.time()
@@ -454,6 +458,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             log(f"  Has Text: {classification.get('has_text', False)}")
             log(f"  Duration: {time.time() - stage1_start:.1f}s")
             log("")
+            pbar.update(1)
 
             # ===== STAGE 2: METADATA =====
             log("[STAGE 2] Metadata Extraction")
@@ -463,6 +468,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             log(f"  Aspect Ratio: {image_meta['aspect_ratio']} ({image_meta['aspect_decimal']})")
             log(f"  Orientation: {image_meta['orientation']}")
             log("")
+            pbar.update(1)
 
             # ===== STAGE 3: ATTRIBUTE MAPPING =====
             log("[STAGE 3] Attribute Mapping")
@@ -475,6 +481,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             log(f"  Scene: {classification['shot_framing']} + {classification['genre']}")
             log(f"  Selected categories: {', '.join(attribute_schema.keys())}")
             log("")
+            pbar.update(1)
 
             # ===== STAGE 4: DETAILED ANALYSIS =====
             if detail_level in ["Standard", "Deep"]:
@@ -496,6 +503,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 attributes = {"classification": classification}
                 log("[STAGE 4] Skipped (Quick mode)")
                 log("")
+            pbar.update(1)
 
             # ===== STAGE 5: PROMPT COMPOSITION =====
             log("[STAGE 5] Prompt Composition")
@@ -532,6 +540,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             log(f"  Estimated tokens: {estimated_tokens}")
             log(f"  Duration: {time.time() - stage5_start:.1f}s")
             log("")
+            pbar.update(1)
 
             # ===== STAGE 6: Z-IMAGE RECOMMENDATIONS =====
             log("[STAGE 6] Z-Image Recommendations")
@@ -543,6 +552,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 log(f"  Resize: Not needed (already optimal)")
             log(f"  Quality estimate: {zimage_recs['quality_estimate'].upper()}")
             log("")
+            pbar.update(1)
 
             # Build structured data output
             structured_data = {
