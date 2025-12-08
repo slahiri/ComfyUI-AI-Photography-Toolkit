@@ -52,7 +52,6 @@ from typing_extensions import override
 from comfy_api.latest import ComfyExtension, io
 
 # Import all node classes
-from .sid_ai_prompt_generator import SID_AIPromptGenerator
 from .sid_zimage_prompt_generator import SID_ZImagePromptGenerator
 
 
@@ -69,7 +68,6 @@ class SIDPhotographyToolkitExtension(ComfyExtension):
         Add new nodes here as they are created.
         """
         return [
-            SID_AIPromptGenerator,
             SID_ZImagePromptGenerator,
             # Future nodes will be added here
             # SID_ZImagePromptEnhancer,
@@ -85,7 +83,6 @@ async def comfy_entrypoint() -> SIDPhotographyToolkitExtension:
     print(f"Loading SID Photography Toolkit v{__version__} for ComfyUI")
     print("="*60)
     print("Nodes loaded:")
-    print("  - SID_AIPromptGenerator: AI-powered prompt generation from images")
     print("  - SID_ZImagePromptGenerator: Z-Image compatible narrative prompts")
     print("="*60 + "\n")
 
