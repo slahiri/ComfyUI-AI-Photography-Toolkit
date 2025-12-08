@@ -8,360 +8,403 @@
 
 **Provider**: Anthropic/Claude only (other providers deferred)
 
-**Goal**: Enable the SID_AIPromptGenerator node to output Z-Image compatible prompts
+**Goal**: Create two new nodes for Z-Image prompt generation and enhancement
 
 ---
 
-## Current State
+## Architecture: Two-Node Design
 
-### Existing Node: `SID_AIPromptGenerator`
+### Node 1: `SID_Z_Image_Prompt_Generator`
 
-**Inputs:**
-- image, api_key, model, user_prompt
-- photography_style, target_model, color_style
-- photographer_style, lighting_condition
-- seed, temperature, max_tokens
+**Purpose**: Analyze an image and generate a Z-Image compatible narrative prompt
 
-**Outputs:**
-- positive (STRING) - comma-separated keywords
-- negative (STRING) - comma-separated keywords
-- sampler_config (STRING) - markdown guide
+**Use Case**: Image → Prompt (vision-based analysis)
 
-**Prompt Format:**
 ```
-POSITIVE: term1, term2, term3, ...
-NEGATIVE: term1, term2, term3, ...
+[Load Image] → [SID_Z_Image_Prompt_Generator] → [Z-Image Model]
+```
+
+### Node 2: `SID_Z_Image_Prompt_Enhancer`
+
+**Purpose**: Transform a simple text prompt into a detailed Z-Image narrative
+
+**Use Case**: Simple Prompt → Enhanced Prompt (text-only, no image required)
+
+```
+[Text Input] → [SID_Z_Image_Prompt_Enhancer] → [Z-Image Model]
 ```
 
 ---
 
-## Target State
+## Node 1: SID_Z_Image_Prompt_Generator
 
-### Enhanced Outputs
+### Description
+
+Analyzes an input image using Claude's vision capabilities and generates a Z-Image compatible narrative prompt. Includes photography style presets for artistic control.
+
+### Inputs
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `image` | IMAGE | required | Input image to analyze |
+| `api_key` | STRING | "" | Anthropic API key |
+| `model` | COMBO | claude-sonnet-4-5-20250929 | Claude model selection |
+| `user_prompt` | STRING | "" | Additional context/instructions |
+| `photography_style` | COMBO | "Detailed" | Minimal, Detailed, Technical, Ultra-Detailed |
+| `color_style` | COMBO | "None" | None, B&W, Color, Sepia, etc. |
+| `photographer_style` | COMBO | "None" | None + 20 famous photographers |
+| `lighting_condition` | COMBO | "None" | None + 31 lighting setups |
+| `include_text_quotes` | BOOLEAN | True | Wrap text elements in quotes |
+| `max_length` | INT | 2000 | Max output characters (0=unlimited) |
+| `temperature` | FLOAT | 0.7 | Creativity level (0.0-1.0) |
+| `seed` | INT | 0 | Random seed |
+
+### Outputs
 
 | Output | Type | Description |
 |--------|------|-------------|
-| positive | STRING | Keyword format (existing) |
-| negative | STRING | Keyword format (existing) |
-| **narrative_prompt** | STRING | **NEW** - Z-Image compatible narrative |
-| sampler_config | STRING | Markdown guide (existing) |
+| `prompt` | STRING | Z-Image compatible narrative prompt |
+| `debug_log` | STRING | Debug information |
 
-### New Parameters
+### System Prompt Template
 
-| Parameter | Type | Default | Options |
-|-----------|------|---------|---------|
-| **output_format** | COMBO | "keyword" | "keyword", "narrative", "both" |
-| **text_quote_style** | COMBO | "none" | "none", "z-image" |
-| **max_narrative_length** | INT | 2000 | 0-10000 |
+```
+You are an expert visual analyst creating prompts for Z-Image-Turbo.
+Analyze the provided image and generate a detailed narrative description.
+
+## OUTPUT FORMAT
+Single flowing paragraph, {min_words}-{max_words} words, natural language.
+NO keyword lists. NO meta-tags. NO negative prompts.
+
+## STRUCTURE
+1. Shot type and composition
+2. Subject description (visible features only)
+3. Clothing/objects (colors, materials, textures)
+4. Environment/background
+5. Lighting (direction, quality, color temperature)
+6. Style and mood
+
+## RULES
+- Describe ONLY visible elements
+- Use concrete, objective language
+- NO abstract adjectives (beautiful, mysterious)
+- NO quality tags (8K, masterpiece, best quality)
+{text_quote_rule}
+
+{style_guidance}
+```
+
+---
+
+## Node 2: SID_Z_Image_Prompt_Enhancer
+
+### Description
+
+Takes a simple text prompt and enhances it into a detailed Z-Image compatible narrative. Does NOT require an image input - uses Claude's knowledge to expand the description.
+
+### Inputs
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `prompt` | STRING | required | Simple prompt to enhance |
+| `api_key` | STRING | "" | Anthropic API key |
+| `model` | COMBO | claude-sonnet-4-5-20250929 | Claude model selection |
+| `enhancement_level` | COMBO | "Detailed" | Minimal, Detailed, Comprehensive |
+| `subject_type` | COMBO | "Auto" | Auto, Portrait, Landscape, Product, Action, Architecture |
+| `style_direction` | STRING | "" | Optional style guidance |
+| `include_lighting` | BOOLEAN | True | Add lighting descriptions |
+| `include_composition` | BOOLEAN | True | Add composition details |
+| `include_text_quotes` | BOOLEAN | True | Wrap text elements in quotes |
+| `max_length` | INT | 2000 | Max output characters |
+| `temperature` | FLOAT | 0.7 | Creativity level |
+| `seed` | INT | 0 | Random seed |
+
+### Outputs
+
+| Output | Type | Description |
+|--------|------|-------------|
+| `enhanced_prompt` | STRING | Enhanced Z-Image narrative |
+| `debug_log` | STRING | Debug information |
+
+### System Prompt Template
+
+```
+You are an expert prompt engineer for Z-Image-Turbo.
+Transform the user's simple prompt into a detailed visual description.
+
+## INPUT PROMPT
+{user_prompt}
+
+## YOUR TASK
+Expand this into a rich, detailed narrative description suitable for
+Z-Image-Turbo image generation.
+
+## OUTPUT FORMAT
+Single flowing paragraph, {min_words}-{max_words} words.
+Natural language description, NOT a keyword list.
+
+## ENHANCEMENT GUIDELINES
+- Preserve the core intent of the original prompt
+- Add specific visual details (colors, textures, materials)
+- Include spatial relationships and composition
+{lighting_instruction}
+{composition_instruction}
+- Keep backgrounds simple unless specified
+{text_quote_rule}
+
+## RULES
+- NO meta-tags (8K, masterpiece, best quality, high quality)
+- NO negative prompts or exclusions
+- NO abstract adjectives without visual backing
+- Every word should describe something VISIBLE
+
+## SUBJECT-SPECIFIC GUIDANCE ({subject_type})
+{subject_guidance}
+
+{style_direction_block}
+```
+
+### Enhancement Levels
+
+| Level | Word Count | Detail |
+|-------|------------|--------|
+| Minimal | 50-80 | Core elements only |
+| Detailed | 100-180 | Standard enhancement |
+| Comprehensive | 200-300 | Maximum detail |
+
+### Subject Type Guidance
+
+**Portrait:**
+```
+- Describe age, visible features, expression
+- Include clothing details (color, material, fit)
+- Specify pose and body language
+- Add lighting on face/skin
+```
+
+**Landscape:**
+```
+- Layer foreground, middle ground, background
+- Include sky and atmospheric conditions
+- Describe natural lighting and time of day
+- Add environmental details (weather, season)
+```
+
+**Product:**
+```
+- Focus on materials and surface textures
+- Describe colors accurately
+- Include arrangement and props
+- Specify lighting for product photography
+```
+
+**Action:**
+```
+- Capture motion and dynamic poses
+- Describe body position and movement direction
+- Include motion blur if appropriate
+- Add dramatic lighting
+```
+
+**Architecture:**
+```
+- Describe structural elements and materials
+- Include perspective and viewpoint
+- Add environmental context
+- Specify lighting conditions
+```
+
+---
+
+## File Structure
+
+```
+ComfyUI-AI-Photography-Toolkit/
+├── __init__.py                              (updated)
+├── sid_ai_prompt_generator.py               (existing - unchanged)
+├── sid_zimage_prompt_generator.py           (NEW)
+├── sid_zimage_prompt_enhancer.py            (NEW)
+├── utils/
+│   ├── __init__.py                          (NEW)
+│   └── zimage_utils.py                      (NEW - shared utilities)
+├── docs/
+│   ├── Z-IMAGE-PROMPTING-GUIDE.md           (existing)
+│   └── Z-IMAGE-INTEGRATION-PLAN.md          (this file)
+└── README.md                                (updated)
+```
 
 ---
 
 ## Implementation Tasks
 
-### Phase 1: Parameter Addition
+### Phase 1: Shared Utilities
 
-**File:** `sid_ai_prompt_generator.py`
-
-1. Add `output_format` input parameter (COMBO)
-2. Add `text_quote_style` input parameter (COMBO)
-3. Add `max_narrative_length` input parameter (INT)
-4. Add `narrative_prompt` output
-
-**Estimated changes:** ~30 lines in INPUT_TYPES, ~5 lines in RETURN_TYPES
-
----
-
-### Phase 2: Z-Image System Prompt Template
-
-**File:** `sid_ai_prompt_generator.py`
-
-Create new constant `ZIMAGE_SYSTEM_PROMPT_TEMPLATE`:
+**File:** `utils/zimage_utils.py`
 
 ```python
-ZIMAGE_SYSTEM_PROMPT_TEMPLATE = """
-You are an expert at creating prompts for Z-Image-Turbo, a 6B parameter
-text-to-image model. Your task is to analyze the provided image and generate
-a detailed, narrative-style prompt.
-
-## OUTPUT REQUIREMENTS
-
-Generate a SINGLE PARAGRAPH of flowing natural language (80-250 words) that
-describes the visual scene. This is NOT a keyword list.
-
-## STRUCTURE
-
-Follow this order:
-1. Shot type and composition (close-up, medium shot, full-body, wide)
-2. Subject description (age, features, expression, pose)
-3. Clothing and accessories (specific details, colors, materials)
-4. Environment/background (keep simple, avoid clutter)
-5. Lighting setup (Z-Image responds exceptionally well to lighting)
-6. Style and technical notes (photography style, camera feel)
-7. Safety constraints if needed (append at end)
-
-## RULES
-
-DO:
-- Write complete sentences in natural language
-- Describe only VISIBLE elements (colors, shapes, textures, materials)
-- Include specific lighting direction and quality
-- Specify camera angle and shot type
-- Use concrete, objective descriptions
-{text_quote_instruction}
-
-DO NOT:
-- Use comma-separated keyword lists
-- Include meta-tags: "8K", "masterpiece", "best quality", "high quality"
-- Use abstract adjectives: "beautiful", "mysterious", "interesting"
-- Include negative prompts or exclusions (Z-Image doesn't use them)
-- Add quality boosters or model-specific tags
-- Write backstory or invisible context
-
-## PHOTOGRAPHY STYLE GUIDANCE
-
-{photography_style_guidance}
-
-## COLOR TREATMENT
-
-{color_guidance}
-
-## LIGHTING
-
-{lighting_guidance}
-
-## PHOTOGRAPHER REFERENCE
-
-{photographer_guidance}
-
-## OUTPUT FORMAT
-
-Return ONLY the prompt text. No labels, no "POSITIVE:", no explanations.
-Single paragraph, 80-250 words, natural flowing language.
-"""
-```
-
----
-
-### Phase 3: Template Building Logic
-
-**File:** `sid_ai_prompt_generator.py`
-
-Modify `_build_system_prompt()` method:
-
-```python
-def _build_system_prompt(self, model_info, photography_style, color_style,
-                         photographer_style, lighting_condition,
-                         output_format, text_quote_style):
-
-    if output_format == "narrative" or output_format == "both":
-        # Build Z-Image narrative template
-        template = self._build_zimage_template(
-            photography_style, color_style,
-            photographer_style, lighting_condition,
-            text_quote_style
-        )
-    else:
-        # Use existing keyword template
-        template = self._build_keyword_template(...)
-
-    return template
-```
-
-Add new method `_build_zimage_template()`:
-
-```python
-def _build_zimage_template(self, photography_style, color_style,
-                            photographer_style, lighting_condition,
-                            text_quote_style):
-
-    # Text quotation instruction
-    text_quote_instruction = ""
-    if text_quote_style == "z-image":
-        text_quote_instruction = '- Wrap any text in the image with English double quotes: "text here"'
-
-    # Photography style mapping (narrative versions)
-    photography_guidance = self._get_zimage_photography_guidance(photography_style)
-
-    # Color treatment (positive embedding)
-    color_guidance = self._get_zimage_color_guidance(color_style)
-
-    # Lighting (detailed descriptions)
-    lighting_guidance = self._get_zimage_lighting_guidance(lighting_condition)
-
-    # Photographer aesthetic
-    photographer_guidance = self._get_zimage_photographer_guidance(photographer_style)
-
-    return ZIMAGE_SYSTEM_PROMPT_TEMPLATE.format(
-        text_quote_instruction=text_quote_instruction,
-        photography_style_guidance=photography_guidance,
-        color_guidance=color_guidance,
-        lighting_guidance=lighting_guidance,
-        photographer_guidance=photographer_guidance
-    )
-```
-
----
-
-### Phase 4: Response Parsing
-
-**File:** `sid_ai_prompt_generator.py`
-
-Modify `_parse_response()` to handle narrative format:
-
-```python
-def _parse_response(self, response_text, output_format):
-    if output_format == "keyword":
-        return self._parse_keyword_response(response_text)
-    elif output_format == "narrative":
-        return self._parse_narrative_response(response_text)
-    else:  # "both"
-        keyword_result = self._parse_keyword_response(response_text)
-        narrative_result = self._parse_narrative_response(response_text)
-        return {**keyword_result, **narrative_result}
-```
-
-Add `_parse_narrative_response()`:
-
-```python
-def _parse_narrative_response(self, response_text):
-    cleaned = self._clean_zimage_output(response_text)
-    return {"narrative_prompt": cleaned}
-```
-
----
-
-### Phase 5: Output Cleaning
-
-**File:** `sid_ai_prompt_generator.py`
-
-Add Z-Image specific cleaning function:
-
-```python
-def _clean_zimage_output(self, text, max_length=2000):
+# Output cleaning
+def clean_zimage_output(text, max_length=2000):
     """Clean LLM output for Z-Image compatibility."""
+    ...
 
-    # 1. Remove thinking tags
-    text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
-    text = re.sub(r'</think>', '', text)
+# Photography style mappings
+PHOTOGRAPHY_STYLES = {...}
+LIGHTING_CONDITIONS = {...}
+PHOTOGRAPHER_STYLES = {...}
+COLOR_STYLES = {...}
 
-    # 2. Remove markdown code blocks
-    text = re.sub(r'```[\s\S]*?```', '', text)
-    text = re.sub(r'`([^`]*)`', r'\1', text)
+# Subject type guidance
+SUBJECT_GUIDANCE = {...}
 
-    # 3. Remove common prefixes
-    prefixes = [
-        "Here is the enhanced prompt:",
-        "Enhanced prompt:",
-        "Final prompt:",
-        "POSITIVE:",
-        "Prompt:",
-    ]
-    for prefix in prefixes:
-        if text.strip().startswith(prefix):
-            text = text.strip()[len(prefix):].strip()
+# Enhancement level settings
+ENHANCEMENT_LEVELS = {...}
+```
 
-    # 4. Remove surrounding quotes
-    text = text.strip()
-    if (text.startswith('"') and text.endswith('"')) or \
-       (text.startswith("'") and text.endswith("'")):
-        text = text[1:-1]
+**Tasks:**
+1. Create `utils/__init__.py`
+2. Create `utils/zimage_utils.py` with shared constants and functions
+3. Implement `clean_zimage_output()` function
+4. Define all style/lighting/photographer mappings
 
-    # 5. Remove meta-tags that may slip through
-    meta_tags = [
-        r'\b8K\b', r'\bmasterpiece\b', r'\bbest quality\b',
-        r'\bhigh quality\b', r'\bultra detailed\b', r'\bdetailed\b,',
-    ]
-    for tag in meta_tags:
-        text = re.sub(tag, '', text, flags=re.IGNORECASE)
+---
 
-    # 6. Detect and truncate repetitive patterns
-    # (implement pattern detection from Z-Image-Utilities)
+### Phase 2: SID_Z_Image_Prompt_Generator
 
-    # 7. Enforce max length with smart truncation
-    if max_length > 0 and len(text) > max_length:
-        # Try to break at sentence boundary
-        truncated = text[:max_length]
-        last_period = truncated.rfind('.')
-        if last_period > max_length * 0.7:
-            text = truncated[:last_period + 1]
-        else:
-            last_comma = truncated.rfind(',')
-            if last_comma > max_length * 0.8:
-                text = truncated[:last_comma] + '.'
-            else:
-                text = truncated.rstrip() + '.'
+**File:** `sid_zimage_prompt_generator.py`
 
-    # 8. Clean up whitespace
-    text = ' '.join(text.split())
+**Tasks:**
+1. Create node class `SID_ZImagePromptGenerator`
+2. Define INPUT_TYPES with all parameters
+3. Define RETURN_TYPES (prompt, debug_log)
+4. Implement system prompt builder
+5. Implement image-to-base64 conversion (reuse from existing)
+6. Implement execute() method with Claude vision API call
+7. Apply output cleaning
 
-    return text.strip()
+**Estimated Lines:** ~400
+
+---
+
+### Phase 3: SID_Z_Image_Prompt_Enhancer
+
+**File:** `sid_zimage_prompt_enhancer.py`
+
+**Tasks:**
+1. Create node class `SID_ZImagePromptEnhancer`
+2. Define INPUT_TYPES with all parameters
+3. Define RETURN_TYPES (enhanced_prompt, debug_log)
+4. Implement system prompt builder with subject-specific guidance
+5. Implement execute() method with Claude text API call
+6. Apply output cleaning
+
+**Estimated Lines:** ~350
+
+---
+
+### Phase 4: Registration & Documentation
+
+**File:** `__init__.py`
+
+**Tasks:**
+1. Import new node classes
+2. Add to NODE_CLASS_MAPPINGS
+3. Add to NODE_DISPLAY_NAME_MAPPINGS
+
+**File:** `README.md`
+
+**Tasks:**
+1. Document new Z-Image nodes
+2. Add usage examples
+3. Add workflow diagrams
+
+---
+
+## Node Comparison
+
+| Feature | Generator | Enhancer |
+|---------|-----------|----------|
+| Input | Image (required) | Text prompt |
+| Vision API | Yes | No |
+| Photography presets | Yes | No |
+| Subject type | Auto-detected | User-selected |
+| Style direction | Via presets | Free-form text |
+| Use case | Recreate/describe image | Expand simple idea |
+
+---
+
+## Workflow Examples
+
+### Workflow 1: Image Recreation
+
+```
+[Load Image]
+     ↓
+[SID_Z_Image_Prompt_Generator]
+     ↓
+prompt → [CLIP Text Encode] → [KSampler] → [Z-Image Output]
+```
+
+### Workflow 2: Prompt Enhancement
+
+```
+[Primitive String: "a cat sitting on a chair"]
+     ↓
+[SID_Z_Image_Prompt_Enhancer]
+     ↓
+enhanced_prompt → [CLIP Text Encode] → [KSampler] → [Z-Image Output]
+```
+
+### Workflow 3: Chained Enhancement
+
+```
+[Load Image]
+     ↓
+[SID_Z_Image_Prompt_Generator]
+     ↓
+prompt → [SID_Z_Image_Prompt_Enhancer] (with style_direction)
+     ↓
+enhanced_prompt → [Z-Image Model]
 ```
 
 ---
 
-### Phase 6: Main Execute Logic
+## Example Outputs
 
-**File:** `sid_ai_prompt_generator.py`
+### Generator Example
 
-Update main `execute()` method:
+**Input:** Photo of woman in coffee shop
 
-```python
-def execute(self, image, api_key, model, user_prompt, photography_style,
-            target_model, color_style, photographer_style, lighting_condition,
-            seed, temperature, max_tokens,
-            output_format="keyword", text_quote_style="none",
-            max_narrative_length=2000):
-
-    # ... existing validation ...
-
-    # Build appropriate system prompt
-    if output_format == "both":
-        # Make two API calls or request both formats
-        system_prompt = self._build_dual_format_prompt(...)
-    elif output_format == "narrative":
-        system_prompt = self._build_zimage_template(...)
-    else:
-        system_prompt = self._build_system_prompt(...)  # existing
-
-    # ... API call ...
-
-    # Parse response based on format
-    result = self._parse_response(response.content[0].text, output_format)
-
-    # Return appropriate outputs
-    if output_format == "keyword":
-        return NodeOutput(
-            result.get("positive", ""),
-            result.get("negative", ""),
-            "",  # narrative_prompt empty
-            sampler_config
-        )
-    elif output_format == "narrative":
-        return NodeOutput(
-            "",  # positive empty
-            "",  # negative empty
-            self._clean_zimage_output(result.get("narrative_prompt", ""),
-                                       max_narrative_length),
-            sampler_config
-        )
-    else:  # both
-        return NodeOutput(
-            result.get("positive", ""),
-            result.get("negative", ""),
-            self._clean_zimage_output(result.get("narrative_prompt", ""),
-                                       max_narrative_length),
-            sampler_config
-        )
+**Output:**
+```
+A medium shot of an adult woman in her early thirties seated at a
+weathered wooden table inside a warmly lit coffee shop. She has
+shoulder-length wavy brown hair and olive skin, wearing a cream
+cable-knit sweater. Her expression is relaxed with a gentle smile
+as she holds a white ceramic mug with both hands. Soft natural
+daylight streams through large windows to her left, creating subtle
+highlights on her hair and a warm glow on her face. The background
+shows blurred shapes of other patrons and exposed brick walls,
+with warm Edison bulb lighting adding amber tones to the scene.
+Shallow depth of field, candid portrait style.
 ```
 
----
+### Enhancer Example
 
-## File Changes Summary
+**Input:** `a cat sitting on a chair`
 
-| File | Changes |
-|------|---------|
-| `sid_ai_prompt_generator.py` | Add 3 inputs, 1 output, ~200 lines new code |
-| `README.md` | Document new parameters and Z-Image mode |
+**Output (Detailed level):**
+```
+A domestic shorthair cat with orange and white tabby markings sits
+upright on a vintage wooden dining chair. The cat has bright amber
+eyes and alert, forward-facing ears, its gaze directed slightly to
+the left of frame. Its fluffy tail curls around the edge of the
+chair seat. Soft diffused window light from the right illuminates
+the scene, creating gentle shadows beneath the chair. The background
+shows a simple cream-colored wall with subtle texture. The
+composition is centered with the cat at eye level, shallow depth
+of field blurring the wooden floor planks visible at the bottom
+of frame.
+```
 
 ---
 
@@ -369,43 +412,45 @@ def execute(self, image, api_key, model, user_prompt, photography_style,
 
 ### Unit Tests
 
-1. Test `_clean_zimage_output()` with various malformed inputs
-2. Test template building with all parameter combinations
-3. Test response parsing for both formats
+1. `clean_zimage_output()` - various malformed inputs
+2. Template building - all parameter combinations
+3. Subject guidance selection
+4. Enhancement level word counts
 
 ### Integration Tests
 
-1. Generate keyword prompt → verify format
-2. Generate narrative prompt → verify no meta-tags
-3. Generate both formats → verify both populated
-4. Test text quotation with "z-image" style
-5. Test max length truncation
+1. Generator: Image → prompt contains no meta-tags
+2. Enhancer: Simple prompt → enhanced with correct word count
+3. Text quotation: Text elements properly quoted
+4. Max length: Proper truncation at sentence boundaries
 
 ### Manual Testing
 
-1. Connect narrative output to Z-Image model in ComfyUI
-2. Compare image quality: keyword vs narrative for same image
-3. Test with various photography styles
-4. Test text-in-image scenarios with quotation
+1. Generate prompts → feed to Z-Image model
+2. Compare: Generator output vs Enhancer output for same concept
+3. Test all photography styles
+4. Test all subject types
+5. Test enhancement levels
 
 ---
 
 ## Migration Notes
 
-- Existing workflows using keyword format continue to work unchanged
-- New `output_format` defaults to "keyword" for backward compatibility
-- `narrative_prompt` output is empty when format is "keyword"
+- `SID_AIPromptGenerator` remains unchanged (backward compatible)
+- New nodes are additive, not replacements
+- Users can choose which node fits their workflow
 
 ---
 
 ## Future Enhancements (Deferred)
 
 1. **Multi-Provider Support**: OpenRouter, Local LLM, Direct HuggingFace
-2. **CLIP Conditioning Output**: Direct conditioning like Z-Image-Utilities
-3. **Session Support**: Multi-turn prompt refinement
-4. **Prompt Enhancer Integration**: Connect to Z-Image's own enhancer
+2. **CLIP Conditioning Output**: Direct conditioning output variant
+3. **Session Support**: Multi-turn refinement
+4. **Batch Processing**: Multiple images/prompts
+5. **Style Transfer**: Apply photographer style from one image to another
 
 ---
 
-*Created: December 2025*
+*Updated: December 2025*
 *Branch: dev/z-image*
