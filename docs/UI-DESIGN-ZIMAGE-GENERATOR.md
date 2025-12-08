@@ -416,19 +416,41 @@ arrangement:
 │  [☑] Include lighting description                               │
 │  [☑] Quote text elements ("text")                               │
 │                                                                 │
+│  ═══════════════════ PROMPT DIRECTION ════════════════════     │
+│                                                                 │
+│  User Prompt    ┌─────────────────────────────────────────┐    │
+│  (optional)     │ Guide the output: "focus on the dress"  │    │
+│                 │ or provide full prompt to enhance...    │    │
+│                 └─────────────────────────────────────────┘    │
+│                                                                 │
+│  Prompt Mode    [enhance                        ▼]             │
+│                  ├─ analyze (image only, ignore prompt)         │
+│                  ├─ enhance (prompt guides analysis) ✓          │
+│                  ├─ priority (prompt first, image fills gaps)   │
+│                  └─ override (use prompt, minimal image ref)    │
+│                                                                 │
+│  Focus Areas    [☑] Subject details                             │
+│                 [☑] Environment/background                      │
+│                 [☑] Lighting description                        │
+│                 [☑] Colors and materials                        │
+│                 [☐] Mood/atmosphere                             │
+│                 [☑] Quote text elements ("text")                │
+│                                                                 │
 │  ═══════════════════ OUTPUT SETTINGS ═════════════════════     │
 │                                                                 │
 │  Max Tokens     [═══════════════●══════] 300                   │
 │                  50                    500                     │
 │                                                                 │
-│  User Context   ┌─────────────────────────────────────────┐    │
-│  (optional)     │ Any additional context...               │    │
-│                 └─────────────────────────────────────────┘    │
-│                                                                 │
 │  ═══════════════════ GENERATION ══════════════════════════     │
 │                                                                 │
 │  Temperature    [═════════●═══════════════] 0.7                │
+│                                                                 │
 │  Seed           [0                              ] [🎲]          │
+│  Seed Mode      [fixed                          ▼]             │
+│                  ├─ fixed (deterministic output) ✓              │
+│                  ├─ randomize (new seed each run)               │
+│                  ├─ increment (+1 each run)                     │
+│                  └─ decrement (-1 each run)                     │
 │                                                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │  OUTPUTS                                                        │
@@ -452,12 +474,183 @@ arrangement:
 | 3 | `model` | COMBO | claude-sonnet-4-5 | Claude model |
 | 4 | `detail_level` | COMBO | "Standard" | Quick/Standard/Deep |
 | 5 | `focus_override` | COMBO | "Auto-detect" | Force genre focus |
-| 6 | `include_lighting` | BOOL | True | Add lighting descriptions |
-| 7 | `include_text_quotes` | BOOL | True | Quote visible text |
-| 8 | `max_tokens` | INT | 300 | Target output tokens |
-| 9 | `user_context` | STRING | "" | Additional context |
-| 10 | `temperature` | FLOAT | 0.7 | Creativity (0-1) |
-| 11 | `seed` | INT | 0 | Random seed |
+| 6 | `user_prompt` | STRING | "" | Guide or override the analysis |
+| 7 | `prompt_mode` | COMBO | "enhance" | How to use user_prompt |
+| 8 | `focus_subject` | BOOL | True | Include subject details |
+| 9 | `focus_environment` | BOOL | True | Include background/environment |
+| 10 | `focus_lighting` | BOOL | True | Include lighting description |
+| 11 | `focus_colors` | BOOL | True | Include colors and materials |
+| 12 | `focus_mood` | BOOL | False | Include mood/atmosphere |
+| 13 | `include_text_quotes` | BOOL | True | Quote visible text |
+| 14 | `max_tokens` | INT | 300 | Target output tokens |
+| 15 | `temperature` | FLOAT | 0.7 | Creativity (0-1) |
+| 16 | `seed` | INT | 0 | Random seed |
+| 17 | `seed_mode` | COMBO | "fixed" | Seed behavior control |
+
+---
+
+## Seed Mode Behavior
+
+| Mode | Behavior | Use Case |
+|------|----------|----------|
+| **fixed** | Same input + same seed = identical output | Reproducibility, caching |
+| **randomize** | New random seed each execution | Variation, exploration |
+| **increment** | Seed increases by 1 each run | Batch variations |
+| **decrement** | Seed decreases by 1 each run | Reverse exploration |
+
+### Fixed Mode (Deterministic)
+
+When `seed_mode = "fixed"`:
+- Creates a hash from: `image_hash + seed + all_parameters`
+- If hash matches previous run, returns cached output
+- Guarantees identical prompt for identical inputs
+- Useful for reproducible workflows
+
+```python
+# Deterministic caching logic
+def get_cache_key(image, seed, **params):
+    image_hash = hash_image_tensor(image)
+    param_hash = hash(frozenset(params.items()))
+    return f"{image_hash}_{seed}_{param_hash}"
+
+cache_key = get_cache_key(image, seed,
+    model=model,
+    detail_level=detail_level,
+    focus_override=focus_override,
+    include_lighting=include_lighting,
+    include_text_quotes=include_text_quotes,
+    max_tokens=max_tokens,
+    user_context=user_context,
+    temperature=temperature
+)
+
+if cache_key in OUTPUT_CACHE:
+    return OUTPUT_CACHE[cache_key]  # Identical output
+else:
+    result = run_llm_analysis(...)
+    OUTPUT_CACHE[cache_key] = result
+    return result
+```
+
+### Randomize Mode
+
+When `seed_mode = "randomize"`:
+- Generates new random seed (0 to 2^31-1) before each execution
+- Always makes fresh LLM API call (no caching)
+- Each execution produces different prompt variations
+- Seed widget updates to show the used seed
+
+### Increment/Decrement Mode
+
+When `seed_mode = "increment"` or `"decrement"`:
+- Modifies seed by ±1 after successful execution
+- Updates the seed widget value in UI
+- Useful for generating controlled sequential variations
+- Wraps around at boundaries (0 ↔ 2^31-1)
+
+---
+
+## Prompt Mode Behavior
+
+Controls how `user_prompt` interacts with image analysis.
+
+| Mode | Priority | Behavior |
+|------|----------|----------|
+| **analyze** | Image 100% | Ignores user_prompt entirely, pure image analysis |
+| **enhance** | Image 80%, Prompt 20% | Prompt guides/influences the analysis |
+| **priority** | Prompt 70%, Image 30% | Prompt is primary, image fills gaps |
+| **override** | Prompt 90%, Image 10% | User prompt dominates, minimal image reference |
+
+### Analyze Mode (Default when no prompt)
+
+```
+Input: Image only
+Output: Pure visual description from image analysis
+Use: Standard image-to-prompt generation
+```
+
+### Enhance Mode (Default when prompt provided)
+
+```
+Input: Image + "focus on the vintage clothing"
+Output: Full image analysis with extra detail on clothing
+Use: Guide attention to specific elements
+```
+
+The user prompt acts as a directive:
+- "focus on the eyes" → More detail in eyes section
+- "describe in moody tone" → Atmosphere emphasis
+- "emphasize the lighting" → Extended lighting description
+
+### Priority Mode
+
+```
+Input: Image + "woman in red dress at sunset beach"
+Output: Uses prompt as primary structure, image validates/enhances
+Use: When you have a concept and want image to fill details
+```
+
+Processing:
+1. Parse user prompt for key elements
+2. Match/validate against image
+3. Fill gaps with image analysis
+4. Prompt elements take precedence if conflict
+
+### Override Mode
+
+```
+Input: Image + "A cyberpunk cityscape with neon lights..."
+Output: Primarily the user prompt, image adds minor details
+Use: When you want to transform/reimagine the image
+```
+
+Processing:
+1. User prompt is the foundation (90%)
+2. Image provides only: colors, composition hints, basic structure
+3. Minimal image analysis, maximum prompt preservation
+
+### Priority Examples
+
+**Same image, different modes:**
+
+| Mode | User Prompt | Output Focus |
+|------|-------------|--------------|
+| analyze | (ignored) | "Woman in pink swimwear at tropical beach..." |
+| enhance | "tropical paradise" | "Woman at idyllic tropical paradise with palm trees..." |
+| priority | "fashion model photoshoot" | "Professional fashion model in designer swimwear..." |
+| override | "mermaid emerging from sea" | "Mermaid with flowing hair emerging from turquoise sea..." |
+
+---
+
+## Focus Area Toggles
+
+Control which sections appear in the output prompt.
+
+| Toggle | When ON | When OFF |
+|--------|---------|----------|
+| `focus_subject` | Detailed subject description | Brief mention only |
+| `focus_environment` | Full background/setting | Minimal or "blurred background" |
+| `focus_lighting` | Light source, direction, quality | Skip lighting details |
+| `focus_colors` | Material colors and textures | Skip color specifics |
+| `focus_mood` | Atmosphere, emotion, feeling | No mood descriptors |
+| `include_text_quotes` | Text in `"quotes"` | Plain text mention |
+
+### Token Budget Allocation
+
+When all toggles ON (300 tokens):
+```
+Subject:      ~100 tokens (33%)
+Environment:   ~60 tokens (20%)
+Lighting:      ~50 tokens (17%)
+Colors:        ~50 tokens (17%)
+Mood:          ~40 tokens (13%)
+```
+
+When only Subject + Lighting ON:
+```
+Subject:      ~180 tokens (60%)
+Lighting:     ~120 tokens (40%)
+```
 
 ---
 
