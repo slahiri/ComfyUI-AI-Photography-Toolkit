@@ -201,7 +201,7 @@ pip install openai
 
 ## Changelog
 
-### Version 3.1.0 (2025-01-XX) - Z-IMAGE & MULTI-PROVIDER
+### Version 4.0.0 (2025-01-XX) - Z-IMAGE & MULTI-PROVIDER
 
 **New Node: SID_ZImagePromptGenerator**
 - Complete rewrite for Z-Image compatibility
