@@ -84,6 +84,12 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 ),
 
                 # API Settings
+                comfy_io.Combo.Input(
+                    "ai_provider",
+                    options=["Anthropic"],
+                    default="Anthropic",
+                    tooltip="AI provider for image analysis (more providers coming soon)"
+                ),
                 comfy_io.String.Input(
                     "api_key",
                     default="",
@@ -100,6 +106,12 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     ],
                     default="claude-sonnet-4-5-20250929",
                     tooltip="Claude model to use for analysis"
+                ),
+                comfy_io.String.Input(
+                    "api_url",
+                    default="https://api.anthropic.com",
+                    multiline=False,
+                    tooltip="API endpoint URL (not used for Anthropic, for future providers)"
                 ),
 
                 # Analysis Options
@@ -224,24 +236,39 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 ),
             ],
             outputs=[
+                comfy_io.Image.Output(
+                    "image",
+                    display_name="image",
+                    tooltip="Pass-through of input image"
+                ),
                 comfy_io.String.Output(
                     "prompt",
-                    display_name="Z-Image Prompt",
+                    display_name="zimage_prompt",
                     tooltip="Z-Image compatible narrative prompt ready for generation"
+                ),
+                comfy_io.Int.Output(
+                    "width",
+                    display_name="width",
+                    tooltip="Image width in pixels"
+                ),
+                comfy_io.Int.Output(
+                    "height",
+                    display_name="height",
+                    tooltip="Image height in pixels"
                 ),
                 comfy_io.String.Output(
                     "structured_data",
-                    display_name="Structured Data",
+                    display_name="structured_data",
                     tooltip="JSON with classification and extracted attributes"
                 ),
                 comfy_io.String.Output(
                     "metadata",
-                    display_name="Image Metadata",
+                    display_name="image_metadata",
                     tooltip="JSON with image info and Z-Image recommendations"
                 ),
                 comfy_io.String.Output(
                     "debug_log",
-                    display_name="Debug Log",
+                    display_name="debug_log",
                     tooltip="Stage-by-stage processing details"
                 ),
             ],
@@ -251,8 +278,10 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
     def execute(
         cls,
         image,
+        ai_provider: str,
         api_key: str,
         model: str,
+        api_url: str,
         detail_level: str,
         focus_override: str,
         content_detail: str,
@@ -290,17 +319,24 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         actual_seed = cls._process_seed(seed, seed_mode)
         log(f"Seed: {actual_seed} (mode: {seed_mode})")
         log(f"Cache: {'enabled' if cache_prompt else 'disabled'}")
+        log(f"Provider: {ai_provider}")
+
+        # Get image dimensions early for all return paths
+        if len(image.shape) == 4:
+            img_height, img_width = image.shape[1], image.shape[2]
+        else:
+            img_height, img_width = image.shape[0], image.shape[1]
 
         # Validate API key
         if not api_key or api_key.strip() == "":
             error_msg = "ERROR: Anthropic API key is required. Get one at https://console.anthropic.com/"
-            return comfy_io.NodeOutput(error_msg, "{}", "{}", error_msg)
+            return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
 
         try:
             import anthropic
         except ImportError:
             error_msg = "ERROR: anthropic library not installed. Run: pip install anthropic"
-            return comfy_io.NodeOutput(error_msg, "{}", "{}", error_msg)
+            return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
 
         # Check cache if caching is enabled
         if cache_prompt:
@@ -330,7 +366,10 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 log(f"  Cache: {cache_stats['disk_entries']} entries, {cache_stats['disk_size_mb']} MB")
                 log("=" * 60)
                 return comfy_io.NodeOutput(
+                    image,
                     cached["prompt"],
+                    img_width,
+                    img_height,
                     cached["structured_data"],
                     cached["metadata"],
                     cached["debug_log"] + "\n\n[CACHE HIT - Loaded from persistent disk cache]"
@@ -493,7 +532,10 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             debug_log = "\n".join(debug_lines)
 
             return comfy_io.NodeOutput(
+                image,
                 prompt,
+                img_width,
+                img_height,
                 json.dumps(structured_data, indent=2),
                 json.dumps(metadata_output, indent=2),
                 debug_log,
@@ -502,13 +544,13 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         except anthropic.APIError as e:
             error_msg = f"Anthropic API Error: {str(e)}"
             log(f"ERROR: {error_msg}")
-            return comfy_io.NodeOutput(error_msg, "{}", "{}", "\n".join(debug_lines))
+            return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", "\n".join(debug_lines))
         except Exception as e:
             error_msg = f"Error generating prompt: {str(e)}"
             log(f"ERROR: {error_msg}")
             import traceback
             log(traceback.format_exc())
-            return comfy_io.NodeOutput(error_msg, "{}", "{}", "\n".join(debug_lines))
+            return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", "\n".join(debug_lines))
 
     @classmethod
     def _process_seed(cls, seed: int, seed_mode: str) -> int:
