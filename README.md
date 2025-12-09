@@ -58,7 +58,7 @@ SID_Anthropic_LLM ─┐
 | **OpenAI** | SID_OpenAI_Compatible_LLM | [platform.openai.com](https://platform.openai.com) | gpt-4o, gpt-4o-mini, gpt-4-turbo |
 | **xAI Grok** | SID_Grok_LLM | [console.x.ai](https://console.x.ai) | grok-2-vision-1212, grok-vision-beta |
 | **LM Studio** | SID_OpenAI_Compatible_LLM | Not required | Set `api_url`: `http://localhost:1234/v1` |
-| **Local GGUF** | SID_GGUF_LLM | Not required | Auto-installed with GPU detection |
+| **Local GGUF** | SID_GGUF_LLM | Not required | Auto-download with GPU detection |
 
 ### Local GGUF Models
 
@@ -68,14 +68,18 @@ SID_Anthropic_LLM ─┐
 - **AMD** - Installs with ROCm support (Linux)
 - **CPU** - Falls back to CPU-only build
 
-Models download automatically to `ComfyUI/models/LLM/GGUF/`
+Models **auto-download** when `auto_download` is enabled (default: ON).
 
-| Model | VRAM |
-|-------|------|
-| moondream2-q4_k_m | ~4GB |
-| llava-v1.5-7b-q4_k_m | ~8GB |
-| minicpm-v-2_6-q4_k_m | ~10GB |
-| llava-v1.5-13b-q4_k_m | ~16GB |
+**Model Location:** `ComfyUI/models/LLM/GGUF/`
+
+| Model | VRAM | Manual Download |
+|-------|------|-----------------|
+| moondream2-q4_k_m | ~4GB | [HuggingFace](https://huggingface.co/vikhyatk/moondream2) |
+| llava-v1.5-7b-q4_k_m | ~8GB | [HuggingFace](https://huggingface.co/mys/ggml_llava-v1.5-7b) |
+| minicpm-v-2_6-q4_k_m | ~10GB | [HuggingFace](https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf) |
+| llava-v1.5-13b-q4_k_m | ~16GB | [HuggingFace](https://huggingface.co/mys/ggml_llava-v1.5-13b) |
+
+**Manual Installation:** Download both the model `.gguf` file AND the `mmproj` (vision encoder) file to `ComfyUI/models/LLM/GGUF/`
 
 ## Node Settings
 
