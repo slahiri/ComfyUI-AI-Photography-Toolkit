@@ -14,9 +14,6 @@ import sys
 import subprocess
 import importlib.util
 
-# Web directory for JavaScript extensions
-WEB_DIRECTORY = "./web"
-
 # Auto-install dependencies
 def install_dependencies():
     """
@@ -56,6 +53,7 @@ from comfy_api.latest import ComfyExtension, io
 
 # Import all node classes
 from .sid_zimage_prompt_generator import SID_ZImagePromptGenerator
+from .sid_zimage_prompt_generator_advanced import SID_ZImagePromptGenerator_Advanced
 
 # Import LLM provider nodes
 from .llm_providers.sid_anthropic_llm import SID_Anthropic_LLM
@@ -76,6 +74,7 @@ class SIDPhotographyToolkitExtension(ComfyExtension):
         return [
             # Main nodes
             SID_ZImagePromptGenerator,
+            SID_ZImagePromptGenerator_Advanced,
             # LLM Provider nodes
             SID_Anthropic_LLM,
             # Future nodes will be added here
@@ -92,7 +91,8 @@ async def comfy_entrypoint() -> SIDPhotographyToolkitExtension:
     print(f"Loading SID Photography Toolkit v{__version__} for ComfyUI")
     print("="*60)
     print("Nodes loaded:")
-    print("  - SID_ZImagePromptGenerator: Z-Image compatible narrative prompts")
+    print("  - SID_ZImagePromptGenerator: Z-Image prompt generator (built-in LLM)")
+    print("  - SID_ZImagePromptGenerator_Advanced: Z-Image prompt (external LLM)")
     print("  - SID_Anthropic_LLM: Anthropic Claude LLM provider")
     print("="*60 + "\n")
 

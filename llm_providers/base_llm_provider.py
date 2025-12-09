@@ -1,18 +1,20 @@
 """
 Base LLM Provider Class
 
-Abstract base class for all LLM provider nodes.
+Base class for all LLM provider nodes.
 Provides common functionality and interface for provider implementations.
+
+Note: We don't use ABC (Abstract Base Class) because it conflicts with
+ComfyUI's internal class locking mechanism for V3 API nodes.
 """
 
-from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Tuple
 from .llm_model_type import LLMModelConfig
 
 
-class BaseLLMProvider(ABC):
+class BaseLLMProvider:
     """
-    Abstract base class for LLM provider nodes.
+    Base class for LLM provider nodes.
 
     All provider nodes (Anthropic, OpenAI, Ollama, etc.) should inherit
     from this class to ensure consistent interface.
@@ -23,31 +25,28 @@ class BaseLLMProvider(ABC):
     CATEGORY: str = "SID Photography Toolkit/LLM Providers"
 
     @classmethod
-    @abstractmethod
     def get_models(cls) -> List[str]:
         """
         Return list of available models for this provider.
         Override in subclasses.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement get_models()")
 
     @classmethod
-    @abstractmethod
     def get_default_model(cls) -> str:
         """
         Return the default model for this provider.
         Override in subclasses.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement get_default_model()")
 
     @classmethod
-    @abstractmethod
     def get_default_url(cls) -> str:
         """
         Return the default API URL for this provider.
         Override in subclasses.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement get_default_url()")
 
     @classmethod
     def requires_api_key(cls) -> bool:

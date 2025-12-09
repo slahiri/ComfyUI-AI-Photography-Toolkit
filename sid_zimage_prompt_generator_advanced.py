@@ -1,14 +1,12 @@
 """
-SID_ZImagePromptGenerator Node
+SID_ZImagePromptGenerator_Advanced Node
 Agentic multi-stage image analysis for Z-Image prompt generation.
+
+Advanced version that requires an external LLM provider node connection.
+Use SID_Anthropic_LLM, SID_OpenAI_LLM, or other provider nodes.
 
 This node analyzes an input image using vision LLM capabilities and generates
 a Z-Image compatible narrative prompt through a multi-stage agentic pipeline.
-
-Supports multiple AI providers:
-- Anthropic (Claude models)
-- Ollama (local models: llava, moondream, bakllava)
-- Grok (xAI vision models)
 """
 
 import base64
@@ -45,11 +43,18 @@ from .utils.zimage_utils import (
     build_attribute_schema_for_scene,
     format_attribute_schema_for_prompt,
 )
+from .llm_providers.llm_model_type import LLMModelConfig
+
+# Create custom LLM_MODEL type for ComfyUI (must match provider nodes)
+LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
 
 
-class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
+class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
     """
-    Agentic multi-stage image analyzer for Z-Image prompt generation.
+    Advanced Z-Image prompt generator with external LLM provider.
+
+    Requires connection to an LLM provider node (e.g., SID_Anthropic_LLM).
+    Use this for flexible provider selection and centralized LLM configuration.
 
     Uses a 6-stage pipeline:
     1. Classification - Detect shot framing and photography genre
@@ -58,8 +63,6 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
     4. Detailed Analysis - LLM extraction of structured attributes
     5. Prompt Composition - Generate flowing narrative prompt
     6. Z-Image Optimization - Provide recommendations for Z-Image
-
-    Supports NSFW content through content_detail levels (Z-Image compatible).
     """
 
     # Track seed state for increment/decrement modes
@@ -78,10 +81,10 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             genre_options = ["Auto-detect"]
 
         return comfy_io.Schema(
-            node_id="SID_ZImagePromptGenerator",
-            display_name="SID Z-Image Prompt Generator",
+            node_id="SID_ZImagePromptGenerator_Advanced",
+            display_name="SID Z-Image Prompt Generator (Advanced)",
             category="SID Photography Toolkit/Z-Image",
-            description="Agentic image analyzer that generates Z-Image compatible narrative prompts",
+            description="Advanced Z-Image prompt generator with external LLM provider connection",
             inputs=[
                 # Image input
                 comfy_io.Image.Input(
@@ -89,49 +92,10 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     tooltip="Input image to analyze"
                 ),
 
-                # API Settings
-                comfy_io.Combo.Input(
-                    "ai_provider",
-                    options=["Anthropic", "Ollama", "Grok"],
-                    default="Anthropic",
-                    tooltip="AI provider for image analysis. Anthropic=Claude API, Ollama=Local models, Grok=xAI API"
-                ),
-                comfy_io.String.Input(
-                    "api_key",
-                    default="",
-                    multiline=False,
-                    tooltip="API key: Anthropic (console.anthropic.com), Grok (console.x.ai). Leave empty for Ollama."
-                ),
-                comfy_io.Combo.Input(
-                    "model",
-                    options=[
-                        # Anthropic models
-                        "claude-sonnet-4-5-20250929",
-                        "claude-haiku-4-5-20251001",
-                        "claude-opus-4-1-20250805",
-                        "claude-3-5-haiku-20241022",
-                        # Ollama models - Low VRAM (~4-8GB)
-                        "ollama/moondream",
-                        "ollama/llava:7b",
-                        "ollama/bakllava",
-                        # Ollama models - Mid VRAM (~12-16GB)
-                        "ollama/llava:13b",
-                        "ollama/llava-llama3",
-                        # Ollama models - High VRAM (~24GB+)
-                        "ollama/llava:34b",
-                        "ollama/llama3.2-vision",
-                        # Grok models
-                        "grok-2-vision-1212",
-                        "grok-vision-beta",
-                    ],
-                    default="claude-sonnet-4-5-20250929",
-                    tooltip="Model: Claude (Anthropic), ollama/* (local), grok-* (xAI). Ollama models sorted by VRAM: moondream/llava:7b (Low), llava:13b (Mid), llava:34b (High)"
-                ),
-                comfy_io.String.Input(
-                    "api_url",
-                    default="",
-                    multiline=False,
-                    tooltip="API URL override. Ollama: http://localhost:11434 (default if empty). Grok: https://api.x.ai (default). Anthropic: ignored."
+                # Required external LLM model (from provider nodes)
+                LLM_MODEL_Type.Input(
+                    "llm_model",
+                    tooltip="Connect LLM provider node (e.g., SID_Anthropic_LLM)"
                 ),
 
                 # Analysis Options
@@ -213,28 +177,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     tooltip="Quote visible text with \"quotes\" for Z-Image text rendering"
                 ),
 
-                # Output Settings
-                comfy_io.Int.Input(
-                    "max_tokens",
-                    default=300,
-                    min=50,
-                    max=500,
-                    step=25,
-                    display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Target output tokens for the prompt"
-                ),
-
-                # Generation Settings
-                comfy_io.Float.Input(
-                    "temperature",
-                    default=0.7,
-                    min=0.0,
-                    max=1.0,
-                    step=0.1,
-                    round=0.1,
-                    display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Creativity level (0=focused, 1=creative)"
-                ),
+                # Generation Settings (max_tokens and temperature come from llm_model)
                 comfy_io.Int.Input(
                     "seed",
                     default=0,
@@ -298,10 +241,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
     def execute(
         cls,
         image,
-        ai_provider: str,
-        api_key: str,
-        model: str,
-        api_url: str,
+        llm_model: LLMModelConfig,  # Required external LLM config
         detail_level: str,
         focus_override: str,
         content_detail: str,
@@ -313,8 +253,6 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         focus_colors: bool,
         focus_mood: bool,
         include_text_quotes: bool,
-        max_tokens: int,
-        temperature: float,
         seed: int,
         seed_mode: str,
         cache_prompt: bool,
@@ -329,7 +267,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             print(message)
 
         log("=" * 60)
-        log("SID Z-Image Prompt Generator - Debug Log")
+        log("SID Z-Image Prompt Generator (Advanced) - Debug Log")
         log("=" * 60)
         log(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         log(f"Mode: {detail_level} ({get_detail_level_config(detail_level).get('llm_calls', 2)} LLM calls)")
@@ -341,13 +279,17 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         else:
             img_height, img_width = image.shape[0], image.shape[1]
 
-        # Determine provider from model selection
-        if model.startswith("ollama/"):
-            actual_provider = "Ollama"
-        elif model.startswith("grok-"):
-            actual_provider = "Grok"
-        else:
-            actual_provider = "Anthropic"
+        # Use external LLM configuration from connected provider node
+        actual_provider = llm_model.provider.capitalize()
+        model = llm_model.model
+        api_key = llm_model.api_key
+        api_url = llm_model.api_url
+        max_tokens = llm_model.max_tokens
+        temperature = llm_model.temperature
+        log(f"[LLM Provider] {actual_provider}")
+        log(f"  Model: {model}")
+        log(f"  Max Tokens: {max_tokens}")
+        log(f"  Temperature: {temperature}")
 
         # Handle seed mode
         actual_seed = cls._process_seed(seed, seed_mode)
