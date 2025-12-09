@@ -108,6 +108,7 @@ def install_llama_cpp_python():
     print("-" * 60)
     print("[SID_GGUF_LLM] Auto-installing llama-cpp-python...")
     print(f"  Detected GPU: {gpu_type.upper()}")
+    sys.stdout.flush()
 
     try:
         if gpu_type == "nvidia":
@@ -126,44 +127,45 @@ def install_llama_cpp_python():
                 print("  Using: CUDA 12.2+ wheel")
 
             print("  Installing... (this may take a few minutes)")
+            print("-" * 60)
+            sys.stdout.flush()
+            # Show pip output in real-time
             subprocess.check_call(
                 [python_exe, "-m", "pip", "install", "llama-cpp-python",
-                 "--extra-index-url", wheel_url],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                 "--extra-index-url", wheel_url, "--progress-bar", "on"]
             )
 
         elif gpu_type == "apple_metal":
             print("  Using: Apple Metal build (M1/M2/M3)")
             print("  Installing... (this may take a few minutes)")
+            print("-" * 60)
+            sys.stdout.flush()
             env = os.environ.copy()
             env["CMAKE_ARGS"] = "-DGGML_METAL=on"
             subprocess.check_call(
-                [python_exe, "-m", "pip", "install", "llama-cpp-python"],
-                env=env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                [python_exe, "-m", "pip", "install", "llama-cpp-python", "--progress-bar", "on"],
+                env=env
             )
 
         elif gpu_type == "amd":
             print("  Using: AMD ROCm build")
             print("  Installing... (this may take several minutes to compile)")
+            print("-" * 60)
+            sys.stdout.flush()
             env = os.environ.copy()
             env["CMAKE_ARGS"] = "-DGGML_HIPBLAS=on"
             subprocess.check_call(
-                [python_exe, "-m", "pip", "install", "llama-cpp-python"],
-                env=env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                [python_exe, "-m", "pip", "install", "llama-cpp-python", "--progress-bar", "on"],
+                env=env
             )
 
         else:  # CPU
             print("  Using: CPU-only build")
             print("  Installing...")
+            print("-" * 60)
+            sys.stdout.flush()
             subprocess.check_call(
-                [python_exe, "-m", "pip", "install", "llama-cpp-python"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                [python_exe, "-m", "pip", "install", "llama-cpp-python", "--progress-bar", "on"]
             )
 
         print("  [OK] llama-cpp-python installed successfully!")
