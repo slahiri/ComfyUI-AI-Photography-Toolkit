@@ -14,6 +14,9 @@ import sys
 import subprocess
 import importlib.util
 
+# Web directory for JavaScript extensions
+WEB_DIRECTORY = "./web"
+
 # Auto-install dependencies
 def install_dependencies():
     """
