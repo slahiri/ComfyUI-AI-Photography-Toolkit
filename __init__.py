@@ -54,6 +54,9 @@ from comfy_api.latest import ComfyExtension, io
 # Import all node classes
 from .sid_zimage_prompt_generator import SID_ZImagePromptGenerator
 
+# Import LLM provider nodes
+from .llm_providers.sid_anthropic_llm import SID_Anthropic_LLM
+
 
 class SIDPhotographyToolkitExtension(ComfyExtension):
     """
@@ -68,7 +71,10 @@ class SIDPhotographyToolkitExtension(ComfyExtension):
         Add new nodes here as they are created.
         """
         return [
+            # Main nodes
             SID_ZImagePromptGenerator,
+            # LLM Provider nodes
+            SID_Anthropic_LLM,
             # Future nodes will be added here
             # SID_ZImagePromptEnhancer,
         ]
@@ -84,6 +90,7 @@ async def comfy_entrypoint() -> SIDPhotographyToolkitExtension:
     print("="*60)
     print("Nodes loaded:")
     print("  - SID_ZImagePromptGenerator: Z-Image compatible narrative prompts")
+    print("  - SID_Anthropic_LLM: Anthropic Claude LLM provider")
     print("="*60 + "\n")
 
     return SIDPhotographyToolkitExtension()

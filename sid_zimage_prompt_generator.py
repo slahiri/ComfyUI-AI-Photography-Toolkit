@@ -45,6 +45,7 @@ from .utils.zimage_utils import (
     build_attribute_schema_for_scene,
     format_attribute_schema_for_prompt,
 )
+from .llm_providers.llm_model_type import LLMModelConfig
 
 
 class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
@@ -89,7 +90,14 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     tooltip="Input image to analyze"
                 ),
 
-                # API Settings
+                # Optional external LLM model (from provider nodes)
+                comfy_io.Custom.Input(
+                    "llm_model",
+                    optional=True,
+                    tooltip="Optional: Connect LLM provider node (e.g., SID_Anthropic_LLM). When connected, internal API settings are ignored."
+                ),
+
+                # API Settings (used when llm_model is not connected)
                 comfy_io.Combo.Input(
                     "ai_provider",
                     options=["Anthropic", "Ollama", "Grok"],
@@ -298,6 +306,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
     def execute(
         cls,
         image,
+        llm_model: Optional[LLMModelConfig],  # Optional external LLM config
         ai_provider: str,
         api_key: str,
         model: str,
@@ -341,13 +350,28 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         else:
             img_height, img_width = image.shape[0], image.shape[1]
 
-        # Determine provider from model selection
-        if model.startswith("ollama/"):
-            actual_provider = "Ollama"
-        elif model.startswith("grok-"):
-            actual_provider = "Grok"
+        # Check if external LLM model is connected
+        if llm_model is not None and isinstance(llm_model, LLMModelConfig):
+            # Use external LLM configuration
+            actual_provider = llm_model.provider.capitalize()
+            model = llm_model.model
+            api_key = llm_model.api_key
+            api_url = llm_model.api_url
+            max_tokens = llm_model.max_tokens
+            temperature = llm_model.temperature
+            log(f"[EXTERNAL LLM] Using connected LLM provider node")
+            log(f"  Provider: {actual_provider}")
+            log(f"  Model: {model}")
         else:
-            actual_provider = "Anthropic"
+            # Use internal settings (backward compatible)
+            # Determine provider from model selection
+            if model.startswith("ollama/"):
+                actual_provider = "Ollama"
+            elif model.startswith("grok-"):
+                actual_provider = "Grok"
+            else:
+                actual_provider = "Anthropic"
+            log(f"[INTERNAL] Using internal LLM settings")
 
         # Handle seed mode
         actual_seed = cls._process_seed(seed, seed_mode)
