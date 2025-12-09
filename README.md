@@ -1,279 +1,139 @@
 # ComfyUI-AI-Photography-Toolkit
 
-A collection of AI-powered photography and image generation tools for ComfyUI. All nodes are prefixed with `SID_` for easy identification.
+AI-powered Z-Image prompt generator for ComfyUI. Analyzes images and generates flowing narrative prompts optimized for Z-Image models.
 
-![Workflow Screenshot](docs/images/workflow-screenshot.png)
-
-## Features
-
-### Current Nodes
-
-#### SID_ZImagePromptGenerator
-
-Agentic multi-stage image analyzer that generates Z-Image compatible narrative prompts. Supports multiple AI providers including Anthropic Claude, Ollama (local), and Grok (xAI).
-
-**Key Features:**
-- **6-Stage Agentic Pipeline**: Classification → Metadata → Attribute Mapping → Detailed Analysis → Prompt Composition → Z-Image Optimization
-- **Multi-Provider Support**: Anthropic (Claude), Ollama (local models), Grok (xAI)
-- **Z-Image Optimized**: Generates flowing narrative prompts (no keyword lists or meta-tags)
-- **NSFW Support**: Content detail levels from minimal to explicit
-- **Smart Caching**: Persistent disk cache saves API calls
-- **56+ Photography Genres**: Across 6 categories (People, Events, Nature, Commercial, Artistic, Lifestyle)
-- **11 Shot Framings**: From Extreme Close-Up (ECU) to Very Long Shot (VLS)
-
-### Future Nodes (Planned)
-- SID_ZImagePromptEnhancer - Text-to-text prompt enhancement for Z-Image
+**Version:** 4.1.0
+**Author:** Siddhartha Lahiri
 
 ## Installation
 
-### Method 1: Manual Installation (Recommended)
+```bash
+cd ComfyUI/custom_nodes
+git clone https://github.com/slahiri/ComfyUI-AI-Photography-Toolkit.git
+```
 
-1. Navigate to your ComfyUI custom_nodes directory:
-   ```bash
-   cd ComfyUI/custom_nodes
-   ```
+Restart ComfyUI. Dependencies install automatically on first load.
 
-2. Clone this repository:
-   ```bash
-   git clone https://github.com/slahiri/ComfyUI-AI-Photography-Toolkit.git
-   ```
+## Nodes
 
-3. Install dependencies:
-   ```bash
-   cd ComfyUI-AI-Photography-Toolkit
-   pip install -r requirements.txt
-   ```
+### Prompt Generators
 
-4. Restart ComfyUI
+| Node | Description |
+|------|-------------|
+| **SID_ZImagePromptGenerator** | Built-in Anthropic Claude |
+| **SID_ZImagePromptGenerator_Advanced** | Connect any LLM provider |
 
-### Method 2: Via ComfyUI Manager
+### LLM Providers (for Advanced node)
 
-1. Open ComfyUI Manager
-2. Search for "ComfyUI-AI-Photography-Toolkit"
-3. Click Install
-4. Restart ComfyUI
+| Node | Provider | API Key |
+|------|----------|---------|
+| **SID_Anthropic_LLM** | Anthropic Claude | [console.anthropic.com](https://console.anthropic.com) |
+| **SID_OpenAI_Compatible_LLM** | OpenAI / GPT / Together AI / LM Studio | [platform.openai.com](https://platform.openai.com) or local |
+| **SID_Grok_LLM** | xAI Grok | [console.x.ai](https://console.x.ai) |
+| **SID_GGUF_LLM** | Local GGUF models | Not required |
 
-## Usage
+## Quick Start
 
-### SID_ZImagePromptGenerator
+### Option 1: Basic Node (Anthropic)
 
-#### 1. Choose Your AI Provider
+```
+Image → SID_ZImagePromptGenerator → zimage_prompt
+```
 
-| Provider | Models | API Key | URL |
-|----------|--------|---------|-----|
-| **Anthropic** | claude-sonnet-4-5, claude-haiku-4-5, claude-opus-4-1 | Required ([console.anthropic.com](https://console.anthropic.com)) | Auto |
-| **Ollama** | llava, moondream, bakllava (local) | Not required | `http://localhost:11434` |
-| **Grok** | grok-2-vision, grok-vision-beta | Required ([console.x.ai](https://console.x.ai)) | Auto |
+Enter your Anthropic API key in the node.
 
-#### 2. Ollama Models by VRAM
+### Option 2: Advanced Node (Any Provider)
 
-| VRAM Tier | Models | Memory Required |
-|-----------|--------|-----------------|
-| **Low** | `ollama/moondream`, `ollama/llava:7b`, `ollama/bakllava` | ~4-8GB |
-| **Mid** | `ollama/llava:13b`, `ollama/llava-llama3` | ~12-16GB |
-| **High** | `ollama/llava:34b`, `ollama/llama3.2-vision` | ~24GB+ |
+```
+SID_Anthropic_LLM ─┐
+                   ├→ SID_ZImagePromptGenerator_Advanced → zimage_prompt
+        Image ─────┘
+```
 
-#### 3. Node Configuration
+## Setup by Provider
 
-**API Settings:**
-- `ai_provider`: Select provider (auto-detected from model)
-- `api_key`: Your API key (leave empty for Ollama)
-- `model`: Select model (provider auto-detected from prefix)
-- `api_url`: Override URL (optional, defaults provided)
+### Anthropic Claude
 
-**Analysis Options:**
-- `detail_level`: Quick (1 LLM call), Standard (2 calls), Deep (3 calls)
-- `focus_override`: Force specific genre (Portrait, Landscape, Product, etc.)
-- `content_detail`: minimal, standard, detailed, explicit (NSFW)
+1. Get API key: [console.anthropic.com](https://console.anthropic.com)
+2. Use **SID_ZImagePromptGenerator** or **SID_Anthropic_LLM**
 
-**Prompt Direction:**
-- `user_prompt`: Optional guidance text
-- `prompt_mode`:
-  - "Image Only" - Analyze image, ignore prompt
-  - "Prompt Guides Analysis" - Image primary, prompt guides emphasis
-  - "Prompt First, Image Fills Gaps" - Prompt primary, image supplements
-  - "Prompt Dominates" - Prompt foundation, minimal image details
+### OpenAI / GPT-4
 
-**Focus Toggles:**
-- `focus_subject`: Include subject description
-- `focus_environment`: Include background/environment
-- `focus_lighting`: Include lighting analysis
-- `focus_colors`: Include colors and materials
-- `focus_mood`: Include mood/atmosphere
-- `include_text_quotes`: Quote visible text with "quotes"
+1. Get API key: [platform.openai.com](https://platform.openai.com)
+2. Use **SID_OpenAI_Compatible_LLM**
+3. Models: `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`
 
-**Generation Settings:**
-- `max_tokens`: Target prompt length (50-500)
-- `temperature`: Creativity (0.0=focused, 1.0=creative)
-- `seed`: Reproducibility seed
-- `seed_mode`: fixed, randomize, increment, decrement
-- `cache_prompt`: Enable persistent disk caching
+### xAI Grok
 
-#### 4. Outputs
+1. Get API key: [console.x.ai](https://console.x.ai)
+2. Use **SID_Grok_LLM**
+
+### LM Studio / Local Server
+
+1. Start LM Studio server
+2. Use **SID_OpenAI_Compatible_LLM**
+3. Set `api_url`: `http://localhost:1234/v1`
+4. Leave `api_key` empty
+
+### Local GGUF Models
+
+1. Install llama-cpp-python (see below)
+2. Use **SID_GGUF_LLM**
+3. Models auto-download to `ComfyUI/models/LLM/GGUF/`
+
+**Available Models:**
+
+| Model | VRAM |
+|-------|------|
+| moondream2-q4_k_m | ~4GB |
+| llava-v1.5-7b-q4_k_m | ~8GB |
+| minicpm-v-2_6-q4_k_m | ~10GB |
+| llava-v1.5-13b-q4_k_m | ~16GB |
+
+**Install llama-cpp-python:**
+
+```bash
+# NVIDIA CUDA 12.1
+pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121
+
+# NVIDIA CUDA 12.2+
+pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu122
+
+# CPU only
+pip install llama-cpp-python
+
+# AMD ROCm
+CMAKE_ARGS="-DGGML_HIPBLAS=on" pip install llama-cpp-python
+```
+
+## Node Settings
+
+| Setting | Options |
+|---------|---------|
+| detail_level | Quick (1 call), Standard (2), Deep (3) |
+| focus_override | Auto-detect, Portrait, Landscape, etc. |
+| content_detail | minimal, standard, detailed, explicit |
+| prompt_mode | Image Only, Prompt Guides, Prompt First, Prompt Dominates |
+
+## Outputs
 
 | Output | Description |
 |--------|-------------|
-| `image` | Pass-through of input image |
-| `zimage_prompt` | Z-Image compatible narrative prompt |
-| `width` | Image width in pixels |
-| `height` | Image height in pixels |
-| `structured_data` | JSON with classification and attributes |
-| `image_metadata` | JSON with Z-Image recommendations |
-| `debug_log` | Stage-by-stage processing details |
-
-### Example Workflow
-
-```
-Image Input → SID_ZImagePromptGenerator → zimage_prompt → Z-Image Model
-                      ↓
-              structured_data → (optional) Further processing
-```
-
-### Z-Image Best Practices
-
-Z-Image-Turbo (6B parameter model) works best with:
-- **Narrative prompts**: Flowing descriptions, not keyword lists
-- **No meta-tags**: Avoid "8K, masterpiece, best quality"
-- **No negative prompts**: Z-Image doesn't use them (guidance_scale=0.0)
-- **Visible elements only**: Describe what's actually in the image
-
-## Configuration
-
-### Ollama Setup (Local Models)
-
-1. Install Ollama: https://ollama.ai
-2. Pull a vision model:
-   ```bash
-   ollama pull llava:7b      # Low VRAM
-   ollama pull llava:13b     # Mid VRAM
-   ollama pull llava:34b     # High VRAM
-   ```
-3. Ollama runs on `http://localhost:11434` by default
-
-### API Key Security
-
-**Important:** Never commit your API key to version control!
-
-Options for storing your API key:
-1. Enter it directly in the node (least secure)
-2. Use environment variables (recommended)
-3. Use a secrets management system (production)
-
-## Troubleshooting
-
-### "ERROR: anthropic library not installed"
-```bash
-pip install anthropic>=0.39.0
-```
-
-### "ERROR: openai library not installed" (for Grok)
-```bash
-pip install openai
-```
-
-### "Ollama connection refused"
-- Ensure Ollama is running: `ollama serve`
-- Check URL is correct: `http://localhost:11434`
-- Verify model is pulled: `ollama list`
-
-### "API Error (AuthenticationError)"
-- Verify API key is correct
-- Check API key has not expired
-- Ensure account has credits
-
-### Empty or Invalid Prompts
-- Try increasing `max_tokens`
-- Check the debug_log output
-- Ensure image is valid
-
-## Requirements
-
-- ComfyUI (latest version recommended)
-- Python 3.10+
-- API key for chosen provider (except Ollama)
+| zimage_prompt | Generated narrative prompt |
+| structured_data | JSON classification |
+| debug_log | Processing details |
 
 ## Dependencies
 
-- `anthropic>=0.39.0` - Anthropic Claude API
-- `openai` - Grok API (OpenAI-compatible)
-- `requests` - Ollama API
-- `pyyaml>=6.0` - Configuration loading
-- `pillow>=10.0.0` - Image processing
-- `numpy>=1.24.0` - Array operations
+**Auto-installed:**
+- `anthropic` - Claude API
+- `openai` - OpenAI/Grok API
+- `pyyaml` - Config
+- `requests` - HTTP
 
-## Changelog
-
-### Version 4.0.0 (2025-01-XX) - Z-IMAGE & MULTI-PROVIDER
-
-**New Node: SID_ZImagePromptGenerator**
-- Complete rewrite for Z-Image compatibility
-- 6-stage agentic pipeline for intelligent image analysis
-- Generates flowing narrative prompts (not keyword lists)
-- No meta-tags, no negative prompts (Z-Image optimized)
-
-**Multi-Provider Support**
-- **Anthropic**: Claude Sonnet 4.5, Haiku 4.5, Opus 4.1
-- **Ollama**: Local vision models with VRAM tiers
-  - Low (~4-8GB): moondream, llava:7b, bakllava
-  - Mid (~12-16GB): llava:13b, llava-llama3
-  - High (~24GB+): llava:34b, llama3.2-vision
-- **Grok**: xAI vision models (grok-2-vision, grok-vision-beta)
-
-**Smart Features**
-- Persistent disk caching (saves API calls)
-- 56+ photography genres across 6 categories
-- 11 shot framing types (ECU to VLS)
-- Content detail levels (minimal to explicit/NSFW)
-- Seed modes: fixed, randomize, increment, decrement
-- 4 prompt modes for user prompt integration
-
-**Outputs**
-- Image pass-through
-- Z-Image prompt
-- Width/height
-- Structured data (JSON)
-- Image metadata with Z-Image recommendations
-- Debug log
-
-**Breaking Changes**
-- Removed old SID_AIPromptGenerator node
-- New node uses different output structure
-
-### Previous Versions
-
-See git history for changelog of versions 1.0.0 - 3.0.1.
-
-## Credits
-
-Created by Siddhartha Lahiri
-
-Special thanks to:
-- ComfyUI team for the amazing framework
-- Anthropic, Ollama, and xAI for AI APIs
-- The ComfyUI community
-
-## Contributing
-
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## Roadmap
-
-- [x] Z-Image optimized prompt generation
-- [x] Multi-provider support (Anthropic, Ollama, Grok)
-- [x] Persistent caching
-- [x] NSFW content support
-- [ ] SID_ZImagePromptEnhancer (text-to-text)
-- [ ] Batch processing
-- [ ] More AI providers (Gemini, etc.)
+**Manual (for GGUF):**
+- `llama-cpp-python`
 
 ## License
 
-MIT License - See LICENSE file for details
-
----
-
-**Generate better Z-Image prompts with AI!**
+MIT License
