@@ -52,36 +52,17 @@ SID_Anthropic_LLM ─┐
 
 ## Setup by Provider
 
-### Anthropic Claude
-
-1. Get API key: [console.anthropic.com](https://console.anthropic.com)
-2. Use **SID_ZImagePromptGenerator** or **SID_Anthropic_LLM**
-
-### OpenAI / GPT-4
-
-1. Get API key: [platform.openai.com](https://platform.openai.com)
-2. Use **SID_OpenAI_Compatible_LLM**
-3. Models: `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`
-
-### xAI Grok
-
-1. Get API key: [console.x.ai](https://console.x.ai)
-2. Use **SID_Grok_LLM**
-
-### LM Studio / Local Server
-
-1. Start LM Studio server
-2. Use **SID_OpenAI_Compatible_LLM**
-3. Set `api_url`: `http://localhost:1234/v1`
-4. Leave `api_key` empty
+| Provider | Node | API Key | Models / Notes |
+|----------|------|---------|----------------|
+| **Anthropic** | SID_ZImagePromptGenerator or SID_Anthropic_LLM | [console.anthropic.com](https://console.anthropic.com) | claude-sonnet-4-5, claude-haiku-4-5 |
+| **OpenAI** | SID_OpenAI_Compatible_LLM | [platform.openai.com](https://platform.openai.com) | gpt-4o, gpt-4o-mini, gpt-4-turbo |
+| **xAI Grok** | SID_Grok_LLM | [console.x.ai](https://console.x.ai) | grok-2-vision-1212, grok-vision-beta |
+| **LM Studio** | SID_OpenAI_Compatible_LLM | Not required | Set `api_url`: `http://localhost:1234/v1` |
+| **Local GGUF** | SID_GGUF_LLM | Not required | Models auto-download (see below) |
 
 ### Local GGUF Models
 
-1. Install llama-cpp-python (see below)
-2. Use **SID_GGUF_LLM**
-3. Models auto-download to `ComfyUI/models/LLM/GGUF/`
-
-**Available Models:**
+Models download automatically to `ComfyUI/models/LLM/GGUF/`
 
 | Model | VRAM |
 |-------|------|
