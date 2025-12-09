@@ -44,6 +44,7 @@ from .utils.zimage_utils import (
     format_attribute_schema_for_prompt,
 )
 from .llm_providers.llm_model_type import LLMModelConfig
+from .prompt_templates import get_prompt_template_for_provider, BasePromptTemplate
 
 # Create custom LLM_MODEL type for ComfyUI (must match provider nodes)
 LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
@@ -300,7 +301,7 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
 
         # Validate API key (not required for Ollama or local endpoints)
         is_local = "localhost" in api_url or "127.0.0.1" in api_url
-        if actual_provider != "Ollama" and not is_local and (not api_key or api_key.strip() == ""):
+        if actual_provider not in ["Ollama", "Gguf"] and not is_local and (not api_key or api_key.strip() == ""):
             if actual_provider == "Anthropic":
                 error_msg = "ERROR: Anthropic API key is required. Get one at https://console.anthropic.com/"
             elif actual_provider == "Openai":
@@ -411,12 +412,21 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
             # Initialize progress bar (6 stages)
             pbar = comfy.utils.ProgressBar(6)
 
+            # Get the appropriate prompt template for this provider
+            prompt_template = get_prompt_template_for_provider(actual_provider, model)
+            log(f"[TEMPLATE] Using: {prompt_template.name}")
+            log("")
+
+            # Track all LLM interactions for structured output
+            llm_interactions = []
+
             # ===== STAGE 1: CLASSIFICATION =====
             log("[STAGE 1] Classification (LLM Call #1)")
             stage1_start = time.time()
 
             classification = cls._stage1_classification(
-                client, model, base64_image, focus_override, temperature, log
+                client, model, base64_image, focus_override, temperature, log, prompt_template,
+                interactions=llm_interactions
             )
 
             log(f"  Shot Framing: {classification['shot_framing']} ({classification.get('shot_label', '')}) - {int(classification.get('confidence', 0) * 100)}% confidence")
@@ -459,7 +469,9 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
                 attributes = cls._stage4_detailed_analysis(
                     client, model, base64_image,
                     classification, attribute_schema,
-                    content_detail, temperature, log
+                    content_detail, temperature, log, prompt_template,
+                    detail_level=detail_level,
+                    interactions=llm_interactions
                 )
 
                 attr_count = sum(len(v) if isinstance(v, dict) else 1 for v in attributes.values())
@@ -486,7 +498,8 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
                     user_prompt, prompt_mode,
                     focus_subject, focus_environment, focus_lighting,
                     focus_colors, focus_mood, include_text_quotes,
-                    max_tokens, temperature, log
+                    max_tokens, temperature, log, prompt_template,
+                    interactions=llm_interactions
                 )
             else:
                 # Template-based composition
@@ -496,7 +509,8 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
                     user_prompt, prompt_mode,
                     focus_subject, focus_environment, focus_lighting,
                     focus_colors, focus_mood, include_text_quotes,
-                    max_tokens, temperature, log
+                    max_tokens, temperature, log, prompt_template,
+                    interactions=llm_interactions
                 )
 
             # Clean the output
@@ -522,17 +536,41 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
             log("")
             pbar.update(1)
 
-            # Build structured data output
-            structured_data = {
-                "classification": classification,
-                "attributes": attributes,
-                "prompt_stats": {
-                    "word_count": word_count,
-                    "estimated_tokens": estimated_tokens,
-                }
-            }
+            # Build structured data output with organized categories
+            structured_data = cls._build_structured_output(
+                classification=classification,
+                attributes=attributes,
+                prompt=prompt,
+                word_count=word_count,
+                estimated_tokens=estimated_tokens,
+                # Model info
+                provider=actual_provider,
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                template_name=prompt_template.name,
+                # Image info
+                image_meta=image_meta,
+                zimage_recs=zimage_recs,
+                # Settings
+                detail_level=detail_level,
+                content_detail=content_detail,
+                focus_override=focus_override,
+                prompt_mode=prompt_mode,
+                focus_options={
+                    "subject": focus_subject,
+                    "environment": focus_environment,
+                    "lighting": focus_lighting,
+                    "colors": focus_colors,
+                    "mood": focus_mood,
+                },
+                seed=actual_seed,
+                total_time=time.time() - start_time,
+                # LLM interactions
+                llm_interactions=llm_interactions,
+            )
 
-            # Build metadata output
+            # Build metadata output (simplified - main data now in structured_data)
             metadata_output = {
                 "image_info": image_meta,
                 "z_image_recommendations": zimage_recs,
@@ -762,53 +800,49 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
         base64_image: str,
         focus_override: str,
         temperature: float,
-        log
+        log,
+        prompt_template: BasePromptTemplate,
+        interactions: list = None
     ) -> dict:
-        """Stage 1: Classify the image."""
+        """Stage 1: Classify the image using template-based prompts."""
 
         # Get shot framings and genres for reference
         shot_framings = get_shot_framings()
         genres = get_photography_genres()
 
-        shot_codes = list(shot_framings.keys())
-        genre_codes = list(genres.keys())
+        # Use template to build prompts (SOLID: template handles formatting)
+        system_prompt, user_message = prompt_template.build_classification_prompt(
+            shot_framings, genres, focus_override
+        )
 
-        system_prompt = f"""You are an expert image classifier for photography analysis.
-
-Classify this image precisely into shot framing and photography genre.
-
-SHOT FRAMINGS (distance to subject):
-{json.dumps({k: v['name'] for k, v in shot_framings.items()}, indent=2)}
-
-PHOTOGRAPHY GENRES:
-{json.dumps({k: v['name'] for k, v in genres.items()}, indent=2)}
-
-Output ONLY valid JSON (no markdown, no explanation):
-{{
-  "shot_framing": "<code from: {', '.join(shot_codes)}>",
-  "shot_label": "<full name>",
-  "genre": "<code from: {', '.join(genre_codes)}>",
-  "genre_label": "<full name>",
-  "genre_category": "<people|event|nature|commercial|artistic|lifestyle>",
-  "secondary_tags": ["<tag1>", "<tag2>"],
-  "subject_count": <0|1|2|"group">,
-  "has_text": <true|false>,
-  "confidence": <0.0-1.0>
-}}"""
-
-        # Apply focus override if specified
-        user_message = "Classify this image."
-        if focus_override != "Auto-detect":
-            override_config = get_focus_override_config(focus_override)
-            if override_config:
-                user_message = f"Classify this image. Hint: Focus on {focus_override} characteristics."
+        # Get template-specific settings
+        max_tokens = prompt_template.get_classification_max_tokens()
+        temp_modifier = prompt_template.get_temperature_modifier("classification")
+        actual_temp = temperature * temp_modifier
 
         response_text = cls._call_vision_llm(
             client, model, base64_image,
             system_prompt, user_message,
-            max_tokens=500,
-            temperature=temperature * 0.5  # Lower temp for classification
+            max_tokens=max_tokens,
+            temperature=actual_temp
         )
+
+        # Track interaction
+        if interactions is not None:
+            interactions.append({
+                "stage": "classification",
+                "stage_number": 1,
+                "type": "vision",
+                "request": {
+                    "system_prompt": system_prompt,
+                    "user_message": user_message,
+                    "max_tokens": max_tokens,
+                    "temperature": actual_temp,
+                },
+                "response": {
+                    "raw_text": response_text,
+                },
+            })
 
         # Parse JSON response
         try:
@@ -847,72 +881,460 @@ Output ONLY valid JSON (no markdown, no explanation):
         attribute_schema: dict,
         content_detail: str,
         temperature: float,
-        log
+        log,
+        prompt_template: BasePromptTemplate,
+        detail_level: str = "Standard",
+        interactions: list = None
     ) -> dict:
-        """Stage 4: Extract detailed attributes based on schema."""
+        """Stage 4: Extract detailed attributes using template-based prompts.
 
-        schema_text = format_attribute_schema_for_prompt(attribute_schema)
+        For Deep mode with local GGUF models (multi-iteration templates):
+        - Runs multiple focused analysis stages (subject, environment, lighting, style)
+        - Each stage analyzes ONE aspect thoroughly
+        - Results are consolidated into a single attribute dict
 
-        # Build content detail guidance
-        if content_detail == "explicit":
-            detail_guidance = """CONTENT DETAIL: EXPLICIT (NSFW)
-Include full body details: bust size/shape, cleavage visibility, body exposure areas,
-clothing coverage and cutouts, sensuality indicators. Be specific and accurate."""
-        elif content_detail == "detailed":
-            detail_guidance = """CONTENT DETAIL: DETAILED
-Include body proportions, clothing coverage details, exposure areas, and fit descriptions."""
-        elif content_detail == "minimal":
-            detail_guidance = """CONTENT DETAIL: MINIMAL
-Include only basic build and clothing type/color."""
-        else:
-            detail_guidance = """CONTENT DETAIL: STANDARD
-Include build, posture, clothing type, fit, color, and material."""
+        This approach achieves similar quality to cloud models but with more iterations.
+        """
 
-        system_prompt = f"""You are an expert visual analyst for Z-Image prompt generation.
-
-Analyze this image and extract structured attributes.
-
-CLASSIFICATION:
-- Shot: {classification['shot_framing']} ({classification.get('shot_label', '')})
-- Genre: {classification['genre']} ({classification.get('genre_label', '')})
-
-{detail_guidance}
-
-{schema_text}
-
-RULES:
-- Only describe VISIBLE elements
-- Use concrete, objective language
-- Be specific about colors, materials, textures
-- No abstract adjectives (beautiful, mysterious)
-
-Output ONLY valid JSON with the extracted attributes. Use the category names as keys."""
-
-        response_text = cls._call_vision_llm(
-            client, model, base64_image,
-            system_prompt,
-            "Extract all visible attributes from this image according to the schema.",
-            max_tokens=1500,
-            temperature=temperature
+        # Check if we should use multi-iteration deep mode
+        uses_multi_iteration = (
+            detail_level == "Deep"
+            and hasattr(prompt_template, 'uses_multi_iteration_deep_mode')
+            and prompt_template.uses_multi_iteration_deep_mode
         )
 
-        try:
-            # Clean up any markdown
-            response_text = response_text.strip()
-            if response_text.startswith("```"):
-                response_text = response_text.split("```")[1]
-                if response_text.startswith("json"):
-                    response_text = response_text[4:]
-            response_text = response_text.strip()
-            if response_text.endswith("```"):
-                response_text = response_text[:-3].strip()
+        if uses_multi_iteration:
+            # Multi-iteration Deep mode for local models
+            log(f"  [Multi-iteration mode] Running focused analysis stages...")
 
-            attributes = json.loads(response_text)
-        except json.JSONDecodeError:
-            log(f"  Warning: Failed to parse attributes JSON")
-            attributes = {}
+            stages = prompt_template.get_deep_mode_stages()
+            stage_results = {}
+            call_number = 2  # Stage 4 starts at call #2
 
-        return attributes
+            for i, stage in enumerate(stages, 1):
+                log(f"    Stage {i}/{len(stages)}: {stage.capitalize()}")
+
+                # Build focused prompt for this stage
+                system_prompt, user_message = prompt_template.build_focused_analysis_prompt(
+                    stage, classification, content_detail, stage_results
+                )
+
+                # Get stage-specific settings
+                max_tokens = prompt_template.get_focused_analysis_max_tokens()
+                temp_modifier = prompt_template.get_temperature_modifier("focused_analysis")
+                actual_temp = temperature * temp_modifier
+
+                response_text = cls._call_vision_llm(
+                    client, model, base64_image,
+                    system_prompt, user_message,
+                    max_tokens=max_tokens,
+                    temperature=actual_temp
+                )
+
+                # Track interaction
+                if interactions is not None:
+                    interactions.append({
+                        "stage": f"analysis_focused_{stage}",
+                        "stage_number": 4,
+                        "substage": f"{i}/{len(stages)} - {stage}",
+                        "type": "vision",
+                        "request": {
+                            "system_prompt": system_prompt,
+                            "user_message": user_message,
+                            "max_tokens": max_tokens,
+                            "temperature": actual_temp,
+                        },
+                        "response": {
+                            "raw_text": response_text,
+                        },
+                    })
+
+                # Parse JSON response
+                try:
+                    cleaned_response = cls._clean_json_response(response_text)
+                    stage_data = json.loads(cleaned_response)
+                    stage_results[stage] = stage_data
+                    log(f"      Extracted: {list(stage_data.keys())}")
+                except json.JSONDecodeError:
+                    log(f"      Warning: Failed to parse {stage} JSON")
+                    stage_results[stage] = {}
+
+            # Consolidate results from all stages
+            log(f"    Consolidating {len(stages)} analysis stages...")
+            system_prompt, user_message = prompt_template.build_consolidation_prompt(
+                classification, stage_results
+            )
+
+            temp_modifier = prompt_template.get_temperature_modifier("consolidation")
+            actual_temp = temperature * temp_modifier
+            max_tokens = prompt_template.get_analysis_max_tokens()
+
+            response_text = cls._call_text_llm(
+                client, model,
+                system_prompt, user_message,
+                max_tokens=max_tokens,
+                temperature=actual_temp
+            )
+
+            # Track consolidation interaction
+            if interactions is not None:
+                interactions.append({
+                    "stage": "analysis_consolidation",
+                    "stage_number": 4,
+                    "substage": "consolidation",
+                    "type": "text",
+                    "request": {
+                        "system_prompt": system_prompt,
+                        "user_message": user_message,
+                        "max_tokens": max_tokens,
+                        "temperature": actual_temp,
+                    },
+                    "response": {
+                        "raw_text": response_text,
+                    },
+                })
+
+            try:
+                cleaned_response = cls._clean_json_response(response_text)
+                attributes = json.loads(cleaned_response)
+            except json.JSONDecodeError:
+                log(f"    Warning: Failed to parse consolidated JSON, using raw stages")
+                # Flatten stage results as fallback
+                attributes = {}
+                for stage_data in stage_results.values():
+                    if isinstance(stage_data, dict):
+                        attributes.update(stage_data)
+
+            return attributes
+
+        else:
+            # Standard single-call analysis (Claude, OpenAI, Grok, or non-Deep mode)
+            system_prompt, user_message = prompt_template.build_analysis_prompt(
+                classification, attribute_schema, content_detail
+            )
+
+            max_tokens = prompt_template.get_analysis_max_tokens()
+            temp_modifier = prompt_template.get_temperature_modifier("analysis")
+            actual_temp = temperature * temp_modifier
+
+            response_text = cls._call_vision_llm(
+                client, model, base64_image,
+                system_prompt, user_message,
+                max_tokens=max_tokens,
+                temperature=actual_temp
+            )
+
+            # Track interaction
+            if interactions is not None:
+                interactions.append({
+                    "stage": "analysis",
+                    "stage_number": 4,
+                    "type": "vision",
+                    "request": {
+                        "system_prompt": system_prompt,
+                        "user_message": user_message,
+                        "max_tokens": max_tokens,
+                        "temperature": actual_temp,
+                    },
+                    "response": {
+                        "raw_text": response_text,
+                    },
+                })
+
+            try:
+                cleaned_response = cls._clean_json_response(response_text)
+                attributes = json.loads(cleaned_response)
+            except json.JSONDecodeError:
+                log(f"  Warning: Failed to parse attributes JSON")
+                attributes = {}
+
+            return attributes
+
+    @staticmethod
+    def _clean_json_response(response_text: str) -> str:
+        """Clean up JSON response from LLM (remove markdown formatting)."""
+        response_text = response_text.strip()
+        if response_text.startswith("```"):
+            response_text = response_text.split("```")[1]
+            if response_text.startswith("json"):
+                response_text = response_text[4:]
+        response_text = response_text.strip()
+        if response_text.endswith("```"):
+            response_text = response_text[:-3].strip()
+        return response_text
+
+    @classmethod
+    def _build_structured_output(
+        cls,
+        classification: dict,
+        attributes: dict,
+        prompt: str,
+        word_count: int,
+        estimated_tokens: int,
+        # Model info
+        provider: str = "",
+        model: str = "",
+        max_tokens: int = 0,
+        temperature: float = 0.0,
+        template_name: str = "",
+        # Image info
+        image_meta: dict = None,
+        zimage_recs: dict = None,
+        # Settings
+        detail_level: str = "",
+        content_detail: str = "",
+        focus_override: str = "",
+        prompt_mode: str = "",
+        focus_options: dict = None,
+        seed: int = 0,
+        total_time: float = 0.0,
+        llm_interactions: list = None,
+    ) -> dict:
+        """
+        Build a well-organized, categorized structured output JSON.
+
+        Organizes all extracted data into clear categories for easy consumption.
+        Includes model data, image metadata, settings, and all gathered information.
+        """
+        image_meta = image_meta or {}
+        zimage_recs = zimage_recs or {}
+        focus_options = focus_options or {}
+        llm_interactions = llm_interactions or []
+
+        # Helper to safely get nested values
+        def get_nested(d: dict, *keys, default=None):
+            for key in keys:
+                if isinstance(d, dict):
+                    d = d.get(key, default)
+                else:
+                    return default
+            return d if d is not None else default
+
+        # Extract subject data from attributes
+        subject_data = attributes.get("subject", {})
+        pose_data = attributes.get("pose", {})
+        clothing_data = attributes.get("clothing", {})
+        environment_data = attributes.get("environment", {})
+        lighting_data = attributes.get("lighting", {})
+        colors_data = attributes.get("colors", {})
+        style_data = attributes.get("style", {})
+
+        # Build organized structure
+        structured = {
+            # ===== METADATA SECTION =====
+            "metadata": {
+                "generator": "SID Z-Image Prompt Generator Advanced",
+                "version": "1.0.0",
+                "timestamp": datetime.now().isoformat(),
+                "processing_time_seconds": round(total_time, 2),
+            },
+
+            # ===== MODEL CONFIGURATION =====
+            "model": {
+                "provider": provider,
+                "model_name": model,
+                "template": template_name,
+                "settings": {
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                    "seed": seed,
+                },
+            },
+
+            # ===== ANALYSIS SETTINGS =====
+            "settings": {
+                "detail_level": detail_level,
+                "content_detail": content_detail,
+                "focus_override": focus_override,
+                "prompt_mode": prompt_mode,
+                "focus_areas": focus_options,
+            },
+
+            # ===== IMAGE INFORMATION =====
+            "image": {
+                "dimensions": {
+                    "width": image_meta.get("width", 0),
+                    "height": image_meta.get("height", 0),
+                    "megapixels": image_meta.get("megapixels", 0),
+                },
+                "aspect_ratio": {
+                    "ratio": image_meta.get("aspect_ratio", ""),
+                    "decimal": image_meta.get("aspect_decimal", 0),
+                    "orientation": image_meta.get("orientation", ""),
+                },
+                "color_info": {
+                    "mode": image_meta.get("mode", ""),
+                    "has_alpha": image_meta.get("has_alpha", False),
+                    "bit_depth": image_meta.get("bit_depth", 0),
+                },
+            },
+
+            # ===== Z-IMAGE RECOMMENDATIONS =====
+            "zimage_recommendations": {
+                "optimal_resolution": zimage_recs.get("optimal_resolution", []),
+                "resize_needed": zimage_recs.get("resize_needed", False),
+                "resize_method": zimage_recs.get("resize_method", ""),
+                "resize_direction": zimage_recs.get("resize_direction", ""),
+                "quality_estimate": zimage_recs.get("quality_estimate", ""),
+                "recommended_settings": zimage_recs.get("recommended_settings", {}),
+            },
+
+            # ===== IMAGE CLASSIFICATION =====
+            "classification": {
+                "shot_framing": {
+                    "code": classification.get("shot_framing", ""),
+                    "label": classification.get("shot_label", ""),
+                },
+                "genre": {
+                    "code": classification.get("genre", ""),
+                    "label": classification.get("genre_label", ""),
+                    "category": classification.get("genre_category", ""),
+                },
+                "secondary_tags": classification.get("secondary_tags", []),
+                "subject_count": classification.get("subject_count", 1),
+                "has_text": classification.get("has_text", False),
+                "confidence": classification.get("confidence", 0.0),
+                "visual_metrics": classification.get("visual_metrics", {}),
+            },
+
+            # ===== SUBJECT ANALYSIS =====
+            "subject": {
+                "ethnicity": {
+                    "heritage": get_nested(subject_data, "ethnicity", "apparent_heritage", default=""),
+                    "distinctive_features": get_nested(subject_data, "ethnicity", "distinctive_features", default=[]),
+                },
+                "skin": {
+                    "tone": get_nested(subject_data, "skin", "tone", default=""),
+                    "undertone": get_nested(subject_data, "skin", "undertone", default=""),
+                    "surface": get_nested(subject_data, "skin", "surface", default=""),
+                    "details": get_nested(subject_data, "skin", "details", default=""),
+                },
+                "face": {
+                    "shape": subject_data.get("face_shape", ""),
+                    "head_direction": subject_data.get("head_direction", {}),
+                    "expression": subject_data.get("expression", ""),
+                },
+                "eyes": subject_data.get("eyes", {}),
+                "eyebrows": subject_data.get("eyebrows", {}),
+                "nose": subject_data.get("nose", {}),
+                "lips": subject_data.get("lips", {}),
+                "hair": subject_data.get("hair", {}),
+                "build": subject_data.get("build", ""),
+                "notable_features": subject_data.get("notable_features", []),
+            },
+
+            # ===== COSMETICS =====
+            "cosmetics": subject_data.get("cosmetics", {}),
+
+            # ===== POSE ANALYSIS =====
+            "pose": {
+                "head": pose_data.get("head", {}),
+                "neck": pose_data.get("neck", {}),
+                "shoulders": pose_data.get("shoulders", {}),
+                "arms": {
+                    "left": pose_data.get("left_arm", {}),
+                    "right": pose_data.get("right_arm", {}),
+                },
+                "hands": {
+                    "left": pose_data.get("left_hand", {}),
+                    "right": pose_data.get("right_hand", {}),
+                },
+                "torso": pose_data.get("torso", {}),
+                "hips": pose_data.get("hips", {}),
+                "legs": {
+                    "left": pose_data.get("left_leg", ""),
+                    "right": pose_data.get("right_leg", ""),
+                },
+                "feet": pose_data.get("feet", ""),
+                "overall_gesture": pose_data.get("overall_gesture", ""),
+            },
+
+            # ===== CLOTHING ANALYSIS =====
+            "clothing": {
+                "garments": clothing_data.get("garments", []),
+                "coverage": clothing_data.get("coverage", {}),
+                "fabric_behavior": clothing_data.get("fabric_behavior", {}),
+                "accessories": clothing_data.get("accessories", []),
+                "overall_style": clothing_data.get("overall_style", ""),
+            },
+
+            # ===== ENVIRONMENT ANALYSIS =====
+            "environment": {
+                "setting": environment_data.get("setting_type", ""),
+                "background": environment_data.get("background", {}),
+                "surfaces": environment_data.get("surfaces", {}),
+                "props": environment_data.get("props", []),
+                "spatial": environment_data.get("spatial", {}),
+            },
+
+            # ===== LIGHTING ANALYSIS =====
+            "lighting": {
+                "key_light": lighting_data.get("key_light", {}),
+                "fill_light": lighting_data.get("fill_light", {}),
+                "rim_light": lighting_data.get("rim_light", {}),
+                "shadows": lighting_data.get("shadows", {}),
+            },
+
+            # ===== COLOR ANALYSIS =====
+            "colors": {
+                "temperature": colors_data.get("temperature", ""),
+                "dominant_palette": colors_data.get("dominant_palette", []),
+                "saturation": colors_data.get("saturation", ""),
+                "mood": colors_data.get("mood", ""),
+            },
+
+            # ===== STYLE ANALYSIS =====
+            "style": {
+                "technical": style_data.get("technical", {}),
+                "composition": style_data.get("composition", {}),
+                "aesthetic": style_data.get("aesthetic", {}),
+            },
+
+            # ===== GENERATED PROMPT =====
+            "generated_prompt": {
+                "text": prompt,
+                "statistics": {
+                    "word_count": word_count,
+                    "estimated_tokens": estimated_tokens,
+                    "chars": len(prompt),
+                },
+            },
+
+            # ===== LLM INTERACTIONS (all queries and responses) =====
+            "llm_interactions": llm_interactions,
+
+            # ===== RAW DATA (for debugging/advanced use) =====
+            "_raw": {
+                "classification": classification,
+                "attributes": attributes,
+            },
+        }
+
+        # Clean up empty sections
+        structured = cls._clean_empty_values(structured)
+
+        return structured
+
+    @classmethod
+    def _clean_empty_values(cls, d: dict) -> dict:
+        """Recursively remove empty values from dict while preserving structure."""
+        if not isinstance(d, dict):
+            return d
+
+        cleaned = {}
+        for k, v in d.items():
+            if isinstance(v, dict):
+                cleaned_v = cls._clean_empty_values(v)
+                if cleaned_v:  # Only add non-empty dicts
+                    cleaned[k] = cleaned_v
+            elif isinstance(v, list):
+                if v:  # Only add non-empty lists
+                    cleaned[k] = v
+            elif v not in (None, "", 0, 0.0) or k in ("confidence", "word_count", "estimated_tokens", "has_text"):
+                # Keep zeros for specific fields that can legitimately be 0
+                cleaned[k] = v
+
+        return cleaned
 
     @classmethod
     def _stage5_prompt_composition_template(
@@ -932,88 +1354,61 @@ Output ONLY valid JSON with the extracted attributes. Use the category names as 
         include_text_quotes: bool,
         max_tokens: int,
         temperature: float,
-        log
+        log,
+        prompt_template: BasePromptTemplate,
+        interactions: list = None
     ) -> str:
-        """Stage 5: Compose prompt using LLM with template guidance."""
+        """Stage 5: Compose prompt using template-based prompts."""
 
         # Calculate word targets based on max_tokens
         min_words = max(50, int(max_tokens * 0.6))
         max_words = int(max_tokens * 1.2)
 
-        # Build focus instructions
-        focus_parts = []
-        if focus_subject:
-            focus_parts.append("subject description (features, clothing, pose)")
-        if focus_environment:
-            focus_parts.append("environment/background")
-        if focus_lighting:
-            focus_parts.append("lighting (direction, quality, color)")
-        if focus_colors:
-            focus_parts.append("colors and materials")
-        if focus_mood:
-            focus_parts.append("mood/atmosphere")
+        # Build focus options dict
+        focus_options = {
+            "subject": focus_subject,
+            "environment": focus_environment,
+            "lighting": focus_lighting,
+            "colors": focus_colors,
+            "mood": focus_mood,
+        }
 
-        focus_instruction = "Focus on: " + ", ".join(focus_parts) if focus_parts else "Provide a balanced description."
-
-        # Build prompt mode instruction
-        if prompt_mode == "Image Only (ignore prompt)":
-            mode_instruction = "Analyze the image directly. Ignore any user prompt."
-            user_context = ""
-        elif prompt_mode == "Prompt Guides Analysis":
-            mode_instruction = "Analyze the image. Use the user prompt as guidance for emphasis."
-            user_context = f"\nUser guidance: {user_prompt}" if user_prompt else ""
-        elif prompt_mode == "Prompt First, Image Fills Gaps":
-            mode_instruction = "Use the user prompt as primary structure. Fill gaps with image analysis."
-            user_context = f"\nUser prompt (primary): {user_prompt}" if user_prompt else ""
-        else:  # Prompt Dominates
-            mode_instruction = "Use the user prompt as foundation. Add minimal visual details from image."
-            user_context = f"\nUser prompt (override): {user_prompt}" if user_prompt else ""
-
-        # Build text quote instruction
-        text_instruction = 'Quote any visible text with "double quotes" for Z-Image text rendering.' if include_text_quotes else ""
-
-        # Build attributes context
-        attrs_text = json.dumps(attributes, indent=2) if attributes else "{}"
-
-        system_prompt = f"""You are an expert prompt composer for Z-Image-Turbo.
-
-Generate a flowing narrative prompt from the analysis data.
-
-CLASSIFICATION:
-- Shot: {classification['shot_framing']} ({classification.get('shot_label', '')})
-- Genre: {classification['genre']} ({classification.get('genre_label', '')})
-
-EXTRACTED ATTRIBUTES:
-{attrs_text}
-
-INSTRUCTIONS:
-- {mode_instruction}
-- {focus_instruction}
-- {text_instruction}
-
-OUTPUT FORMAT:
-- Single flowing paragraph, {min_words}-{max_words} words
-- Natural language narrative, NOT keyword lists
-- NO meta-tags (8K, masterpiece, best quality)
-- NO negative prompts or exclusions
-- Every word should describe something VISIBLE
-
-STRUCTURE:
-1. Shot type and composition
-2. Subject description (visible features only)
-3. Clothing/objects (colors, materials, textures)
-4. Environment/background (if applicable)
-5. Lighting (direction, quality, color temperature)
-6. Style hints (photography style)
-{user_context}"""
-
-        return cls._call_vision_llm(
-            client, model, base64_image,
-            system_prompt,
-            "Generate the Z-Image narrative prompt based on this image and the analysis.",
-            max_tokens=max_tokens * 2,
-            temperature=temperature
+        # Use template to build prompts (SOLID: template handles formatting)
+        system_prompt, user_message = prompt_template.build_composition_prompt(
+            classification, attributes, user_prompt, prompt_mode,
+            focus_options, include_text_quotes, min_words, max_words
         )
+
+        # Get template-specific settings
+        temp_modifier = prompt_template.get_temperature_modifier("composition")
+        actual_temp = temperature * temp_modifier
+        actual_max_tokens = max_tokens * 2
+
+        response_text = cls._call_vision_llm(
+            client, model, base64_image,
+            system_prompt, user_message,
+            max_tokens=actual_max_tokens,
+            temperature=actual_temp
+        )
+
+        # Track interaction
+        if interactions is not None:
+            interactions.append({
+                "stage": "composition",
+                "stage_number": 5,
+                "type": "vision",
+                "request": {
+                    "system_prompt": system_prompt,
+                    "user_message": user_message,
+                    "max_tokens": actual_max_tokens,
+                    "temperature": actual_temp,
+                },
+                "response": {
+                    "raw_text": response_text,
+                },
+            })
+
+        return response_text
 
     @classmethod
     def _stage5_prompt_composition_llm(
@@ -1033,42 +1428,61 @@ STRUCTURE:
         include_text_quotes: bool,
         max_tokens: int,
         temperature: float,
-        log
+        log,
+        prompt_template: BasePromptTemplate,
+        interactions: list = None
     ) -> str:
         """Stage 5 (Deep mode): Refined prompt composition with additional LLM call."""
-        # For deep mode, we do a more refined composition
-        # First generate a draft, then refine it
 
-        # Generate initial draft
+        # Generate initial draft using template (this will track its own interaction)
         draft = cls._stage5_prompt_composition_template(
             client, model, base64_image,
             classification, attributes,
             user_prompt, prompt_mode,
             focus_subject, focus_environment, focus_lighting,
             focus_colors, focus_mood, include_text_quotes,
-            max_tokens, temperature * 0.8, log
+            max_tokens, temperature * 0.8, log, prompt_template,
+            interactions=interactions
         )
 
-        # Refine the draft
-        refine_prompt = f"""Review and refine this Z-Image prompt for optimal quality.
+        # Calculate word targets
+        min_words = max(50, int(max_tokens * 0.6))
+        max_words = int(max_tokens * 1.2)
 
-DRAFT:
-{draft}
+        # Use template for refinement prompt
+        system_prompt, user_message = prompt_template.build_refinement_prompt(
+            draft, min_words, max_words
+        )
 
-REFINEMENT RULES:
-1. Ensure natural flowing language (not keyword lists)
-2. Remove any meta-tags (8K, masterpiece, best quality)
-3. Ensure every word describes something visible
-4. Check for contradictions or redundancy
-5. Optimize word choice for Z-Image's natural language understanding
-6. Keep within {int(max_tokens * 0.8)}-{max_tokens} words
+        # Get template-specific settings
+        temp_modifier = prompt_template.get_temperature_modifier("refinement")
+        actual_max_tokens = max_tokens * 2
+        actual_temp = temperature * temp_modifier
 
-Output ONLY the refined prompt, nothing else."""
-
-        return cls._call_text_llm(
+        response_text = cls._call_text_llm(
             client, model,
-            "You are a prompt refinement expert for Z-Image-Turbo.",
-            refine_prompt,
-            max_tokens=max_tokens * 2,
-            temperature=temperature * 0.5
+            system_prompt, user_message,
+            max_tokens=actual_max_tokens,
+            temperature=actual_temp
         )
+
+        # Track this refinement LLM call
+        if interactions is not None:
+            interactions.append({
+                "stage": "prompt_refinement",
+                "stage_number": 5,
+                "sub_stage": "refinement",
+                "type": "text",
+                "request": {
+                    "system_prompt": system_prompt,
+                    "user_message": user_message,
+                    "max_tokens": actual_max_tokens,
+                    "temperature": actual_temp,
+                    "input_draft_length": len(draft),
+                },
+                "response": {
+                    "raw_text": response_text,
+                },
+            })
+
+        return response_text

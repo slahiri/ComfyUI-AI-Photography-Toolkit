@@ -4,7 +4,7 @@ AI-powered Z-Image prompt generator for ComfyUI. Analyzes images and generates f
 
 ![Workflow Screenshot](docs/images/workflow-screenshot.png)
 
-**Version:** 4.1.0  
+**Version:** 4.3.0
 **Author:** Siddhartha Lahiri
 
 ## Installation
@@ -151,12 +151,22 @@ ollama serve
 
 **Available Models:**
 
-| Model | VRAM | Manual Download |
-|-------|------|-----------------|
-| moondream2-q4_k_m | ~4GB | [HuggingFace](https://huggingface.co/vikhyatk/moondream2) |
-| llava-v1.5-7b-q4_k_m | ~8GB | [HuggingFace](https://huggingface.co/mys/ggml_llava-v1.5-7b) |
-| minicpm-v-2_6-q4_k_m | ~10GB | [HuggingFace](https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf) |
-| llava-v1.5-13b-q4_k_m | ~16GB | [HuggingFace](https://huggingface.co/mys/ggml_llava-v1.5-13b) |
+| Model | VRAM | Quality | Speed | Download |
+|-------|------|---------|-------|----------|
+| **moondream2-q4_k_m** | ~4GB | Good | Fast | [HuggingFace](https://huggingface.co/moondream/moondream2-gguf) |
+| **llava-v1.5-7b-q4_k_m** | ~8GB | Good | Medium | [HuggingFace](https://huggingface.co/mys/ggml_llava-v1.5-7b) |
+| **llava-v1.6-mistral-7b-q4_k_m** | ~8GB | Better | Medium | [HuggingFace](https://huggingface.co/cmp-nct/llava-1.6-gguf) |
+| **qwen2.5-vl-7b-q4_k_m** | ~6GB | Better | Medium | [HuggingFace](https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF) |
+| **qwen2.5-vl-7b-q8** | ~10GB | Excellent | Medium | [HuggingFace](https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF) |
+| **minicpm-v-2_6-q4_k_m** | ~10GB | Excellent | Medium | [HuggingFace](https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf) |
+| **llava-v1.5-13b-q4_k_m** | ~16GB | Very Good | Slow | [HuggingFace](https://huggingface.co/mys/ggml_llava-v1.5-13b) |
+| **llava-v1.6-34b-q4_k_m** | ~22GB | Best | Slow | [HuggingFace](https://huggingface.co/cjpais/llava-v1.6-34B-gguf) |
+
+**Recommendations by VRAM:**
+- **8GB VRAM:** moondream2, llava-v1.5-7b, qwen2.5-vl-7b-q4
+- **12GB VRAM:** qwen2.5-vl-7b-q8, minicpm-v-2_6
+- **16GB VRAM:** llava-v1.5-13b
+- **24GB VRAM:** llava-v1.6-34b (best quality)
 
 **Model Location:** `ComfyUI/models/LLM/GGUF/`
 
@@ -182,8 +192,31 @@ ollama serve
 | image | Pass-through input image |
 | zimage_prompt | Generated narrative prompt |
 | width / height | Image dimensions |
-| structured_data | JSON classification and attributes |
+| structured_data | Comprehensive JSON with all analysis data (see below) |
 | debug_log | Processing details |
+
+### Structured Data Output
+
+The `structured_data` output contains categorized JSON with:
+
+| Section | Contents |
+|---------|----------|
+| `metadata` | Generator version, timestamp, processing time |
+| `model` | Provider, model name, template used, settings |
+| `settings` | Detail level, content detail, focus options |
+| `image` | Dimensions, aspect ratio, color information |
+| `classification` | Image type, genre, subject count |
+| `subject` | Ethnicity, skin tone, facial features (eyes, nose, lips, eyebrows with gaze direction) |
+| `cosmetics` | Makeup details (foundation, eyes, lips, blush) |
+| `pose` | Body positioning (head, arms, hands, legs, feet with palm orientation) |
+| `clothing` | Garments, materials, coverage analysis (neckline, exposure levels, gaps) |
+| `environment` | Setting, background, props |
+| `lighting` | Type, direction, quality, color temperature |
+| `colors` | Dominant colors, palette, mood |
+| `style` | Photography style, mood, atmosphere |
+| `generated_prompt` | Final prompt with word/token counts |
+| `llm_interactions` | All raw LLM queries and responses for debugging |
+| `zimage_recommendations` | Suggested Z-Image parameters |
 
 ## Dependencies
 
@@ -196,19 +229,18 @@ All dependencies **auto-install** on first load:
 
 ## Changelog
 
-### Version 4.1.0
-- Add `SID_OpenAI_Compatible_LLM` - supports OpenAI, Together AI, LM Studio, Ollama
-- Add `SID_Grok_LLM` - xAI Grok vision models
-- Add `SID_GGUF_LLM` - local GGUF models with auto-download
-- Auto-install `llama-cpp-python` with GPU detection (NVIDIA/Apple/AMD/CPU)
-- Split into Basic and Advanced prompt generator nodes
-- Welcome message shows dependency status on load
+See [CHANGELOG.md](CHANGELOG.md) for full version history.
 
-### Version 4.0.0
-- Initial Z-Image optimized prompt generator
-- 6-stage agentic pipeline
-- Anthropic Claude support
-- Persistent disk caching
+### Version 4.3.0 (Latest)
+- **High-resolution prompt generation** for near-accurate image reproduction
+- **Detailed subject analysis**: ethnicity, precise skin tones with undertones
+- **Facial features**: eyes (with gaze direction), nose, lips, eyebrows in detail
+- **Comprehensive pose analysis**: all body parts including hand/palm orientation
+- **Clothing coverage analysis**: neckline, exposure levels, materials, gaps
+- **Cosmetics extraction**: foundation, eye makeup, lip color, blush
+- **Structured JSON output**: categorized data with all gathered information
+- **LLM interaction tracking**: all raw queries and responses for debugging
+- **Token-optimized prompts**: efficient use of max token limits
 
 ## License
 

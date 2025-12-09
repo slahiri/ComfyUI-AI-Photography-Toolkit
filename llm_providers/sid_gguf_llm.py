@@ -7,12 +7,14 @@ Models are downloaded to ComfyUI/models/LLM/GGUF/ folder.
 """
 
 import os
+import sys
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 from pathlib import Path
 
 from comfy_api.latest import io as comfy_io
 import folder_paths
+import comfy.utils
 
 from .llm_model_type import LLMModelConfig
 from .base_llm_provider import BaseLLMProvider
@@ -34,27 +36,27 @@ class GGUFModelInfo:
     size_mb: int
     vram_gb: float
     description: str
-    chat_format: str  # llava-1-5, llava-1-6, minicpm-v, moondream, etc.
+    chat_format: str  # llava-1-5, llava-1-6, chatml, minicpm-v, moondream2, etc.
     mmproj_filename: Optional[str] = None  # For models needing separate vision encoder
     mmproj_url: Optional[str] = None
 
 
 # Available GGUF vision models with download URLs
 GGUF_MODELS: Dict[str, GGUFModelInfo] = {
-    # Small models (~4GB VRAM)
+    # ===== SMALL MODELS (~4GB VRAM) =====
     "moondream2-q4_k_m": GGUFModelInfo(
         name="Moondream2 Q4_K_M",
         filename="moondream2-text-model-f16.gguf",
-        url="https://huggingface.co/vikhyatk/moondream2/resolve/main/moondream2-text-model-f16.gguf",
+        url="https://huggingface.co/moondream/moondream2-gguf/resolve/main/moondream2-text-model-f16.gguf",
         size_mb=3600,
         vram_gb=4.0,
         description="Small & fast vision model, good for basic tasks",
         chat_format="moondream2",
         mmproj_filename="moondream2-mmproj-f16.gguf",
-        mmproj_url="https://huggingface.co/vikhyatk/moondream2/resolve/main/moondream2-mmproj-f16.gguf",
+        mmproj_url="https://huggingface.co/moondream/moondream2-gguf/resolve/main/moondream2-mmproj-f16.gguf",
     ),
 
-    # Medium models (~8-12GB VRAM)
+    # ===== MEDIUM MODELS (~8-12GB VRAM) =====
     "llava-v1.5-7b-q4_k_m": GGUFModelInfo(
         name="LLaVA 1.5 7B Q4_K_M",
         filename="llava-v1.5-7b-Q4_K_M.gguf",
@@ -65,6 +67,30 @@ GGUF_MODELS: Dict[str, GGUFModelInfo] = {
         chat_format="llava-1-5",
         mmproj_filename="llava-v1.5-7b-mmproj-f16.gguf",
         mmproj_url="https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/mmproj-model-f16.gguf",
+    ),
+
+    "llava-v1.6-mistral-7b-q4_k_m": GGUFModelInfo(
+        name="LLaVA 1.6 Mistral 7B Q4_K_M",
+        filename="llava-v1.6-mistral-7b.Q4_K_M.gguf",
+        url="https://huggingface.co/cjpais/llava-1.6-mistral-7b-gguf/resolve/main/llava-v1.6-mistral-7b.Q4_K_M.gguf",
+        size_mb=4400,
+        vram_gb=8.0,
+        description="Fast LLaVA 1.6 on Mistral backbone, great balance",
+        chat_format="llava-1-6",
+        mmproj_filename="llava-v1.6-mistral-7b-mmproj-f16.gguf",
+        mmproj_url="https://huggingface.co/cjpais/llava-1.6-mistral-7b-gguf/resolve/main/mmproj-model-f16.gguf",
+    ),
+
+    "qwen2.5-vl-7b-q4_k_m": GGUFModelInfo(
+        name="Qwen2.5-VL 7B Q4_K_M",
+        filename="Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf",
+        url="https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf",
+        size_mb=5200,
+        vram_gb=6.0,
+        description="Qwen vision model Q4, good quality at low VRAM",
+        chat_format="chatml",
+        mmproj_filename="Qwen2.5-VL-7B-Instruct-mmproj-f16.gguf",
+        mmproj_url="https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-mmproj-f16.gguf",
     ),
 
     "minicpm-v-2_6-q4_k_m": GGUFModelInfo(
@@ -79,7 +105,19 @@ GGUF_MODELS: Dict[str, GGUFModelInfo] = {
         mmproj_url="https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/resolve/main/mmproj-model-f16.gguf",
     ),
 
-    # Large models (~16GB+ VRAM)
+    "qwen2.5-vl-7b-q8": GGUFModelInfo(
+        name="Qwen2.5-VL 7B Q8",
+        filename="Qwen2.5-VL-7B-Instruct-Q8_0.gguf",
+        url="https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-Q8_0.gguf",
+        size_mb=8100,
+        vram_gb=10.0,
+        description="Qwen vision model Q8, excellent understanding",
+        chat_format="chatml",
+        mmproj_filename="Qwen2.5-VL-7B-Instruct-mmproj-f16.gguf",
+        mmproj_url="https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-mmproj-f16.gguf",
+    ),
+
+    # ===== LARGE MODELS (~16GB+ VRAM) =====
     "llava-v1.5-13b-q4_k_m": GGUFModelInfo(
         name="LLaVA 1.5 13B Q4_K_M",
         filename="llava-v1.5-13b-Q4_K_M.gguf",
@@ -90,6 +128,19 @@ GGUF_MODELS: Dict[str, GGUFModelInfo] = {
         chat_format="llava-1-5",
         mmproj_filename="llava-v1.5-13b-mmproj-f16.gguf",
         mmproj_url="https://huggingface.co/mys/ggml_llava-v1.5-13b/resolve/main/mmproj-model-f16.gguf",
+    ),
+
+    # ===== HIGH-END MODELS (~22GB+ VRAM) =====
+    "llava-v1.6-34b-q4_k_m": GGUFModelInfo(
+        name="LLaVA 1.6 34B Q4_K_M",
+        filename="llava-v1.6-34b.Q4_K_M.gguf",
+        url="https://huggingface.co/cjpais/llava-v1.6-34B-gguf/resolve/main/llava-v1.6-34b.Q4_K_M.gguf",
+        size_mb=20700,
+        vram_gb=22.0,
+        description="Best quality open-source vision model, excellent for detailed prompts",
+        chat_format="llava-1-6",
+        mmproj_filename="llava-v1.6-34b-mmproj-f16.gguf",
+        mmproj_url="https://huggingface.co/cjpais/llava-v1.6-34B-gguf/resolve/main/mmproj-model-f16.gguf",
     ),
 }
 
@@ -105,7 +156,7 @@ class LocalGGUFClient:
         model_path: str,
         mmproj_path: Optional[str] = None,
         chat_format: str = "llava-1-5",
-        n_ctx: int = 2048,
+        n_ctx: int = 4096,
         n_gpu_layers: int = -1,  # -1 = all layers on GPU
         verbose: bool = False,
     ):
@@ -115,7 +166,7 @@ class LocalGGUFClient:
         Args:
             model_path: Path to the GGUF model file
             mmproj_path: Path to the multimodal projector (for vision models)
-            chat_format: Chat format to use (llava-1-5, minicpm-v-2.6, moondream2)
+            chat_format: Chat format to use (llava-1-5, llava-1-6, chatml, minicpm-v-2.6, moondream2)
             n_ctx: Context length
             n_gpu_layers: Number of layers to offload to GPU (-1 = all)
             verbose: Enable verbose output
@@ -136,7 +187,7 @@ class LocalGGUFClient:
         # Create appropriate chat handler for vision models
         chat_handler = None
         if mmproj_path and os.path.exists(mmproj_path):
-            if chat_format in ["llava-1-5", "llava-1-6", "minicpm-v-2.6"]:
+            if chat_format in ["llava-1-5", "llava-1-6", "minicpm-v-2.6", "chatml"]:
                 chat_handler = Llava15ChatHandler(clip_model_path=mmproj_path, verbose=verbose)
             elif chat_format == "moondream2":
                 chat_handler = MoondreamChatHandler(clip_model_path=mmproj_path, verbose=verbose)
@@ -196,7 +247,7 @@ class LocalGGUFClient:
 
     def unload(self):
         """Unload the model from memory."""
-        if hasattr(self, 'llm') and self.llm is not None:
+        if hasattr(self, "llm") and self.llm is not None:
             del self.llm
             self.llm = None
 
@@ -240,58 +291,106 @@ class LocalGGUFMessage:
             self.content = ""
 
 
-def download_model(model_info: GGUFModelInfo, progress_callback=None) -> tuple[str, Optional[str]]:
+
+def download_file_with_progress(url: str, dest_path: str, desc: str, hf_token: Optional[str] = None):
+    """
+    Download a file with ComfyUI progress bar integration.
+
+    Args:
+        url: URL to download from
+        dest_path: Destination file path
+        desc: Description for progress display
+        hf_token: Optional HuggingFace token for private repos
+    """
+    import urllib.request
+    import shutil
+
+    temp_path = dest_path + ".tmp"
+
+    try:
+        # Build request with optional auth header
+        request = urllib.request.Request(url)
+        if hf_token and hf_token.strip():
+            request.add_header("Authorization", f"Bearer {hf_token}")
+
+        # Open URL and get file size
+        with urllib.request.urlopen(request) as response:
+            total_size = int(response.headers.get("content-length", 0))
+            total_mb = total_size / (1024 * 1024) if total_size else 0
+
+            print(f"[SID_GGUF_LLM] Downloading {desc}")
+            print(f"  Size: {total_mb:.1f} MB")
+
+            # Create ComfyUI progress bar
+            pbar = None
+            if total_size > 0:
+                pbar = comfy.utils.ProgressBar(100)
+
+            downloaded = 0
+            block_size = 1024 * 1024  # 1MB chunks
+
+            with open(temp_path, "wb") as f:
+                while True:
+                    chunk = response.read(block_size)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    downloaded += len(chunk)
+
+                    if pbar and total_size > 0:
+                        percent = int((downloaded / total_size) * 100)
+                        pbar.update_absolute(percent, 100)
+                        mb_done = downloaded / (1024 * 1024)
+                        # Print progress to console using carriage return
+                        sys.stdout.write(f"  [{percent:3d}%] {mb_done:.1f} / {total_mb:.1f} MB" + " " * 10 + chr(13))
+                        sys.stdout.flush()
+
+            print()  # New line after progress
+
+        # Move temp file to final destination
+        shutil.move(temp_path, dest_path)
+        print(f"[SID_GGUF_LLM] Downloaded: {os.path.basename(dest_path)}")
+
+    except Exception as e:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise RuntimeError(f"Download failed: {e}")
+
+
+def download_model(model_info: GGUFModelInfo, hf_token: Optional[str] = None) -> tuple[str, Optional[str]]:
     """
     Download a GGUF model and its vision encoder if needed.
 
     Args:
         model_info: GGUFModelInfo with download URLs
-        progress_callback: Optional callback for progress updates
+        hf_token: Optional HuggingFace token for private repos
 
     Returns:
         Tuple of (model_path, mmproj_path)
     """
-    import urllib.request
-    import shutil
-
     model_path = os.path.join(LLM_GGUF_DIR, model_info.filename)
     mmproj_path = None
 
     # Download main model
     if not os.path.exists(model_path):
-        print(f"[SID_GGUF_LLM] Downloading {model_info.name}...")
-        print(f"  URL: {model_info.url}")
-        print(f"  Size: ~{model_info.size_mb}MB")
-        print(f"  Destination: {model_path}")
-
-        try:
-            # Download with progress
-            temp_path = model_path + ".tmp"
-            urllib.request.urlretrieve(model_info.url, temp_path)
-            shutil.move(temp_path, model_path)
-            print(f"[SID_GGUF_LLM] Downloaded: {model_info.filename}")
-        except Exception as e:
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
-            raise RuntimeError(f"Failed to download model: {e}")
+        download_file_with_progress(
+            model_info.url,
+            model_path,
+            f"{model_info.name} ({model_info.size_mb}MB)",
+            hf_token
+        )
 
     # Download vision encoder if needed
     if model_info.mmproj_filename and model_info.mmproj_url:
         mmproj_path = os.path.join(LLM_GGUF_DIR, model_info.mmproj_filename)
 
         if not os.path.exists(mmproj_path):
-            print(f"[SID_GGUF_LLM] Downloading vision encoder...")
-            print(f"  URL: {model_info.mmproj_url}")
-
-            try:
-                temp_path = mmproj_path + ".tmp"
-                urllib.request.urlretrieve(model_info.mmproj_url, temp_path)
-                shutil.move(temp_path, mmproj_path)
-                print(f"[SID_GGUF_LLM] Downloaded: {model_info.mmproj_filename}")
-            except Exception as e:
-                if os.path.exists(temp_path):
-                    os.remove(temp_path)
-                raise RuntimeError(f"Failed to download vision encoder: {e}")
+            download_file_with_progress(
+                model_info.mmproj_url,
+                mmproj_path,
+                f"Vision encoder for {model_info.name}",
+                hf_token
+            )
 
     return model_path, mmproj_path
 
@@ -311,6 +410,7 @@ def get_available_models() -> List[str]:
     return models
 
 
+
 class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
     """
     Local GGUF LLM Provider.
@@ -320,9 +420,9 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
 
     Supported models:
     - Moondream2: Small & fast (~4GB VRAM)
-    - LLaVA 1.5 7B: Balanced quality (~8GB VRAM)
-    - MiniCPM-V 2.6: Excellent vision (~10GB VRAM)
-    - LLaVA 1.5 13B: High quality (~16GB VRAM)
+    - LLaVA 1.5/1.6: Various sizes from 7B to 34B
+    - Qwen2.5-VL: Excellent vision understanding (~6-10GB VRAM)
+    - MiniCPM-V 2.6: Multilingual vision (~10GB VRAM)
     """
 
     PROVIDER_NAME = "gguf"
@@ -353,26 +453,31 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             node_id="SID_GGUF_LLM",
             display_name="SID GGUF LLM",
             category="SID Photography Toolkit/LLM Providers",
-            description="Local GGUF vision model. No API needed. Models: Moondream, LLaVA, MiniCPM-V",
+            description="Local GGUF vision model. No API needed. Models: Moondream, LLaVA, Qwen2.5-VL, MiniCPM-V",
             inputs=[
                 comfy_io.Combo.Input(
                     "model",
                     options=model_options,
                     default=cls.get_default_model(),
-                    tooltip="Select model. Moondream=fast/small, LLaVA-7B=balanced, MiniCPM-V=best quality"
+                    tooltip="Select model. Moondream=fast/small, LLaVA-7B=balanced, Qwen/MiniCPM=best quality"
                 ),
                 comfy_io.Boolean.Input(
                     "auto_download",
                     default=True,
                     tooltip="Automatically download model if not present"
                 ),
+                comfy_io.String.Input(
+                    "hf_token",
+                    default="",
+                    tooltip="HuggingFace token for gated/private models (optional)"
+                ),
                 comfy_io.Int.Input(
                     "n_ctx",
-                    default=2048,
+                    default=4096,
                     min=512,
-                    max=8192,
-                    step=256,
-                    tooltip="Context length (higher = more memory)"
+                    max=32768,
+                    step=512,
+                    tooltip="Context length (higher = more memory). Use 4096+ for larger models"
                 ),
                 comfy_io.Int.Input(
                     "n_gpu_layers",
@@ -411,11 +516,13 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             ],
         )
 
+
     @classmethod
     def execute(
         cls,
         model: str,
         auto_download: bool,
+        hf_token: str,
         n_ctx: int,
         n_gpu_layers: int,
         max_tokens: int,
@@ -446,12 +553,14 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             if not os.path.exists(model_path):
                 if auto_download:
                     print(f"[SID_GGUF_LLM] Model not found, downloading...")
-                    model_path, mmproj_path = download_model(model_info)
+                    # Pass hf_token for authenticated downloads
+                    token = hf_token.strip() if hf_token else None
+                    model_path, mmproj_path = download_model(model_info, token)
                 else:
                     raise ValueError(
-                        f"Model not found: {model_path}\n"
-                        f"Enable 'auto_download' or manually download from:\n"
-                        f"  {model_info.url}"
+                        f"Model not found: {model_path}. "
+                        f"Enable 'auto_download' or manually download from: "
+                        f"{model_info.url}"
                     )
 
         # Create configuration with all needed info for client creation

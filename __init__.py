@@ -7,7 +7,7 @@ Author: Siddhartha Lahiri
 Version: 4.0.0
 """
 
-__version__ = "4.1.0"
+__version__ = "4.2.0"
 
 import os
 import sys
