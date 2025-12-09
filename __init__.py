@@ -7,46 +7,98 @@ Author: Siddhartha Lahiri
 Version: 4.0.0
 """
 
-__version__ = "4.0.0"
+__version__ = "4.1.0"
 
 import os
 import sys
 import subprocess
 import importlib.util
 
-# Auto-install dependencies
-def install_dependencies():
+# Track installation status for welcome message
+_dependency_status = {}
+
+
+def check_and_install_dependencies():
     """
-    Automatically install required dependencies if not already installed.
+    Check and install required dependencies. Track status for logging.
     """
+    global _dependency_status
+
+    # Required dependencies (auto-installed)
     dependencies = {
-        "anthropic": "anthropic>=0.39.0",
-        "yaml": "pyyaml>=6.0",
+        "anthropic": {
+            "import_name": "anthropic",
+            "pip_spec": "anthropic>=0.39.0",
+            "description": "Anthropic Claude API SDK",
+        },
+        "openai": {
+            "import_name": "openai",
+            "pip_spec": "openai>=1.0.0",
+            "description": "OpenAI API SDK (also used for Grok, LM Studio, etc.)",
+        },
+        "pyyaml": {
+            "import_name": "yaml",
+            "pip_spec": "pyyaml>=6.0",
+            "description": "YAML configuration parser",
+        },
+        "requests": {
+            "import_name": "requests",
+            "pip_spec": "requests>=2.28.0",
+            "description": "HTTP library (for Ollama API)",
+        },
+        "typing_extensions": {
+            "import_name": "typing_extensions",
+            "pip_spec": "typing_extensions>=4.0.0",
+            "description": "Extended typing support",
+        },
+    }
+
+    # Optional dependencies (NOT auto-installed, require manual setup)
+    optional_dependencies = {
+        "llama_cpp": {
+            "import_name": "llama_cpp",
+            "description": "Local GGUF model inference (requires GPU-specific build)",
+            "install_instructions": [
+                "NVIDIA CUDA 12.1: pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121",
+                "NVIDIA CUDA 12.2+: pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu122",
+                "CPU only: pip install llama-cpp-python",
+                "AMD ROCm: CMAKE_ARGS=\"-DGGML_HIPBLAS=on\" pip install llama-cpp-python",
+            ],
+        },
     }
 
     python_exe = sys.executable
 
-    for package_name, package_spec in dependencies.items():
-        # Check if package is already installed
-        if importlib.util.find_spec(package_name) is None:
-            print(f"\n{'='*60}")
-            print(f"Installing {package_name} for SID Photography Toolkit...")
-            print(f"{'='*60}")
+    # Check and install required dependencies
+    for pkg_name, pkg_info in dependencies.items():
+        import_name = pkg_info["import_name"]
+        pip_spec = pkg_info["pip_spec"]
+
+        if importlib.util.find_spec(import_name) is not None:
+            _dependency_status[pkg_name] = "installed"
+        else:
+            # Try to install
             try:
                 subprocess.check_call(
-                    [python_exe, "-m", "pip", "install", package_spec],
+                    [python_exe, "-m", "pip", "install", pip_spec],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE
                 )
-                print(f"{package_name} installed successfully!")
-            except subprocess.CalledProcessError as e:
-                print(f"ERROR: Failed to install {package_name}")
-                print(f"Please manually install: pip install {package_spec}")
-                print(f"Error: {e}")
-            print(f"{'='*60}\n")
+                _dependency_status[pkg_name] = "just_installed"
+            except subprocess.CalledProcessError:
+                _dependency_status[pkg_name] = "failed"
 
-# Install dependencies on module load
-install_dependencies()
+    # Check optional dependencies (don't auto-install)
+    for pkg_name, pkg_info in optional_dependencies.items():
+        import_name = pkg_info["import_name"]
+        if importlib.util.find_spec(import_name) is not None:
+            _dependency_status[pkg_name] = "installed"
+        else:
+            _dependency_status[pkg_name] = "not_installed"
+
+
+# Run dependency check on module load
+check_and_install_dependencies()
 
 from typing_extensions import override
 from comfy_api.latest import ComfyExtension, io
@@ -57,6 +109,9 @@ from .sid_zimage_prompt_generator_advanced import SID_ZImagePromptGenerator_Adva
 
 # Import LLM provider nodes
 from .llm_providers.sid_anthropic_llm import SID_Anthropic_LLM
+from .llm_providers.sid_openai_compatible_llm import SID_OpenAI_Compatible_LLM
+from .llm_providers.sid_grok_llm import SID_Grok_LLM
+from .llm_providers.sid_gguf_llm import SID_GGUF_LLM
 
 
 class SIDPhotographyToolkitExtension(ComfyExtension):
@@ -77,9 +132,94 @@ class SIDPhotographyToolkitExtension(ComfyExtension):
             SID_ZImagePromptGenerator_Advanced,
             # LLM Provider nodes
             SID_Anthropic_LLM,
-            # Future nodes will be added here
-            # SID_ZImagePromptEnhancer,
+            SID_OpenAI_Compatible_LLM,
+            SID_Grok_LLM,
+            SID_GGUF_LLM,
         ]
+
+
+def print_welcome_message():
+    """
+    Print welcome message with dependency status and available nodes.
+    """
+    global _dependency_status
+
+    # Header
+    print("")
+    print("=" * 65)
+    print("  SID Photography Toolkit for ComfyUI")
+    print(f"  Version: {__version__}")
+    print("  Author: Siddhartha Lahiri")
+    print("=" * 65)
+
+    # Dependencies status
+    print("")
+    print("  Dependencies:")
+
+    # Required dependencies
+    required_pkgs = ["anthropic", "openai", "pyyaml", "requests", "typing_extensions"]
+    pkg_descriptions = {
+        "anthropic": "Anthropic Claude API",
+        "openai": "OpenAI/Grok/LM Studio API",
+        "pyyaml": "YAML config parser",
+        "requests": "HTTP library (Ollama)",
+        "typing_extensions": "Type hints",
+    }
+
+    for pkg in required_pkgs:
+        status = _dependency_status.get(pkg, "unknown")
+        desc = pkg_descriptions.get(pkg, pkg)
+        if status == "installed":
+            print(f"    [OK] {desc}")
+        elif status == "just_installed":
+            print(f"    [INSTALLED] {desc} (just installed)")
+        elif status == "failed":
+            print(f"    [FAILED] {desc} - please install manually")
+        else:
+            print(f"    [?] {desc}")
+
+    # Optional: llama-cpp-python
+    print("")
+    llama_status = _dependency_status.get("llama_cpp", "not_installed")
+    if llama_status == "installed":
+        print("    [OK] llama-cpp-python (local GGUF models)")
+    else:
+        print("    [--] llama-cpp-python (optional, for local GGUF models)")
+        print("")
+        print("         To enable SID_GGUF_LLM node, install llama-cpp-python:")
+        print("         NVIDIA CUDA 12.1:")
+        print("           pip install llama-cpp-python \\")
+        print("             --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121")
+        print("         NVIDIA CUDA 12.2+:")
+        print("           pip install llama-cpp-python \\")
+        print("             --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu122")
+        print("         CPU only:")
+        print("           pip install llama-cpp-python")
+        print("         AMD ROCm:")
+        print("           CMAKE_ARGS=\"-DGGML_HIPBLAS=on\" pip install llama-cpp-python")
+
+    # Available nodes
+    print("")
+    print("-" * 65)
+    print("  Available Nodes:")
+    print("")
+    print("  Prompt Generators:")
+    print("    - SID_ZImagePromptGenerator          (built-in Anthropic LLM)")
+    print("    - SID_ZImagePromptGenerator_Advanced (external LLM provider)")
+    print("")
+    print("  LLM Providers (connect to Advanced node):")
+    print("    - SID_Anthropic_LLM        Anthropic Claude (cloud)")
+    print("    - SID_OpenAI_Compatible_LLM OpenAI/GPT/Together AI/LM Studio")
+    print("    - SID_Grok_LLM             xAI Grok (cloud)")
+    if llama_status == "installed":
+        print("    - SID_GGUF_LLM             Local GGUF models (Moondream/LLaVA/MiniCPM)")
+    else:
+        print("    - SID_GGUF_LLM             [requires llama-cpp-python]")
+
+    print("")
+    print("  GGUF models location: ComfyUI/models/LLM/GGUF/")
+    print("=" * 65)
+    print("")
 
 
 async def comfy_entrypoint() -> SIDPhotographyToolkitExtension:
@@ -87,13 +227,5 @@ async def comfy_entrypoint() -> SIDPhotographyToolkitExtension:
     ComfyUI calls this function to load the extension and its nodes.
     This is the entry point for the custom node package.
     """
-    print("\n" + "="*60)
-    print(f"Loading SID Photography Toolkit v{__version__} for ComfyUI")
-    print("="*60)
-    print("Nodes loaded:")
-    print("  - SID_ZImagePromptGenerator: Z-Image prompt generator (built-in LLM)")
-    print("  - SID_ZImagePromptGenerator_Advanced: Z-Image prompt (external LLM)")
-    print("  - SID_Anthropic_LLM: Anthropic Claude LLM provider")
-    print("="*60 + "\n")
-
+    print_welcome_message()
     return SIDPhotographyToolkitExtension()

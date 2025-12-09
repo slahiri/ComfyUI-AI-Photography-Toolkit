@@ -298,10 +298,13 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
         log(f"Provider: {actual_provider}")
         log(f"Model: {model}")
 
-        # Validate API key (not required for Ollama)
-        if actual_provider != "Ollama" and (not api_key or api_key.strip() == ""):
+        # Validate API key (not required for Ollama or local endpoints)
+        is_local = "localhost" in api_url or "127.0.0.1" in api_url
+        if actual_provider != "Ollama" and not is_local and (not api_key or api_key.strip() == ""):
             if actual_provider == "Anthropic":
                 error_msg = "ERROR: Anthropic API key is required. Get one at https://console.anthropic.com/"
+            elif actual_provider == "Openai":
+                error_msg = "ERROR: API key is required for remote endpoints."
             else:
                 error_msg = "ERROR: Grok API key is required. Get one at https://console.x.ai/"
             return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
@@ -313,11 +316,17 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
             except ImportError:
                 error_msg = "ERROR: anthropic library not installed. Run: pip install anthropic"
                 return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
-        elif actual_provider == "Grok":
+        elif actual_provider in ["Openai", "Grok"]:
             try:
                 import openai
             except ImportError:
                 error_msg = "ERROR: openai library not installed. Run: pip install openai"
+                return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
+        elif actual_provider == "Gguf":
+            try:
+                from .llm_providers.sid_gguf_llm import LocalGGUFClient
+            except ImportError:
+                error_msg = "ERROR: llama-cpp-python not installed. Run: pip install llama-cpp-python"
                 return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
         else:  # Ollama
             try:
@@ -370,10 +379,27 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
             if actual_provider == "Anthropic":
                 import anthropic
                 client = anthropic.Anthropic(api_key=api_key.strip())
+            elif actual_provider == "Openai":
+                import openai
+                openai_url = api_url.strip() if api_url.strip() else "https://api.openai.com/v1"
+                client = openai.OpenAI(api_key=api_key.strip(), base_url=openai_url)
             elif actual_provider == "Grok":
                 import openai
                 grok_url = api_url.strip() if api_url.strip() else "https://api.x.ai/v1"
                 client = openai.OpenAI(api_key=api_key.strip(), base_url=grok_url)
+            elif actual_provider == "Gguf":
+                # Local GGUF model - create LocalGGUFClient
+                from .llm_providers.sid_gguf_llm import LocalGGUFClient
+                extra = llm_model.extra_params
+                log(f"[GGUF] Loading local model...")
+                client = LocalGGUFClient(
+                    model_path=extra.get("model_path"),
+                    mmproj_path=extra.get("mmproj_path"),
+                    chat_format=extra.get("chat_format", "llava-1-5"),
+                    n_ctx=extra.get("n_ctx", 2048),
+                    n_gpu_layers=extra.get("n_gpu_layers", -1),
+                )
+                log(f"[GGUF] Model loaded successfully")
             else:  # Ollama
                 import requests
                 ollama_url = api_url.strip() if api_url.strip() else "http://localhost:11434"
@@ -598,14 +624,13 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
         temperature: float,
     ) -> str:
         """
-        Unified vision LLM call that handles Anthropic, Ollama, and Grok providers.
+        Unified vision LLM call that handles Anthropic, OpenAI, Grok, and Ollama providers.
         Returns the text response from the model.
         """
-        # Determine provider from model name
-        if model.startswith("ollama/"):
+        # Check if client is Ollama (dict with url/session)
+        if isinstance(client, dict) and "url" in client:
             # Ollama API call
-            import requests
-            ollama_model = model.replace("ollama/", "")
+            ollama_model = model.replace("ollama/", "") if model.startswith("ollama/") else model
             url = f"{client['url']}/api/chat"
 
             payload = {
@@ -630,8 +655,8 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
             result = response.json()
             return result.get("message", {}).get("content", "")
 
-        elif model.startswith("grok-"):
-            # Grok (OpenAI-compatible) API call
+        elif hasattr(client, 'chat') and hasattr(client.chat, 'completions'):
+            # OpenAI-compatible API call (OpenAI, Grok, Together AI, etc.)
             response = client.chat.completions.create(
                 model=model,
                 max_tokens=max_tokens,
@@ -682,9 +707,9 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
         """
         Unified text-only LLM call (no image) for refinement stages.
         """
-        if model.startswith("ollama/"):
-            import requests
-            ollama_model = model.replace("ollama/", "")
+        # Check if client is Ollama (dict with url/session)
+        if isinstance(client, dict) and "url" in client:
+            ollama_model = model.replace("ollama/", "") if model.startswith("ollama/") else model
             url = f"{client['url']}/api/chat"
 
             payload = {
@@ -705,7 +730,8 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
             result = response.json()
             return result.get("message", {}).get("content", "")
 
-        elif model.startswith("grok-"):
+        elif hasattr(client, 'chat') and hasattr(client.chat, 'completions'):
+            # OpenAI-compatible API call (OpenAI, Grok, Together AI, etc.)
             response = client.chat.completions.create(
                 model=model,
                 max_tokens=max_tokens,
@@ -718,6 +744,7 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
             return response.choices[0].message.content
 
         else:
+            # Anthropic API call
             message = client.messages.create(
                 model=model,
                 max_tokens=max_tokens,
