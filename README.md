@@ -12,7 +12,7 @@ cd ComfyUI/custom_nodes
 git clone https://github.com/slahiri/ComfyUI-AI-Photography-Toolkit.git
 ```
 
-Restart ComfyUI. Dependencies install automatically on first load.
+Restart ComfyUI. All dependencies install automatically on first load.
 
 ## Nodes
 
@@ -58,9 +58,15 @@ SID_Anthropic_LLM ─┐
 | **OpenAI** | SID_OpenAI_Compatible_LLM | [platform.openai.com](https://platform.openai.com) | gpt-4o, gpt-4o-mini, gpt-4-turbo |
 | **xAI Grok** | SID_Grok_LLM | [console.x.ai](https://console.x.ai) | grok-2-vision-1212, grok-vision-beta |
 | **LM Studio** | SID_OpenAI_Compatible_LLM | Not required | Set `api_url`: `http://localhost:1234/v1` |
-| **Local GGUF** | SID_GGUF_LLM | Not required | Models auto-download (see below) |
+| **Local GGUF** | SID_GGUF_LLM | Not required | Auto-installed with GPU detection |
 
 ### Local GGUF Models
+
+`llama-cpp-python` is **auto-installed** with GPU detection:
+- **NVIDIA** - Installs CUDA 12.1 or 12.2+ wheel automatically
+- **Apple Silicon** - Installs with Metal support (M1/M2/M3)
+- **AMD** - Installs with ROCm support (Linux)
+- **CPU** - Falls back to CPU-only build
 
 Models download automatically to `ComfyUI/models/LLM/GGUF/`
 
@@ -70,22 +76,6 @@ Models download automatically to `ComfyUI/models/LLM/GGUF/`
 | llava-v1.5-7b-q4_k_m | ~8GB |
 | minicpm-v-2_6-q4_k_m | ~10GB |
 | llava-v1.5-13b-q4_k_m | ~16GB |
-
-**Install llama-cpp-python:**
-
-```bash
-# NVIDIA CUDA 12.1
-pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121
-
-# NVIDIA CUDA 12.2+
-pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu122
-
-# CPU only
-pip install llama-cpp-python
-
-# AMD ROCm
-CMAKE_ARGS="-DGGML_HIPBLAS=on" pip install llama-cpp-python
-```
 
 ## Node Settings
 
@@ -106,14 +96,12 @@ CMAKE_ARGS="-DGGML_HIPBLAS=on" pip install llama-cpp-python
 
 ## Dependencies
 
-**Auto-installed:**
+All dependencies are **auto-installed** on first load:
 - `anthropic` - Claude API
 - `openai` - OpenAI/Grok API
 - `pyyaml` - Config
 - `requests` - HTTP
-
-**Manual (for GGUF):**
-- `llama-cpp-python`
+- `llama-cpp-python` - Local GGUF inference (with GPU auto-detection)
 
 ## License
 

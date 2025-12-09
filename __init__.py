@@ -16,6 +16,165 @@ import importlib.util
 
 # Track installation status for welcome message
 _dependency_status = {}
+_gpu_info = {}
+
+
+def detect_gpu_info():
+    """
+    Detect GPU type and CUDA version for llama-cpp-python installation.
+    Supports: NVIDIA (CUDA), AMD (ROCm), Apple Silicon (Metal), CPU
+    Works on Windows, Linux, and macOS.
+    """
+    global _gpu_info
+    import platform
+
+    system = platform.system()  # 'Windows', 'Linux', 'Darwin'
+    machine = platform.machine()  # 'x86_64', 'arm64', 'AMD64'
+
+    # Check for Apple Silicon (macOS with ARM)
+    if system == "Darwin" and machine == "arm64":
+        _gpu_info = {"type": "apple_metal", "system": "macOS", "chip": "Apple Silicon"}
+        return _gpu_info
+
+    # Try to detect via PyTorch (most reliable in ComfyUI environment)
+    try:
+        import torch
+        if torch.cuda.is_available():
+            cuda_version = torch.version.cuda
+            if cuda_version:
+                major, minor = cuda_version.split(".")[:2]
+                _gpu_info = {
+                    "type": "nvidia",
+                    "cuda_version": cuda_version,
+                    "cuda_major": int(major),
+                    "cuda_minor": int(minor),
+                    "system": system,
+                }
+                return _gpu_info
+        # Check for MPS (Apple Metal via PyTorch) - fallback for macOS
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            _gpu_info = {"type": "apple_metal", "system": "macOS", "chip": "Apple Silicon"}
+            return _gpu_info
+    except ImportError:
+        pass
+
+    # Try nvidia-smi as fallback (Windows/Linux)
+    try:
+        result = subprocess.run(
+            ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            _gpu_info = {"type": "nvidia", "cuda_version": "12.2", "cuda_major": 12, "cuda_minor": 2, "system": system}
+            return _gpu_info
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    # Check for AMD ROCm (Linux only)
+    if system == "Linux":
+        try:
+            result = subprocess.run(["rocm-smi"], capture_output=True, timeout=5)
+            if result.returncode == 0:
+                _gpu_info = {"type": "amd", "rocm": True, "system": system}
+                return _gpu_info
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+
+        if os.environ.get("ROCM_HOME") or os.path.exists("/opt/rocm"):
+            _gpu_info = {"type": "amd", "rocm": True, "system": system}
+            return _gpu_info
+
+    # Default to CPU
+    _gpu_info = {"type": "cpu", "system": system}
+    return _gpu_info
+
+
+def install_llama_cpp_python():
+    """
+    Auto-install llama-cpp-python with the correct GPU support.
+    Returns True if installation successful, False otherwise.
+    """
+    global _gpu_info
+
+    if not _gpu_info:
+        detect_gpu_info()
+
+    gpu_type = _gpu_info.get("type", "cpu")
+    python_exe = sys.executable
+
+    print("")
+    print("-" * 60)
+    print("[SID_GGUF_LLM] Auto-installing llama-cpp-python...")
+    print(f"  Detected GPU: {gpu_type.upper()}")
+
+    try:
+        if gpu_type == "nvidia":
+            cuda_major = _gpu_info.get("cuda_major", 12)
+            cuda_minor = _gpu_info.get("cuda_minor", 2)
+            cuda_version = _gpu_info.get("cuda_version", "12.2")
+
+            print(f"  CUDA Version: {cuda_version}")
+
+            # Choose wheel based on CUDA version
+            if cuda_major == 12 and cuda_minor < 2:
+                wheel_url = "https://abetlen.github.io/llama-cpp-python/whl/cu121"
+                print("  Using: CUDA 12.1 wheel")
+            else:
+                wheel_url = "https://abetlen.github.io/llama-cpp-python/whl/cu122"
+                print("  Using: CUDA 12.2+ wheel")
+
+            print("  Installing... (this may take a few minutes)")
+            subprocess.check_call(
+                [python_exe, "-m", "pip", "install", "llama-cpp-python",
+                 "--extra-index-url", wheel_url],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+        elif gpu_type == "apple_metal":
+            print("  Using: Apple Metal build (M1/M2/M3)")
+            print("  Installing... (this may take a few minutes)")
+            env = os.environ.copy()
+            env["CMAKE_ARGS"] = "-DGGML_METAL=on"
+            subprocess.check_call(
+                [python_exe, "-m", "pip", "install", "llama-cpp-python"],
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+        elif gpu_type == "amd":
+            print("  Using: AMD ROCm build")
+            print("  Installing... (this may take several minutes to compile)")
+            env = os.environ.copy()
+            env["CMAKE_ARGS"] = "-DGGML_HIPBLAS=on"
+            subprocess.check_call(
+                [python_exe, "-m", "pip", "install", "llama-cpp-python"],
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+        else:  # CPU
+            print("  Using: CPU-only build")
+            print("  Installing...")
+            subprocess.check_call(
+                [python_exe, "-m", "pip", "install", "llama-cpp-python"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+        print("  [OK] llama-cpp-python installed successfully!")
+        print("-" * 60)
+        return True
+
+    except subprocess.CalledProcessError as e:
+        print(f"  [FAILED] Installation failed: {e}")
+        print("  Please install manually - see README for instructions")
+        print("-" * 60)
+        return False
 
 
 def check_and_install_dependencies():
@@ -88,13 +247,21 @@ def check_and_install_dependencies():
             except subprocess.CalledProcessError:
                 _dependency_status[pkg_name] = "failed"
 
-    # Check optional dependencies (don't auto-install)
+    # Check optional dependencies - auto-install llama-cpp-python with GPU detection
     for pkg_name, pkg_info in optional_dependencies.items():
         import_name = pkg_info["import_name"]
         if importlib.util.find_spec(import_name) is not None:
             _dependency_status[pkg_name] = "installed"
         else:
-            _dependency_status[pkg_name] = "not_installed"
+            # Auto-install llama-cpp-python with correct GPU support
+            if pkg_name == "llama_cpp":
+                detect_gpu_info()
+                if install_llama_cpp_python():
+                    _dependency_status[pkg_name] = "just_installed"
+                else:
+                    _dependency_status[pkg_name] = "failed"
+            else:
+                _dependency_status[pkg_name] = "not_installed"
 
 
 # Run dependency check on module load
@@ -178,25 +345,24 @@ def print_welcome_message():
         else:
             print(f"    [?] {desc}")
 
-    # Optional: llama-cpp-python
+    # llama-cpp-python status (now auto-installed)
     print("")
     llama_status = _dependency_status.get("llama_cpp", "not_installed")
+    gpu_type = _gpu_info.get("type", "cpu")
+    gpu_desc = {
+        "nvidia": f"NVIDIA CUDA {_gpu_info.get('cuda_version', '')}",
+        "apple_metal": "Apple Metal (M1/M2/M3)",
+        "amd": "AMD ROCm",
+        "cpu": "CPU",
+    }.get(gpu_type, "CPU")
+
     if llama_status == "installed":
-        print("    [OK] llama-cpp-python (local GGUF models)")
+        print(f"    [OK] llama-cpp-python ({gpu_desc})")
+    elif llama_status == "just_installed":
+        print(f"    [INSTALLED] llama-cpp-python ({gpu_desc})")
     else:
-        print("    [--] llama-cpp-python (optional, for local GGUF models)")
-        print("")
-        print("         To enable SID_GGUF_LLM node, install llama-cpp-python:")
-        print("         NVIDIA CUDA 12.1:")
-        print("           pip install llama-cpp-python \\")
-        print("             --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121")
-        print("         NVIDIA CUDA 12.2+:")
-        print("           pip install llama-cpp-python \\")
-        print("             --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu122")
-        print("         CPU only:")
-        print("           pip install llama-cpp-python")
-        print("         AMD ROCm:")
-        print("           CMAKE_ARGS=\"-DGGML_HIPBLAS=on\" pip install llama-cpp-python")
+        print(f"    [FAILED] llama-cpp-python - auto-install failed")
+        print("         Please install manually - see README")
 
     # Available nodes
     print("")
@@ -211,10 +377,10 @@ def print_welcome_message():
     print("    - SID_Anthropic_LLM        Anthropic Claude (cloud)")
     print("    - SID_OpenAI_Compatible_LLM OpenAI/GPT/Together AI/LM Studio")
     print("    - SID_Grok_LLM             xAI Grok (cloud)")
-    if llama_status == "installed":
-        print("    - SID_GGUF_LLM             Local GGUF models (Moondream/LLaVA/MiniCPM)")
+    if llama_status in ["installed", "just_installed"]:
+        print(f"    - SID_GGUF_LLM             Local GGUF models ({gpu_desc})")
     else:
-        print("    - SID_GGUF_LLM             [requires llama-cpp-python]")
+        print("    - SID_GGUF_LLM             [install failed - see README]")
 
     print("")
     print("  GGUF models location: ComfyUI/models/LLM/GGUF/")
