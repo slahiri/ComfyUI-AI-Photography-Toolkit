@@ -10,6 +10,9 @@ from comfy_api.latest import io as comfy_io
 from .llm_model_type import LLMModelConfig
 from .base_llm_provider import BaseLLMProvider
 
+# Create custom LLM_MODEL type for ComfyUI
+LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
+
 
 class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
     """
@@ -87,7 +90,7 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                 ),
             ],
             outputs=[
-                comfy_io.Custom.Output(
+                LLM_MODEL_Type.Output(
                     "llm_model",
                     display_name="LLM_MODEL",
                     tooltip="LLM configuration to connect to SID_ZImagePromptGenerator"

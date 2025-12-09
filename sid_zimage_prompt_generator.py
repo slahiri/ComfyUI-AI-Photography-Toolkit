@@ -47,6 +47,9 @@ from .utils.zimage_utils import (
 )
 from .llm_providers.llm_model_type import LLMModelConfig
 
+# Create custom LLM_MODEL type for ComfyUI (must match provider nodes)
+LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
+
 
 class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
     """
@@ -91,7 +94,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 ),
 
                 # Optional external LLM model (from provider nodes)
-                comfy_io.Custom.Input(
+                LLM_MODEL_Type.Input(
                     "llm_model",
                     optional=True,
                     tooltip="Optional: Connect LLM provider node (e.g., SID_Anthropic_LLM). When connected, internal API settings are ignored."
