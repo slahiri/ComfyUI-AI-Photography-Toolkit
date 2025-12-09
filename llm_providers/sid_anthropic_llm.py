@@ -72,10 +72,11 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                 ),
                 comfy_io.Int.Input(
                     "max_tokens",
-                    default=1024,
+                    default=300,
                     min=50,
                     max=4096,
                     step=50,
+                    display_mode=comfy_io.NumberDisplay.slider,
                     tooltip="Maximum tokens in response"
                 ),
                 comfy_io.Float.Input(
