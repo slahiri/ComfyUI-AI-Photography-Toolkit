@@ -1092,6 +1092,18 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
                 api_key=llm_model.api_key,
                 base_url="https://api.x.ai/v1"
             )
+        elif provider == "gguf":
+            # Local GGUF model - create LocalGGUFClient from extra_params
+            from .llm_providers.sid_gguf_llm import LocalGGUFClient
+            extra = llm_model.extra_params or {}
+            return LocalGGUFClient(
+                model_path=extra.get("model_path", ""),
+                mmproj_path=extra.get("mmproj_path"),
+                chat_format=extra.get("chat_format", "llava-1-5"),
+                n_ctx=extra.get("n_ctx", 4096),
+                n_gpu_layers=extra.get("n_gpu_layers", -1),
+                verbose=False,
+            )
         else:
             raise ValueError(f"Unsupported provider: {provider}")
 

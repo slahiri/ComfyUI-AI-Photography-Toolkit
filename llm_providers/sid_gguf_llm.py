@@ -495,6 +495,22 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
 
         model_options = list(GGUF_MODELS.keys())
 
+        # User-friendly presets for memory/performance tradeoffs
+        memory_presets = [
+            "Auto (Recommended)",
+            "Low VRAM (4-6GB)",
+            "Medium VRAM (8-12GB)",
+            "High VRAM (16GB+)",
+            "CPU Only (No GPU)",
+        ]
+
+        quality_presets = [
+            "Quick (300 tokens)",
+            "Standard (500 tokens)",
+            "Detailed (800 tokens)",
+            "Maximum (1500 tokens)",
+        ]
+
         return comfy_io.Schema(
             node_id="SID_GGUF_LLM",
             display_name="SID GGUF LLM",
@@ -507,6 +523,31 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     default=cls.get_default_model(),
                     tooltip="Select model. Moondream=fast/small, LLaVA-7B=balanced, Qwen/MiniCPM=best quality"
                 ),
+                comfy_io.Combo.Input(
+                    "memory_mode",
+                    options=memory_presets,
+                    default="Auto (Recommended)",
+                    display_name="Memory Mode",
+                    tooltip="How to use your GPU memory. Auto works for most users. Use Low VRAM if you get out-of-memory errors."
+                ),
+                comfy_io.Combo.Input(
+                    "quality_mode",
+                    options=quality_presets,
+                    default="Standard (500 tokens)",
+                    display_name="Output Quality",
+                    tooltip="How detailed the generated prompt should be. Standard is good for most uses."
+                ),
+                comfy_io.Float.Input(
+                    "temperature",
+                    default=0.7,
+                    min=0.0,
+                    max=1.5,
+                    step=0.1,
+                    round=0.1,
+                    display_name="Creativity",
+                    display_mode=comfy_io.NumberDisplay.slider,
+                    tooltip="0.0-0.3=precise/accurate, 0.5-0.7=balanced (recommended), 0.8-1.5=creative/varied"
+                ),
                 comfy_io.Boolean.Input(
                     "auto_download",
                     default=True,
@@ -516,45 +557,6 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     "hf_token",
                     default="",
                     tooltip="HuggingFace token for gated/private models (optional)"
-                ),
-                comfy_io.Int.Input(
-                    "n_ctx",
-                    default=8192,
-                    min=512,
-                    max=32768,
-                    step=512,
-                    display_name="Context Length",
-                    tooltip="Memory for conversation history. 4096=basic, 8192=recommended for detailed analysis. Higher uses more VRAM. If you get memory errors, reduce this."
-                ),
-                comfy_io.Int.Input(
-                    "n_gpu_layers",
-                    default=-1,
-                    min=-1,
-                    max=100,
-                    step=1,
-                    display_name="GPU Layers",
-                    tooltip="How much runs on GPU. -1=All (fastest, most VRAM). 0=CPU only (slow but no VRAM). 20-40=Split between GPU/CPU if you have limited VRAM."
-                ),
-                comfy_io.Int.Input(
-                    "max_tokens",
-                    default=500,
-                    min=50,
-                    max=2048,
-                    step=50,
-                    display_name="Max Output Tokens",
-                    display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Maximum words in generated prompt. 300=quick, 500=standard (recommended), 800+=detailed. Higher values need more context length."
-                ),
-                comfy_io.Float.Input(
-                    "temperature",
-                    default=0.7,
-                    min=0.0,
-                    max=2.0,
-                    step=0.1,
-                    round=0.1,
-                    display_name="Creativity",
-                    display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="0.0-0.3=precise/accurate, 0.5-0.7=balanced (recommended), 0.8-1.5=creative/varied"
                 ),
             ],
             outputs=[
@@ -571,14 +573,35 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
     def execute(
         cls,
         model: str,
+        memory_mode: str,
+        quality_mode: str,
+        temperature: float,
         auto_download: bool,
         hf_token: str,
-        n_ctx: int,
-        n_gpu_layers: int,
-        max_tokens: int,
-        temperature: float,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
+
+        # Convert memory preset to n_ctx and n_gpu_layers
+        memory_settings = {
+            "Auto (Recommended)": {"n_ctx": 8192, "n_gpu_layers": -1},
+            "Low VRAM (4-6GB)": {"n_ctx": 4096, "n_gpu_layers": 20},
+            "Medium VRAM (8-12GB)": {"n_ctx": 8192, "n_gpu_layers": -1},
+            "High VRAM (16GB+)": {"n_ctx": 16384, "n_gpu_layers": -1},
+            "CPU Only (No GPU)": {"n_ctx": 4096, "n_gpu_layers": 0},
+        }
+
+        # Convert quality preset to max_tokens
+        quality_settings = {
+            "Quick (300 tokens)": 300,
+            "Standard (500 tokens)": 500,
+            "Detailed (800 tokens)": 800,
+            "Maximum (1500 tokens)": 1500,
+        }
+
+        mem_config = memory_settings.get(memory_mode, memory_settings["Auto (Recommended)"])
+        n_ctx = mem_config["n_ctx"]
+        n_gpu_layers = mem_config["n_gpu_layers"]
+        max_tokens = quality_settings.get(quality_mode, 500)
 
         # Get model info
         if model not in GGUF_MODELS:
@@ -636,7 +659,7 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         print(f"  Model: {model_path}")
         if mmproj_path:
             print(f"  Vision: {mmproj_path}")
-        print(f"  Context: {n_ctx}, GPU layers: {n_gpu_layers}")
-        print(f"  max_tokens={max_tokens}, temp={temperature}")
+        print(f"  Memory: {memory_mode} (ctx={n_ctx}, gpu_layers={n_gpu_layers})")
+        print(f"  Quality: {quality_mode}, Creativity: {temperature}")
 
         return comfy_io.NodeOutput(config)
