@@ -330,11 +330,21 @@ class QwenVLClient:
             print(f"  Attention: {self.attention_mode}")
         else:
             # Try flash_attention_2, fallback to sdpa
+            # Must check both import AND package metadata (transformers checks version)
+            flash_available = False
             try:
                 import flash_attn
+                import importlib.metadata
+                # This is what transformers checks - must succeed
+                importlib.metadata.version("flash_attn")
+                flash_available = True
+            except (ImportError, importlib.metadata.PackageNotFoundError):
+                pass
+
+            if flash_available:
                 load_kwargs["attn_implementation"] = "flash_attention_2"
                 print(f"  Attention: flash_attention_2 (auto-detected)")
-            except ImportError:
+            else:
                 load_kwargs["attn_implementation"] = "sdpa"
                 print(f"  Attention: sdpa (flash_attn not available)")
 
