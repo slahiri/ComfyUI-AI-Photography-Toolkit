@@ -139,6 +139,10 @@ class QwenVLClient:
     """
     Wrapper class that provides OpenAI-compatible interface for QwenVL models.
     Uses HuggingFace transformers with BitsAndBytes quantization.
+
+    Features image embedding caching - when the same image is analyzed multiple times
+    (e.g., component mode with 8+ calls per image), the processed image tensors are
+    cached and reused, significantly reducing processing time.
     """
 
     # Class-level model cache for keep_model_loaded
@@ -146,6 +150,10 @@ class QwenVLClient:
     _cached_processor = None
     _cached_tokenizer = None
     _cached_signature = None
+
+    # Class-level image cache (hash -> processed tensors)
+    _image_cache = {}
+    _image_cache_max_size = 3  # Keep last 3 images cached
 
     def __init__(
         self,
@@ -449,6 +457,29 @@ class QwenVLClient:
 
             print("[QwenVLClient] Model unloaded")
 
+    @classmethod
+    def _hash_image(cls, b64_data: str) -> str:
+        """Create a hash for image data (for caching)."""
+        import hashlib
+        # Use first 2000 chars for speed (enough to identify unique images)
+        return hashlib.md5(b64_data[:2000].encode()).hexdigest()
+
+    @classmethod
+    def _get_cached_image(cls, image_hash: str) -> Optional[Dict]:
+        """Get cached processed image tensors."""
+        return cls._image_cache.get(image_hash)
+
+    @classmethod
+    def _cache_image(cls, image_hash: str, processed: Dict):
+        """Cache processed image tensors."""
+        # LRU-style: remove oldest if at capacity
+        if len(cls._image_cache) >= cls._image_cache_max_size:
+            oldest = next(iter(cls._image_cache))
+            del cls._image_cache[oldest]
+
+        cls._image_cache[image_hash] = processed
+        print(f"[QwenVLClient] Image cached (cache size: {len(cls._image_cache)})")
+
     @property
     def chat(self):
         """OpenAI-style chaining: client.chat.completions.create()"""
@@ -492,9 +523,10 @@ class QwenVLClient:
 
         start_time = time.time()
 
-        # Convert messages to QwenVL format
+        # Convert messages to QwenVL format with image caching
         conversation = []
         images = []
+        image_hash = None  # For caching
 
         for msg in messages:
             role = msg.get("role", "user")
@@ -516,6 +548,10 @@ class QwenVLClient:
                             if url.startswith("data:image"):
                                 # Parse base64
                                 header, b64data = url.split(",", 1)
+
+                                # Generate hash for caching
+                                image_hash = self._hash_image(b64data)
+
                                 img_bytes = base64.b64decode(b64data)
                                 img = Image.open(io.BytesIO(img_bytes))
                                 images.append(img)
@@ -532,19 +568,56 @@ class QwenVLClient:
             add_generation_prompt=True
         )
 
-        # Process inputs
-        processed = self.processor(
-            text=chat_text,
-            images=images if images else None,
-            return_tensors="pt"
-        )
-
-        # Move to model device
+        # Process inputs with image caching
         model_device = next(self.model.parameters()).device
-        model_inputs = {
-            k: v.to(model_device) if torch.is_tensor(v) else v
-            for k, v in processed.items()
-        }
+        cached_tensors = self._get_cached_image(image_hash) if image_hash else None
+
+        if cached_tensors and images:
+            # Cache HIT - reuse processed image tensors
+            print(f"[QwenVLClient] Image cache HIT")
+
+            # Process text only (faster)
+            processed = self.processor(
+                text=chat_text,
+                images=images,  # Still needed for correct input_ids
+                return_tensors="pt"
+            )
+
+            # Replace with cached image tensors (already on device)
+            model_inputs = {}
+            for k, v in processed.items():
+                if k in cached_tensors:
+                    # Use cached tensor (already on device)
+                    model_inputs[k] = cached_tensors[k]
+                elif torch.is_tensor(v):
+                    model_inputs[k] = v.to(model_device)
+                else:
+                    model_inputs[k] = v
+        else:
+            # Cache MISS - process and cache
+            if image_hash and images:
+                print(f"[QwenVLClient] Image cache MISS - processing")
+
+            processed = self.processor(
+                text=chat_text,
+                images=images if images else None,
+                return_tensors="pt"
+            )
+
+            # Move to model device
+            model_inputs = {
+                k: v.to(model_device) if torch.is_tensor(v) else v
+                for k, v in processed.items()
+            }
+
+            # Cache image tensors for reuse
+            if image_hash and images:
+                cache_data = {}
+                for k in ["pixel_values", "image_grid_thw"]:
+                    if k in model_inputs:
+                        cache_data[k] = model_inputs[k]
+                if cache_data:
+                    self._cache_image(image_hash, cache_data)
 
         # Build generation kwargs
         gen_kwargs = {
