@@ -281,6 +281,153 @@ Output JSON:
 }"""
     },
 
+    "body_figure": {
+        "name": "Body Figure & Proportions",
+        "prompt": """Analyze the BODY FIGURE, PROPORTIONS, and EXPOSURE LEVEL visible in this image.
+
+CRITICAL: Only describe what is ACTUALLY VISIBLE. Do not invent or assume hidden body parts.
+
+1. NUDITY/EXPOSURE LEVEL (CRITICAL - identify accurately):
+   - Fully clothed: no skin exposed beyond face/hands
+   - Partially clothed: some skin exposed (arms, legs, midriff)
+   - Revealing clothing: significant skin, cleavage, short shorts, etc.
+   - Swimwear/Lingerie: bikini, underwear, bra visible
+   - Topless: chest/breasts exposed, no top garment
+   - Nude: fully naked, no clothing
+   - Implied nude: appears nude but strategic covering/cropping
+
+2. BREAST/CHEST EXPOSURE (be specific):
+   - Covered: fully covered by clothing
+   - Cleavage only: upper breast curves visible between/above garment
+   - Sideboob: side curve of breast visible (left, right, or both)
+   - Underboob: lower curve of breast visible below garment
+   - Partial exposure: significant breast visible but not nipple
+   - Full exposure: entire breast visible including nipple
+   - Nipple visibility: covered, showing through fabric, partially visible, fully visible
+
+3. OVERALL BODY TYPE (if visible):
+   - Slim/Slender: narrow frame, lean build
+   - Athletic/Toned: muscular definition, fit appearance
+   - Average: moderate proportions
+   - Curvy/Voluptuous: pronounced curves, fuller figure
+   - Petite: small frame overall
+   - Plus-size: larger frame
+
+4. BUST/CHEST DETAILS (if visible - be specific):
+   - Cup size estimate (use standard sizing):
+     * AA/A: Very small, minimal projection
+     * B: Small, subtle curve
+     * C: Medium, moderate projection
+     * D: Large, noticeable projection
+     * DD/E: Very large, significant projection
+     * DDD/F: Extra large, prominent projection
+     * G+: Extremely large, very prominent
+   - Size relative to frame: small, medium, large, very large
+   - Shape: natural, rounded, teardrop, projected, perky, full, pendulous
+   - Cleavage visibility: none, minimal, moderate, prominent, deep
+   - Cleavage shadow: none, subtle, defined, dramatic
+   - Upper curve visibility: how much of upper breast curve is visible
+   - Side curve visibility: visible from side angle? how much?
+   - Underboob visibility: visible? how much?
+   - Lift/Position: natural, lifted, pushed together, separated
+   - Fullness distribution: top-heavy, bottom-heavy, even
+   - Projection: flat, slight, moderate, projected, very projected
+
+5. WAIST (if visible):
+   - Definition: undefined, slight, defined, very defined (hourglass)
+   - Width relative to bust/hips: narrow, proportional, wide
+   - Midriff visible: yes/no, how much
+   - Waist shadows: soft shadows, defined shadows, dramatic contour
+
+6. HIPS & BUTTOCKS (if visible):
+   - Hip width: narrow, medium, wide, very wide
+   - Hip curve: subtle, moderate, pronounced, dramatic
+   - Hip-to-waist ratio: slight, moderate, dramatic hourglass
+   - Buttocks shape (if visible): flat, moderate, rounded, prominent, heart-shaped
+   - Buttocks exposure: covered, partially visible, fully visible
+   - Buttocks curve shadow: none, subtle, defined
+
+7. THIGHS (if visible):
+   - Fullness: slim, toned, moderate, full, thick
+   - Gap: thigh gap present, touching, close together
+   - Curve: straight, slight curve, curved, very curved
+
+8. BODY SHADOWS & CONTOURS:
+   - Shadow under bust: none, subtle, defined, dramatic
+   - Abdominal shadows: flat, subtle definition, defined abs, shadows in curves
+   - Hip/waist shadow: how shadows define the waist curve
+   - Overall body contour definition: soft/flat lighting, moderate shadows, dramatic sculpting
+
+9. SKIN EXPOSURE SUMMARY:
+   - Upper body: covered, arms exposed, shoulders exposed, cleavage shown, midriff shown, breasts exposed
+   - Lower body: covered, thighs visible, legs visible, buttocks visible, genitals covered/exposed
+   - Back: covered, upper back, lower back, full back
+
+Output JSON:
+{
+    "nudity_level": "<fully_clothed/partially_clothed/revealing/swimwear_lingerie/topless/nude/implied_nude>",
+    "breast_exposure": {
+        "level": "<covered/cleavage_only/sideboob/underboob/partial/full>",
+        "sideboob_visible": "<none/left/right/both>",
+        "underboob_visible": true/false,
+        "nipple_visibility": "<covered/through_fabric/partial/full>",
+        "exposure_details": "<specific description of what's visible>"
+    },
+    "body_type": "<overall body type>",
+    "bust": {
+        "visible": true/false,
+        "cup_size": "<AA/A/B/C/D/DD/DDD/F/G+>",
+        "size": "<small/medium/large/very_large>",
+        "shape": "<natural/rounded/teardrop/projected/perky/full>",
+        "cleavage_visibility": "<none/minimal/moderate/prominent/deep>",
+        "cleavage_shadow": "<none/subtle/defined/dramatic>",
+        "upper_curve": "<visibility description>",
+        "side_curve": "<visibility description>",
+        "underboob_curve": "<visibility description>",
+        "position": "<natural/lifted/pushed_together/separated>",
+        "fullness_distribution": "<top-heavy/bottom-heavy/even>"
+    },
+    "waist": {
+        "visible": true/false,
+        "definition": "<undefined/slight/defined/very_defined>",
+        "width": "<narrow/proportional/wide>",
+        "midriff_exposed": true/false,
+        "shadows": "<shadow description>"
+    },
+    "hips": {
+        "visible": true/false,
+        "width": "<narrow/medium/wide/very_wide>",
+        "curve": "<subtle/moderate/pronounced/dramatic>",
+        "waist_ratio": "<slight/moderate/dramatic_hourglass>",
+        "shadow_definition": "<shadow description>"
+    },
+    "buttocks": {
+        "visible": true/false,
+        "exposure": "<covered/partial/full>",
+        "shape": "<flat/moderate/rounded/prominent/heart-shaped>",
+        "curve_shadow": "<none/subtle/defined>"
+    },
+    "thighs": {
+        "visible": true/false,
+        "fullness": "<slim/toned/moderate/full/thick>",
+        "curve": "<straight/slight/curved/very_curved>",
+        "gap": "<present/touching/close>"
+    },
+    "body_contour_shadows": {
+        "under_bust_shadow": "<none/subtle/defined/dramatic>",
+        "abdominal_shadows": "<flat/subtle/defined_abs/curved_shadows>",
+        "hip_waist_shadow": "<description>",
+        "overall_sculpting": "<soft/moderate/dramatic>"
+    },
+    "skin_exposure": {
+        "upper_body": "<what's exposed>",
+        "lower_body": "<what's exposed>",
+        "back": "<what's exposed>"
+    },
+    "prompt_description": "<complete body figure description for prompt - include nudity level, all visible proportions, curves, exposure details, and shadow details>"
+}"""
+    },
+
     "clothing": {
         "name": "Clothing Analysis",
         "prompt": """Analyze ONLY the clothing ACTUALLY VISIBLE in this image.
@@ -640,9 +787,9 @@ Output JSON:
 # Subject type to component mapping
 SUBJECT_COMPONENTS = {
     "WOMAN": {
-        "Standard": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "clothing", "lighting"],
-        "Detailed": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
-        "Extreme": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
+        "Standard": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "body_figure", "clothing", "lighting"],
+        "Detailed": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
+        "Extreme": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
     },
     "MAN": {
         "Standard": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "clothing", "lighting"],
@@ -695,18 +842,18 @@ SUBJECT_COMPONENTS = {
 # Detail mode configurations
 DETAIL_MODES = {
     "Standard": {
-        "components": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "clothing", "lighting"],
-        "description": "Balanced analysis - main features",
+        "components": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "body_figure", "clothing", "lighting"],
+        "description": "Balanced analysis - main features including body proportions",
         "include_measurements": False,
     },
     "Detailed": {
-        "components": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
-        "description": "Comprehensive analysis - all features including intimate apparel and tattoos",
+        "components": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
+        "description": "Comprehensive analysis - all features including body figure, intimate apparel and tattoos",
         "include_measurements": True,
     },
     "Extreme": {
-        "components": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
-        "description": "Maximum detail - all components, explicit descriptions, raw output",
+        "components": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
+        "description": "Maximum detail - all components including body proportions, explicit descriptions, raw output",
         "include_measurements": True,
         "include_exposure": True,
         "raw_mode": True,

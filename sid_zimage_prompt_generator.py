@@ -45,24 +45,24 @@ ANALYSIS_MODES = {
         "include_tattoos": False,
     },
     "Standard": {
-        "components": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "clothing", "lighting"],
-        "description": "Balanced analysis (~10s)",
+        "components": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "body_figure", "clothing", "lighting"],
+        "description": "Balanced analysis with body proportions (~12s)",
         "include_lighting": True,
         "include_pose": True,
         "include_intimate": False,
         "include_tattoos": False,
     },
     "Detailed": {
-        "components": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
-        "description": "Full analysis with intimate/tattoos (~20s)",
+        "components": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
+        "description": "Full analysis with body figure/intimate/tattoos (~25s)",
         "include_lighting": True,
         "include_pose": True,
         "include_intimate": True,
         "include_tattoos": True,
     },
     "Extreme": {
-        "components": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
-        "description": "Maximum detail, raw output (~25s)",
+        "components": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
+        "description": "Maximum detail with body figure, raw output (~30s)",
         "include_lighting": True,
         "include_pose": True,
         "include_intimate": True,
@@ -191,6 +191,49 @@ Output JSON:
 
 Output JSON:
 {"visible_parts": ["<list>"], "posture": "<posture>", "body_angle": "<angle>", "arms": "<position>", "prompt_description": "<pose description>"}"""
+    },
+
+    "body_figure": {
+        "name": "Body Figure & Proportions",
+        "prompt": """Analyze BODY FIGURE, PROPORTIONS, and EXPOSURE LEVEL visible in this image.
+CRITICAL: Only describe what is ACTUALLY VISIBLE.
+
+1. NUDITY/EXPOSURE LEVEL:
+   - Fully clothed / Partially clothed / Revealing / Swimwear-Lingerie / Topless / Nude / Implied nude
+
+2. BREAST/CHEST EXPOSURE:
+   - Covered / Cleavage only / Sideboob (left/right/both) / Underboob / Partial / Full
+   - Nipple visibility: covered / through fabric / partial / full
+
+3. BODY TYPE: Slim / Athletic / Average / Curvy-Voluptuous / Petite / Plus-size
+
+4. BUST DETAILS (if visible):
+   - Cup size estimate: AA/A (minimal) / B (small) / C (medium) / D (large) / DD-E (very large) / DDD-F (extra large) / G+ (extremely large)
+   - Shape: natural / rounded / teardrop / projected / perky / full
+   - Cleavage: none / minimal / moderate / prominent / deep
+   - Cleavage shadow: none / subtle / defined / dramatic
+   - Position: natural / lifted / pushed together / separated
+
+5. WAIST (if visible):
+   - Definition: undefined / slight / defined / very defined (hourglass)
+   - Midriff visible: yes/no
+
+6. HIPS & BUTTOCKS (if visible):
+   - Hip width: narrow / medium / wide / very wide
+   - Hip curve: subtle / moderate / pronounced / dramatic
+   - Buttocks shape: flat / moderate / rounded / prominent / heart-shaped
+   - Buttocks exposure: covered / partial / full
+
+7. THIGHS (if visible):
+   - Fullness: slim / toned / moderate / full / thick
+   - Thigh gap: present / touching / close
+
+8. BODY SHADOWS & CONTOURS:
+   - Under bust shadow: none / subtle / defined / dramatic
+   - Overall sculpting: soft / moderate / dramatic
+
+Output JSON:
+{"nudity_level": "<level>", "breast_exposure": {"level": "<level>", "sideboob": "<none/left/right/both>", "underboob": true/false, "nipple": "<visibility>"}, "body_type": "<type>", "bust": {"visible": true/false, "cup_size": "<AA-G+>", "shape": "<shape>", "cleavage": "<level>", "cleavage_shadow": "<level>", "position": "<position>"}, "waist": {"visible": true/false, "definition": "<level>", "midriff_exposed": true/false}, "hips": {"visible": true/false, "width": "<width>", "curve": "<curve>"}, "buttocks": {"visible": true/false, "shape": "<shape>", "exposure": "<level>"}, "thighs": {"visible": true/false, "fullness": "<level>", "gap": "<status>"}, "body_shadows": {"under_bust": "<level>", "sculpting": "<level>"}, "prompt_description": "<complete body figure description>"}"""
     },
 
     "clothing": {
@@ -741,8 +784,8 @@ Return a single JSON object:
         """Assemble final prompt from components with example text filtering."""
         sections = []
 
-        # Order: framing, ethnicity, face, hair, eyes, nose_lips, body_pose, clothing, intimate, tattoos, accessories, lighting
-        order = ["framing", "ethnicity", "face", "hair", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"]
+        # Order: framing, ethnicity, face, hair, eyes, nose_lips, body_pose, body_figure, clothing, intimate, tattoos, accessories, lighting
+        order = ["framing", "ethnicity", "face", "hair", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"]
 
         for key in order:
             if key in components and components[key]:
