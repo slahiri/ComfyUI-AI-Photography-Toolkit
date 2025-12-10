@@ -1,0 +1,43 @@
+[project]
+name = "comfyui-ai-photography-toolkit"
+description = "AI-powered Z-Image prompt generator for ComfyUI. Analyzes images and generates flowing narrative prompts optimized for Z-Image models."
+version = "4.1.0"
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["comfyui", "ai", "photography", "prompt-generator", "llm", "anthropic", "openai", "gguf", "image-analysis"]
+
+authors = [
+    { name = "Siddhartha Lahiri" }
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "anthropic>=0.39.0",
+    "openai>=1.0.0",
+    "requests>=2.28.0",
+    "pyyaml>=6.0",
+    "pillow>=10.0.0",
+    "numpy>=1.24.0",
+]
+
+[project.urls]
+Repository = "https://github.com/slahiri/ComfyUI-AI-Photography-Toolkit"
+Documentation = "https://github.com/slahiri/ComfyUI-AI-Photography-Toolkit#readme"
+Issues = "https://github.com/slahiri/ComfyUI-AI-Photography-Toolkit/issues"
+
+[tool.comfy]
+PublisherId = "slahiri"
+DisplayName = "SID AI Photography Toolkit"
+Icon = "https://raw.githubusercontent.com/slahiri/ComfyUI-AI-Photography-Toolkit/master/docs/images/workflow-screenshot.png"
