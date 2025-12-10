@@ -1,241 +1,194 @@
 """
-SID_ZImagePromptGenerator Node
-Agentic multi-stage image analysis for Z-Image prompt generation.
+SID_ZImagePromptGenerator Node (Basic)
 
-This node analyzes an input image using vision LLM capabilities and generates
-a Z-Image compatible narrative prompt through a multi-stage agentic pipeline.
+Simple, user-friendly Z-Image prompt generator with preset options.
+Uses LLM_MODEL input from provider nodes for flexibility.
 
-Supports multiple AI providers:
-- Anthropic (Claude models)
-- Ollama (local models: llava, moondream, bakllava)
-- Grok (xAI vision models)
+Key Features:
+- Preset prompt styles for common use cases
+- Simple detail level selection
+- Single-shot generation (fast)
+- Optional custom guidance
+
+For advanced options, use SID_ZImagePromptGenerator_Advanced_V2.
 """
 
 import base64
 import io
-import json
-import random
+import re
 import time
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, Optional
 
 import numpy as np
 from PIL import Image
-from typing_extensions import override
-from comfy_api.latest import ComfyExtension, io as comfy_io
+from comfy_api.latest import io as comfy_io
 import comfy.utils
 
-from .utils.zimage_utils import (
-    load_zimage_config,
-    get_shot_framings,
-    get_photography_genres,
-    get_content_detail_schema,
-    get_prompt_template,
-    get_focus_override_config,
-    get_detail_level_config,
-    get_zimage_settings,
-    clean_zimage_output,
-    hash_image_tensor,
-    get_cache_key,
-    get_cached_output,
-    set_cached_output,
-    get_cache_stats,
-    get_image_metadata,
-    get_zimage_recommendations,
-    build_attribute_schema_for_scene,
-    format_attribute_schema_for_prompt,
-)
+from .llm_providers.llm_model_type import LLMModelConfig
+
+# Create custom LLM_MODEL type for ComfyUI
+LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
+
+
+# Preset prompt styles - user-friendly presets like QwenVL
+PRESET_STYLES = {
+    "Detailed Description": {
+        "emoji": "📸",
+        "description": "Comprehensive image description with all visible details",
+        "system": """You are an expert visual analyst for text-to-image AI prompts.
+Generate a detailed, flowing narrative prompt that captures all visible elements in the image.
+Focus on: composition, subject features, clothing, colors, materials, lighting, and background.
+Output ONLY the prompt text - no explanations or formatting.""",
+        "user": """Analyze this image and generate a detailed prompt covering:
+1. Shot type and composition
+2. Subject description (features, pose, expression)
+3. Clothing/attire (colors, materials, style)
+4. Lighting and shadows
+5. Background/environment
+
+Generate a natural flowing paragraph combining all elements."""
+    },
+
+    "Portrait Focus": {
+        "emoji": "👤",
+        "description": "Emphasizes facial features, expression, and upper body",
+        "system": """You are an expert portrait analyst for text-to-image AI prompts.
+Generate a detailed prompt focused on the subject's appearance and expression.
+Emphasize: face shape, features, skin tone, hair, expression, and visible clothing.
+Output ONLY the prompt text - no explanations or formatting.""",
+        "user": """Analyze this portrait and generate a prompt covering:
+1. Face shape, skin tone, ethnicity
+2. Facial features (eyes, nose, lips)
+3. Hair style, color, and arrangement
+4. Expression and gaze
+5. Upper body and clothing
+6. Lighting on the face
+
+Generate a natural flowing paragraph."""
+    },
+
+    "Fashion & Outfit": {
+        "emoji": "👗",
+        "description": "Detailed clothing and styling analysis",
+        "system": """You are an expert fashion analyst for text-to-image AI prompts.
+Generate a detailed prompt focused on clothing, accessories, and styling.
+Emphasize: garment types, colors, materials, fit, and accessories.
+Output ONLY the prompt text - no explanations or formatting.""",
+        "user": """Analyze this image focusing on fashion and generate a prompt covering:
+1. Garment types (dress, top, pants, etc.)
+2. Colors and patterns
+3. Materials and textures
+4. Fit and style
+5. Accessories (jewelry, bags, etc.)
+6. Overall fashion aesthetic
+
+Generate a natural flowing paragraph."""
+    },
+
+    "Artistic Style": {
+        "emoji": "🎨",
+        "description": "Focuses on artistic and photographic qualities",
+        "system": """You are an expert art and photography analyst for text-to-image AI prompts.
+Generate a prompt that captures the artistic and photographic qualities of the image.
+Emphasize: composition, lighting style, color palette, mood, and artistic techniques.
+Output ONLY the prompt text - no explanations or formatting.""",
+        "user": """Analyze this image's artistic qualities and generate a prompt covering:
+1. Composition and framing
+2. Lighting style and direction
+3. Color palette and tones
+4. Mood and atmosphere
+5. Photographic style (studio, natural, editorial)
+6. Any artistic effects
+
+Generate a natural flowing paragraph."""
+    },
+
+    "Quick Caption": {
+        "emoji": "⚡",
+        "description": "Brief, concise description (faster)",
+        "system": """You are a concise image captioner.
+Generate a short, accurate prompt describing the main elements of the image.
+Keep it under 100 words. Focus on the most important visual elements.
+Output ONLY the prompt text.""",
+        "user": "Generate a brief, accurate caption for this image in 50-100 words."
+    },
+
+    "NSFW/Detailed": {
+        "emoji": "🔞",
+        "description": "Comprehensive body and clothing analysis (adults only)",
+        "system": """You are an expert visual analyst for detailed image prompts.
+Generate a comprehensive prompt including body features and clothing details.
+Be specific about: body proportions, skin, clothing coverage, and exposure.
+This is for adult content generation. Be accurate and detailed.
+Output ONLY the prompt text - no explanations or formatting.""",
+        "user": """Analyze this image comprehensively and generate a detailed prompt covering:
+1. Framing and composition
+2. Subject's body (build, proportions, skin tone)
+3. Facial features and expression
+4. Hair style and color
+5. All clothing/intimate apparel details
+6. Body positioning and pose
+7. Lighting and background
+
+Generate a detailed, flowing paragraph. Include all visible details."""
+    },
+}
 
 
 class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
     """
-    Agentic multi-stage image analyzer for Z-Image prompt generation.
+    Simple Z-Image Prompt Generator.
 
-    Uses a 6-stage pipeline:
-    1. Classification - Detect shot framing and photography genre
-    2. Metadata - Extract image dimensions and properties
-    3. Attribute Mapping - Select relevant attributes for the scene
-    4. Detailed Analysis - LLM extraction of structured attributes
-    5. Prompt Composition - Generate flowing narrative prompt
-    6. Z-Image Optimization - Provide recommendations for Z-Image
+    Easy-to-use node with preset styles for common use cases.
+    Connect any LLM provider node (Anthropic, OpenAI, QwenVL, etc.).
 
-    Supports NSFW content through content_detail levels (Z-Image compatible).
+    For advanced options, use SID_ZImagePromptGenerator_Advanced_V2.
     """
-
-    # Track seed state for increment/decrement modes
-    _last_seed: int = 0
 
     @classmethod
     def define_schema(cls) -> comfy_io.Schema:
-        """Define the node schema with all inputs and outputs."""
+        """Define the node schema with simple, user-friendly options."""
 
-        # Load config for options
-        try:
-            config = load_zimage_config()
-            genres = get_photography_genres()
-            genre_options = ["Auto-detect"] + list(genres.keys())
-        except Exception:
-            genre_options = ["Auto-detect"]
+        # Build preset options with emojis
+        preset_options = [
+            f"{v['emoji']} {k}" for k, v in PRESET_STYLES.items()
+        ]
 
         return comfy_io.Schema(
             node_id="SID_ZImagePromptGenerator",
             display_name="SID Z-Image Prompt Generator",
             category="SID Photography Toolkit/Z-Image",
-            description="Agentic image analyzer that generates Z-Image compatible narrative prompts",
+            description="Simple Z-Image prompt generator. Connect LLM provider, select style, generate!",
+            is_output_node=True,
             inputs=[
-                # Image input
                 comfy_io.Image.Input(
                     "image",
                     tooltip="Input image to analyze"
                 ),
 
-                # API Settings
-                comfy_io.Combo.Input(
-                    "ai_provider",
-                    options=["Anthropic", "Ollama", "Grok"],
-                    default="Anthropic",
-                    tooltip="AI provider for image analysis. Anthropic=Claude API, Ollama=Local models, Grok=xAI API"
-                ),
-                comfy_io.String.Input(
-                    "api_key",
-                    default="",
-                    multiline=False,
-                    tooltip="API key: Anthropic (console.anthropic.com), Grok (console.x.ai). Leave empty for Ollama."
-                ),
-                comfy_io.Combo.Input(
-                    "model",
-                    options=[
-                        # Anthropic models
-                        "claude-sonnet-4-5-20250929",
-                        "claude-haiku-4-5-20251001",
-                        "claude-opus-4-1-20250805",
-                        "claude-3-5-haiku-20241022",
-                        # Ollama models - Low VRAM (~4-8GB)
-                        "ollama/moondream",
-                        "ollama/llava:7b",
-                        "ollama/bakllava",
-                        # Ollama models - Mid VRAM (~12-16GB)
-                        "ollama/llava:13b",
-                        "ollama/llava-llama3",
-                        # Ollama models - High VRAM (~24GB+)
-                        "ollama/llava:34b",
-                        "ollama/llama3.2-vision",
-                        # Grok models
-                        "grok-2-vision-1212",
-                        "grok-vision-beta",
-                    ],
-                    default="claude-sonnet-4-5-20250929",
-                    tooltip="Model: Claude (Anthropic), ollama/* (local), grok-* (xAI). Ollama models sorted by VRAM: moondream/llava:7b (Low), llava:13b (Mid), llava:34b (High)"
-                ),
-                comfy_io.String.Input(
-                    "api_url",
-                    default="",
-                    multiline=False,
-                    tooltip="API URL override. Ollama: http://localhost:11434 (default if empty). Grok: https://api.x.ai (default). Anthropic: ignored."
+                LLM_MODEL_Type.Input(
+                    "llm_model",
+                    tooltip="Connect LLM provider node (SID_Anthropic_LLM, SID_QwenVL_LLM, etc.)"
                 ),
 
-                # Analysis Options
+                # Simple preset selection like QwenVL
                 comfy_io.Combo.Input(
-                    "detail_level",
-                    options=["Quick", "Standard", "Deep"],
-                    default="Standard",
-                    tooltip="Analysis depth: Quick (1 call), Standard (2 calls), Deep (3 calls)"
-                ),
-                comfy_io.Combo.Input(
-                    "focus_override",
-                    options=[
-                        "Auto-detect",
-                        "Portrait/People",
-                        "Full Body/Fashion",
-                        "Landscape/Environment",
-                        "Product/Object",
-                        "Food/Beverage",
-                        "Architecture/Interior",
-                    ],
-                    default="Auto-detect",
-                    tooltip="Force a specific genre focus instead of auto-detection"
-                ),
-                comfy_io.Combo.Input(
-                    "content_detail",
-                    options=["minimal", "standard", "detailed", "explicit"],
-                    default="standard",
-                    tooltip="Body/clothing detail level. 'explicit' enables full NSFW attributes"
+                    "preset_style",
+                    options=preset_options,
+                    default=preset_options[0],  # Detailed Description
+                    tooltip="Preset analysis style - determines what aspects to emphasize"
                 ),
 
-                # Prompt Direction
+                # Optional custom guidance
                 comfy_io.String.Input(
-                    "user_prompt",
+                    "custom_guidance",
                     default="",
                     multiline=True,
-                    tooltip="Optional: Guide the analysis (e.g., 'focus on the dress') or provide prompt to enhance"
-                ),
-                comfy_io.Combo.Input(
-                    "prompt_mode",
-                    options=[
-                        "Image Only (ignore prompt)",
-                        "Prompt Guides Analysis",
-                        "Prompt First, Image Fills Gaps",
-                        "Prompt Dominates",
-                    ],
-                    default="Prompt Guides Analysis",
-                    tooltip="How user_prompt interacts with image analysis"
+                    tooltip="Optional: Add specific instructions (e.g., 'focus on the red dress', 'emphasize the lighting')"
                 ),
 
-                # Focus Area Toggles
-                comfy_io.Boolean.Input(
-                    "focus_subject",
-                    default=True,
-                    tooltip="Include detailed subject description"
-                ),
-                comfy_io.Boolean.Input(
-                    "focus_environment",
-                    default=True,
-                    tooltip="Include background/environment description"
-                ),
-                comfy_io.Boolean.Input(
-                    "focus_lighting",
-                    default=True,
-                    tooltip="Include lighting description"
-                ),
-                comfy_io.Boolean.Input(
-                    "focus_colors",
-                    default=True,
-                    tooltip="Include colors and materials"
-                ),
-                comfy_io.Boolean.Input(
-                    "focus_mood",
-                    default=False,
-                    tooltip="Include mood/atmosphere description"
-                ),
-                comfy_io.Boolean.Input(
-                    "include_text_quotes",
-                    default=True,
-                    tooltip="Quote visible text with \"quotes\" for Z-Image text rendering"
-                ),
-
-                # Output Settings
-                comfy_io.Int.Input(
-                    "max_tokens",
-                    default=500,
-                    min=100,
-                    max=2000,
-                    step=50,
-                    display_name="Max Output Tokens",
-                    display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Controls prompt length. 300=short (~150 words), 500=standard (~250 words), 800=detailed (~400 words). Z-Image handles long prompts."
-                ),
-
-                # Generation Settings
-                comfy_io.Float.Input(
-                    "temperature",
-                    default=0.7,
-                    min=0.0,
-                    max=1.0,
-                    step=0.1,
-                    round=0.1,
-                    display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Creativity level (0=focused, 1=creative)"
-                ),
+                # Simple seed for reproducibility
                 comfy_io.Int.Input(
                     "seed",
                     default=0,
@@ -244,53 +197,22 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     control_after_generate=True,
                     tooltip="Random seed for reproducibility"
                 ),
-                comfy_io.Combo.Input(
-                    "seed_mode",
-                    options=["fixed", "randomize", "increment", "decrement"],
-                    default="fixed",
-                    tooltip="Seed behavior: fixed (deterministic), randomize (new each run), increment/decrement"
-                ),
-                comfy_io.Boolean.Input(
-                    "cache_prompt",
-                    default=True,
-                    tooltip="Cache results locally. Same image + settings = instant cached result (saves API calls)"
-                ),
             ],
             outputs=[
-                comfy_io.Image.Output(
-                    "output_image",
-                    display_name="image",
-                    tooltip="Pass-through of input image"
-                ),
                 comfy_io.String.Output(
                     "prompt",
-                    display_name="zimage_prompt",
-                    tooltip="Z-Image compatible narrative prompt ready for generation"
+                    display_name="prompt",
+                    tooltip="Generated Z-Image prompt"
                 ),
                 comfy_io.Int.Output(
                     "width",
                     display_name="width",
-                    tooltip="Image width in pixels"
+                    tooltip="Image width"
                 ),
                 comfy_io.Int.Output(
                     "height",
                     display_name="height",
-                    tooltip="Image height in pixels"
-                ),
-                comfy_io.String.Output(
-                    "structured_data",
-                    display_name="structured_data",
-                    tooltip="JSON with classification and extracted attributes"
-                ),
-                comfy_io.String.Output(
-                    "metadata",
-                    display_name="image_metadata",
-                    tooltip="JSON with image info and Z-Image recommendations"
-                ),
-                comfy_io.String.Output(
-                    "debug_log",
-                    display_name="debug_log",
-                    tooltip="Stage-by-stage processing details"
+                    tooltip="Image height"
                 ),
             ],
         )
@@ -299,398 +221,204 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
     def execute(
         cls,
         image,
-        ai_provider: str,
-        api_key: str,
-        model: str,
-        api_url: str,
-        detail_level: str,
-        focus_override: str,
-        content_detail: str,
-        user_prompt: str,
-        prompt_mode: str,
-        focus_subject: bool,
-        focus_environment: bool,
-        focus_lighting: bool,
-        focus_colors: bool,
-        focus_mood: bool,
-        include_text_quotes: bool,
-        max_tokens: int,
-        temperature: float,
+        llm_model: LLMModelConfig,
+        preset_style: str,
+        custom_guidance: str,
         seed: int,
-        seed_mode: str,
-        cache_prompt: bool,
     ) -> comfy_io.NodeOutput:
-        """Execute the agentic pipeline to generate Z-Image prompt."""
+        """Execute the prompt generation."""
 
-        debug_lines = []
         start_time = time.time()
 
-        def log(message: str):
-            debug_lines.append(message)
-            print(message)
+        def log(msg: str):
+            print(f"[SID-Basic] {msg}")
 
-        log("=" * 60)
-        log("SID Z-Image Prompt Generator - Debug Log")
-        log("=" * 60)
-        log(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        log(f"Mode: {detail_level} ({get_detail_level_config(detail_level).get('llm_calls', 2)} LLM calls)")
-        log("")
+        # Get image dimensions
+        img_tensor = image[0]
+        height, width = img_tensor.shape[0], img_tensor.shape[1]
 
-        # Get image dimensions early for all return paths
-        if len(image.shape) == 4:
-            img_height, img_width = image.shape[1], image.shape[2]
-        else:
-            img_height, img_width = image.shape[0], image.shape[1]
-
-        # Determine provider from model selection
-        if model.startswith("ollama/"):
-            actual_provider = "Ollama"
-        elif model.startswith("grok-"):
-            actual_provider = "Grok"
-        else:
-            actual_provider = "Anthropic"
-
-        # Handle seed mode
-        actual_seed = cls._process_seed(seed, seed_mode)
-        log(f"Seed: {actual_seed} (mode: {seed_mode})")
-        log(f"Cache: {'enabled' if cache_prompt else 'disabled'}")
-        log(f"Provider: {actual_provider}")
-        log(f"Model: {model}")
-
-        # Validate API key (not required for Ollama)
-        if actual_provider != "Ollama" and (not api_key or api_key.strip() == ""):
-            if actual_provider == "Anthropic":
-                error_msg = "ERROR: Anthropic API key is required. Get one at https://console.anthropic.com/"
-            else:
-                error_msg = "ERROR: Grok API key is required. Get one at https://console.x.ai/"
-            return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
-
-        # Import provider libraries
-        if actual_provider == "Anthropic":
-            try:
-                import anthropic
-            except ImportError:
-                error_msg = "ERROR: anthropic library not installed. Run: pip install anthropic"
-                return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
-        elif actual_provider == "Grok":
-            try:
-                import openai
-            except ImportError:
-                error_msg = "ERROR: openai library not installed. Run: pip install openai"
-                return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
-        else:  # Ollama
-            try:
-                import requests
-            except ImportError:
-                error_msg = "ERROR: requests library not installed. Run: pip install requests"
-                return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", error_msg)
-
-        # Check cache if caching is enabled
-        if cache_prompt:
-            image_hash = hash_image_tensor(image)
-            cache_key = get_cache_key(
-                image_hash, actual_seed,
-                model=model,
-                detail_level=detail_level,
-                focus_override=focus_override,
-                content_detail=content_detail,
-                user_prompt=user_prompt,
-                prompt_mode=prompt_mode,
-                focus_subject=focus_subject,
-                focus_environment=focus_environment,
-                focus_lighting=focus_lighting,
-                focus_colors=focus_colors,
-                focus_mood=focus_mood,
-                include_text_quotes=include_text_quotes,
-                max_tokens=max_tokens,
-                temperature=temperature,
-            )
-
-            cached = get_cached_output(cache_key)
-            if cached:
-                cache_stats = get_cache_stats()
-                log("[CACHE HIT] Returning cached output (persistent disk cache)")
-                log(f"  Cache: {cache_stats['disk_entries']} entries, {cache_stats['disk_size_mb']} MB")
-                log("=" * 60)
-                return comfy_io.NodeOutput(
-                    image,
-                    cached["prompt"],
-                    img_width,
-                    img_height,
-                    cached["structured_data"],
-                    cached["metadata"],
-                    cached["debug_log"] + "\n\n[CACHE HIT - Loaded from persistent disk cache]"
-                )
-        else:
-            cache_key = None
+        log("=" * 50)
+        log("SID Z-Image Prompt Generator (Basic)")
+        log("=" * 50)
+        log(f"Style: {preset_style}")
+        log(f"Image: {width}x{height}")
+        log(f"Provider: {llm_model.provider}")
+        log(f"Model: {llm_model.model}")
 
         try:
-            # Initialize client based on provider
-            if actual_provider == "Anthropic":
-                import anthropic
-                client = anthropic.Anthropic(api_key=api_key.strip())
-            elif actual_provider == "Grok":
-                import openai
-                grok_url = api_url.strip() if api_url.strip() else "https://api.x.ai/v1"
-                client = openai.OpenAI(api_key=api_key.strip(), base_url=grok_url)
-            else:  # Ollama
-                import requests
-                ollama_url = api_url.strip() if api_url.strip() else "http://localhost:11434"
-                client = {"url": ollama_url, "session": requests.Session()}
+            # Parse preset style (remove emoji)
+            style_name = preset_style.split(" ", 1)[1] if " " in preset_style else preset_style
+            preset = PRESET_STYLES.get(style_name, PRESET_STYLES["Detailed Description"])
+
+            log(f"Using preset: {style_name}")
 
             # Convert image to base64
-            base64_image = cls._image_to_base64(image)
+            img_np = (img_tensor.cpu().numpy() * 255).astype(np.uint8)
+            pil_image = Image.fromarray(img_np)
 
-            # Initialize progress bar (6 stages)
-            pbar = comfy.utils.ProgressBar(6)
+            # Check for max_image_size optimization
+            max_image_size = llm_model.extra_params.get("max_image_size") if llm_model.extra_params else None
+            if max_image_size and max(width, height) > max_image_size:
+                if width > height:
+                    new_width = max_image_size
+                    new_height = int(height * (max_image_size / width))
+                else:
+                    new_height = max_image_size
+                    new_width = int(width * (max_image_size / height))
+                pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                log(f"Image resized: {width}x{height} -> {new_width}x{new_height}")
 
-            # ===== STAGE 1: CLASSIFICATION =====
-            log("[STAGE 1] Classification (LLM Call #1)")
-            stage1_start = time.time()
+            buffer = io.BytesIO()
+            pil_image.save(buffer, format="JPEG", quality=95)
+            base64_image = base64.standard_b64encode(buffer.getvalue()).decode("utf-8")
 
-            classification = cls._stage1_classification(
-                client, model, base64_image, focus_override, temperature, log
+            # Build prompts
+            system_prompt = preset["system"]
+            user_prompt = preset["user"]
+
+            # Add custom guidance if provided
+            if custom_guidance and custom_guidance.strip():
+                user_prompt += f"\n\nADDITIONAL GUIDANCE: {custom_guidance.strip()}"
+                log(f"Custom guidance: {custom_guidance.strip()[:50]}...")
+
+            # Get client and make LLM call
+            client = cls._get_client(llm_model)
+
+            # Progress bar
+            pbar = comfy.utils.ProgressBar(2)
+            log("Generating prompt...")
+            pbar.update(1)
+
+            prompt = cls._call_llm(
+                client,
+                llm_model,
+                base64_image,
+                system_prompt,
+                user_prompt
             )
 
-            log(f"  Shot Framing: {classification['shot_framing']} ({classification.get('shot_label', '')}) - {int(classification.get('confidence', 0) * 100)}% confidence")
-            log(f"  Genre: {classification['genre']} ({classification.get('genre_label', '')})")
-            log(f"  Secondary: {', '.join(classification.get('secondary_tags', []))}")
-            log(f"  Subject Count: {classification.get('subject_count', 0)}")
-            log(f"  Has Text: {classification.get('has_text', False)}")
-            log(f"  Duration: {time.time() - stage1_start:.1f}s")
-            log("")
+            # Clean output
+            prompt = cls._clean_output(prompt)
+
+            # Add custom guidance prefix if significant
+            if custom_guidance and custom_guidance.strip() and len(custom_guidance.strip()) > 10:
+                prompt = f"[FOCUS: {custom_guidance.strip()}] {prompt}"
+
             pbar.update(1)
 
-            # ===== STAGE 2: METADATA =====
-            log("[STAGE 2] Metadata Extraction")
-
-            image_meta = get_image_metadata(image)
-            log(f"  Dimensions: {image_meta['width']} x {image_meta['height']} px")
-            log(f"  Aspect Ratio: {image_meta['aspect_ratio']} ({image_meta['aspect_decimal']})")
-            log(f"  Orientation: {image_meta['orientation']}")
-            log("")
-            pbar.update(1)
-
-            # ===== STAGE 3: ATTRIBUTE MAPPING =====
-            log("[STAGE 3] Attribute Mapping")
-
-            attribute_schema = build_attribute_schema_for_scene(
-                classification["shot_framing"],
-                classification["genre"],
-                content_detail
-            )
-            log(f"  Scene: {classification['shot_framing']} + {classification['genre']}")
-            log(f"  Selected categories: {', '.join(attribute_schema.keys())}")
-            log("")
-            pbar.update(1)
-
-            # ===== STAGE 4: DETAILED ANALYSIS =====
-            if detail_level in ["Standard", "Deep"]:
-                log("[STAGE 4] Detailed Analysis (LLM Call #2)")
-                stage4_start = time.time()
-
-                attributes = cls._stage4_detailed_analysis(
-                    client, model, base64_image,
-                    classification, attribute_schema,
-                    content_detail, temperature, log
-                )
-
-                attr_count = sum(len(v) if isinstance(v, dict) else 1 for v in attributes.values())
-                log(f"  Attributes extracted: {len(attributes)} categories, {attr_count} properties")
-                log(f"  Duration: {time.time() - stage4_start:.1f}s")
-                log("")
-            else:
-                # Quick mode - use classification only
-                attributes = {"classification": classification}
-                log("[STAGE 4] Skipped (Quick mode)")
-                log("")
-            pbar.update(1)
-
-            # ===== STAGE 5: PROMPT COMPOSITION =====
-            log("[STAGE 5] Prompt Composition")
-            stage5_start = time.time()
-
-            if detail_level == "Deep":
-                # Additional LLM call for refined prompt
-                log("  (LLM Call #3 for refined composition)")
-                prompt = cls._stage5_prompt_composition_llm(
-                    client, model, base64_image,
-                    classification, attributes,
-                    user_prompt, prompt_mode,
-                    focus_subject, focus_environment, focus_lighting,
-                    focus_colors, focus_mood, include_text_quotes,
-                    max_tokens, temperature, log
-                )
-            else:
-                # Template-based composition
-                prompt = cls._stage5_prompt_composition_template(
-                    client, model, base64_image,
-                    classification, attributes,
-                    user_prompt, prompt_mode,
-                    focus_subject, focus_environment, focus_lighting,
-                    focus_colors, focus_mood, include_text_quotes,
-                    max_tokens, temperature, log
-                )
-
-            # Clean the output
-            prompt = clean_zimage_output(prompt, max_tokens * 4)  # ~4 chars per token
-
-            word_count = len(prompt.split())
-            estimated_tokens = int(word_count * 1.3)
-            log(f"  Word count: {word_count}")
-            log(f"  Estimated tokens: {estimated_tokens}")
-            log(f"  Duration: {time.time() - stage5_start:.1f}s")
-            log("")
-            pbar.update(1)
-
-            # ===== STAGE 6: Z-IMAGE RECOMMENDATIONS =====
-            log("[STAGE 6] Z-Image Recommendations")
-
-            zimage_recs = get_zimage_recommendations(image_meta)
-            if zimage_recs["resize_needed"]:
-                log(f"  Resize: {image_meta['width']}x{image_meta['height']} -> {zimage_recs['optimal_resolution'][0]}x{zimage_recs['optimal_resolution'][1]} ({zimage_recs['resize_method']} {zimage_recs['resize_direction']})")
-            else:
-                log(f"  Resize: Not needed (already optimal)")
-            log(f"  Quality estimate: {zimage_recs['quality_estimate'].upper()}")
-            log("")
-            pbar.update(1)
-
-            # Build structured data output
-            structured_data = {
-                "classification": classification,
-                "attributes": attributes,
-                "prompt_stats": {
-                    "word_count": word_count,
-                    "estimated_tokens": estimated_tokens,
-                }
-            }
-
-            # Build metadata output
-            metadata_output = {
-                "image_info": image_meta,
-                "z_image_recommendations": zimage_recs,
-                "content_flags": {
-                    "has_text": classification.get("has_text", False),
-                    "has_multiple_subjects": classification.get("subject_count", 1) != 1,
-                    "complexity": "high" if len(attributes) > 10 else "medium" if len(attributes) > 5 else "low",
-                    "content_detail_level": content_detail,
-                }
-            }
-
-            # Finalize debug log
+            # Stats
             total_time = time.time() - start_time
-            log("=" * 60)
-            log(f"Total duration: {total_time:.1f}s")
+            word_count = len(prompt.split())
 
-            # Cache the result for fixed seed mode
-            if cache_key:
-                set_cached_output(cache_key, {
-                    "prompt": prompt,
-                    "structured_data": json.dumps(structured_data, indent=2),
-                    "metadata": json.dumps(metadata_output, indent=2),
-                    "debug_log": "\n".join(debug_lines),  # Log before cache info
-                })
-                cache_stats = get_cache_stats()
-                log(f"[CACHED] Result saved to persistent disk cache")
-                log(f"  Cache: {cache_stats['disk_entries']} entries, {cache_stats['disk_size_mb']} MB")
+            log(f"Generated: {word_count} words")
+            log(f"Time: {total_time:.1f}s")
+            log("=" * 50)
 
-            log("=" * 60)
-            debug_log = "\n".join(debug_lines)
-
-            return comfy_io.NodeOutput(
-                image,
-                prompt,
-                img_width,
-                img_height,
-                json.dumps(structured_data, indent=2),
-                json.dumps(metadata_output, indent=2),
-                debug_log,
-            )
+            return comfy_io.NodeOutput(prompt, width, height, ui={"text": (prompt,)})
 
         except Exception as e:
-            error_type = type(e).__name__
-            error_msg = f"API Error ({error_type}): {str(e)}"
-            log(f"ERROR: {error_msg}")
+            error_msg = f"Error: {str(e)}"
+            log(error_msg)
             import traceback
-            log(traceback.format_exc())
-            return comfy_io.NodeOutput(image, error_msg, img_width, img_height, "{}", "{}", "\n".join(debug_lines))
+            traceback.print_exc()
+            return comfy_io.NodeOutput(error_msg, width, height, ui={"text": (error_msg,)})
 
     @classmethod
-    def _process_seed(cls, seed: int, seed_mode: str) -> int:
-        """Process seed based on mode and return actual seed to use."""
-        if seed_mode == "randomize":
-            return random.randint(0, 2147483647)
-        elif seed_mode == "increment":
-            cls._last_seed = seed + 1
-            return seed
-        elif seed_mode == "decrement":
-            cls._last_seed = max(0, seed - 1)
-            return seed
-        else:  # fixed
-            return seed
+    def _get_client(cls, llm_model: LLMModelConfig):
+        """Get the appropriate LLM client based on provider."""
+        provider = llm_model.provider.lower()
 
-    @staticmethod
-    def _image_to_base64(image_tensor) -> str:
-        """Convert ComfyUI image tensor to base64 string."""
-        if len(image_tensor.shape) == 4:
-            image_np = image_tensor[0].cpu().numpy()
+        if provider == "anthropic":
+            import anthropic
+            return anthropic.Anthropic(api_key=llm_model.api_key)
+
+        elif provider in ["openai", "openai_compatible"]:
+            from openai import OpenAI
+            return OpenAI(
+                api_key=llm_model.api_key or "not-needed",
+                base_url=llm_model.api_url if llm_model.api_url else None
+            )
+
+        elif provider == "grok":
+            from openai import OpenAI
+            return OpenAI(
+                api_key=llm_model.api_key,
+                base_url="https://api.x.ai/v1"
+            )
+
+        elif provider == "gguf":
+            from .llm_providers.sid_gguf_llm import LocalGGUFClient
+            extra = llm_model.extra_params or {}
+            return LocalGGUFClient(
+                model_path=extra.get("model_path", ""),
+                mmproj_path=extra.get("mmproj_path"),
+                chat_format=extra.get("chat_format", "llava-1-5"),
+                n_ctx=extra.get("n_ctx", 4096),
+                n_gpu_layers=extra.get("n_gpu_layers", -1),
+                verbose=False,
+            )
+
+        elif provider == "qwenvl":
+            from .llm_providers.sid_qwenvl_llm import QwenVLClient
+            extra = llm_model.extra_params or {}
+            return QwenVLClient(
+                model_name=llm_model.model,
+                quantization=extra.get("quantization", "4-bit"),
+                device=extra.get("device", "auto"),
+                attention_mode=extra.get("attention_mode", "auto"),
+                keep_model_loaded=extra.get("keep_model_loaded", True),
+                top_p=extra.get("top_p", 0.9),
+                repetition_penalty=extra.get("repetition_penalty", 1.2),
+                num_beams=extra.get("num_beams", 1),
+            )
+
         else:
-            image_np = image_tensor.cpu().numpy()
-
-        image_np = (image_np * 255).astype(np.uint8)
-        pil_image = Image.fromarray(image_np)
-
-        buffered = io.BytesIO()
-        pil_image.save(buffered, format="PNG")
-        img_bytes = buffered.getvalue()
-        return base64.b64encode(img_bytes).decode("utf-8")
+            raise ValueError(f"Unsupported provider: {provider}")
 
     @classmethod
-    def _call_vision_llm(
+    def _call_llm(
         cls,
         client,
-        model: str,
+        llm_model: LLMModelConfig,
         base64_image: str,
         system_prompt: str,
-        user_message: str,
-        max_tokens: int,
-        temperature: float,
+        user_prompt: str
     ) -> str:
-        """
-        Unified vision LLM call that handles Anthropic, Ollama, and Grok providers.
-        Returns the text response from the model.
-        """
-        # Determine provider from model name
-        if model.startswith("ollama/"):
-            # Ollama API call
-            import requests
-            ollama_model = model.replace("ollama/", "")
-            url = f"{client['url']}/api/chat"
+        """Make LLM call with image."""
 
-            payload = {
-                "model": ollama_model,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {
-                        "role": "user",
-                        "content": user_message,
-                        "images": [base64_image]
-                    }
-                ],
-                "stream": False,
-                "options": {
-                    "temperature": temperature,
-                    "num_predict": max_tokens,
-                }
-            }
+        model = llm_model.model
+        max_tokens = llm_model.max_tokens
+        temperature = llm_model.temperature
 
-            response = client["session"].post(url, json=payload, timeout=120)
-            response.raise_for_status()
-            result = response.json()
-            return result.get("message", {}).get("content", "")
+        if hasattr(client, 'messages'):
+            # Anthropic
+            response = client.messages.create(
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system=system_prompt,
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": base64_image,
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "text": user_prompt
+                        }
+                    ]
+                }]
+            )
+            return response.content[0].text
 
-        elif model.startswith("grok-"):
-            # Grok (OpenAI-compatible) API call
+        else:
+            # OpenAI-style (including QwenVL, GGUF)
             response = client.chat.completions.create(
                 model=model,
                 max_tokens=max_tokens,
@@ -702,405 +430,44 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                         "content": [
                             {
                                 "type": "image_url",
-                                "image_url": {"url": f"data:image/png;base64,{base64_image}"}
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{base64_image}"
+                                }
                             },
-                            {"type": "text", "text": user_message}
+                            {
+                                "type": "text",
+                                "text": user_prompt
+                            }
                         ]
                     }
                 ]
             )
             return response.choices[0].message.content
 
-        else:
-            # Anthropic API call
-            message = client.messages.create(
-                model=model,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                system=system_prompt,
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": base64_image}},
-                        {"type": "text", "text": user_message}
-                    ],
-                }],
-            )
-            return message.content[0].text
-
     @classmethod
-    def _call_text_llm(
-        cls,
-        client,
-        model: str,
-        system_prompt: str,
-        user_message: str,
-        max_tokens: int,
-        temperature: float,
-    ) -> str:
-        """
-        Unified text-only LLM call (no image) for refinement stages.
-        """
-        if model.startswith("ollama/"):
-            import requests
-            ollama_model = model.replace("ollama/", "")
-            url = f"{client['url']}/api/chat"
+    def _clean_output(cls, text: str) -> str:
+        """Clean up LLM output."""
 
-            payload = {
-                "model": ollama_model,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
-                ],
-                "stream": False,
-                "options": {
-                    "temperature": temperature,
-                    "num_predict": max_tokens,
-                }
-            }
+        # Remove common prefixes
+        prefixes_to_remove = [
+            r"^Here'?s? (?:the |a )?(?:detailed |comprehensive )?prompt[:\s]*",
+            r"^(?:The )?prompt[:\s]*",
+            r"^Output[:\s]*",
+            r"^Description[:\s]*",
+            r"^Caption[:\s]*",
+        ]
+        for pattern in prefixes_to_remove:
+            text = re.sub(pattern, "", text, flags=re.IGNORECASE)
 
-            response = client["session"].post(url, json=payload, timeout=120)
-            response.raise_for_status()
-            result = response.json()
-            return result.get("message", {}).get("content", "")
+        # Remove markdown
+        text = re.sub(r'```[a-z]*\n?', '', text)
+        text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)
+        text = re.sub(r'\*([^*]+)\*', r'\1', text)
+        text = re.sub(r'^#+\s+', '', text, flags=re.MULTILINE)
 
-        elif model.startswith("grok-"):
-            response = client.chat.completions.create(
-                model=model,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
-                ]
-            )
-            return response.choices[0].message.content
+        # Clean whitespace
+        text = re.sub(r'\n\s*\n', ' ', text)
+        text = re.sub(r'\s+', ' ', text)
+        text = text.strip()
 
-        else:
-            message = client.messages.create(
-                model=model,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                system=system_prompt,
-                messages=[{"role": "user", "content": user_message}],
-            )
-            return message.content[0].text
-
-    @classmethod
-    def _stage1_classification(
-        cls,
-        client,
-        model: str,
-        base64_image: str,
-        focus_override: str,
-        temperature: float,
-        log
-    ) -> dict:
-        """Stage 1: Classify the image."""
-
-        # Get shot framings and genres for reference
-        shot_framings = get_shot_framings()
-        genres = get_photography_genres()
-
-        shot_codes = list(shot_framings.keys())
-        genre_codes = list(genres.keys())
-
-        system_prompt = f"""You are an expert image classifier for photography analysis.
-
-Classify this image precisely into shot framing and photography genre.
-
-SHOT FRAMINGS (distance to subject):
-{json.dumps({k: v['name'] for k, v in shot_framings.items()}, indent=2)}
-
-PHOTOGRAPHY GENRES:
-{json.dumps({k: v['name'] for k, v in genres.items()}, indent=2)}
-
-Output ONLY valid JSON (no markdown, no explanation):
-{{
-  "shot_framing": "<code from: {', '.join(shot_codes)}>",
-  "shot_label": "<full name>",
-  "genre": "<code from: {', '.join(genre_codes)}>",
-  "genre_label": "<full name>",
-  "genre_category": "<people|event|nature|commercial|artistic|lifestyle>",
-  "secondary_tags": ["<tag1>", "<tag2>"],
-  "subject_count": <0|1|2|"group">,
-  "has_text": <true|false>,
-  "confidence": <0.0-1.0>
-}}"""
-
-        # Apply focus override if specified
-        user_message = "Classify this image."
-        if focus_override != "Auto-detect":
-            override_config = get_focus_override_config(focus_override)
-            if override_config:
-                user_message = f"Classify this image. Hint: Focus on {focus_override} characteristics."
-
-        response_text = cls._call_vision_llm(
-            client, model, base64_image,
-            system_prompt, user_message,
-            max_tokens=500,
-            temperature=temperature * 0.5  # Lower temp for classification
-        )
-
-        # Parse JSON response
-        try:
-            # Clean up any markdown
-            response_text = response_text.strip()
-            if response_text.startswith("```"):
-                response_text = response_text.split("```")[1]
-                if response_text.startswith("json"):
-                    response_text = response_text[4:]
-            response_text = response_text.strip()
-
-            classification = json.loads(response_text)
-        except json.JSONDecodeError:
-            log(f"  Warning: Failed to parse classification JSON, using defaults")
-            classification = {
-                "shot_framing": "MS",
-                "shot_label": "Medium Shot",
-                "genre": "PRT",
-                "genre_label": "Portrait",
-                "genre_category": "people",
-                "secondary_tags": [],
-                "subject_count": 1,
-                "has_text": False,
-                "confidence": 0.5
-            }
-
-        return classification
-
-    @classmethod
-    def _stage4_detailed_analysis(
-        cls,
-        client,
-        model: str,
-        base64_image: str,
-        classification: dict,
-        attribute_schema: dict,
-        content_detail: str,
-        temperature: float,
-        log
-    ) -> dict:
-        """Stage 4: Extract detailed attributes based on schema."""
-
-        schema_text = format_attribute_schema_for_prompt(attribute_schema)
-
-        # Build content detail guidance
-        if content_detail == "explicit":
-            detail_guidance = """CONTENT DETAIL: EXPLICIT (NSFW)
-Include full body details: bust size/shape, cleavage visibility, body exposure areas,
-clothing coverage and cutouts, sensuality indicators. Be specific and accurate."""
-        elif content_detail == "detailed":
-            detail_guidance = """CONTENT DETAIL: DETAILED
-Include body proportions, clothing coverage details, exposure areas, and fit descriptions."""
-        elif content_detail == "minimal":
-            detail_guidance = """CONTENT DETAIL: MINIMAL
-Include only basic build and clothing type/color."""
-        else:
-            detail_guidance = """CONTENT DETAIL: STANDARD
-Include build, posture, clothing type, fit, color, and material."""
-
-        system_prompt = f"""You are an expert visual analyst for Z-Image prompt generation.
-
-Analyze this image and extract structured attributes.
-
-CLASSIFICATION:
-- Shot: {classification['shot_framing']} ({classification.get('shot_label', '')})
-- Genre: {classification['genre']} ({classification.get('genre_label', '')})
-
-{detail_guidance}
-
-{schema_text}
-
-RULES:
-- Only describe VISIBLE elements
-- Use concrete, objective language
-- Be specific about colors, materials, textures
-- No abstract adjectives (beautiful, mysterious)
-
-Output ONLY valid JSON with the extracted attributes. Use the category names as keys."""
-
-        response_text = cls._call_vision_llm(
-            client, model, base64_image,
-            system_prompt,
-            "Extract all visible attributes from this image according to the schema.",
-            max_tokens=1500,
-            temperature=temperature
-        )
-
-        try:
-            # Clean up any markdown
-            response_text = response_text.strip()
-            if response_text.startswith("```"):
-                response_text = response_text.split("```")[1]
-                if response_text.startswith("json"):
-                    response_text = response_text[4:]
-            response_text = response_text.strip()
-            if response_text.endswith("```"):
-                response_text = response_text[:-3].strip()
-
-            attributes = json.loads(response_text)
-        except json.JSONDecodeError:
-            log(f"  Warning: Failed to parse attributes JSON")
-            attributes = {}
-
-        return attributes
-
-    @classmethod
-    def _stage5_prompt_composition_template(
-        cls,
-        client,
-        model: str,
-        base64_image: str,
-        classification: dict,
-        attributes: dict,
-        user_prompt: str,
-        prompt_mode: str,
-        focus_subject: bool,
-        focus_environment: bool,
-        focus_lighting: bool,
-        focus_colors: bool,
-        focus_mood: bool,
-        include_text_quotes: bool,
-        max_tokens: int,
-        temperature: float,
-        log
-    ) -> str:
-        """Stage 5: Compose prompt using LLM with template guidance."""
-
-        # Calculate word targets based on max_tokens
-        min_words = max(50, int(max_tokens * 0.6))
-        max_words = int(max_tokens * 1.2)
-
-        # Build focus instructions
-        focus_parts = []
-        if focus_subject:
-            focus_parts.append("subject description (features, clothing, pose)")
-        if focus_environment:
-            focus_parts.append("environment/background")
-        if focus_lighting:
-            focus_parts.append("lighting (direction, quality, color)")
-        if focus_colors:
-            focus_parts.append("colors and materials")
-        if focus_mood:
-            focus_parts.append("mood/atmosphere")
-
-        focus_instruction = "Focus on: " + ", ".join(focus_parts) if focus_parts else "Provide a balanced description."
-
-        # Build prompt mode instruction
-        if prompt_mode == "Image Only (ignore prompt)":
-            mode_instruction = "Analyze the image directly. Ignore any user prompt."
-            user_context = ""
-        elif prompt_mode == "Prompt Guides Analysis":
-            mode_instruction = "Analyze the image. Use the user prompt as guidance for emphasis."
-            user_context = f"\nUser guidance: {user_prompt}" if user_prompt else ""
-        elif prompt_mode == "Prompt First, Image Fills Gaps":
-            mode_instruction = "Use the user prompt as primary structure. Fill gaps with image analysis."
-            user_context = f"\nUser prompt (primary): {user_prompt}" if user_prompt else ""
-        else:  # Prompt Dominates
-            mode_instruction = "Use the user prompt as foundation. Add minimal visual details from image."
-            user_context = f"\nUser prompt (override): {user_prompt}" if user_prompt else ""
-
-        # Build text quote instruction
-        text_instruction = 'Quote any visible text with "double quotes" for Z-Image text rendering.' if include_text_quotes else ""
-
-        # Build attributes context
-        attrs_text = json.dumps(attributes, indent=2) if attributes else "{}"
-
-        system_prompt = f"""You are an expert prompt composer for Z-Image-Turbo.
-
-Generate a flowing narrative prompt from the analysis data.
-
-CLASSIFICATION:
-- Shot: {classification['shot_framing']} ({classification.get('shot_label', '')})
-- Genre: {classification['genre']} ({classification.get('genre_label', '')})
-
-EXTRACTED ATTRIBUTES:
-{attrs_text}
-
-INSTRUCTIONS:
-- {mode_instruction}
-- {focus_instruction}
-- {text_instruction}
-
-OUTPUT FORMAT:
-- Single flowing paragraph, {min_words}-{max_words} words
-- Natural language narrative, NOT keyword lists
-- NO meta-tags (8K, masterpiece, best quality)
-- NO negative prompts or exclusions
-- Every word should describe something VISIBLE
-
-STRUCTURE:
-1. Shot type and composition
-2. Subject description (visible features only)
-3. Clothing/objects (colors, materials, textures)
-4. Environment/background (if applicable)
-5. Lighting (direction, quality, color temperature)
-6. Style hints (photography style)
-{user_context}"""
-
-        return cls._call_vision_llm(
-            client, model, base64_image,
-            system_prompt,
-            "Generate the Z-Image narrative prompt based on this image and the analysis.",
-            max_tokens=max_tokens * 2,
-            temperature=temperature
-        )
-
-    @classmethod
-    def _stage5_prompt_composition_llm(
-        cls,
-        client,
-        model: str,
-        base64_image: str,
-        classification: dict,
-        attributes: dict,
-        user_prompt: str,
-        prompt_mode: str,
-        focus_subject: bool,
-        focus_environment: bool,
-        focus_lighting: bool,
-        focus_colors: bool,
-        focus_mood: bool,
-        include_text_quotes: bool,
-        max_tokens: int,
-        temperature: float,
-        log
-    ) -> str:
-        """Stage 5 (Deep mode): Refined prompt composition with additional LLM call."""
-        # For deep mode, we do a more refined composition
-        # First generate a draft, then refine it
-
-        # Generate initial draft
-        draft = cls._stage5_prompt_composition_template(
-            client, model, base64_image,
-            classification, attributes,
-            user_prompt, prompt_mode,
-            focus_subject, focus_environment, focus_lighting,
-            focus_colors, focus_mood, include_text_quotes,
-            max_tokens, temperature * 0.8, log
-        )
-
-        # Refine the draft
-        refine_prompt = f"""Review and refine this Z-Image prompt for optimal quality.
-
-DRAFT:
-{draft}
-
-REFINEMENT RULES:
-1. Ensure natural flowing language (not keyword lists)
-2. Remove any meta-tags (8K, masterpiece, best quality)
-3. Ensure every word describes something visible
-4. Check for contradictions or redundancy
-5. Optimize word choice for Z-Image's natural language understanding
-6. Keep within {int(max_tokens * 0.8)}-{max_tokens} words
-
-Output ONLY the refined prompt, nothing else."""
-
-        return cls._call_text_llm(
-            client, model,
-            "You are a prompt refinement expert for Z-Image-Turbo.",
-            refine_prompt,
-            max_tokens=max_tokens * 2,
-            temperature=temperature * 0.5
-        )
+        return text
