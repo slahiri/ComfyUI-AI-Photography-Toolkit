@@ -349,18 +349,6 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 base_url="https://api.x.ai/v1"
             )
 
-        elif provider == "gguf":
-            from .llm_providers.sid_gguf_llm import LocalGGUFClient
-            extra = llm_model.extra_params or {}
-            return LocalGGUFClient(
-                model_path=extra.get("model_path", ""),
-                mmproj_path=extra.get("mmproj_path"),
-                chat_format=extra.get("chat_format", "llava-1-5"),
-                n_ctx=extra.get("n_ctx", 4096),
-                n_gpu_layers=extra.get("n_gpu_layers", -1),
-                verbose=False,
-            )
-
         elif provider == "qwenvl":
             from .llm_providers.sid_qwenvl_llm import QwenVLClient
             extra = llm_model.extra_params or {}
@@ -425,7 +413,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             return response.content[0].text
 
         else:
-            # OpenAI-style (including QwenVL, GGUF)
+            # OpenAI-style (including QwenVL)
             response = client.chat.completions.create(
                 model=model,
                 max_tokens=max_tokens,

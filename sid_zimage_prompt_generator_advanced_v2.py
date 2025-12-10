@@ -936,7 +936,7 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         img_np = (img_tensor.cpu().numpy() * 255).astype(np.uint8)
         pil_image = Image.fromarray(img_np)
 
-        # Check for max_image_size in extra_params (GGUF optimization)
+        # Check for max_image_size in extra_params (image resize optimization)
         max_image_size = llm_model.extra_params.get("max_image_size") if llm_model.extra_params else None
         if max_image_size and max(width, height) > max_image_size:
             # Resize while preserving aspect ratio
@@ -1421,18 +1421,6 @@ Output ONLY the raw prompt text - no formatting, headers, or explanations."""
             return OpenAI(
                 api_key=llm_model.api_key,
                 base_url="https://api.x.ai/v1"
-            )
-        elif provider == "gguf":
-            # Local GGUF model - create LocalGGUFClient from extra_params
-            from .llm_providers.sid_gguf_llm import LocalGGUFClient
-            extra = llm_model.extra_params or {}
-            return LocalGGUFClient(
-                model_path=extra.get("model_path", ""),
-                mmproj_path=extra.get("mmproj_path"),
-                chat_format=extra.get("chat_format", "llava-1-5"),
-                n_ctx=extra.get("n_ctx", 4096),
-                n_gpu_layers=extra.get("n_gpu_layers", -1),
-                verbose=False,
             )
         elif provider == "qwenvl":
             # QwenVL model using HuggingFace transformers
@@ -1947,7 +1935,7 @@ When analyzing, prioritize capturing any details related to the user's request."
         img_np = (img_tensor.cpu().numpy() * 255).astype(np.uint8)
         pil_image = Image.fromarray(img_np)
 
-        # Check for max_image_size in extra_params (GGUF optimization)
+        # Check for max_image_size in extra_params (image resize optimization)
         max_image_size = llm_model.extra_params.get("max_image_size") if llm_model.extra_params else None
         if max_image_size and max(width, height) > max_image_size:
             # Resize while preserving aspect ratio

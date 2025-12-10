@@ -5,7 +5,7 @@ version = "4.2.0"
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10"
-keywords = ["comfyui", "ai", "photography", "prompt-generator", "llm", "anthropic", "openai", "gguf", "image-analysis"]
+keywords = ["comfyui", "ai", "photography", "prompt-generator", "llm", "anthropic", "openai", "qwenvl", "image-analysis"]
 
 authors = [
     { name = "Siddhartha Lahiri" }

@@ -683,7 +683,7 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
     QwenVL Local Vision Model Provider.
 
     Uses HuggingFace transformers with BitsAndBytes quantization.
-    No llama-cpp-python required - easier installation than GGUF.
+    No llama-cpp-python required - easy installation.
 
     Features:
     - Auto VRAM management with downgrade (20% safety margin)
