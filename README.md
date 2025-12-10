@@ -50,6 +50,17 @@ LLM Provider Node ─┐
         Image ─────┘
 ```
 
+## Sample Workflows
+
+Ready-to-use workflow examples are included in the `sample_workflows/` folder:
+
+| Workflow | Description |
+|----------|-------------|
+| [sample_workflow.json](sample_workflows/sample_workflow.json) | Anthropic Claude with Z-Image Turbo rendering |
+| [sample_workflow_gguf.json](sample_workflows/sample_workflow_gguf.json) | Local GGUF model (no API key required) |
+
+**To use:** Load in ComfyUI via `Load` button or drag & drop. Replace `YOUR_ANTHROPIC_API_KEY` with your actual key.
+
 ---
 
 ## Setup by Provider
