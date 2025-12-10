@@ -534,6 +534,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 device=extra.get("device", "auto"),
                 attention_mode=extra.get("attention_mode", "auto"),
                 keep_model_loaded=extra.get("keep_model_loaded", True),
+                top_p=extra.get("top_p", 0.9),
+                repetition_penalty=extra.get("repetition_penalty", 1.2),
+                use_torch_compile=extra.get("use_torch_compile", False),
             )
 
         else:

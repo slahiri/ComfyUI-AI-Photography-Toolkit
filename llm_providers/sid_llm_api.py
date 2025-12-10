@@ -28,11 +28,57 @@ For local vision models, use SID_LLM_Local instead.
 """
 
 from typing import List, Dict, Any, Tuple
+import requests
 from comfy_api.latest import io as comfy_io
 from .llm_model_type import LLMModelConfig
 
 # Create custom LLM_MODEL type for ComfyUI
 LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
+
+
+# =============================================================================
+# Dynamic Model Detection
+# =============================================================================
+
+def get_ollama_models(timeout: float = 2.0) -> List[str]:
+    """
+    Query Ollama API for installed models.
+    Returns list of model names or empty list if Ollama not running.
+    """
+    try:
+        response = requests.get("http://localhost:11434/api/tags", timeout=timeout)
+        if response.status_code == 200:
+            data = response.json()
+            models = [m["name"] for m in data.get("models", [])]
+            if models:
+                print(f"[SID_LLM_API] Found {len(models)} Ollama models: {', '.join(models[:5])}{'...' if len(models) > 5 else ''}")
+            return models
+    except requests.exceptions.RequestException:
+        pass  # Ollama not running or not accessible
+    return []
+
+
+def get_lmstudio_models(timeout: float = 2.0) -> List[str]:
+    """
+    Query LM Studio API for loaded models.
+    Returns list of model names or empty list if LM Studio not running.
+    """
+    try:
+        response = requests.get("http://localhost:1234/v1/models", timeout=timeout)
+        if response.status_code == 200:
+            data = response.json()
+            models = [m["id"] for m in data.get("data", [])]
+            if models:
+                print(f"[SID_LLM_API] Found {len(models)} LM Studio models: {', '.join(models[:5])}")
+            return models
+    except requests.exceptions.RequestException:
+        pass  # LM Studio not running
+    return []
+
+
+# Cache for detected models (refreshed on node reload)
+_ollama_models_cache: List[str] = []
+_lmstudio_models_cache: List[str] = []
 
 
 # =============================================================================
@@ -257,7 +303,8 @@ PROVIDERS = {
         "provider_name": "ollama",
         "requires_key": False,
         "is_local": True,
-        "models": [
+        "models": "dynamic",  # Will be populated by get_ollama_models()
+        "fallback_models": [
             "llama3.2-vision:11b",
             "llama3.2-vision:90b",
             "llava:13b",
@@ -279,6 +326,7 @@ PROVIDERS = {
             "phi3.5:3.8b",
             "gemma2:27b",
             "gemma2:9b",
+            "gemma3:latest",
         ],
         "default_model": "llama3.2-vision:11b",
     },
@@ -429,11 +477,44 @@ MODEL_METADATA = {
 }
 
 
+def get_provider_models(provider_name: str, config: Dict) -> List[str]:
+    """Get models for a specific provider, with dynamic detection for local providers."""
+    global _ollama_models_cache, _lmstudio_models_cache
+
+    models = config.get("models", [])
+
+    # Handle dynamic model detection
+    if models == "dynamic":
+        if config.get("provider_name") == "ollama":
+            # Try to get models from Ollama
+            if not _ollama_models_cache:
+                _ollama_models_cache = get_ollama_models()
+            if _ollama_models_cache:
+                # Combine detected models with fallback (detected first)
+                detected = set(_ollama_models_cache)
+                fallback = config.get("fallback_models", [])
+                models = list(_ollama_models_cache) + [m for m in fallback if m not in detected]
+            else:
+                models = config.get("fallback_models", [])
+
+        elif config.get("provider_name") == "lmstudio":
+            # Try to get models from LM Studio
+            if not _lmstudio_models_cache:
+                _lmstudio_models_cache = get_lmstudio_models()
+            if _lmstudio_models_cache:
+                models = _lmstudio_models_cache + config.get("fallback_models", [])
+            else:
+                models = config.get("fallback_models", [])
+
+    return models if isinstance(models, list) else []
+
+
 def get_all_models() -> List[str]:
     """Get all models from all providers with provider prefix."""
     all_models = []
     for provider_name, config in PROVIDERS.items():
-        for model in config["models"]:
+        models = get_provider_models(provider_name, config)
+        for model in models:
             all_models.append(f"[{provider_name}] {model}")
     return all_models
 

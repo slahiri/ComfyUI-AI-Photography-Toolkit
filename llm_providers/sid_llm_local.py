@@ -385,20 +385,44 @@ class LocalModelClient:
         self.model_info = LOCAL_MODELS.get(model_name)
 
     def _get_device_info(self) -> Dict[str, Any]:
-        """Detect GPU type and available memory."""
+        """Detect GPU type and available memory with detailed logging."""
         import torch
 
-        info = {"type": "cpu", "available_gb": 0, "total_gb": 0}
+        info = {"type": "cpu", "available_gb": 0, "total_gb": 0, "gpu_name": "N/A"}
 
+        print("[LocalModelClient] Detecting device...")
+
+        # Check CUDA
         if torch.cuda.is_available():
             info["type"] = "cuda"
             props = torch.cuda.get_device_properties(0)
             info["total_gb"] = props.total_memory / (1024**3)
             info["available_gb"] = (props.total_memory - torch.cuda.memory_allocated(0)) / (1024**3)
+            info["gpu_name"] = props.name
+            info["compute_capability"] = f"{props.major}.{props.minor}"
+            print(f"  CUDA available: {info['gpu_name']}")
+            print(f"  Compute capability: {info['compute_capability']}")
+            print(f"  VRAM: {info['total_gb']:.1f}GB total, {info['available_gb']:.1f}GB free")
+
+            # Check bitsandbytes for quantization
+            try:
+                import bitsandbytes
+                print(f"  bitsandbytes: installed (v{bitsandbytes.__version__})")
+            except ImportError:
+                print("  WARNING: bitsandbytes not installed - 4-bit/8-bit quantization unavailable")
+                print("  Install with: pip install bitsandbytes")
+
         elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             info["type"] = "mps"
-            info["total_gb"] = 16
+            info["total_gb"] = 16  # Estimate
             info["available_gb"] = 16
+            info["gpu_name"] = "Apple Silicon (MPS)"
+            print(f"  MPS available: Apple Silicon GPU")
+
+        else:
+            print("  WARNING: No GPU detected - running on CPU (will be slow)")
+            print("  For CUDA: ensure NVIDIA drivers and pytorch+cuda are installed")
+            print("  For MPS: ensure macOS 12.3+ with Apple Silicon")
 
         return info
 
