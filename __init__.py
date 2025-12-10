@@ -274,7 +274,6 @@ from comfy_api.latest import ComfyExtension, io
 
 # Import all node classes
 from .sid_zimage_prompt_generator import SID_ZImagePromptGenerator
-from .sid_zimage_prompt_generator_advanced import SID_ZImagePromptGenerator_Advanced
 from .sid_zimage_prompt_generator_advanced_v2 import SID_ZImagePromptGenerator_Advanced_V2
 
 # Import LLM provider nodes
@@ -299,7 +298,6 @@ class SIDPhotographyToolkitExtension(ComfyExtension):
         return [
             # Main nodes
             SID_ZImagePromptGenerator,
-            SID_ZImagePromptGenerator_Advanced,
             SID_ZImagePromptGenerator_Advanced_V2,
             # LLM Provider nodes
             SID_Anthropic_LLM,
@@ -375,7 +373,6 @@ def print_welcome_message():
     print("")
     print("  Prompt Generators:")
     print("    - SID_ZImagePromptGenerator             (built-in Anthropic LLM)")
-    print("    - SID_ZImagePromptGenerator_Advanced    (external LLM provider)")
     print("    - SID_ZImagePromptGenerator_Advanced_V2 (component-based analysis)")
     print("")
     print("  LLM Providers (connect to Advanced node):")
