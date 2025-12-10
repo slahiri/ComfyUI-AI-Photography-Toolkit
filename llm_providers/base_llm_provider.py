@@ -81,6 +81,14 @@ class BaseLLMProvider:
         return True
 
     @classmethod
+    def supports_reasoning(cls, model: str) -> bool:
+        """
+        Return whether the specified model supports extended thinking/reasoning mode.
+        Override in subclasses with MODEL_METADATA dict.
+        """
+        return False
+
+    @classmethod
     def validate_api_key(cls, api_key: str) -> Tuple[bool, str]:
         """
         Validate the API key format (not actual authentication).
@@ -114,5 +122,6 @@ class BaseLLMProvider:
             temperature=temperature,
             supports_vision=cls.supports_vision(model),
             supports_system_prompt=cls.supports_system_prompt(model),
+            supports_reasoning=cls.supports_reasoning(model),
             extra_params=extra_params or {},
         )

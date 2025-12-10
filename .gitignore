@@ -58,3 +58,7 @@ models/
 
 # Prompt cache
 cache/
+
+# Test output directories
+improvement_sessions/
+test_results/

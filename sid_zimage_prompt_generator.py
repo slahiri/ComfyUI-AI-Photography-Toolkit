@@ -216,12 +216,13 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 # Output Settings
                 comfy_io.Int.Input(
                     "max_tokens",
-                    default=300,
-                    min=50,
-                    max=500,
-                    step=25,
+                    default=500,
+                    min=100,
+                    max=2000,
+                    step=50,
+                    display_name="Max Output Tokens",
                     display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Target output tokens for the prompt"
+                    tooltip="Controls prompt length. 300=short (~150 words), 500=standard (~250 words), 800=detailed (~400 words). Z-Image handles long prompts."
                 ),
 
                 # Generation Settings

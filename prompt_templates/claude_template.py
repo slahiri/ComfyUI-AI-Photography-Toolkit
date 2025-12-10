@@ -43,7 +43,7 @@ class ClaudePromptTemplate(BasePromptTemplate):
 
     def get_analysis_max_tokens(self) -> int:
         """Max tokens for analysis response."""
-        return 3000  # Significantly increased for comprehensive extraction
+        return 4500  # Very high to prevent truncation of detailed JSON analysis
 
     def build_classification_prompt(
         self,
@@ -270,6 +270,16 @@ IMAGE CLASSIFICATION:
 
 EXTRACTION RULES - CRITICAL FOR ACCURACY:
 
+0. ETHNICITY & HERITAGE (HIGHEST PRIORITY):
+   - Identify apparent ethnicity/heritage with specificity
+   - Examples: "South Asian (Indian)", "East Asian (Korean)", "European (Mediterranean)", "African", "Latin American"
+   - SKIN TONE: Use precise descriptors with undertones:
+     * Light/Fair with warm/cool/neutral undertone
+     * Medium with olive/golden/peachy undertone
+     * Dark/Deep with warm/cool undertone
+   - Examples: "warm medium-tan skin with golden undertones", "deep brown skin with cool undertones"
+   - This is CRITICAL for accurate reproduction - wrong ethnicity = failed reproduction
+
 1. COLORS - Use precise descriptors:
    - NOT "brown hair" → "warm chestnut brown hair with subtle auburn highlights"
    - NOT "blue eyes" → "deep navy blue eyes with lighter rings around the iris"
@@ -364,7 +374,24 @@ Output comprehensive JSON covering all visible elements."""
 
         text_instruction = """TEXT RENDERING: Quote any visible text exactly with "double quotes" for Z-Image text rendering.""" if include_text_quotes else ""
 
-        attrs_text = json.dumps(attributes, indent=2) if attributes else "{}"
+        # Build attributes text with fallback handling
+        if attributes:
+            # Check if we have a raw response fallback (JSON parsing failed)
+            raw_response = attributes.pop('_raw_response', None)
+            parse_failed = attributes.pop('_parse_failed', False)
+
+            if parse_failed and raw_response:
+                # JSON parsing completely failed - use raw text
+                attrs_text = f"[Analysis text - extract details from this]:\n{raw_response[:3000]}"
+            elif len(attributes) < 3 and raw_response:
+                # Very sparse attributes - supplement with raw response
+                attrs_text = json.dumps(attributes, indent=2)
+                attrs_text += f"\n\n[Additional context from analysis]:\n{raw_response[:1500]}"
+            else:
+                # Normal case - good structured data
+                attrs_text = json.dumps(attributes, indent=2)
+        else:
+            attrs_text = "[No pre-extracted data - analyze image directly for all details]"
 
         # Get visual metrics for composition guidance
         visual_metrics = classification.get('visual_metrics', {})
@@ -391,13 +418,16 @@ PROMPT ENGINEERING RULES FOR ACCURACY:
 
 1. STRUCTURE (in order of appearance in prompt):
    - Photography type and framing
-   - Subject description (most detail here)
+   - ETHNICITY/HERITAGE FIRST: "South Asian woman", "East Asian man", etc. - THIS IS CRITICAL
+   - SKIN TONE with undertones: "warm golden-brown skin", "fair cool-toned skin"
+   - Facial features and expression (eye color must match source EXACTLY)
    - Clothing/accessories with precise colors
-   - Pose and expression specifics
+   - Pose specifics
    - Environment/background elements
    - Lighting setup description
-   - Color grading/atmosphere
-   - Camera/lens characteristics if detectable
+   - Atmosphere/mood
+
+CRITICAL: Wrong ethnicity/skin tone = reproduction failure. State these early and precisely.
 
 2. COLOR PRECISION:
    - Use compound color descriptors: "warm honey blonde", "cool steel blue", "deep wine red"

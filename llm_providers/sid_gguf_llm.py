@@ -29,116 +29,154 @@ os.makedirs(LLM_GGUF_DIR, exist_ok=True)
 
 @dataclass
 class GGUFModelInfo:
-    """Information about a GGUF model."""
+    """Information about a GGUF model with metadata for validation."""
     name: str
     filename: str
     url: str
     size_mb: int
     vram_gb: float
     description: str
-    chat_format: str  # llava-1-5, llava-1-6, chatml, minicpm-v, moondream2, etc.
+    chat_format: str  # llava-1-5, llava-1-6, chatml, minicpm-v, etc.
+    # Model capability metadata
+    context_length: int = 4096  # Maximum context length supported
+    recommended_n_ctx: int = 4096  # Recommended n_ctx setting
+    max_output_tokens: int = 2048  # Maximum output tokens
+    supports_json: bool = True  # Can follow JSON output format
+    supports_detailed_prompts: bool = True  # Can handle complex prompts
+    supports_reasoning: bool = False  # Local GGUF models don't support reasoning mode
+    quality_tier: str = "good"  # basic, good, excellent, best
     mmproj_filename: Optional[str] = None  # For models needing separate vision encoder
     mmproj_url: Optional[str] = None
 
 
 # Available GGUF vision models with download URLs
+# Note: Moondream2 removed - too small for reliable structured output
 GGUF_MODELS: Dict[str, GGUFModelInfo] = {
-    # ===== SMALL MODELS (~4GB VRAM) =====
-    "moondream2-q4_k_m": GGUFModelInfo(
-        name="Moondream2 Q4_K_M",
-        filename="moondream2-text-model-f16.gguf",
-        url="https://huggingface.co/moondream/moondream2-gguf/resolve/main/moondream2-text-model-f16.gguf",
-        size_mb=3600,
-        vram_gb=4.0,
-        description="Small & fast vision model, good for basic tasks",
-        chat_format="moondream2",
-        mmproj_filename="moondream2-mmproj-f16.gguf",
-        mmproj_url="https://huggingface.co/moondream/moondream2-gguf/resolve/main/moondream2-mmproj-f16.gguf",
-    ),
-
     # ===== MEDIUM MODELS (~8-12GB VRAM) =====
     "llava-v1.5-7b-q4_k_m": GGUFModelInfo(
-        name="LLaVA 1.5 7B Q4_K_M",
+        name="LLaVA 1.5 7B (8GB VRAM)",
         filename="llava-v1.5-7b-Q4_K_M.gguf",
         url="https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/ggml-model-q4_k.gguf",
         size_mb=4100,
         vram_gb=8.0,
         description="Balanced vision model, good quality",
         chat_format="llava-1-5",
+        context_length=4096,
+        recommended_n_ctx=4096,
+        max_output_tokens=2048,
+        supports_json=True,
+        supports_detailed_prompts=True,
+        quality_tier="good",
         mmproj_filename="llava-v1.5-7b-mmproj-f16.gguf",
         mmproj_url="https://huggingface.co/mys/ggml_llava-v1.5-7b/resolve/main/mmproj-model-f16.gguf",
     ),
 
     "llava-v1.6-mistral-7b-q4_k_m": GGUFModelInfo(
-        name="LLaVA 1.6 Mistral 7B Q4_K_M",
+        name="LLaVA 1.6 Mistral 7B (8GB VRAM)",
         filename="llava-v1.6-mistral-7b.Q4_K_M.gguf",
         url="https://huggingface.co/cjpais/llava-1.6-mistral-7b-gguf/resolve/main/llava-v1.6-mistral-7b.Q4_K_M.gguf",
         size_mb=4400,
         vram_gb=8.0,
         description="Fast LLaVA 1.6 on Mistral backbone, great balance",
         chat_format="llava-1-6",
+        context_length=8192,
+        recommended_n_ctx=8192,
+        max_output_tokens=4096,
+        supports_json=True,
+        supports_detailed_prompts=True,
+        quality_tier="good",
         mmproj_filename="llava-v1.6-mistral-7b-mmproj-f16.gguf",
         mmproj_url="https://huggingface.co/cjpais/llava-1.6-mistral-7b-gguf/resolve/main/mmproj-model-f16.gguf",
     ),
 
     "qwen2.5-vl-7b-q4_k_m": GGUFModelInfo(
-        name="Qwen2.5-VL 7B Q4_K_M",
+        name="Qwen2.5-VL 7B Q4 (6GB VRAM) - Recommended",
         filename="Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf",
         url="https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf",
         size_mb=5200,
         vram_gb=6.0,
-        description="Qwen vision model Q4, good quality at low VRAM",
+        description="Excellent quality at low VRAM, best value",
         chat_format="chatml",
+        context_length=32768,
+        recommended_n_ctx=8192,
+        max_output_tokens=4096,
+        supports_json=True,
+        supports_detailed_prompts=True,
+        quality_tier="excellent",
         mmproj_filename="Qwen2.5-VL-7B-Instruct-mmproj-f16.gguf",
         mmproj_url="https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-mmproj-f16.gguf",
     ),
 
     "minicpm-v-2_6-q4_k_m": GGUFModelInfo(
-        name="MiniCPM-V 2.6 Q4_K_M",
+        name="MiniCPM-V 2.6 (10GB VRAM)",
         filename="MiniCPM-V-2_6-Q4_K_M.gguf",
         url="https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/resolve/main/ggml-model-Q4_K_M.gguf",
         size_mb=4800,
         vram_gb=10.0,
         description="Excellent vision understanding, multilingual",
         chat_format="minicpm-v-2.6",
+        context_length=8192,
+        recommended_n_ctx=8192,
+        max_output_tokens=4096,
+        supports_json=True,
+        supports_detailed_prompts=True,
+        quality_tier="excellent",
         mmproj_filename="MiniCPM-V-2_6-mmproj-f16.gguf",
         mmproj_url="https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/resolve/main/mmproj-model-f16.gguf",
     ),
 
     "qwen2.5-vl-7b-q8": GGUFModelInfo(
-        name="Qwen2.5-VL 7B Q8",
+        name="Qwen2.5-VL 7B Q8 (10GB VRAM) - Best Quality",
         filename="Qwen2.5-VL-7B-Instruct-Q8_0.gguf",
         url="https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-Q8_0.gguf",
         size_mb=8100,
         vram_gb=10.0,
-        description="Qwen vision model Q8, excellent understanding",
+        description="Highest quality 7B model, excellent for detailed prompts",
         chat_format="chatml",
+        context_length=32768,
+        recommended_n_ctx=8192,
+        max_output_tokens=4096,
+        supports_json=True,
+        supports_detailed_prompts=True,
+        quality_tier="excellent",
         mmproj_filename="Qwen2.5-VL-7B-Instruct-mmproj-f16.gguf",
         mmproj_url="https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-mmproj-f16.gguf",
     ),
 
     # ===== LARGE MODELS (~16GB+ VRAM) =====
     "llava-v1.5-13b-q4_k_m": GGUFModelInfo(
-        name="LLaVA 1.5 13B Q4_K_M",
+        name="LLaVA 1.5 13B (16GB VRAM)",
         filename="llava-v1.5-13b-Q4_K_M.gguf",
         url="https://huggingface.co/mys/ggml_llava-v1.5-13b/resolve/main/ggml-model-q4_k.gguf",
         size_mb=7400,
         vram_gb=16.0,
         description="High quality vision model, needs more VRAM",
         chat_format="llava-1-5",
+        context_length=4096,
+        recommended_n_ctx=4096,
+        max_output_tokens=2048,
+        supports_json=True,
+        supports_detailed_prompts=True,
+        quality_tier="excellent",
         mmproj_filename="llava-v1.5-13b-mmproj-f16.gguf",
         mmproj_url="https://huggingface.co/mys/ggml_llava-v1.5-13b/resolve/main/mmproj-model-f16.gguf",
     ),
 
     # ===== HIGH-END MODELS (~22GB+ VRAM) =====
     "llava-v1.6-34b-q4_k_m": GGUFModelInfo(
-        name="LLaVA 1.6 34B Q4_K_M",
+        name="LLaVA 1.6 34B (22GB VRAM) - Best",
         filename="llava-v1.6-34b.Q4_K_M.gguf",
         url="https://huggingface.co/cjpais/llava-v1.6-34B-gguf/resolve/main/llava-v1.6-34b.Q4_K_M.gguf",
         size_mb=20700,
         vram_gb=22.0,
-        description="Best quality open-source vision model, excellent for detailed prompts",
+        description="Best quality open-source vision model",
         chat_format="llava-1-6",
+        context_length=8192,
+        recommended_n_ctx=8192,
+        max_output_tokens=4096,
+        supports_json=True,
+        supports_detailed_prompts=True,
+        quality_tier="best",
         mmproj_filename="llava-v1.6-34b-mmproj-f16.gguf",
         mmproj_url="https://huggingface.co/cjpais/llava-v1.6-34B-gguf/resolve/main/mmproj-model-f16.gguf",
     ),
@@ -436,6 +474,14 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         return "moondream2-q4_k_m"
 
     @classmethod
+    def supports_reasoning(cls, model: str) -> bool:
+        """Local GGUF models don't support reasoning mode."""
+        # Check if model is in GGUF_MODELS dict
+        if model in GGUF_MODELS:
+            return GGUF_MODELS[model].supports_reasoning
+        return False  # Custom models default to no reasoning
+
+    @classmethod
     def get_default_url(cls) -> str:
         return ""  # Local model, no URL
 
@@ -473,11 +519,12 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                 ),
                 comfy_io.Int.Input(
                     "n_ctx",
-                    default=4096,
+                    default=8192,
                     min=512,
                     max=32768,
                     step=512,
-                    tooltip="Context length (higher = more memory). Use 4096+ for larger models"
+                    display_name="Context Length",
+                    tooltip="Memory for conversation history. 4096=basic, 8192=recommended for detailed analysis. Higher uses more VRAM. If you get memory errors, reduce this."
                 ),
                 comfy_io.Int.Input(
                     "n_gpu_layers",
@@ -485,16 +532,18 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     min=-1,
                     max=100,
                     step=1,
-                    tooltip="GPU layers (-1 = all on GPU, 0 = CPU only)"
+                    display_name="GPU Layers",
+                    tooltip="How much runs on GPU. -1=All (fastest, most VRAM). 0=CPU only (slow but no VRAM). 20-40=Split between GPU/CPU if you have limited VRAM."
                 ),
                 comfy_io.Int.Input(
                     "max_tokens",
-                    default=300,
+                    default=500,
                     min=50,
                     max=2048,
                     step=50,
+                    display_name="Max Output Tokens",
                     display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Maximum tokens in response"
+                    tooltip="Maximum words in generated prompt. 300=quick, 500=standard (recommended), 800+=detailed. Higher values need more context length."
                 ),
                 comfy_io.Float.Input(
                     "temperature",
@@ -503,8 +552,9 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     max=2.0,
                     step=0.1,
                     round=0.1,
+                    display_name="Creativity",
                     display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Creativity level (0=focused, 2=creative)"
+                    tooltip="0.0-0.3=precise/accurate, 0.5-0.7=balanced (recommended), 0.8-1.5=creative/varied"
                 ),
             ],
             outputs=[

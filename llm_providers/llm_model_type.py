@@ -33,6 +33,7 @@ class LLMModelConfig:
     # Capabilities
     supports_vision: bool = True     # Whether model supports image input
     supports_system_prompt: bool = True  # Whether model supports system prompts
+    supports_reasoning: bool = False  # Whether model supports extended thinking/reasoning mode
 
     # Provider-specific parameters
     extra_params: Dict[str, Any] = field(default_factory=dict)
@@ -59,6 +60,7 @@ class LLMModelConfig:
             "temperature": self.temperature,
             "supports_vision": self.supports_vision,
             "supports_system_prompt": self.supports_system_prompt,
+            "supports_reasoning": self.supports_reasoning,
             "extra_params": self.extra_params,
         }
 
@@ -74,6 +76,7 @@ class LLMModelConfig:
             temperature=data.get("temperature", 0.7),
             supports_vision=data.get("supports_vision", True),
             supports_system_prompt=data.get("supports_system_prompt", True),
+            supports_reasoning=data.get("supports_reasoning", False),
             extra_params=data.get("extra_params", {}),
         )
 

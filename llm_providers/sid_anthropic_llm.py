@@ -33,9 +33,23 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         "claude-3-5-haiku-20241022",     # Claude 3.5 Haiku
     ]
 
+    # Model metadata - reasoning support (extended thinking)
+    MODEL_METADATA = {
+        "claude-sonnet-4-5-20250929": {"supports_reasoning": True},   # Sonnet 4.5 - extended thinking
+        "claude-haiku-4-5-20251001": {"supports_reasoning": False},   # Haiku 4.5 - no reasoning (fast/cheap)
+        "claude-opus-4-1-20250805": {"supports_reasoning": True},     # Opus 4.1 - extended thinking
+        "claude-3-5-sonnet-20241022": {"supports_reasoning": True},   # 3.5 Sonnet - extended thinking
+        "claude-3-5-haiku-20241022": {"supports_reasoning": False},   # 3.5 Haiku - no reasoning
+    }
+
     @classmethod
     def get_models(cls) -> List[str]:
         return cls.MODELS
+
+    @classmethod
+    def supports_reasoning(cls, model: str) -> bool:
+        """Check if model supports extended thinking/reasoning."""
+        return cls.MODEL_METADATA.get(model, {}).get("supports_reasoning", False)
 
     @classmethod
     def get_default_model(cls) -> str:
@@ -72,12 +86,13 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                 ),
                 comfy_io.Int.Input(
                     "max_tokens",
-                    default=300,
-                    min=50,
-                    max=4096,
-                    step=50,
+                    default=500,
+                    min=100,
+                    max=8192,
+                    step=100,
+                    display_name="Max Output Tokens",
                     display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Maximum tokens in response"
+                    tooltip="Controls prompt length. 300=short (~150 words), 500=standard (~250 words), 800=detailed (~400 words), 1500+=very detailed. Z-Image handles long prompts well."
                 ),
                 comfy_io.Float.Input(
                     "temperature",

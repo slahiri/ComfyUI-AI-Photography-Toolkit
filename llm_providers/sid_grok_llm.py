@@ -30,9 +30,20 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         "grok-vision-beta",      # Grok Vision Beta
     ]
 
+    # Model metadata - reasoning support (Grok doesn't have reasoning models yet)
+    MODEL_METADATA = {
+        "grok-2-vision-1212": {"supports_reasoning": False},
+        "grok-vision-beta": {"supports_reasoning": False},
+    }
+
     @classmethod
     def get_models(cls) -> List[str]:
         return cls.MODELS
+
+    @classmethod
+    def supports_reasoning(cls, model: str) -> bool:
+        """Check if model supports reasoning mode."""
+        return cls.MODEL_METADATA.get(model, {}).get("supports_reasoning", False)
 
     @classmethod
     def get_default_model(cls) -> str:
@@ -69,12 +80,13 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                 ),
                 comfy_io.Int.Input(
                     "max_tokens",
-                    default=300,
-                    min=50,
-                    max=4096,
-                    step=50,
+                    default=500,
+                    min=100,
+                    max=8192,
+                    step=100,
+                    display_name="Max Output Tokens",
                     display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Maximum tokens in response"
+                    tooltip="Controls prompt length. 300=short (~150 words), 500=standard (~250 words), 800=detailed (~400 words), 1500+=very detailed."
                 ),
                 comfy_io.Float.Input(
                     "temperature",

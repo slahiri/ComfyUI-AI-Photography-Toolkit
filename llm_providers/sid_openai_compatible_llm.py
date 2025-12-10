@@ -36,19 +36,43 @@ class SID_OpenAI_Compatible_LLM(comfy_io.ComfyNode, BaseLLMProvider):
 
     # Common OpenAI and compatible models with vision support
     MODELS = [
-        # OpenAI models
+        # OpenAI models - Standard
         "gpt-4o",                # GPT-4o (latest, multimodal)
         "gpt-4o-mini",           # GPT-4o Mini (fast/cheap)
         "gpt-4-turbo",           # GPT-4 Turbo with vision
+        # OpenAI models - Reasoning (o1 series)
+        "o1",                    # OpenAI o1 (reasoning model)
+        "o1-mini",               # OpenAI o1-mini (smaller reasoning)
+        "o1-preview",            # OpenAI o1-preview
         # Together AI models
         "meta-llama/Llama-Vision-Free",
         "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
         # Use custom_model for other providers
     ]
 
+    # Model metadata - reasoning support
+    MODEL_METADATA = {
+        # Standard models - no built-in reasoning
+        "gpt-4o": {"supports_reasoning": False},
+        "gpt-4o-mini": {"supports_reasoning": False},
+        "gpt-4-turbo": {"supports_reasoning": False},
+        # Reasoning models (o1 series)
+        "o1": {"supports_reasoning": True},
+        "o1-mini": {"supports_reasoning": True},
+        "o1-preview": {"supports_reasoning": True},
+        # Together AI / LM Studio - no reasoning
+        "meta-llama/Llama-Vision-Free": {"supports_reasoning": False},
+        "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo": {"supports_reasoning": False},
+    }
+
     @classmethod
     def get_models(cls) -> List[str]:
         return cls.MODELS
+
+    @classmethod
+    def supports_reasoning(cls, model: str) -> bool:
+        """Check if model supports reasoning mode."""
+        return cls.MODEL_METADATA.get(model, {}).get("supports_reasoning", False)
 
     @classmethod
     def get_default_model(cls) -> str:
@@ -97,12 +121,13 @@ class SID_OpenAI_Compatible_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                 ),
                 comfy_io.Int.Input(
                     "max_tokens",
-                    default=300,
-                    min=50,
-                    max=4096,
-                    step=50,
+                    default=500,
+                    min=100,
+                    max=8192,
+                    step=100,
+                    display_name="Max Output Tokens",
                     display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Maximum tokens in response"
+                    tooltip="Controls prompt length. 300=short (~150 words), 500=standard (~250 words), 800=detailed (~400 words), 1500+=very detailed."
                 ),
                 comfy_io.Float.Input(
                     "temperature",

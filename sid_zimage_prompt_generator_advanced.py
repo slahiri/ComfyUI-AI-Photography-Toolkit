@@ -50,6 +50,286 @@ from .prompt_templates import get_prompt_template_for_provider, BasePromptTempla
 LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
 
 
+def detect_and_clean_repetition(text: str, max_repeat_count: int = 3) -> tuple[str, bool]:
+    """
+    Detect and clean repetitive patterns in LLM output.
+
+    Returns:
+        tuple: (cleaned_text, had_repetition)
+    """
+    if not text:
+        return text, False
+
+    had_repetition = False
+
+    # Pattern 1: Detect repeated key-value pairs like "shape": 0.99, "shape": 0.99
+    import re
+
+    # Find repeated JSON-like patterns (key: value repeated)
+    repeated_json_pattern = r'("[^"]+"\s*:\s*[^,\n]+,?\s*)\1{2,}'
+    if re.search(repeated_json_pattern, text):
+        had_repetition = True
+        # Keep only one instance
+        text = re.sub(repeated_json_pattern, r'\1', text)
+
+    # Pattern 2: Detect repeated phrases/sentences (composition stage issue)
+    # Split into sentences and detect repetition
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    if len(sentences) > 3:
+        seen = set()
+        unique_sentences = []
+        for sentence in sentences:
+            # Normalize for comparison
+            normalized = sentence.strip().lower()[:50]  # First 50 chars
+            if normalized and normalized not in seen:
+                seen.add(normalized)
+                unique_sentences.append(sentence)
+            elif normalized:
+                had_repetition = True
+        if had_repetition:
+            text = ' '.join(unique_sentences)
+
+    # Pattern 3: Detect word-level repetition loops
+    words = text.split()
+    if len(words) > 20:
+        # Check if last 10 words repeat
+        window_size = 10
+        for i in range(len(words) - window_size * 2):
+            window1 = ' '.join(words[i:i+window_size])
+            window2 = ' '.join(words[i+window_size:i+window_size*2])
+            if window1 == window2:
+                had_repetition = True
+                # Truncate at repetition point
+                text = ' '.join(words[:i+window_size])
+                break
+
+    # Pattern 4: Detect "style": "white" repeated (specific pattern from tests)
+    if text.count('"style"') > 5:
+        had_repetition = True
+        # Extract first meaningful part before repetition
+        first_style_pos = text.find('"style"')
+        if first_style_pos > 0:
+            # Try to find valid JSON end before repetition
+            bracket_pos = text.rfind('}', 0, first_style_pos + 50)
+            if bracket_pos > 0:
+                text = text[:bracket_pos + 1]
+
+    return text.strip(), had_repetition
+
+
+def extract_json_from_text(text: str, include_raw_fallback: bool = True) -> dict:
+    """
+    Extract JSON from text that may contain markdown code blocks or other formatting.
+    Handles truncated JSON by attempting repair.
+    Falls back to extracting key-value pairs from prose if JSON parsing fails.
+
+    Args:
+        text: The raw LLM response text
+        include_raw_fallback: If True, includes _raw_response in result when JSON parsing fails
+
+    Returns:
+        dict: Extracted JSON or fallback dictionary with _raw_response
+    """
+    import re
+
+    if not text:
+        return {}
+
+    # Try to find JSON in markdown code blocks
+    json_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', text)
+    if json_match:
+        json_text = json_match.group(1)
+        result = _try_parse_json(json_text)
+        if result and len(result) > 0:
+            return result
+
+    # Try to find raw JSON (starts with { ends with } or truncated)
+    json_match = re.search(r'\{[\s\S]*', text)
+    if json_match:
+        json_text = json_match.group(0)
+        result = _try_parse_json(json_text)
+        if result and len(result) > 0:
+            return result
+
+    # Try aggressive key-value extraction from partial JSON
+    partial_result = _extract_key_values_from_partial_json(text)
+    if partial_result and len(partial_result) > 0:
+        return partial_result
+
+    # Fallback: Extract key information from prose
+    prose_result = _extract_from_prose(text)
+
+    # Always include raw response as ultimate fallback
+    if include_raw_fallback and (not prose_result or len(prose_result) == 0):
+        return {"_raw_response": text[:4000], "_parse_failed": True}
+
+    if include_raw_fallback and prose_result:
+        prose_result["_raw_response"] = text[:2000]  # Include truncated raw for reference
+
+    return prose_result
+
+
+def _try_parse_json(json_text: str) -> dict:
+    """Try to parse JSON, with repair attempts for truncated responses."""
+    import re
+
+    # Clean up escaped underscores from some models
+    json_text = json_text.replace('\\_', '_')
+
+    # First try: direct parse
+    try:
+        return json.loads(json_text)
+    except json.JSONDecodeError:
+        pass
+
+    # Second try: close truncated JSON
+    # Count open braces and brackets
+    open_braces = json_text.count('{') - json_text.count('}')
+    open_brackets = json_text.count('[') - json_text.count(']')
+
+    # Remove any trailing incomplete values (like 'appears to"')
+    # Find last complete key-value pair
+    repaired = json_text.rstrip()
+    if repaired.endswith(','):
+        repaired = repaired[:-1]
+
+    # Remove incomplete string at end
+    if repaired.count('"') % 2 == 1:
+        # Odd number of quotes - find and remove last incomplete string
+        last_quote = repaired.rfind('"')
+        if last_quote > 0:
+            # Look for the second-to-last quote
+            second_last = repaired.rfind('"', 0, last_quote)
+            if second_last > 0:
+                # Check if this looks like a truncated value
+                between = repaired[second_last:last_quote+1]
+                if ':' not in between:
+                    repaired = repaired[:second_last]
+
+    # Remove trailing incomplete key-value
+    repaired = re.sub(r',\s*"[^"]*"\s*:\s*"?[^",}]*$', '', repaired)
+    repaired = re.sub(r',\s*"[^"]*"\s*$', '', repaired)
+
+    # Close brackets and braces
+    repaired = repaired.rstrip()
+    if repaired.endswith(','):
+        repaired = repaired[:-1]
+
+    for _ in range(open_brackets):
+        repaired += ']'
+    for _ in range(open_braces):
+        repaired += '}'
+
+    try:
+        return json.loads(repaired)
+    except json.JSONDecodeError:
+        pass
+
+    # Third try: extract nested objects that are complete
+    complete_objects = re.findall(r'"(\w+)"\s*:\s*(\{[^{}]*\})', json_text)
+    if complete_objects:
+        result = {}
+        for key, value in complete_objects:
+            try:
+                result[key] = json.loads(value)
+            except json.JSONDecodeError:
+                pass
+        if result:
+            return result
+
+    return {}
+
+
+def _extract_key_values_from_partial_json(text: str) -> dict:
+    """
+    Aggressively extract key-value pairs from partial/truncated JSON.
+    Works even when JSON is badly malformed or truncated mid-value.
+    """
+    import re
+
+    result = {}
+
+    # Pattern 1: Extract complete "key": "value" pairs
+    string_pairs = re.findall(r'"([^"]+)"\s*:\s*"([^"]*)"', text)
+    for key, value in string_pairs:
+        if key and value and not key.startswith('_'):
+            # Skip internal keys and empty values
+            clean_key = key.lower().replace(' ', '_')
+            result[clean_key] = value
+
+    # Pattern 2: Extract "key": number pairs
+    number_pairs = re.findall(r'"([^"]+)"\s*:\s*(-?\d+\.?\d*)', text)
+    for key, value in number_pairs:
+        if key and not key.startswith('_'):
+            clean_key = key.lower().replace(' ', '_')
+            try:
+                result[clean_key] = float(value) if '.' in value else int(value)
+            except ValueError:
+                pass
+
+    # Pattern 3: Extract "key": true/false/null pairs
+    bool_pairs = re.findall(r'"([^"]+)"\s*:\s*(true|false|null)', text, re.IGNORECASE)
+    for key, value in bool_pairs:
+        if key and not key.startswith('_'):
+            clean_key = key.lower().replace(' ', '_')
+            result[clean_key] = value.lower() == 'true' if value.lower() != 'null' else None
+
+    # Pattern 4: Extract nested objects that are complete
+    nested_objects = re.findall(r'"(\w+)"\s*:\s*(\{[^{}]*\})', text)
+    for key, value in nested_objects:
+        try:
+            result[key] = json.loads(value)
+        except json.JSONDecodeError:
+            pass
+
+    # Pattern 5: Look for common analysis fields with specific patterns
+    # Eye color
+    eye_match = re.search(r'(?:eye_color|eyes?)["\s:]+([^",}\n]+)', text, re.IGNORECASE)
+    if eye_match and 'eye_color' not in result:
+        result['eye_color'] = eye_match.group(1).strip().strip('"')
+
+    # Hair color
+    hair_match = re.search(r'(?:hair_color|hair)["\s:]+([^",}\n]+)', text, re.IGNORECASE)
+    if hair_match and 'hair_color' not in result:
+        result['hair_color'] = hair_match.group(1).strip().strip('"')
+
+    # Skin tone
+    skin_match = re.search(r'(?:skin_tone|skin)["\s:]+([^",}\n]+)', text, re.IGNORECASE)
+    if skin_match and 'skin_tone' not in result:
+        result['skin_tone'] = skin_match.group(1).strip().strip('"')
+
+    # Ethnicity
+    ethnicity_match = re.search(r'(?:ethnicity|heritage|background)["\s:]+([^",}\n]+)', text, re.IGNORECASE)
+    if ethnicity_match and 'ethnicity' not in result:
+        result['ethnicity'] = ethnicity_match.group(1).strip().strip('"')
+
+    return result
+
+
+def _extract_from_prose(text: str) -> dict:
+    """Extract key information from prose text when JSON parsing fails."""
+    import re
+
+    result = {}
+
+    # Common patterns to extract
+    patterns = {
+        'gender': r'\b(female|male|woman|man)\b',
+        'age_range': r'\b(young adult|adult|teen|child|middle-aged|elderly)\b',
+        'hair_color': r'(?:hair[^.]*?)(black|dark brown|brown|chestnut|auburn|blonde|red|gray|white)',
+        'eye_color': r'(?:eyes?[^.]*?)(dark brown|brown|blue|green|hazel|gray|black)',
+        'ethnicity': r'\b(East Asian|South Asian|Asian|Caucasian|African|Hispanic|Latino|Middle Eastern|Mediterranean|European)\b',
+        'skin_tone': r'(?:skin[^.]*?)(fair|light|medium|olive|tan|dark|brown|warm|cool)',
+    }
+
+    for key, pattern in patterns.items():
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            result[key] = match.group(1).lower() if len(match.groups()) == 1 else match.group(1).lower()
+
+    return result
+
+
 class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
     """
     Advanced Z-Image prompt generator with external LLM provider.
@@ -844,30 +1124,35 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
                 },
             })
 
-        # Parse JSON response
-        try:
-            # Clean up any markdown
-            response_text = response_text.strip()
-            if response_text.startswith("```"):
-                response_text = response_text.split("```")[1]
-                if response_text.startswith("json"):
-                    response_text = response_text[4:]
-            response_text = response_text.strip()
+        # Clean repetition if detected
+        response_text, had_repetition = detect_and_clean_repetition(response_text)
+        if had_repetition:
+            log("  Warning: Detected and cleaned repetitive output from LLM")
 
-            classification = json.loads(response_text)
-        except json.JSONDecodeError:
-            log(f"  Warning: Failed to parse classification JSON, using defaults")
-            classification = {
-                "shot_framing": "MS",
-                "shot_label": "Medium Shot",
-                "genre": "PRT",
-                "genre_label": "Portrait",
-                "genre_category": "people",
-                "secondary_tags": [],
-                "subject_count": 1,
-                "has_text": False,
-                "confidence": 0.5
-            }
+        # Parse JSON response using improved extraction
+        classification = extract_json_from_text(response_text)
+
+        # Validate and fill defaults
+        defaults = {
+            "shot_framing": "MS",
+            "shot_label": "Medium Shot",
+            "genre": "PRT",
+            "genre_label": "Portrait",
+            "genre_category": "people",
+            "secondary_tags": [],
+            "subject_count": 1,
+            "has_text": False,
+            "confidence": 0.5
+        }
+
+        if not classification or "shot_framing" not in classification:
+            log("  Warning: Failed to parse classification JSON, using defaults")
+            classification = defaults
+        else:
+            # Fill in any missing fields
+            for key, value in defaults.items():
+                if key not in classification:
+                    classification[key] = value
 
         return classification
 
@@ -949,13 +1234,17 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
                         },
                     })
 
+                # Clean repetition if detected
+                response_text, had_repetition = detect_and_clean_repetition(response_text)
+                if had_repetition:
+                    log(f"      Warning: Detected and cleaned repetitive output")
+
                 # Parse JSON response
-                try:
-                    cleaned_response = cls._clean_json_response(response_text)
-                    stage_data = json.loads(cleaned_response)
+                stage_data = extract_json_from_text(response_text)
+                if stage_data:
                     stage_results[stage] = stage_data
                     log(f"      Extracted: {list(stage_data.keys())}")
-                except json.JSONDecodeError:
+                else:
                     log(f"      Warning: Failed to parse {stage} JSON")
                     stage_results[stage] = {}
 
@@ -994,16 +1283,27 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
                     },
                 })
 
-            try:
-                cleaned_response = cls._clean_json_response(response_text)
-                attributes = json.loads(cleaned_response)
-            except json.JSONDecodeError:
+            # Clean repetition if detected
+            response_text, had_repetition = detect_and_clean_repetition(response_text)
+            if had_repetition:
+                log(f"    Warning: Detected and cleaned repetitive output in consolidation")
+
+            log(f"    Consolidation response length: {len(response_text)} chars")
+
+            attributes = extract_json_from_text(response_text, include_raw_fallback=True)
+            if not attributes or len(attributes) == 0:
                 log(f"    Warning: Failed to parse consolidated JSON, using raw stages")
                 # Flatten stage results as fallback
                 attributes = {}
                 for stage_data in stage_results.values():
                     if isinstance(stage_data, dict):
                         attributes.update(stage_data)
+                # Include raw response as additional context
+                if not attributes:
+                    attributes = {"_raw_response": response_text[:4000], "_parse_failed": True}
+            else:
+                real_attrs = {k: v for k, v in attributes.items() if not k.startswith('_')}
+                log(f"    Consolidated {len(real_attrs)} attribute fields")
 
             return attributes
 
@@ -1041,12 +1341,29 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
                     },
                 })
 
-            try:
-                cleaned_response = cls._clean_json_response(response_text)
-                attributes = json.loads(cleaned_response)
-            except json.JSONDecodeError:
-                log(f"  Warning: Failed to parse attributes JSON")
-                attributes = {}
+            # Clean repetition if detected
+            response_text, had_repetition = detect_and_clean_repetition(response_text)
+            if had_repetition:
+                log(f"  Warning: Detected and cleaned repetitive output in analysis")
+
+            # Log response length for debugging truncation issues
+            log(f"  Analysis response length: {len(response_text)} chars")
+
+            attributes = extract_json_from_text(response_text, include_raw_fallback=True)
+
+            # Detailed logging for debugging
+            if not attributes or len(attributes) == 0:
+                log(f"  ERROR: Failed to extract ANY attributes from analysis")
+                log(f"  Response preview: {response_text[:200]}...")
+                attributes = {"_raw_response": response_text[:4000], "_parse_failed": True}
+            elif attributes.get('_parse_failed'):
+                log(f"  Warning: JSON parsing failed, using raw text fallback")
+            elif attributes.get('_raw_response') and len(attributes) < 5:
+                log(f"  Warning: Sparse attributes ({len(attributes)-1} fields), raw text included as fallback")
+            else:
+                # Filter out internal keys for counting
+                real_attrs = {k: v for k, v in attributes.items() if not k.startswith('_')}
+                log(f"  Extracted {len(real_attrs)} attribute fields successfully")
 
             return attributes
 
@@ -1361,8 +1678,9 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
         """Stage 5: Compose prompt using template-based prompts."""
 
         # Calculate word targets based on max_tokens
-        min_words = max(50, int(max_tokens * 0.6))
-        max_words = int(max_tokens * 1.2)
+        # Ensure minimum word counts for quality prompts (Standard mode should be 150-250+)
+        min_words = max(150, int(max_tokens * 0.8))
+        max_words = max(300, int(max_tokens * 1.5))
 
         # Build focus options dict
         focus_options = {
@@ -1390,6 +1708,11 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
             max_tokens=actual_max_tokens,
             temperature=actual_temp
         )
+
+        # Clean repetition if detected (common in smaller models)
+        response_text, had_repetition = detect_and_clean_repetition(response_text)
+        if had_repetition:
+            log("  Warning: Detected and cleaned repetitive output in composition")
 
         # Track interaction
         if interactions is not None:
@@ -1445,9 +1768,9 @@ class SID_ZImagePromptGenerator_Advanced(comfy_io.ComfyNode):
             interactions=interactions
         )
 
-        # Calculate word targets
-        min_words = max(50, int(max_tokens * 0.6))
-        max_words = int(max_tokens * 1.2)
+        # Calculate word targets - Deep mode should have even higher targets
+        min_words = max(200, int(max_tokens * 1.0))
+        max_words = max(400, int(max_tokens * 2.0))
 
         # Use template for refinement prompt
         system_prompt, user_message = prompt_template.build_refinement_prompt(
