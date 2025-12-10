@@ -734,8 +734,10 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                 comfy_io.Int.Input(
                     "max_tokens",
                     default=512,
-                    min=64,
+                    min=512,
                     max=4096,
+                    step=128,
+                    display_mode=comfy_io.NumberDisplay.slider,
                     tooltip="Maximum tokens to generate. Higher=longer output but slower."
                 ),
                 comfy_io.Boolean.Input(
