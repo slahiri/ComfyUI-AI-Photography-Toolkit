@@ -367,6 +367,7 @@ class LocalModelClient:
         top_p: float = 0.9,
         repetition_penalty: float = 1.2,
         num_beams: int = 1,
+        use_torch_compile: bool = False,
     ):
         self.model_name = model_name
         self.quantization = quantization
@@ -376,6 +377,7 @@ class LocalModelClient:
         self.top_p = top_p
         self.repetition_penalty = repetition_penalty
         self.num_beams = num_beams
+        self.use_torch_compile = use_torch_compile
 
         self.model = None
         self.processor = None
@@ -682,20 +684,25 @@ class LocalModelClient:
         }
 
         # Select optimal attention implementation
+        actual_attention_mode = self.attention_mode
         if self.attention_mode != "auto":
             load_kwargs["attn_implementation"] = self.attention_mode
+            print(f"  Using {self.attention_mode} (user-specified)")
         elif device == "cuda":
             try:
                 import flash_attn
                 major, _ = torch.cuda.get_device_capability()
                 if major >= 8:
                     load_kwargs["attn_implementation"] = "flash_attention_2"
-                    print("  Using Flash Attention 2")
+                    actual_attention_mode = "flash_attention_2"
+                    print("  Using Flash Attention 2 (auto-detected)")
                 else:
                     load_kwargs["attn_implementation"] = "sdpa"
-                    print("  Using SDPA (Scaled Dot Product Attention)")
+                    actual_attention_mode = "sdpa"
+                    print("  Using SDPA (GPU compute capability < 8.0)")
             except ImportError:
                 load_kwargs["attn_implementation"] = "sdpa"
+                actual_attention_mode = "sdpa"
                 print("  Using SDPA (flash_attn not installed)")
 
         if device == "cuda":
@@ -711,9 +718,31 @@ class LocalModelClient:
         # Enable KV cache for faster generation
         self.model.config.use_cache = True
 
-        # Resolution limits for QwenVL - optimized for balance of quality and speed
-        min_pixels = 256 * 28 * 28   # ~200K pixels
-        max_pixels = 1280 * 28 * 28  # ~1M pixels
+        # Apply torch.compile for faster inference (CUDA + Torch 2.1+ only)
+        if self.use_torch_compile and device == "cuda":
+            try:
+                torch_version = tuple(int(x) for x in torch.__version__.split('.')[:2])
+                if torch_version >= (2, 1):
+                    print("  Applying torch.compile (mode=reduce-overhead)...")
+                    self.model = torch.compile(self.model, mode="reduce-overhead")
+                    print("  torch.compile applied successfully (first run may be slower)")
+                else:
+                    print(f"  torch.compile skipped: requires Torch 2.1+, found {torch.__version__}")
+            except Exception as e:
+                print(f"  torch.compile failed (continuing without): {e}")
+
+        # Adaptive resolution for QwenVL (optimal range: 480x480 to 2560x2560)
+        # Qwen2.5-VL uses patch_size=28, Qwen3-VL uses patch_size=14
+        # Resolution rounded to nearest multiple of patch_size
+        is_qwen3 = "Qwen3" in self.model_name
+        patch_size = 14 if is_qwen3 else 28
+
+        # Min: ~200K pixels (good for speed), Max: ~1M pixels (good for detail)
+        # These values align with Qwen docs: 480x480 to 1280x1280 optimal
+        min_pixels = 256 * patch_size * patch_size   # ~100K-200K pixels
+        max_pixels = 1280 * patch_size * patch_size  # ~500K-1M pixels
+
+        print(f"  Resolution limits: {min_pixels//1000}K - {max_pixels//1000}K pixels (patch_size={patch_size})")
 
         self.processor = AutoProcessor.from_pretrained(
             model_path,
@@ -737,6 +766,8 @@ class LocalModelClient:
         messages: List[Dict[str, Any]],
         max_tokens: int = 512,
         temperature: float = 0.6,
+        min_response_words: int = 20,
+        max_retries: int = 2,
         **kwargs
     ) -> "LocalModelResponse":
         """Create a chat completion (OpenAI-compatible interface)."""
@@ -773,22 +804,52 @@ class LocalModelClient:
                                 img = Image.open(io.BytesIO(img_bytes))
                                 images.append(img)
 
-        # Generate based on model family
-        if self.model_info.family == ModelFamily.FLORENCE2:
-            response_text = self._generate_florence2(images, text_prompt, max_tokens, temperature)
-        elif self.model_info.family == ModelFamily.MOONDREAM2:
-            response_text = self._generate_moondream2(images, text_prompt, max_tokens, temperature)
-        elif self.model_info.family == ModelFamily.SMOLVLM:
-            response_text = self._generate_smolvlm(images, text_prompt, max_tokens, temperature)
-        elif self.model_info.family == ModelFamily.PHI35_VISION:
-            response_text = self._generate_phi35_vision(images, text_prompt, max_tokens, temperature)
-        elif self.model_info.family == ModelFamily.QWENVL:
-            response_text = self._generate_qwenvl(messages, images, max_tokens, temperature)
-        else:
-            raise ValueError(f"Unknown model family: {self.model_info.family}")
+        # Generate with retry logic for short responses
+        response_text = ""
+        retry_count = 0
+        current_temp = temperature
+
+        while retry_count <= max_retries:
+            gen_start = time.time()
+
+            # Generate based on model family
+            if self.model_info.family == ModelFamily.FLORENCE2:
+                response_text = self._generate_florence2(images, text_prompt, max_tokens, current_temp)
+            elif self.model_info.family == ModelFamily.MOONDREAM2:
+                response_text = self._generate_moondream2(images, text_prompt, max_tokens, current_temp)
+            elif self.model_info.family == ModelFamily.SMOLVLM:
+                response_text = self._generate_smolvlm(images, text_prompt, max_tokens, current_temp)
+            elif self.model_info.family == ModelFamily.PHI35_VISION:
+                response_text = self._generate_phi35_vision(images, text_prompt, max_tokens, current_temp)
+            elif self.model_info.family == ModelFamily.QWENVL:
+                response_text = self._generate_qwenvl(messages, images, max_tokens, current_temp)
+            else:
+                raise ValueError(f"Unknown model family: {self.model_info.family}")
+
+            gen_elapsed = time.time() - gen_start
+
+            # Validate response length
+            word_count = len(response_text.split())
+            if word_count >= min_response_words:
+                break
+
+            # Response too short, retry with adjusted temperature
+            retry_count += 1
+            if retry_count <= max_retries:
+                current_temp = min(1.0, temperature + 0.2 * retry_count)
+                print(f"[LocalModelClient] Response too short ({word_count} words), retrying {retry_count}/{max_retries} with temp={current_temp:.1f}")
 
         elapsed = time.time() - start_time
+        word_count = len(response_text.split())
+        tokens_approx = len(response_text) // 4  # Rough token estimate
+
+        # Quality metrics
         print(f"[LocalModelClient] Generated in {elapsed:.1f}s")
+        print(f"  Output: {word_count} words, ~{tokens_approx} tokens")
+        if elapsed > 0:
+            print(f"  Speed: ~{tokens_approx/elapsed:.1f} tokens/sec")
+        if retry_count > 0:
+            print(f"  Retries: {retry_count}")
 
         return LocalModelResponse(response_text.strip())
 
@@ -1093,6 +1154,38 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     display_name="Keep Model Loaded",
                     tooltip="Keep model in VRAM between runs (faster repeat inference)"
                 ),
+                comfy_io.Combo.Input(
+                    "attention_mode",
+                    options=ATTENTION_MODES,
+                    default="auto",
+                    tooltip="Attention implementation: auto (recommended), flash_attention_2 (Ampere+), sdpa, eager"
+                ),
+                comfy_io.Float.Input(
+                    "repetition_penalty",
+                    default=1.2,
+                    min=0.8,
+                    max=2.0,
+                    step=0.1,
+                    round=0.1,
+                    display_mode=comfy_io.NumberDisplay.slider,
+                    tooltip="Penalize repeated tokens (1.0=off, 1.2=recommended, 2.0=strong)"
+                ),
+                comfy_io.Float.Input(
+                    "top_p",
+                    default=0.9,
+                    min=0.1,
+                    max=1.0,
+                    step=0.05,
+                    round=0.05,
+                    display_mode=comfy_io.NumberDisplay.slider,
+                    tooltip="Nucleus sampling (0.9=recommended, lower=more focused)"
+                ),
+                comfy_io.Boolean.Input(
+                    "use_torch_compile",
+                    default=False,
+                    display_name="Use Torch Compile",
+                    tooltip="Enable torch.compile for faster inference (CUDA + Torch 2.1+ only, first run slower)"
+                ),
             ],
             outputs=[
                 LLM_MODEL_Type.Output(
@@ -1114,6 +1207,10 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
         custom_max_tokens: int,
         enable_reasoning: bool,
         keep_model_loaded: bool,
+        attention_mode: str,
+        repetition_penalty: float,
+        top_p: float,
+        use_torch_compile: bool,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
         try:
@@ -1183,12 +1280,15 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                 extra_params={
                     "quantization": quant,
                     "device": device,
-                    "attention_mode": "auto",  # Always auto for best compatibility
+                    "attention_mode": attention_mode,
                     "keep_model_loaded": keep_model_loaded,
                     "repo_id": model_info.repo_id,
                     "family": model_info.family.value,
                     "is_thinking": model_info.is_thinking,
                     "enable_reasoning": reasoning_enabled,
+                    "repetition_penalty": repetition_penalty,
+                    "top_p": top_p,
+                    "use_torch_compile": use_torch_compile,
                 },
             )
 

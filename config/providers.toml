@@ -93,5 +93,66 @@ anthropic = 1568
 openai = 2048
 ollama = 1024
 lmstudio = 1024
-local = 768
+local = 1280  # QwenVL optimal range
 default = 1024
+
+
+# =============================================================================
+# Local Model Configuration (QwenVL, Florence, etc.)
+# =============================================================================
+
+[local_models]
+# Default generation parameters for local models
+default_temperature = 0.3
+default_repetition_penalty = 1.2
+default_top_p = 0.9
+default_num_beams = 1
+
+# Attention mode options
+attention_modes = ["auto", "flash_attention_2", "sdpa", "eager"]
+default_attention_mode = "auto"
+
+# Response validation
+min_response_words = 20
+max_retries = 2
+retry_temp_increase = 0.2
+
+[local_models.qwenvl]
+# QwenVL-specific settings
+# Qwen2.5-VL uses patch_size=28, Qwen3-VL uses patch_size=14
+# Optimal resolution: 480x480 to 2560x2560 (per Qwen docs)
+min_pixels_qwen3 = 50176    # 256 * 14 * 14
+max_pixels_qwen3 = 250880   # 1280 * 14 * 14
+min_pixels_qwen25 = 200704  # 256 * 28 * 28
+max_pixels_qwen25 = 1003520 # 1280 * 28 * 28
+
+# Torch compile settings
+enable_torch_compile = false  # Default off (first run slower)
+torch_compile_mode = "reduce-overhead"
+min_torch_version = "2.1"
+
+# Model recommendations by VRAM
+# <8GB: Qwen3-VL-2B (4-bit)
+# 8-12GB: Qwen3-VL-4B (8-bit)
+# 12-16GB: Qwen3-VL-4B (FP16) or Qwen3-VL-8B (8-bit)
+# >16GB: Qwen3-VL-8B (FP16)
+
+[local_models.florence2]
+# Florence-2 is ultra-fast, good for quick captions
+default_temperature = 0.2
+max_output_tokens = 1024
+
+[local_models.moondream2]
+# Moondream is efficient, runs on CPU too
+default_temperature = 0.3
+max_output_tokens = 2048
+
+[local_models.smolvlm]
+# SmolVLM for edge/mobile use
+default_temperature = 0.2
+max_output_tokens = 1024
+
+[local_models.phi35_vision]
+# Phi-3.5-Vision for high quality
+default_temperature = 0.4
+max_output_tokens = 4096

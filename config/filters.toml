@@ -72,13 +72,81 @@ patterns = [
     "\\n\\n\\n+",
     "Note:.*$",
     "I hope this helps.*$",
+    "Feel free to ask.*$",
+    "Is there anything else.*$",
 ]
 
 [provider_cleanup.lmstudio]
 patterns = [
     "```\\n*$",
     "Let me know.*$",
+    "Hope this helps.*$",
+]
+
+[provider_cleanup.groq]
+# Groq tends to be fast but sometimes adds meta-commentary
+patterns = [
+    "^Sure,?\\s*",
+    "^Certainly,?\\s*",
+    "^Of course,?\\s*",
+    "\\n\\nIs there anything.*$",
+]
+
+[provider_cleanup.together]
+# Together AI cleanup
+patterns = [
+    "^Here is (?:the |a )?(?:detailed )?(?:description|prompt):\\s*",
+    "\\n\\n---\\n*$",
+    "I hope this (?:helps|description).*$",
+]
+
+[provider_cleanup.fireworks]
+# Fireworks AI cleanup
+patterns = [
+    "^Based on (?:the|this) image,?\\s*",
+    "\\n\\nLet me know.*$",
+]
+
+[provider_cleanup.openai]
+# OpenAI/GPT models cleanup
+patterns = [
+    "^(?:Sure|Certainly|Of course)[!,.]?\\s*",
+    "\\n\\nI hope this (?:helps|meets).*$",
+]
+
+[provider_cleanup.anthropic]
+# Claude models - generally clean but sometimes adds meta
+patterns = [
+    "^(?:Here's|Here is) (?:the |a )?(?:description|prompt):\\s*",
+]
+
+[provider_cleanup.local]
+# Local models (QwenVL, Florence, etc.) - most aggressive cleanup
+patterns = [
+    "\\n\\n\\n+",
+    "^(?:Sure|Certainly|Of course)[!,.]?\\s*",
+    "Note:.*$",
+    "I hope this helps.*$",
+    "Is there anything else.*$",
+    "Let me know if.*$",
+    "Feel free to.*$",
+    "^Based on (?:the|this) image,?\\s*",
+    "^(?:Here's|Here is) (?:the |a )?(?:detailed )?(?:description|prompt|caption):\\s*",
+    "\\[End of (?:description|prompt)\\]",
 ]
 
 [provider_cleanup.default]
 patterns = []
+
+
+# =============================================================================
+# RESPONSE VALIDATION
+# =============================================================================
+
+[validation]
+# Minimum acceptable response length (words)
+min_words = 20
+# Maximum retries for short responses
+max_retries = 2
+# Temperature increase per retry
+retry_temp_increase = 0.2
