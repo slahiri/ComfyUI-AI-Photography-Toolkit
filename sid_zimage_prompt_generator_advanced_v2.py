@@ -774,6 +774,14 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
                     tooltip="Connect LLM provider node (e.g., SID_Anthropic_LLM)"
                 ),
 
+                # Prompt generation mode
+                comfy_io.Combo.Input(
+                    "prompt_mode",
+                    options=["Single Shot", "Agentic (Reasoning Models)"],
+                    default="Single Shot",
+                    tooltip="Single Shot=fast single call, Agentic=deep analysis (requires reasoning-capable model like Claude 3.5/o1)"
+                ),
+
                 # Single detail mode - 3 levels
                 comfy_io.Combo.Input(
                     "detail_mode",
@@ -843,6 +851,7 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         cls,
         image,
         llm_model: LLMModelConfig,
+        prompt_mode: str,
         detail_mode: str,
         user_prompt: str,
         include_lighting: bool,
@@ -850,38 +859,47 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         seed: int,
         cache_results: bool,
     ) -> comfy_io.NodeOutput:
-        """Execute the component-based analysis pipeline."""
+        """Execute the prompt generation pipeline."""
 
         # Get image dimensions early for error returns
         img_tensor = image[0]
         img_height, img_width = img_tensor.shape[0], img_tensor.shape[1]
 
-        # Reasoning mode is now determined by the LLM model node
-        # (model capability AND user toggle are combined there)
-        use_reasoning = llm_model.supports_reasoning
+        # Check if model supports reasoning for agentic mode
+        supports_reasoning = llm_model.supports_reasoning
 
         # Guardrail: Log and validate max_tokens against model limits
         max_tokens = llm_model.max_tokens
         model_max = (llm_model.extra_params or {}).get("model_max_output_tokens", "unknown")
         print(f"[V2] Model: {llm_model.model} (provider: {llm_model.provider})")
         print(f"[V2] Max tokens: {max_tokens} (model limit: {model_max})")
+        print(f"[V2] Prompt Mode: {prompt_mode}")
 
         # Warn if max_tokens is very low for prompt generation
         if max_tokens < 300:
             print(f"[V2] Warning: max_tokens={max_tokens} is very low, may result in truncated prompts")
 
         try:
-            if use_reasoning:
-                # Agentic single-call approach for reasoning models
+            if prompt_mode == "Agentic (Reasoning Models)":
+                # Check if model supports reasoning
+                if not supports_reasoning:
+                    print(f"[V2] WARNING: Agentic mode selected but model doesn't support reasoning!")
+                    print(f"[V2] Falling back to Single Shot mode. Enable reasoning in LLM node or use Claude 3.5/o1.")
+                    # Fall back to single shot
+                    return cls._execute_single_shot_pipeline(
+                        image, llm_model, detail_mode, user_prompt,
+                        include_lighting, include_pose, seed, cache_results
+                    )
+                # Agentic approach for reasoning models
                 print(f"[V2] Using AGENTIC mode (reasoning enabled)")
                 return cls._execute_agentic_pipeline(
                     image, llm_model, detail_mode, user_prompt,
                     include_lighting, include_pose, seed, cache_results
                 )
             else:
-                # Multi-step iterative approach
-                print(f"[V2] Using ITERATIVE mode (multi-step)")
-                return cls._execute_pipeline(
+                # Single Shot - fast single call approach
+                print(f"[V2] Using SINGLE SHOT mode")
+                return cls._execute_single_shot_pipeline(
                     image, llm_model, detail_mode, user_prompt,
                     include_lighting, include_pose, seed, cache_results
                 )
@@ -904,7 +922,12 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         seed: int,
         cache_results: bool,
     ) -> comfy_io.NodeOutput:
-        """Internal execute with full pipeline."""
+        """
+        [DEPRECATED] Multi-step iterative pipeline.
+
+        This method is deprecated in favor of _execute_single_shot_pipeline.
+        Kept for backward compatibility but no longer used by default.
+        """
 
         start_time = time.time()
         log_lines = []
@@ -1075,6 +1098,320 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         pbar.update(1)
 
         return comfy_io.NodeOutput(prompt, width, height, ui={"text": (prompt,)})
+
+    # =========================================================================
+    # SINGLE SHOT PIPELINE - Fast single-call approach (replaces iterative)
+    # =========================================================================
+
+    @classmethod
+    def _execute_single_shot_pipeline(
+        cls,
+        image,
+        llm_model: LLMModelConfig,
+        detail_mode: str,
+        user_prompt: str,
+        include_lighting: bool,
+        include_pose: bool,
+        seed: int,
+        cache_results: bool,
+    ) -> comfy_io.NodeOutput:
+        """
+        Single-shot pipeline - generates prompt in one comprehensive call.
+
+        Uses our component knowledge condensed into a single, well-structured prompt.
+        Much faster than iterative, works well with all vision models.
+        """
+
+        start_time = time.time()
+
+        def log(msg: str):
+            print(f"[V2-SINGLE] {msg}")
+
+        log("=" * 60)
+        log("SID Z-Image Prompt Generator V2 - SINGLE SHOT MODE")
+        log("=" * 60)
+        log(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        log(f"Detail Mode: {detail_mode}")
+
+        # Get image dimensions
+        img_tensor = image[0]
+        height, width = img_tensor.shape[0], img_tensor.shape[1]
+        log(f"Image: {width}x{height}")
+
+        # Convert image to base64
+        img_np = (img_tensor.cpu().numpy() * 255).astype(np.uint8)
+        pil_image = Image.fromarray(img_np)
+
+        # Check for max_image_size in extra_params
+        max_image_size = llm_model.extra_params.get("max_image_size") if llm_model.extra_params else None
+        if max_image_size and max(width, height) > max_image_size:
+            if width > height:
+                new_width = max_image_size
+                new_height = int(height * (max_image_size / width))
+            else:
+                new_height = max_image_size
+                new_width = int(width * (max_image_size / height))
+            pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            log(f"Image resized: {width}x{height} -> {new_width}x{new_height}")
+
+        buffer = io.BytesIO()
+        pil_image.save(buffer, format="JPEG", quality=95)
+        base64_image = base64.standard_b64encode(buffer.getvalue()).decode("utf-8")
+
+        # Get LLM client
+        client = cls._get_client(llm_model)
+        model = llm_model.model
+
+        log(f"Provider: {llm_model.provider}")
+        log(f"Model: {model}")
+
+        # Progress bar
+        pbar = comfy.utils.ProgressBar(2)
+
+        # Build comprehensive single-shot prompt based on detail mode
+        system_prompt = cls._build_single_shot_system_prompt(detail_mode, user_prompt)
+        analysis_prompt = cls._build_single_shot_analysis_prompt(
+            detail_mode, user_prompt, include_lighting, include_pose
+        )
+
+        log("Generating prompt (single call)...")
+        pbar.update(1)
+
+        # Make single LLM call
+        try:
+            if hasattr(client, 'messages'):
+                # Anthropic
+                response = client.messages.create(
+                    model=model,
+                    max_tokens=llm_model.max_tokens,
+                    temperature=llm_model.temperature,
+                    system=system_prompt,
+                    messages=[{
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "image/jpeg",
+                                    "data": base64_image,
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": analysis_prompt
+                            }
+                        ]
+                    }]
+                )
+                prompt = response.content[0].text
+            else:
+                # OpenAI-style
+                response = client.chat.completions.create(
+                    model=model,
+                    max_tokens=llm_model.max_tokens,
+                    temperature=llm_model.temperature,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{base64_image}"
+                                    }
+                                },
+                                {
+                                    "type": "text",
+                                    "text": analysis_prompt
+                                }
+                            ]
+                        }
+                    ]
+                )
+                prompt = response.choices[0].message.content
+
+        except Exception as e:
+            log(f"Error: {e}")
+            raise
+
+        # Clean up the prompt (remove any markdown or extra formatting)
+        prompt = cls._clean_single_shot_output(prompt)
+
+        # Add user focus if provided
+        if user_prompt and user_prompt.strip():
+            prompt = f"[USER FOCUS: {user_prompt.strip()}] {prompt}"
+
+        pbar.update(1)
+
+        # Calculate stats
+        total_time = time.time() - start_time
+        word_count = len(prompt.split())
+        token_estimate = len(prompt) // 4
+
+        log(f"Final prompt: {word_count} words, ~{token_estimate} tokens")
+        log(f"Total time: {total_time:.1f}s")
+        log("=" * 60)
+
+        return comfy_io.NodeOutput(prompt, width, height, ui={"text": (prompt,)})
+
+    @classmethod
+    def _build_single_shot_system_prompt(cls, detail_mode: str, user_prompt: str) -> str:
+        """Build the system prompt for single-shot generation."""
+
+        base_system = """You are an expert visual analyst specializing in generating precise, flowing prompts for text-to-image AI models.
+
+Your task is to analyze the provided image and generate a cohesive, descriptive prompt that captures all visual elements.
+
+CRITICAL RULES:
+1. Describe ONLY what you can see - do not invent or assume details
+2. Start with framing/composition, then subject, then details, then lighting/background
+3. Use natural, flowing language - not a list of tags
+4. Be specific about colors, textures, and positions
+5. Output ONLY the prompt text - no explanations, headers, or formatting"""
+
+        if user_prompt and user_prompt.strip():
+            base_system += f"""
+
+IMPORTANT USER REQUEST: Pay special attention to: "{user_prompt.strip()}"
+Ensure your prompt captures and emphasizes any details related to this request."""
+
+        return base_system
+
+    @classmethod
+    def _build_single_shot_analysis_prompt(
+        cls,
+        detail_mode: str,
+        user_prompt: str,
+        include_lighting: bool,
+        include_pose: bool
+    ) -> str:
+        """Build the analysis prompt based on detail mode."""
+
+        if detail_mode == "Standard":
+            return """Analyze this image and generate a detailed prompt covering:
+
+1. FRAMING: Shot type (close-up, medium, full), camera angle, depth of field
+2. SUBJECT: Ethnicity, gender, age, skin tone, facial features
+3. HAIR: Arrangement (updo, loose, braided), color, texture, length
+4. FACE: Shape, expression, gaze direction, makeup if visible
+5. CLOTHING: Garment types, colors, materials, style (ONLY describe what's visible)
+""" + ("""6. POSE: Body position, posture, hand placement
+""" if include_pose else "") + ("""7. LIGHTING: Direction, quality, shadows, background
+""" if include_lighting else "") + """
+Generate a flowing, natural paragraph that combines these elements into a cohesive prompt.
+Output ONLY the prompt text."""
+
+        elif detail_mode == "Detailed":
+            return """Analyze this image comprehensively and generate a detailed prompt covering:
+
+1. FRAMING & COMPOSITION:
+   - Color mode (color or black & white)
+   - Shot type (ECU, CU, MCU, MS, FS, LS)
+   - Subject pose (standing, seated, lying, kneeling)
+   - Camera angle and depth of field
+   - How much of frame subject fills
+
+2. SUBJECT DEMOGRAPHICS:
+   - Ethnicity (be specific: East Asian, South Asian, European, etc.)
+   - Skin tone with undertones (warm, cool, olive)
+   - Age range and gender
+
+3. HAIR (CRITICAL - describe arrangement first):
+   - Is it up (bun, ponytail, braided) or down (loose)?
+   - Crown/top styling
+   - Color, texture, length
+
+4. FACIAL FEATURES:
+   - Face shape and angle
+   - Eye color, shape, expression
+   - Makeup details if present
+   - Lips and nose
+
+5. BODY & POSE:
+   - Visible body parts
+   - Posture and body angle
+   - Hand positions if visible
+
+6. CLOTHING & INTIMATE APPAREL:
+   - All visible garments with specific details
+   - Materials, colors, style
+   - Any lingerie/intimate apparel visible
+
+7. ACCESSORIES & TATTOOS:
+   - Jewelry (type, material, placement)
+   - Visible tattoos (location, style, subject)
+
+8. LIGHTING & ENVIRONMENT:
+   - Light direction and quality
+   - Shadow characteristics
+   - Background type and color
+
+Generate a rich, flowing description that combines ALL these elements.
+Output ONLY the prompt text - no headers or formatting."""
+
+        else:  # Extreme
+            return """Generate an EXTREMELY detailed, comprehensive prompt for this image.
+
+Analyze EVERY visible element with maximum precision:
+
+FRAMING: Exact shot type, subject position in frame, frame fill percentage, camera angle, depth of field, background blur level. Note if black & white.
+
+SUBJECT: Precise ethnicity (not just "Asian" - specify East/South/Southeast Asian), exact skin tone with undertones, age range, gender presentation.
+
+HAIR: ARRANGEMENT FIRST (updo/ponytail/braided/half-up/loose), then crown styling, color with any highlights, texture, length, condition.
+
+FACE: Shape, angle from frontal, head tilt, all notable proportions.
+
+EYES: Exact color with variations/rings, shape, gaze direction, expression, all makeup details (shadow colors, liner style, lash type).
+
+NOSE & LIPS: Shapes, proportions, lip color/state, any makeup.
+
+BODY: All visible parts, exact posture, shoulder position, arm positions, hand positions if visible, body angle, weight distribution.
+
+CLOTHING: Every visible garment in detail - type, neckline, color, material, fit, visible features. Note if cropped by frame.
+
+INTIMATE APPAREL: If visible - bra style/coverage/straps/material, bottoms style, garters, stockings (pattern, denier, color).
+
+TATTOOS: Every visible tattoo - exact location, size, style, subject matter, colors.
+
+ACCESSORIES: All jewelry with type, style, material, size, placement.
+
+LIGHTING: Direction (use clock positions), quality, color temperature, shadow density/direction, rim lighting.
+
+BACKGROUND: Type, color, blur level, any visible elements.
+
+Generate an extremely detailed, flowing narrative prompt.
+Output ONLY the raw prompt text - no formatting, headers, or explanations."""
+
+    @classmethod
+    def _clean_single_shot_output(cls, text: str) -> str:
+        """Clean up the LLM output to get just the prompt."""
+        import re
+
+        # Remove common prefixes
+        prefixes_to_remove = [
+            r"^Here'?s? (?:the |a )?(?:detailed |comprehensive )?prompt[:\s]*",
+            r"^(?:The )?prompt[:\s]*",
+            r"^Output[:\s]*",
+            r"^Description[:\s]*",
+        ]
+        for pattern in prefixes_to_remove:
+            text = re.sub(pattern, "", text, flags=re.IGNORECASE)
+
+        # Remove markdown formatting
+        text = re.sub(r'```[a-z]*\n?', '', text)
+        text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # Bold
+        text = re.sub(r'\*([^*]+)\*', r'\1', text)  # Italic
+        text = re.sub(r'^#+\s+', '', text, flags=re.MULTILINE)  # Headers
+
+        # Clean up whitespace
+        text = re.sub(r'\n\s*\n', ' ', text)  # Multiple newlines to space
+        text = re.sub(r'\s+', ' ', text)  # Multiple spaces to single
+        text = text.strip()
+
+        return text
 
     @classmethod
     def _get_client(cls, llm_model: LLMModelConfig):
