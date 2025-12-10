@@ -394,12 +394,16 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         temperature = llm_model.temperature
 
         if hasattr(client, 'messages'):
-            # Anthropic
+            # Anthropic - with prompt caching for cost/latency reduction
             response = client.messages.create(
                 model=model,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                system=system_prompt,
+                system=[{
+                    "type": "text",
+                    "text": system_prompt,
+                    "cache_control": {"type": "ephemeral"}
+                }],
                 messages=[{
                     "role": "user",
                     "content": [

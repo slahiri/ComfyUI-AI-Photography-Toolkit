@@ -1162,12 +1162,16 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         # Make single LLM call
         try:
             if hasattr(client, 'messages'):
-                # Anthropic
+                # Anthropic - with prompt caching for cost/latency reduction
                 response = client.messages.create(
                     model=model,
                     max_tokens=llm_model.max_tokens,
                     temperature=llm_model.temperature,
-                    system=system_prompt,
+                    system=[{
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"}
+                    }],
                     messages=[{
                         "role": "user",
                         "content": [
@@ -1476,12 +1480,16 @@ When analyzing, prioritize capturing any details related to the user's request."
         try:
             # Determine if Anthropic or OpenAI-style API
             if hasattr(client, 'messages'):
-                # Anthropic
+                # Anthropic - with prompt caching for cost/latency reduction
                 response = client.messages.create(
                     model=model,
                     max_tokens=1000,
                     temperature=0.3,
-                    system=system_prompt,
+                    system=[{
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"}
+                    }],
                     messages=[{
                         "role": "user",
                         "content": [

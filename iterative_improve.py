@@ -131,8 +131,10 @@ def analyze_component(client, model: str, provider: str, base64_image: str,
 
     try:
         if provider == "anthropic":
+            # Use prompt caching for cost/latency reduction
             resp = client.messages.create(
-                model=model, max_tokens=1000, temperature=0.3, system=system,
+                model=model, max_tokens=1000, temperature=0.3,
+                system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
                 messages=[{"role": "user", "content": [
                     {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_image}},
                     {"type": "text", "text": prompt}
