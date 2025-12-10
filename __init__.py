@@ -1,13 +1,13 @@
 """
 ComfyUI-AI-Photography-Toolkit
-A collection of AI-powered photography and image generation tools for ComfyUI.
+LLM Provider nodes for ComfyUI - Cloud and Local model support.
 All nodes are prefixed with SID_ for easy identification.
 
 Author: Siddhartha Lahiri
-Version: 4.0.0
+Version: 4.2.0
 """
 
-__version__ = "4.1.1"
+__version__ = "4.2.0"
 
 import sys
 import subprocess
@@ -80,38 +80,29 @@ check_and_install_dependencies()
 from typing_extensions import override
 from comfy_api.latest import ComfyExtension, io
 
-# Import all node classes
-from .sid_zimage_prompt_generator import SID_ZImagePromptGenerator
-from .sid_zimage_prompt_generator_advanced_v2 import SID_ZImagePromptGenerator_Advanced_V2
+# Import LLM provider nodes (unified cloud API + local models)
+from .llm_providers.sid_llm_api import SID_LLM_API
+from .llm_providers.sid_llm_local import SID_LLM_Local
 
-# Import LLM provider nodes
-from .llm_providers.sid_anthropic_llm import SID_Anthropic_LLM
-from .llm_providers.sid_openai_compatible_llm import SID_OpenAI_Compatible_LLM
-from .llm_providers.sid_grok_llm import SID_Grok_LLM
-from .llm_providers.sid_qwenvl_llm import SID_QwenVL_LLM
+# Import Z-Image Prompt Generator (unified node)
+from .sid_zimage_prompt_generator import SID_ZImagePromptGenerator
 
 
 class SIDPhotographyToolkitExtension(ComfyExtension):
     """
     Extension class for SID Photography Toolkit.
-    Registers all SID_ prefixed nodes with ComfyUI.
+    Registers SID_ prefixed LLM nodes with ComfyUI.
     """
 
     @override
     async def get_node_list(self) -> list[type[io.ComfyNode]]:
         """
         Return list of all nodes in this extension.
-        Add new nodes here as they are created.
         """
         return [
-            # Main nodes
-            SID_ZImagePromptGenerator,
-            SID_ZImagePromptGenerator_Advanced_V2,
-            # LLM Provider nodes
-            SID_Anthropic_LLM,
-            SID_OpenAI_Compatible_LLM,
-            SID_Grok_LLM,
-            SID_QwenVL_LLM,
+            SID_LLM_API,              # Cloud LLM (Anthropic, OpenAI, Gemini, Grok, Ollama, LM Studio)
+            SID_LLM_Local,            # Local models (Florence-2, Moondream2, SmolVLM, Phi-3.5, QwenVL)
+            SID_ZImagePromptGenerator,  # Z-Image prompt generator (auto Single-Shot/Agentic)
         ]
 
 
@@ -160,15 +151,12 @@ def print_welcome_message():
     print("-" * 65)
     print("  Available Nodes:")
     print("")
-    print("  Prompt Generators:")
-    print("    - SID_ZImagePromptGenerator             (simple preset-based)")
-    print("    - SID_ZImagePromptGenerator_Advanced_V2 (component-based analysis)")
+    print("  LLM Providers:")
+    print("    - SID_LLM_API   Cloud APIs (Anthropic, OpenAI, Gemini, Grok, Ollama, LM Studio)")
+    print("    - SID_LLM_Local Local models (Florence-2, Moondream, SmolVLM, Phi-3.5, QwenVL)")
     print("")
-    print("  LLM Providers (connect to generator nodes):")
-    print("    - SID_Anthropic_LLM         Anthropic Claude (cloud)")
-    print("    - SID_OpenAI_Compatible_LLM OpenAI/GPT/Together AI/LM Studio")
-    print("    - SID_Grok_LLM              xAI Grok (cloud)")
-    print("    - SID_QwenVL_LLM            Local Qwen VL (recommended for local)")
+    print("  Prompt Generator:")
+    print("    - SID_ZImagePromptGenerator  Z-Image prompts (auto Single-Shot/Agentic)")
 
     print("")
     print("=" * 65)

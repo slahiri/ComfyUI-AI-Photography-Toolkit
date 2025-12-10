@@ -5,6 +5,59 @@ All notable changes to ComfyUI-AI-Photography-Toolkit will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.0] - 2024-12-11
+
+### Added
+- **SID_LLM_API** - Unified cloud LLM node supporting 15+ providers:
+  - Anthropic (Claude 4.x Sonnet, Opus, Haiku)
+  - OpenAI (GPT-4o, GPT-4o-mini, o1, o3)
+  - Google Gemini (2.0, 1.5 Pro, Flash)
+  - xAI Grok (grok-2-vision, grok-vision-beta)
+  - Mistral (pixtral-large, pixtral-12b)
+  - DeepSeek, Cohere, Together AI, Fireworks, Groq, Perplexity
+  - Ollama, LM Studio (local)
+  - OpenRouter, Custom endpoints
+- **SID_LLM_Local** - Unified local model node supporting:
+  - Florence-2 Large (~4GB VRAM)
+  - Moondream2 (~4GB VRAM)
+  - SmolVLM (~4GB VRAM)
+  - Phi-3.5 Vision (~8GB VRAM)
+  - QwenVL 2B (~6GB VRAM)
+- **SID_ZImagePromptGenerator** - Unified prompt generator with:
+  - Auto pipeline selection (Single-Shot vs Agentic based on LLM capability)
+  - Analysis modes: Quick, Standard, Detailed, Extreme
+  - Preset styles: Auto-Detect, Portrait, Fashion, Artistic, NSFW
+  - User guidance input for custom instructions
+- **Max tokens preset** dropdown (Short/Medium/Long/Very Long/Maximum) replacing slider
+- **Enable reasoning toggle** for extended thinking support
+- **Auto quantization** for local models (4-bit/8-bit/None/Auto)
+
+### Changed
+- Consolidated from 8+ nodes to **3 unified nodes**
+- Simplified workflow: `LLM Provider → Prompt Generator → Output`
+- Provider-specific model dropdowns in SID_LLM_API
+- Auto-detection of local vs cloud providers for API key requirements
+
+### Deprecated
+The following nodes have been removed and replaced:
+
+| Deprecated Node | Replacement |
+|-----------------|-------------|
+| `SID_ZImagePromptGenerator` (basic) | `SID_ZImagePromptGenerator` (unified) |
+| `SID_ZImagePromptGenerator_Advanced` | `SID_ZImagePromptGenerator` (unified) |
+| `SID_ZImagePromptGenerator_Advanced_V2` | `SID_ZImagePromptGenerator` (unified) |
+| `SID_Anthropic_LLM` | `SID_LLM_API` (provider: Anthropic) |
+| `SID_OpenAI_Compatible_LLM` | `SID_LLM_API` (provider: OpenAI/Custom) |
+| `SID_Grok_LLM` | `SID_LLM_API` (provider: xAI Grok) |
+| `SID_GGUF_LLM` | `SID_LLM_Local` |
+| `SID_QwenVL_LLM` | `SID_LLM_Local` (model: QwenVL) |
+
+### Migration
+To migrate from v4.1.x:
+1. Replace individual LLM nodes (`SID_Anthropic_LLM`, etc.) with `SID_LLM_API` or `SID_LLM_Local`
+2. Replace any prompt generator with `SID_ZImagePromptGenerator`
+3. Reconnect image and LLM model inputs
+
 ## [4.1.0] - 2024-12-10
 
 ### Added
