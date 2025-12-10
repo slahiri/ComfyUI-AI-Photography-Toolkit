@@ -27,11 +27,13 @@ Output only the description, no extra text.
 """
 
 [system.basic]
-# For local models like LLaVA, Moondream - keep it simple
+# For local models like LLaVA, Moondream, Ollama - direct single-shot prompts
 base = """
-Describe this image for AI image generation.
-Focus on: subject, clothing, pose, lighting, background.
-Output only the description.
+You are an image captioning assistant. Your task is to write a detailed description of what you see in the image.
+
+Write a flowing paragraph that could be used as a prompt to recreate this image. Include: the subject's appearance, what they're wearing, their pose, and the setting/background.
+
+Important: Output ONLY the description. No introductory phrases like "Here is" or "This image shows". Start directly with the description.
 """
 
 
@@ -163,48 +165,38 @@ Write the most detailed description possible.
 # =============================================================================
 # USER PROMPTS BY MODE - BASIC TIER (Ollama, LM Studio, Local)
 # =============================================================================
+# For non-reasoning local models: direct instructions, no numbered lists,
+# explicit output format instructions
 
 [user.basic.quick]
-prompt = "Describe this image in 30-50 words. Include subject, clothing, and setting."
+prompt = """Write a brief 30-50 word description of this image. Start directly with the description, for example: "A woman with long dark hair wearing a red dress stands in a garden..."
+
+Describe the person, their clothing, and the setting."""
 
 [user.basic.standard]
-prompt = """
-Describe this image:
-- Who is in the image (gender, ethnicity, age)
-- What they are wearing
-- Their pose
-- The lighting and background
+prompt = """Write a detailed description of this image that could be used as an AI image generation prompt.
 
-Write a simple description.
-"""
+Include: who is in the image (appearance, ethnicity, age), what they are wearing (colors, materials), their pose and expression, and the background/lighting.
+
+Example format: "A young Asian woman with shoulder-length black hair, wearing a white blouse and blue jeans, sitting on a wooden bench in a sunlit park. Soft natural lighting, blurred trees in background."
+
+Now describe this image in similar format:"""
 
 [user.basic.detailed]
-prompt = """
-Describe this image in detail:
-- Subject: gender, ethnicity, skin tone, age
-- Hair: color, style
-- Face: expression
-- Clothing: what they wear, colors
-- Pose: how they are positioned
-- Background: what's behind them
+prompt = """Write a comprehensive description of this image for AI image generation.
 
-Write a clear description.
-"""
+Cover these aspects in a flowing paragraph: the subject's appearance (ethnicity, skin tone, age, build), their hair (color, style, length), facial expression and features, all visible clothing (specific items, colors, materials), their body pose and positioning, and the setting (background, lighting quality).
+
+Example: "A Hispanic woman in her late twenties with olive skin and wavy chestnut brown hair falling past her shoulders. She has a warm smile and brown eyes with subtle makeup. She wears a fitted emerald green dress with thin straps. She stands with one hand on her hip, leaning slightly against a white wall. Warm golden hour lighting from the left creates soft shadows."
+
+Now describe this image in similar detail:"""
 
 [user.basic.extreme]
-# Even extreme mode is simplified for basic tier
-prompt = """
-Describe everything visible in this image:
-- Subject appearance and demographics
-- Hair color and style
-- Facial expression
-- All clothing with colors
-- Body pose
-- Any jewelry or accessories
-- Lighting and background
+prompt = """Write the most detailed description possible of this image for AI image generation.
 
-Be thorough but clear.
-"""
+Describe everything visible: the subject's complete appearance (precise ethnicity, skin tone with undertones, approximate age), hair (exact color, style, texture, length), facial features (shape, expression, eye details, makeup), ALL clothing items with specific colors and materials, body pose and positioning, any visible tattoos or accessories, jewelry, and the complete setting including lighting direction, quality, and background details.
+
+Start directly with the description - no introduction needed. Write a single flowing paragraph covering all visible details:"""
 
 
 # =============================================================================
@@ -237,5 +229,7 @@ Focus on subject, clothing, pose, and setting.
 
 [agentic.basic]
 # Simplified for local models - single pass instead of multi-step
-intro = "Describe this image for AI image generation."
-synthesis = "Write a clear description of what you see."
+# Local models don't benefit from multi-step reasoning, use direct prompts
+intro = """Write a detailed description of this image for AI image generation. Include the subject's appearance, clothing, pose, and the setting. Start directly with the description - no introduction needed."""
+
+synthesis = """Now write the final description as a single flowing paragraph. Start directly with "A..." or the subject description. Do not include phrases like "Here is" or "The image shows"."""

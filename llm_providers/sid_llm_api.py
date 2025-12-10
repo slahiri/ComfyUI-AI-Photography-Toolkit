@@ -81,6 +81,26 @@ _ollama_models_cache: List[str] = []
 _lmstudio_models_cache: List[str] = []
 
 
+def is_likely_vision_model(model_name: str) -> bool:
+    """
+    Check if a model name suggests vision capability.
+    Used to warn users when selecting non-vision models for image analysis.
+    """
+    model_lower = model_name.lower()
+    vision_keywords = [
+        "vision", "vlm", "vl", "visual",
+        "llava", "bakllava", "pixtral", "qwenvl", "qwen-vl", "qwen2-vl", "qwen2.5-vl",
+        "moondream", "florence", "phi-3-vision", "phi3-vision", "smolvlm",
+        "llama-3.2-11b", "llama-3.2-90b",  # Llama 3.2 vision models
+        "llama3.2-vision", "llama3.2:11b", "llama3.2:90b",
+        "gpt-4o", "gpt-4-turbo",  # OpenAI vision models
+        "claude",  # All Claude models support vision
+        "gemini",  # Gemini supports vision
+        "grok-vision", "grok-2-vision",
+    ]
+    return any(kw in model_lower for kw in vision_keywords)
+
+
 # =============================================================================
 # Provider Configurations
 # =============================================================================
@@ -785,6 +805,12 @@ class SID_LLM_API(comfy_io.ComfyNode):
             print(f"  URL: {actual_url}")
             print(f"  max_tokens={max_tokens} ({max_tokens_preset}), temp={temperature}")
             print(f"  reasoning={reasoning_status}")
+
+            # Warn if local provider model may not support vision (but allow it)
+            if is_local and not is_likely_vision_model(model_name):
+                print(f"  ⚠️ WARNING: '{model_name}' may not support vision/image input.")
+                print(f"     For image analysis, consider using a vision model like 'llava', 'llama3.2-vision', etc.")
+                print(f"     Proceeding anyway - if this model does support vision, you can ignore this warning.")
 
             return comfy_io.NodeOutput(config)
 

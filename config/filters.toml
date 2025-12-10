@@ -133,6 +133,12 @@ patterns = [
     "^Based on (?:the|this) image,?\\s*",
     "^(?:Here's|Here is) (?:the |a )?(?:detailed )?(?:description|prompt|caption):\\s*",
     "\\[End of (?:description|prompt)\\]",
+    "^(?:This|The) image (?:shows|depicts|features|contains)\\s*",
+    "^In (?:this|the) image,?\\s*",
+    "^(?:I can see|I see|Looking at (?:this|the) image),?\\s*",
+    "^(?:The photo|The photograph) (?:shows|depicts|features)\\s*",
+    "^As requested,?\\s*",
+    "^(?:For|As) (?:the|this|an?) AI (?:image )?(?:generation|prompt),?\\s*",
 ]
 
 [provider_cleanup.default]
