@@ -1420,7 +1420,10 @@ Output ONLY the raw prompt text - no formatting, headers, or explanations."""
 
         if provider == "anthropic":
             import anthropic
-            return anthropic.Anthropic(api_key=llm_model.api_key)
+            import httpx
+            # Set longer timeout for vision requests (can be slow)
+            timeout = httpx.Timeout(timeout=600.0, connect=30.0)
+            return anthropic.Anthropic(api_key=llm_model.api_key, timeout=timeout)
         elif provider == "openai" or provider == "openai_compatible":
             from openai import OpenAI
             return OpenAI(
