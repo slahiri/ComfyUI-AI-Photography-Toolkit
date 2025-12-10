@@ -771,15 +771,7 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
 
                 LLM_MODEL_Type.Input(
                     "llm_model",
-                    tooltip="Connect LLM provider node (e.g., SID_Anthropic_LLM)"
-                ),
-
-                # Prompt generation mode
-                comfy_io.Combo.Input(
-                    "prompt_mode",
-                    options=["Single Shot", "Agentic (Reasoning Models)"],
-                    default="Single Shot",
-                    tooltip="Single Shot=fast single call, Agentic=deep analysis (requires reasoning-capable model like Claude 3.5/o1)"
+                    tooltip="Connect LLM provider node (e.g., SID_Anthropic_LLM). Enable reasoning in the LLM node for Agentic mode."
                 ),
 
                 # Single detail mode - 3 levels
@@ -851,7 +843,6 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         cls,
         image,
         llm_model: LLMModelConfig,
-        prompt_mode: str,
         detail_mode: str,
         user_prompt: str,
         include_lighting: bool,
@@ -865,7 +856,7 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         img_tensor = image[0]
         img_height, img_width = img_tensor.shape[0], img_tensor.shape[1]
 
-        # Check if model supports reasoning for agentic mode
+        # Auto-detect mode from LLM config (reasoning enabled in LLM node)
         supports_reasoning = llm_model.supports_reasoning
 
         # Guardrail: Log and validate max_tokens against model limits
@@ -873,25 +864,16 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         model_max = (llm_model.extra_params or {}).get("model_max_output_tokens", "unknown")
         print(f"[V2] Model: {llm_model.model} (provider: {llm_model.provider})")
         print(f"[V2] Max tokens: {max_tokens} (model limit: {model_max})")
-        print(f"[V2] Prompt Mode: {prompt_mode}")
+        print(f"[V2] Reasoning enabled: {supports_reasoning}")
 
         # Warn if max_tokens is very low for prompt generation
         if max_tokens < 300:
             print(f"[V2] Warning: max_tokens={max_tokens} is very low, may result in truncated prompts")
 
         try:
-            if prompt_mode == "Agentic (Reasoning Models)":
-                # Check if model supports reasoning
-                if not supports_reasoning:
-                    print(f"[V2] WARNING: Agentic mode selected but model doesn't support reasoning!")
-                    print(f"[V2] Falling back to Single Shot mode. Enable reasoning in LLM node or use Claude 3.5/o1.")
-                    # Fall back to single shot
-                    return cls._execute_single_shot_pipeline(
-                        image, llm_model, detail_mode, user_prompt,
-                        include_lighting, include_pose, seed, cache_results
-                    )
+            if supports_reasoning:
                 # Agentic approach for reasoning models
-                print(f"[V2] Using AGENTIC mode (reasoning enabled)")
+                print(f"[V2] Using AGENTIC mode (reasoning enabled in LLM node)")
                 return cls._execute_agentic_pipeline(
                     image, llm_model, detail_mode, user_prompt,
                     include_lighting, include_pose, seed, cache_results

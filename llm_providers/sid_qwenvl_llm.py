@@ -756,6 +756,12 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     display_name="Keep Model Loaded",
                     tooltip="Keep model in VRAM between runs. Faster but uses memory."
                 ),
+                comfy_io.Boolean.Input(
+                    "enable_reasoning",
+                    default=False,
+                    display_name="Enable Reasoning (Agentic)",
+                    tooltip="Enable Agentic/reasoning mode in Advanced V2 generator. Only works with Thinking models."
+                ),
             ],
             outputs=[
                 LLM_MODEL_Type.Output(
@@ -779,6 +785,7 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         num_beams: int,
         max_tokens: int,
         keep_model_loaded: bool,
+        enable_reasoning: bool,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
 
@@ -799,8 +806,8 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         if model_info.is_fp8:
             quant = "FP8"
 
-        # Thinking models support reasoning
-        supports_reasoning = model_info.is_thinking
+        # Reasoning requires both: Thinking model + user enabled
+        supports_reasoning = model_info.is_thinking and enable_reasoning
 
         # Create configuration
         config = LLMModelConfig(
@@ -832,7 +839,13 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         print(f"  Quantization: {quant}, Device: {device}, Attention: {attention_mode}")
         print(f"  Temperature: {temperature}, Top-P: {top_p}, Rep.Penalty: {repetition_penalty}")
         print(f"  Num Beams: {num_beams}, Max Tokens: {max_tokens}")
-        if supports_reasoning:
-            print(f"  [Thinking Model - Reasoning Enabled]")
+        if model_info.is_thinking:
+            if enable_reasoning:
+                print(f"  [Thinking Model - Reasoning ENABLED]")
+            else:
+                print(f"  [Thinking Model - Reasoning DISABLED]")
+        else:
+            if enable_reasoning:
+                print(f"  [Instruct Model - Reasoning toggle ignored (not a Thinking model)]")
 
         return comfy_io.NodeOutput(config)

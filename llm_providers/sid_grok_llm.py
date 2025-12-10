@@ -93,6 +93,12 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     display_mode=comfy_io.NumberDisplay.slider,
                     tooltip="Creativity level (0=focused, 2=very creative)"
                 ),
+                comfy_io.Boolean.Input(
+                    "enable_reasoning",
+                    default=False,
+                    display_name="Enable Reasoning (Agentic)",
+                    tooltip="Enable Agentic/reasoning mode in Advanced V2 generator. Note: Current Grok models don't support reasoning yet."
+                ),
             ],
             outputs=[
                 LLM_MODEL_Type.Output(
@@ -109,6 +115,7 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         api_key: str,
         model: str,
         temperature: float,
+        enable_reasoning: bool,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
 
@@ -120,6 +127,14 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         # Get model's max output tokens from metadata
         model_max_output = cls.get_max_output_tokens(model)
 
+        # Determine if reasoning should be enabled
+        # Only enable if BOTH model supports it AND user enabled it
+        model_supports = cls.supports_reasoning(model)
+        actual_reasoning = model_supports and enable_reasoning
+
+        if enable_reasoning and not model_supports:
+            print(f"[SID_Grok_LLM] Note: {model} does not support reasoning mode")
+
         # Create configuration using model's max_output_tokens
         config = cls.create_config(
             model=model,
@@ -129,10 +144,10 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             temperature=temperature,
         )
 
-        # Add model max output tokens to extra_params
+        # Update config with reasoning support
+        config.supports_reasoning = actual_reasoning
         config.extra_params = {"model_max_output_tokens": model_max_output}
 
-        reasoning = cls.supports_reasoning(model)
-        print(f"[SID_Grok_LLM] Configured: {model} (max_tokens={model_max_output}, temp={temperature}, reasoning={reasoning})")
+        print(f"[SID_Grok_LLM] Configured: {model} (max_tokens={model_max_output}, temp={temperature}, reasoning={actual_reasoning})")
 
         return comfy_io.NodeOutput(config)

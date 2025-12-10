@@ -666,6 +666,12 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     display_name="Max Image Size",
                     tooltip="Resize images before encoding for faster processing. 512=~4x faster (default), 768=~2x faster, 1024=~1.5x faster. Original=no resize (slowest but most detail)."
                 ),
+                comfy_io.Boolean.Input(
+                    "enable_reasoning",
+                    default=False,
+                    display_name="Enable Reasoning (Agentic)",
+                    tooltip="Enable Agentic/reasoning mode in Advanced V2 generator. Note: Current GGUF models don't support reasoning yet."
+                ),
             ],
             outputs=[
                 LLM_MODEL_Type.Output(
@@ -686,6 +692,7 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         auto_download: bool,
         hf_token: str,
         max_image_size: str,
+        enable_reasoning: bool,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
 
@@ -749,7 +756,7 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         n_gpu_layers = mem_config["n_gpu_layers"]
 
         # Get model info and metadata
-        model_supports_reasoning = False
+        model_supports_reasoning_capability = False
         model_max_output_tokens = 2048  # Default fallback
         max_image_resolution = "dynamic"
 
@@ -772,7 +779,7 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             chat_format = model_info.chat_format
 
             # Get model metadata
-            model_supports_reasoning = model_info.supports_reasoning
+            model_supports_reasoning_capability = model_info.supports_reasoning
             model_max_output_tokens = model_info.max_output_tokens
             max_image_resolution = model_info.max_image_resolution
 
@@ -793,6 +800,13 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         # Use model's max_output_tokens directly
         max_tokens = model_max_output_tokens
 
+        # Determine if reasoning should be enabled
+        # Only enable if BOTH model supports it AND user enabled it
+        actual_reasoning = model_supports_reasoning_capability and enable_reasoning
+
+        if enable_reasoning and not model_supports_reasoning_capability:
+            print(f"[SID_GGUF_LLM] Note: {model} does not support reasoning mode")
+
         # Create configuration with all needed info for client creation
         config = LLMModelConfig(
             provider=cls.PROVIDER_NAME,
@@ -803,7 +817,7 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             temperature=temperature,
             supports_vision=True,
             supports_system_prompt=True,
-            supports_reasoning=model_supports_reasoning,
+            supports_reasoning=actual_reasoning,
             extra_params={
                 "model_path": model_path,
                 "mmproj_path": mmproj_path,
@@ -824,6 +838,6 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         print(f"  Max tokens: {max_tokens}, Model resolution: {max_image_resolution}")
         resize_info = f"resize to {max_image_size}px" if max_image_size != "Original" else "no resize"
         print(f"  Image preprocessing: {resize_info}")
-        print(f"  Creativity: {temperature}, Reasoning: {model_supports_reasoning}")
+        print(f"  Creativity: {temperature}, Reasoning: {actual_reasoning}")
 
         return comfy_io.NodeOutput(config)
