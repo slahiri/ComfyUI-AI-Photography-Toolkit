@@ -41,3 +41,4 @@ Issues = "https://github.com/slahiri/ComfyUI-AI-Photography-Toolkit/issues"
 PublisherId = "slahiri"
 DisplayName = "SID AI Photography Toolkit"
 Icon = "https://raw.githubusercontent.com/slahiri/ComfyUI-AI-Photography-Toolkit/master/docs/images/workflow-screenshot.png"
+exclude = [".venv", "__pycache__", "*.pyc", ".git", "cache", "improvement_sessions", ".env"]
