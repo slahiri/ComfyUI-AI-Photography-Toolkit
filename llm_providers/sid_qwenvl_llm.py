@@ -3,13 +3,15 @@ SID_QwenVL_LLM Node
 
 QwenVL vision-language model provider using HuggingFace transformers.
 No llama-cpp-python required - uses transformers with BitsAndBytes quantization.
-Supports Qwen2.5-VL and Qwen3-VL models (Instruct and Thinking variants).
 
-Enhanced with features from ComfyUI-QwenVL:
-- VRAM auto-downgrade
-- Attention mode selection
+Supports Qwen3-VL models:
+- Instruct variants: 2B, 4B, 8B, 32B (standard instruction-following)
+- Thinking variants: 2B, 4B, 8B (reasoning/analysis models)
+
+Features:
+- VRAM auto-downgrade with 20% safety margin
+- Attention mode selection (flash_attention_2, sdpa)
 - Generation parameters (num_beams, repetition_penalty, top_p)
-- More model options including Thinking and FP8 variants
 """
 
 import os
@@ -105,39 +107,6 @@ QWENVL_MODELS: Dict[str, QwenVLModelInfo] = {
         description="High quality reasoning"
     ),
 
-    # =========================================================================
-    # Qwen3-VL Series - Pre-quantized FP8
-    # =========================================================================
-    "Qwen3-VL-4B-Instruct-FP8": QwenVLModelInfo(
-        name="Qwen3-VL 4B FP8 (2.5GB) - Pre-quantized",
-        repo_id="Qwen/Qwen3-VL-4B-Instruct-FP8",
-        vram_fp16=2.5, vram_8bit=2.5, vram_4bit=2.5,  # FP8 has fixed size
-        is_fp8=True,
-        description="Pre-quantized, very fast loading"
-    ),
-    "Qwen3-VL-8B-Instruct-FP8": QwenVLModelInfo(
-        name="Qwen3-VL 8B FP8 (7.5GB) - Pre-quantized",
-        repo_id="Qwen/Qwen3-VL-8B-Instruct-FP8",
-        vram_fp16=7.5, vram_8bit=7.5, vram_4bit=7.5,
-        is_fp8=True,
-        description="Pre-quantized 8B, fast loading"
-    ),
-
-    # =========================================================================
-    # Qwen2.5-VL Series (Stable)
-    # =========================================================================
-    "Qwen2.5-VL-3B-Instruct": QwenVLModelInfo(
-        name="Qwen2.5-VL 3B (6GB) - Stable",
-        repo_id="Qwen/Qwen2.5-VL-3B-Instruct",
-        vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
-        description="Stable, well-tested"
-    ),
-    "Qwen2.5-VL-7B-Instruct": QwenVLModelInfo(
-        name="Qwen2.5-VL 7B (15GB) - Best Stable",
-        repo_id="Qwen/Qwen2.5-VL-7B-Instruct",
-        vram_fp16=15.0, vram_8bit=8.5, vram_4bit=5.0,
-        description="Best quality 2.5 model"
-    ),
 }
 
 
@@ -634,17 +603,14 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
     No llama-cpp-python required - easier installation than GGUF.
 
     Features:
-    - Auto VRAM management with downgrade
+    - Auto VRAM management with downgrade (20% safety margin)
     - Attention mode selection (flash_attention_2, sdpa)
     - Generation parameters (num_beams, repetition_penalty, top_p)
-    - Thinking/Reasoning model variants
-    - Pre-quantized FP8 models for fast loading
+    - Thinking/Reasoning model variants for Agentic mode
 
-    Supported models:
-    - Qwen3-VL 2B/4B/8B/32B Instruct
+    Supported models (7 total):
+    - Qwen3-VL 2B/4B/8B/32B Instruct (standard)
     - Qwen3-VL 2B/4B/8B Thinking (reasoning)
-    - Qwen3-VL FP8 pre-quantized
-    - Qwen2.5-VL 3B/7B Instruct
     """
 
     PROVIDER_NAME = "qwenvl"
@@ -691,13 +657,11 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             f"QwenVL Local Vision Models{vram_info}\n\n"
             "No API needed, no llama-cpp-python required.\n"
             "Uses HuggingFace transformers + BitsAndBytes.\n\n"
-            "Instruct Models:\n"
+            "Instruct Models (standard):\n"
             "- 2B: 1.5-4GB, 4B: 2-6GB (Recommended)\n"
             "- 8B: 4.5-12GB, 32B: 8.5-28GB\n\n"
-            "Thinking Models (Reasoning):\n"
-            "- 2B/4B/8B-Thinking: Better analysis\n\n"
-            "FP8 Pre-quantized:\n"
-            "- Fast loading, fixed VRAM"
+            "Thinking Models (reasoning, for Agentic mode):\n"
+            "- 2B: 1.5-4GB, 4B: 2-6GB, 8B: 4.5-12GB"
         )
 
         return comfy_io.Schema(
