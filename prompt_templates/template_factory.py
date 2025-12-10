@@ -66,6 +66,10 @@ def get_prompt_template_for_provider(
     if provider_lower == "gguf":
         return _get_template_instance(PromptTemplateType.LOCAL_GGUF)
 
+    elif provider_lower == "qwenvl":
+        # QwenVL models work best with simpler prompts like GGUF
+        return _get_template_instance(PromptTemplateType.LOCAL_GGUF)
+
     elif provider_lower == "ollama":
         # Ollama can run various models - check model name for hints
         if model:

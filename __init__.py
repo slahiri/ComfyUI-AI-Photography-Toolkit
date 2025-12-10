@@ -7,7 +7,7 @@ Author: Siddhartha Lahiri
 Version: 4.0.0
 """
 
-__version__ = "4.2.0"
+__version__ = "4.1.1"
 
 import os
 import sys
@@ -281,6 +281,7 @@ from .llm_providers.sid_anthropic_llm import SID_Anthropic_LLM
 from .llm_providers.sid_openai_compatible_llm import SID_OpenAI_Compatible_LLM
 from .llm_providers.sid_grok_llm import SID_Grok_LLM
 from .llm_providers.sid_gguf_llm import SID_GGUF_LLM
+from .llm_providers.sid_qwenvl_llm import SID_QwenVL_LLM
 
 
 class SIDPhotographyToolkitExtension(ComfyExtension):
@@ -304,6 +305,7 @@ class SIDPhotographyToolkitExtension(ComfyExtension):
             SID_OpenAI_Compatible_LLM,
             SID_Grok_LLM,
             SID_GGUF_LLM,
+            SID_QwenVL_LLM,
         ]
 
 
@@ -379,10 +381,11 @@ def print_welcome_message():
     print("    - SID_Anthropic_LLM        Anthropic Claude (cloud)")
     print("    - SID_OpenAI_Compatible_LLM OpenAI/GPT/Together AI/LM Studio")
     print("    - SID_Grok_LLM             xAI Grok (cloud)")
+    print("    - SID_QwenVL_LLM           Local Qwen VL (transformers, easy setup)")
     if llama_status in ["installed", "just_installed"]:
-        print(f"    - SID_GGUF_LLM             Local GGUF models ({gpu_desc})")
+        print(f"    - SID_GGUF_LLM             [Deprecated] Local GGUF ({gpu_desc})")
     else:
-        print("    - SID_GGUF_LLM             [install failed - see README]")
+        print("    - SID_GGUF_LLM             [Deprecated] Use SID_QwenVL_LLM instead")
 
     print("")
     print("  GGUF models location: ComfyUI/models/LLM/GGUF/")

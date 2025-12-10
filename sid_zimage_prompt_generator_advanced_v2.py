@@ -1108,6 +1108,16 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
                 n_gpu_layers=extra.get("n_gpu_layers", -1),
                 verbose=False,
             )
+        elif provider == "qwenvl":
+            # QwenVL model using HuggingFace transformers
+            from .llm_providers.sid_qwenvl_llm import QwenVLClient
+            extra = llm_model.extra_params or {}
+            return QwenVLClient(
+                model_name=llm_model.model,
+                quantization=extra.get("quantization", "4-bit"),
+                device=extra.get("device", "auto"),
+                keep_model_loaded=extra.get("keep_model_loaded", True),
+            )
         else:
             raise ValueError(f"Unsupported provider: {provider}")
 

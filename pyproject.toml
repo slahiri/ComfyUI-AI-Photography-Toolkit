@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-ai-photography-toolkit"
 description = "AI-powered Z-Image prompt generator for ComfyUI. Analyzes images and generates flowing narrative prompts optimized for Z-Image models."
-version = "4.1.0"
+version = "4.1.1"
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -30,6 +30,14 @@ dependencies = [
     "pyyaml>=6.0",
     "pillow>=10.0.0",
     "numpy>=1.24.0",
+    "transformers>=4.45.0",
+    "accelerate>=0.25.0",
+]
+
+[project.optional-dependencies]
+# For QwenVL with 4-bit/8-bit quantization (CUDA only)
+quantization = [
+    "bitsandbytes>=0.41.0",
 ]
 
 [project.urls]

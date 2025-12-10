@@ -598,7 +598,8 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
 
         # Build model info for description
         model_info_text = (
-            "Local GGUF vision models - No API needed. All support 1024x1024+ images.\n\n"
+            "[DEPRECATED] Use SID_QwenVL_LLM instead - easier installation!\n\n"
+            "Local GGUF vision models - Requires llama-cpp-python (platform-specific build).\n\n"
             "Models:\n"
             "- Qwen3-VL 2B Q4: 4GB VRAM, Dynamic res, Good (fast)\n"
             "- Qwen2.5-VL 7B Q4: 6GB VRAM, Dynamic res, Excellent (recommended)\n"
@@ -620,7 +621,7 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
 
         return comfy_io.Schema(
             node_id="SID_GGUF_LLM",
-            display_name="SID GGUF LLM",
+            display_name="SID GGUF LLM [Deprecated]",
             category="SID Photography Toolkit/LLM Providers",
             description=model_info_text,
             inputs=[
