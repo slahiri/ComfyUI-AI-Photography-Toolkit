@@ -1,0 +1,440 @@
+# =============================================================================
+# Component Definitions for Agentic Analysis
+# =============================================================================
+# Each component has prompts for different tiers (advanced/standard/basic)
+# Advanced tier requests JSON output; Basic tier requests plain text
+
+
+# =============================================================================
+# FRAMING & COMPOSITION
+# =============================================================================
+
+[framing]
+name = "Framing & Composition"
+
+[framing.advanced]
+prompt = """
+Analyze ONLY the framing and composition:
+1. COLOR MODE: Color or black & white?
+2. SHOT TYPE: ECU/BCU/CU/MCU/MS/MFS/FS/LS
+3. SUBJECT POSE: Standing/Seated/Lying/Kneeling/Leaning
+4. CAMERA ANGLE: Eye level, above, below?
+5. DEPTH OF FIELD: Shallow/medium/deep?
+
+Output JSON:
+{"shot_type": "<code>", "subject_pose": "<pose>", "frame_fill_percent": <number>, "camera_angle": "<angle>", "depth_of_field": "<dof>", "color_mode": "<color/bw>", "prompt_description": "<complete framing description>"}
+"""
+
+[framing.standard]
+prompt = """
+Describe the framing:
+- Shot type (close-up, medium, full shot)
+- Camera angle (eye level, above, below)
+- Subject position in frame
+- Depth of field (blurry or sharp background)
+"""
+
+[framing.basic]
+prompt = "Describe the camera shot type and angle. Is the background blurry or sharp?"
+
+
+# =============================================================================
+# ETHNICITY & DEMOGRAPHICS
+# =============================================================================
+
+[ethnicity]
+name = "Ethnicity & Demographics"
+
+[ethnicity.advanced]
+prompt = """
+Analyze the subject's demographics:
+1. ETHNICITY: Be specific (East Asian, South Asian, European, etc.)
+2. SKIN TONE: Base tone + undertone (warm/cool/olive)
+3. AGE RANGE: young adult, adult, middle-aged, etc.
+4. GENDER: female/male
+
+Output JSON:
+{"ethnicity": "<specific>", "skin_tone_base": "<tone>", "skin_tone_undertone": "<undertone>", "age_range": "<range>", "gender": "<gender>", "prompt_description": "<demographics description>"}
+"""
+
+[ethnicity.standard]
+prompt = """
+Describe the subject:
+- Ethnicity or heritage
+- Skin tone
+- Approximate age
+- Gender
+"""
+
+[ethnicity.basic]
+prompt = "Describe the person: their ethnicity, skin tone, approximate age, and gender."
+
+
+# =============================================================================
+# HAIR ANALYSIS
+# =============================================================================
+
+[hair]
+name = "Hair Analysis"
+
+[hair.advanced]
+prompt = """
+Analyze the hair (ARRANGEMENT FIRST):
+1. ARRANGEMENT: Updo/Ponytail/Braided/Half-up/Loose/Short
+2. COLOR: Base color + highlights
+3. TEXTURE: Straight/wavy/curly
+4. LENGTH: Short/shoulder/mid-back/long
+
+Output JSON:
+{"arrangement": "<style>", "base_color": "<color>", "texture": "<texture>", "length": "<length>", "prompt_description": "<hair description starting with arrangement>"}
+"""
+
+[hair.standard]
+prompt = """
+Describe the hair:
+- Style/arrangement (up, down, ponytail, etc.)
+- Color
+- Texture (straight, wavy, curly)
+- Length
+"""
+
+[hair.basic]
+prompt = "Describe the hair: style, color, and length."
+
+
+# =============================================================================
+# FACE ANALYSIS
+# =============================================================================
+
+[face]
+name = "Face Shape & Angle"
+
+[face.advanced]
+prompt = """
+Analyze face shape and positioning:
+1. FACE SHAPE: Oval/round/heart/square/diamond
+2. FACE ANGLE: Frontal/3/4 left/3/4 right/profile
+3. HEAD TILT: Level/tilted
+
+Output JSON:
+{"shape": "<shape>", "angle": "<angle>", "tilt": "<tilt>", "prompt_description": "<face description>"}
+"""
+
+[face.standard]
+prompt = """
+Describe the face:
+- Face shape
+- Which direction they're facing
+- Expression
+"""
+
+[face.basic]
+prompt = "Describe the face shape and which direction the person is looking."
+
+
+# =============================================================================
+# EYES ANALYSIS
+# =============================================================================
+
+[eyes]
+name = "Eyes Analysis"
+
+[eyes.advanced]
+prompt = """
+Analyze the eyes:
+1. COLOR: Specific color with variations
+2. SHAPE: Almond/round/hooded/monolid
+3. GAZE: Direction
+4. EXPRESSION: Soft/intense/playful
+5. MAKEUP: If any
+
+Output JSON:
+{"color": "<color>", "shape": "<shape>", "gaze": "<direction>", "expression": "<expression>", "makeup": "<if any>", "prompt_description": "<eyes description>"}
+"""
+
+[eyes.standard]
+prompt = """
+Describe the eyes:
+- Eye color
+- Eye shape
+- Where they're looking
+- Any eye makeup
+"""
+
+[eyes.basic]
+prompt = "Describe the eye color, shape, and any makeup."
+
+
+# =============================================================================
+# NOSE & LIPS
+# =============================================================================
+
+[nose_lips]
+name = "Nose & Lips"
+
+[nose_lips.advanced]
+prompt = """
+Analyze nose and lips:
+NOSE: Shape, bridge height
+LIPS: Shape, fullness, color/makeup, state (closed/parted/smiling)
+
+Output JSON:
+{"nose_shape": "<shape>", "lip_shape": "<shape>", "lip_color": "<color>", "lip_state": "<state>", "prompt_description": "<nose and lips description>"}
+"""
+
+[nose_lips.standard]
+prompt = """
+Describe nose and lips:
+- Nose shape
+- Lip shape and color
+- Expression (smiling, parted, etc.)
+"""
+
+[nose_lips.basic]
+prompt = "Describe the nose shape and lip color/expression."
+
+
+# =============================================================================
+# BODY & POSE
+# =============================================================================
+
+[body_pose]
+name = "Body & Pose"
+
+[body_pose.advanced]
+prompt = """
+Analyze visible body and pose:
+1. VISIBLE PARTS: What's visible
+2. POSTURE: Upright/relaxed/leaning
+3. ARM/HAND POSITIONS: If visible
+4. BODY ANGLE: Facing camera or angled
+
+Output JSON:
+{"visible_parts": ["<list>"], "posture": "<posture>", "body_angle": "<angle>", "arms": "<position>", "prompt_description": "<pose description>"}
+"""
+
+[body_pose.standard]
+prompt = """
+Describe the pose:
+- What body parts are visible
+- Posture (standing, sitting, etc.)
+- Arm and hand positions
+"""
+
+[body_pose.basic]
+prompt = "Describe how the person is posed and what body parts are visible."
+
+
+# =============================================================================
+# CLOTHING ANALYSIS
+# =============================================================================
+
+[clothing]
+name = "Clothing Analysis"
+
+[clothing.advanced]
+prompt = """
+Analyze ONLY VISIBLE clothing:
+For each garment:
+1. TYPE: Dress/top/pants/etc.
+2. NECKLINE: If visible
+3. COLOR: Specific
+4. MATERIAL: Silk/satin/cotton/etc.
+5. FIT: Fitted/loose
+
+ONLY describe what you can SEE - do not invent details.
+
+Output JSON:
+{"garments": [{"type": "<type>", "color": "<color>", "material": "<material>"}], "overall_style": "<style>", "prompt_description": "<clothing description>"}
+"""
+
+[clothing.standard]
+prompt = """
+Describe visible clothing:
+- Each clothing item
+- Colors
+- Materials if identifiable
+- Overall style
+"""
+
+[clothing.basic]
+prompt = "Describe what the person is wearing. Include colors and type of clothing."
+
+
+# =============================================================================
+# INTIMATE APPAREL
+# =============================================================================
+
+[intimate_apparel]
+name = "Intimate Apparel"
+
+[intimate_apparel.advanced]
+prompt = """
+Analyze visible intimate apparel/lingerie:
+BRA: Style, coverage, straps, material, color
+BOTTOMS: Style, coverage, material
+GARTER/STOCKINGS: If visible
+
+Output JSON:
+{"bra": {"style": "<style>", "material": "<material>", "color": "<color>"}, "bottoms": {"style": "<style>", "color": "<color>"}, "stockings": {"present": true/false, "type": "<type>"}, "prompt_description": "<intimate apparel description>"}
+"""
+
+[intimate_apparel.standard]
+prompt = """
+If visible, describe intimate apparel:
+- Bra style and color
+- Bottoms style and color
+- Any stockings or garters
+"""
+
+[intimate_apparel.basic]
+prompt = "If visible, describe any lingerie or intimate apparel with colors."
+
+
+# =============================================================================
+# TATTOOS
+# =============================================================================
+
+[tattoos]
+name = "Tattoos"
+
+[tattoos.advanced]
+prompt = """
+Analyze visible tattoos:
+For each: Location, size, style, subject, colors
+
+Output JSON:
+{"has_tattoos": true/false, "tattoos": [{"location": "<location>", "style": "<style>", "subject": "<subject>"}], "prompt_description": "<tattoos description or 'no visible tattoos'>"}
+"""
+
+[tattoos.standard]
+prompt = """
+Describe any visible tattoos:
+- Location on body
+- What the tattoo depicts
+- Style and colors
+"""
+
+[tattoos.basic]
+prompt = "Describe any visible tattoos and where they are located."
+
+
+# =============================================================================
+# ACCESSORIES
+# =============================================================================
+
+[accessories]
+name = "Accessories"
+
+[accessories.advanced]
+prompt = """
+Analyze accessories/jewelry:
+For each: Type, style, material, color, size
+
+Output JSON:
+{"accessories": [{"type": "<type>", "material": "<material>", "color": "<color>"}], "prompt_description": "<accessories description>"}
+"""
+
+[accessories.standard]
+prompt = """
+Describe accessories and jewelry:
+- Type of item
+- Material (gold, silver, etc.)
+- Notable details
+"""
+
+[accessories.basic]
+prompt = "Describe any jewelry or accessories the person is wearing."
+
+
+# =============================================================================
+# LIGHTING & BACKGROUND
+# =============================================================================
+
+[lighting]
+name = "Lighting & Background"
+
+[lighting.advanced]
+prompt = """
+Analyze lighting and background:
+LIGHTING: Type, direction, quality, color temperature
+SHADOWS: Density, direction
+BACKGROUND: Type, color, blur level
+
+Output JSON:
+{"light_type": "<type>", "light_direction": "<direction>", "light_quality": "<quality>", "background_type": "<type>", "background_color": "<color>", "background_blur": "<blur>", "prompt_description": "<lighting and background description>"}
+"""
+
+[lighting.standard]
+prompt = """
+Describe lighting and background:
+- Light source direction
+- Light quality (soft, harsh)
+- Background description
+- How blurred is the background
+"""
+
+[lighting.basic]
+prompt = "Describe the lighting (soft or harsh, direction) and the background."
+
+
+# =============================================================================
+# SUBJECT DETECTION
+# =============================================================================
+
+[subject_detection]
+name = "Subject Detection"
+
+[subject_detection.advanced]
+prompt = """
+Identify the PRIMARY SUBJECT TYPE:
+WOMAN, MAN, COUPLE, GROUP, VEHICLE, LANDSCAPE, ANIMAL, PRODUCT, OTHER
+
+Output JSON:
+{"subject_type": "<type>", "has_human": true/false, "human_gender": "<female/male/none>", "main_focus": "<description>"}
+"""
+
+[subject_detection.standard]
+prompt = "What is the main subject of this image? Is it a person (specify gender), vehicle, landscape, or something else?"
+
+[subject_detection.basic]
+prompt = "What is the main subject: a woman, man, or something else?"
+
+
+# =============================================================================
+# ANALYSIS MODE CONFIGURATIONS
+# =============================================================================
+# Which components to analyze for each mode
+
+[modes.quick]
+components = ["framing", "ethnicity", "clothing"]
+description = "Fast single-call caption"
+include_lighting = false
+include_pose = false
+include_intimate = false
+include_tattoos = false
+
+[modes.standard]
+components = ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "clothing", "lighting"]
+description = "Balanced analysis"
+include_lighting = true
+include_pose = true
+include_intimate = false
+include_tattoos = false
+
+[modes.detailed]
+components = ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"]
+description = "Full analysis with intimate/tattoos"
+include_lighting = true
+include_pose = true
+include_intimate = true
+include_tattoos = true
+
+[modes.extreme]
+components = ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"]
+description = "Maximum detail, raw output"
+include_lighting = true
+include_pose = true
+include_intimate = true
+include_tattoos = true
+raw_mode = true

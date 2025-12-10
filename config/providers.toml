@@ -1,0 +1,97 @@
+# =============================================================================
+# Provider Configuration for SID Photography Toolkit
+# =============================================================================
+# This file defines provider tiers, capabilities, and stop strings.
+# Tiers: "advanced" (cloud APIs), "standard" (capable local), "basic" (simple local)
+
+[tiers]
+# Provider tier mappings - determines prompt complexity
+anthropic = "advanced"
+openai = "advanced"
+google = "advanced"
+gemini = "advanced"
+mistral = "advanced"
+deepseek = "advanced"
+cohere = "advanced"
+together = "standard"
+fireworks = "standard"
+groq = "standard"
+perplexity = "standard"
+openrouter = "advanced"
+xai = "advanced"
+grok = "advanced"
+
+# Local providers - simpler prompts work better
+ollama = "basic"
+lmstudio = "basic"
+kobold = "basic"
+local = "basic"
+custom = "standard"  # Assume standard unless proven otherwise
+
+[tier_descriptions]
+advanced = "Full-featured cloud APIs (Claude, GPT-4, Gemini) - complex multi-step prompts"
+standard = "Capable models with some limitations - moderate prompt complexity"
+basic = "Local/lightweight models - simple, direct prompts work best"
+
+
+# =============================================================================
+# Stop Strings by Provider
+# =============================================================================
+# These sequences signal the LLM to stop generating, preventing text leakage.
+
+[stop_strings]
+# Local providers need aggressive stop strings to prevent rambling
+ollama = ["\n\n\n\n\n", "\n\n\n\n", "---", "```\n\n"]
+lmstudio = ["\n\n\n", "```\n\n", "---", "\n\n---"]
+kobold = ["\n\n\n\n\n", "###", "---", "```"]
+
+# Cloud providers generally handle stopping well
+mistral = ["\n\n"]
+anthropic = []  # Claude handles this excellently
+openai = []     # GPT handles this well
+google = []
+default = []
+
+
+# =============================================================================
+# Provider Capabilities
+# =============================================================================
+# What each provider tier can handle
+
+[capabilities.advanced]
+max_prompt_items = 12          # Can handle long numbered lists
+supports_json_output = true    # Reliably outputs valid JSON
+supports_system_prompt = true  # Full system prompt support
+supports_reasoning = true      # Extended thinking capability
+max_context_tokens = 128000    # Large context windows
+recommended_temperature = 0.7
+
+[capabilities.standard]
+max_prompt_items = 8
+supports_json_output = true
+supports_system_prompt = true
+supports_reasoning = false
+max_context_tokens = 32000
+recommended_temperature = 0.5
+
+[capabilities.basic]
+max_prompt_items = 4           # Keep prompts short and simple
+supports_json_output = false   # Often produces malformed JSON
+supports_system_prompt = true  # Most support system prompts
+supports_reasoning = false
+max_context_tokens = 8000
+recommended_temperature = 0.3  # Lower temperature for consistency
+
+
+# =============================================================================
+# Image Size Limits by Provider
+# =============================================================================
+
+[image_limits]
+# Maximum image dimensions for optimal processing
+anthropic = 1568
+openai = 2048
+ollama = 1024
+lmstudio = 1024
+local = 768
+default = 1024

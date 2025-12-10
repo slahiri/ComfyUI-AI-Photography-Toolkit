@@ -1,0 +1,241 @@
+# =============================================================================
+# Prompt Templates for SID Photography Toolkit
+# =============================================================================
+# Prompts are organized by tier (advanced/standard/basic) and mode (quick/standard/detailed/extreme)
+# Triple-quoted strings (""") allow multi-line prompts
+
+
+# =============================================================================
+# SYSTEM PROMPTS - Set the model's role and behavior
+# =============================================================================
+
+[system.advanced]
+# For Claude, GPT-4, Gemini - full capability
+base = """
+You are an expert visual analyst for text-to-image AI prompts.
+Generate a detailed, flowing narrative prompt capturing all visible elements.
+Focus on: composition, subject, clothing, lighting, background.
+Output ONLY the prompt text - no explanations or formatting.
+"""
+
+[system.standard]
+# For mid-tier models - slightly simplified
+base = """
+You are an image analysis expert creating prompts for AI image generation.
+Describe the image in detail focusing on subject, clothing, pose, and setting.
+Output only the description, no extra text.
+"""
+
+[system.basic]
+# For local models like LLaVA, Moondream - keep it simple
+base = """
+Describe this image for AI image generation.
+Focus on: subject, clothing, pose, lighting, background.
+Output only the description.
+"""
+
+
+# =============================================================================
+# PRESET STYLE ADDONS - Added to system prompt based on selected style
+# =============================================================================
+
+[styles.portrait]
+system_addon = "Focus heavily on facial features, expression, skin quality, and makeup details."
+user_addon = "Emphasize the subject's face, expression, and upper body appearance."
+
+[styles.fashion]
+system_addon = "Focus heavily on clothing details, materials, colors, fit, and accessories."
+user_addon = "Emphasize all clothing items, materials, textures, and fashion styling."
+
+[styles.artistic]
+system_addon = "Focus on artistic and photographic qualities - composition, lighting, color palette, mood."
+user_addon = "Emphasize the artistic qualities: composition, lighting style, color tones, and overall mood."
+
+[styles.nsfw]
+system_addon = "Include comprehensive body and intimate apparel details. Be specific about all visible features."
+user_addon = "Provide detailed analysis of body, intimate apparel, and all visible features."
+
+[styles.auto]
+# No addon - let the model decide
+system_addon = ""
+user_addon = ""
+
+
+# =============================================================================
+# USER PROMPTS BY MODE - ADVANCED TIER (Claude, GPT-4, Gemini)
+# =============================================================================
+
+[user.advanced.quick]
+prompt = "Generate a brief, accurate prompt for this image in 50-100 words."
+
+[user.advanced.standard]
+prompt = """
+Analyze this image and generate a detailed prompt covering:
+1. FRAMING: Shot type, camera angle, depth of field
+2. SUBJECT: Ethnicity, gender, age, skin tone
+3. HAIR: Arrangement, color, texture
+4. FACE: Shape, expression, makeup
+5. CLOTHING: Garments, colors, materials (ONLY what's visible)
+6. POSE: Body position, posture
+7. LIGHTING: Direction, quality, background
+
+Generate a flowing paragraph combining all elements.
+"""
+
+[user.advanced.detailed]
+prompt = """
+Generate a COMPREHENSIVE prompt covering:
+FRAMING: Shot type, pose (standing/seated/lying), camera angle, depth of field
+SUBJECT: Specific ethnicity, skin tone with undertones, age, gender
+HAIR: Arrangement FIRST (updo/ponytail/loose), color, texture, length
+FACE: Shape, angle, expression
+EYES: Color, shape, gaze, makeup
+NOSE & LIPS: Shape, color, state
+BODY: Visible parts, posture, arm/hand positions
+CLOTHING: All visible garments with details
+INTIMATE APPAREL: If visible - bra style, bottoms, stockings
+TATTOOS: Location, style, subject
+ACCESSORIES: Jewelry details
+LIGHTING: Direction, quality, shadows, background
+
+Generate a detailed flowing description.
+"""
+
+[user.advanced.extreme]
+prompt = """
+Generate an EXTREMELY detailed prompt with MAXIMUM precision.
+Analyze EVERY visible element: exact shot type, precise ethnicity, skin undertones,
+hair arrangement and styling, facial features, eye details with makeup,
+nose and lip shapes, full body pose, ALL clothing with materials/colors,
+ALL intimate apparel details if visible, ALL tattoos with locations/styles,
+ALL accessories, and complete lighting/background analysis.
+
+Output a comprehensive, flowing narrative with all details.
+"""
+
+
+# =============================================================================
+# USER PROMPTS BY MODE - STANDARD TIER (Together, Fireworks, Groq)
+# =============================================================================
+
+[user.standard.quick]
+prompt = "Describe this image in 50 words for AI generation."
+
+[user.standard.standard]
+prompt = """
+Describe this image covering:
+- Shot type and framing
+- Subject appearance (ethnicity, age, gender)
+- Hair style and color
+- Clothing details
+- Pose and expression
+- Lighting and background
+
+Write a flowing description.
+"""
+
+[user.standard.detailed]
+prompt = """
+Describe this image in detail:
+- Framing and camera angle
+- Subject: ethnicity, skin tone, age
+- Hair: style, color, length
+- Face: shape, expression, makeup
+- Clothing: all visible items with colors and materials
+- Body pose and positioning
+- Lighting quality and direction
+- Background details
+
+Write a comprehensive description.
+"""
+
+[user.standard.extreme]
+prompt = """
+Describe every visible detail:
+Subject appearance, hair styling, facial features, eye details,
+all clothing items, body pose, any tattoos or accessories,
+and complete lighting/background analysis.
+
+Write the most detailed description possible.
+"""
+
+
+# =============================================================================
+# USER PROMPTS BY MODE - BASIC TIER (Ollama, LM Studio, Local)
+# =============================================================================
+
+[user.basic.quick]
+prompt = "Describe this image in 30-50 words. Include subject, clothing, and setting."
+
+[user.basic.standard]
+prompt = """
+Describe this image:
+- Who is in the image (gender, ethnicity, age)
+- What they are wearing
+- Their pose
+- The lighting and background
+
+Write a simple description.
+"""
+
+[user.basic.detailed]
+prompt = """
+Describe this image in detail:
+- Subject: gender, ethnicity, skin tone, age
+- Hair: color, style
+- Face: expression
+- Clothing: what they wear, colors
+- Pose: how they are positioned
+- Background: what's behind them
+
+Write a clear description.
+"""
+
+[user.basic.extreme]
+# Even extreme mode is simplified for basic tier
+prompt = """
+Describe everything visible in this image:
+- Subject appearance and demographics
+- Hair color and style
+- Facial expression
+- All clothing with colors
+- Body pose
+- Any jewelry or accessories
+- Lighting and background
+
+Be thorough but clear.
+"""
+
+
+# =============================================================================
+# AGENTIC PROMPTS - For reasoning-enabled multi-step analysis
+# =============================================================================
+
+[agentic.advanced]
+# Full agentic prompt for advanced models
+intro = """
+You are performing a comprehensive visual analysis for Z-Image prompt generation.
+Analyze each component separately, then synthesize into a flowing prompt.
+"""
+
+synthesis = """
+Now combine all analysis into a single flowing narrative prompt.
+Start with framing, then subject, then details, then lighting.
+Output ONLY the final prompt text.
+"""
+
+[agentic.standard]
+intro = """
+Analyze this image step by step for prompt generation.
+Focus on the most important visual elements.
+"""
+
+synthesis = """
+Combine your analysis into a single description.
+Focus on subject, clothing, pose, and setting.
+"""
+
+[agentic.basic]
+# Simplified for local models - single pass instead of multi-step
+intro = "Describe this image for AI image generation."
+synthesis = "Write a clear description of what you see."

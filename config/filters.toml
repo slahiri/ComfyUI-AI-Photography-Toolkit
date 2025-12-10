@@ -1,0 +1,84 @@
+# =============================================================================
+# Output Filters for SID Photography Toolkit
+# =============================================================================
+# These patterns are used to clean LLM output and remove leaked example text
+# Note: Use double-quoted strings for regex patterns that need escaping
+
+
+# =============================================================================
+# EXAMPLE TEXT PATTERNS TO REMOVE
+# =============================================================================
+# Regex patterns that match example/placeholder text that shouldn't be in output
+
+[example_patterns]
+# MCU text that was leaking in the original issue
+patterns = [
+    "MCU head and shoulders portrait[^,]*,",
+    "subject fills \\d+% of frame[^,]*,",
+    "shallow depth of field with soft bokeh background[^,]*,",
+    "e\\.g\\.,?\\s*['\"][^'\"]+['\"]",
+    "<[^>]+>",
+    "\\[YOUR [^\\]]+\\]",
+    "\\[PLACEHOLDER[^\\]]*\\]",
+    "DO NOT copy",
+    "describe THIS image",
+    "ONLY describe what you can SEE",
+    "do not invent details",
+    "^Here'?s? (?:the |a )?prompt[:\\s]*",
+    "^(?:The )?prompt[:\\s]*",
+    "^Output[:\\s]*",
+    "^Description[:\\s]*",
+    "^Image description[:\\s]*",
+]
+
+
+# =============================================================================
+# MARKDOWN PATTERNS TO CLEAN
+# =============================================================================
+
+[markdown_patterns]
+# Remove markdown formatting from output
+patterns = [
+    "```[a-z]*\\n?",
+    "\\*\\*([^*]+)\\*\\*",
+    "\\*([^*]+)\\*",
+    "^#+\\s+",
+    "^[-*]\\s+",
+    "\\[([^\\]]+)\\]\\([^)]+\\)",
+]
+
+
+# =============================================================================
+# WHITESPACE CLEANUP
+# =============================================================================
+
+[whitespace]
+# Patterns for cleaning up whitespace issues
+collapse_newlines = "\\n\\s*\\n"
+collapse_spaces = "\\s+"
+double_commas = ",\\s*,"
+leading_comma = "^\\s*,\\s*"
+trailing_comma = "\\s*,\\s*$"
+double_periods = "\\.\\s*\\."
+
+
+# =============================================================================
+# PROVIDER-SPECIFIC CLEANUP
+# =============================================================================
+
+[provider_cleanup.ollama]
+# Extra patterns for Ollama models
+patterns = [
+    "\\n\\n\\n+",
+    "Note:.*$",
+    "I hope this helps.*$",
+]
+
+[provider_cleanup.lmstudio]
+patterns = [
+    "```\\n*$",
+    "Let me know.*$",
+]
+
+[provider_cleanup.default]
+patterns = []

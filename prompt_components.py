@@ -44,14 +44,14 @@ Output JSON:
     "color_mode": "<color/black_and_white/sepia>",
     "color_style": "<if B&W: high contrast, soft, film noir, etc.>",
     "shot_type": "<code>",
-    "shot_description": "<e.g., 'head and shoulders visible, upper chest in frame'>",
+    "shot_description": "<describe what body parts are visible in THIS image>",
     "subject_pose": "<standing/seated/lying/kneeling/leaning>",
     "subject_position": "<position>",
     "frame_fill_percent": <number>,
     "camera_angle": "<angle>",
     "depth_of_field": "<shallow/medium/deep>",
     "background_blur": "<description of blur level>",
-    "prompt_description": "<complete framing description for prompt, e.g. 'MCU head and shoulders portrait, subject fills 70% of frame, shallow depth of field with soft bokeh background'>"
+    "prompt_description": "<YOUR framing description - DO NOT copy the example, describe THIS image>"
 }"""
     },
 
@@ -99,7 +99,7 @@ Output JSON:
     "skin_description": "<full description for prompt>",
     "age_range": "<range>",
     "gender": "<gender>",
-    "prompt_description": "<complete ethnicity and demographics description for prompt, e.g. 'South Asian woman in her 20s with warm medium skin tone and olive undertones'>"
+    "prompt_description": "<YOUR ethnicity/demographics description for THIS image - DO NOT copy examples>"
 }"""
     },
 
@@ -143,7 +143,7 @@ Output JSON:
     "texture": "<texture>",
     "length": "<length>",
     "condition": "<condition>",
-    "prompt_description": "<START with arrangement (e.g. 'half-up styled hair with...'), THEN describe rest>"
+    "prompt_description": "<YOUR hair description - START with arrangement, then color/texture/length>"
 }"""
     },
 

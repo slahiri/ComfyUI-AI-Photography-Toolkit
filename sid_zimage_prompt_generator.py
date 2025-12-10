@@ -25,6 +25,7 @@ from comfy_api.latest import io as comfy_io
 import comfy.utils
 
 from .llm_providers.llm_model_type import LLMModelConfig
+from . import config_loader
 
 # Create custom LLM_MODEL type for ComfyUI
 LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
@@ -408,9 +409,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         img_tensor = image[0]
         base64_image = cls._image_to_base64(img_tensor, llm_model)
 
-        # Build prompts
-        system_prompt = cls._build_system_prompt(analysis_mode, preset_style, user_guidance)
-        user_prompt = cls._build_user_prompt(analysis_mode, preset_style, user_guidance)
+        # Build prompts (tier-aware based on provider)
+        system_prompt = cls._build_system_prompt(llm_model.provider, preset_style, user_guidance)
+        user_prompt = cls._build_user_prompt(llm_model.provider, analysis_mode, preset_style)
 
         # Get client and call
         client = cls._get_client(llm_model)
@@ -419,7 +420,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         pbar.update(1)
 
         response = cls._call_llm(client, llm_model, base64_image, system_prompt, user_prompt)
-        prompt = cls._clean_output(response)
+        prompt = cls._clean_output(response, llm_model.provider)
 
         # Add user focus if provided
         if user_guidance and user_guidance.strip():
@@ -451,7 +452,6 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
 
         # Get client
         client = cls._get_client(llm_model)
-        model = llm_model.model
 
         pbar = comfy.utils.ProgressBar(3)
 
@@ -459,7 +459,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         subject_type = "WOMAN"  # Default
         if preset_style == "Auto-Detect":
             print(f"[SID-Prompt] Detecting subject...")
-            subject_result = cls._analyze_component(client, model, base64_image, "subject_detection")
+            subject_result = cls._analyze_component(client, llm_model, base64_image, "subject_detection")
             subject_type = subject_result.get("subject_type", "WOMAN").upper()
             print(f"[SID-Prompt] Subject: {subject_type}")
         pbar.update(1)
@@ -540,74 +540,25 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             raise ValueError(f"Unsupported provider: {provider}")
 
     @classmethod
-    def _build_system_prompt(cls, analysis_mode: str, preset_style: str, user_guidance: str) -> str:
-        """Build system prompt for single-shot mode."""
-        base = """You are an expert visual analyst for text-to-image AI prompts.
-Generate a detailed, flowing narrative prompt capturing all visible elements.
-Focus on: composition, subject, clothing, lighting, background.
-Output ONLY the prompt text - no explanations or formatting."""
-
-        style_addon = PRESET_STYLES.get(preset_style, {}).get("system_addon", "")
-        if style_addon:
-            base += f"\n\n{style_addon}"
-
-        if user_guidance and user_guidance.strip():
-            base += f"\n\nUSER REQUEST (high priority): {user_guidance.strip()}"
-
-        return base
+    def _build_system_prompt(cls, provider: str, preset_style: str, user_guidance: str) -> str:
+        """Build system prompt using TOML config based on provider tier."""
+        return config_loader.build_system_prompt(provider, preset_style, user_guidance)
 
     @classmethod
-    def _build_user_prompt(cls, analysis_mode: str, preset_style: str, user_guidance: str) -> str:
-        """Build user prompt based on analysis mode."""
-        mode_config = ANALYSIS_MODES.get(analysis_mode, ANALYSIS_MODES["Standard"])
+    def _build_user_prompt(cls, provider: str, analysis_mode: str, preset_style: str) -> str:
+        """Build user prompt using TOML config based on provider tier and mode."""
+        return config_loader.build_user_prompt(provider, analysis_mode, preset_style)
 
-        if analysis_mode == "Quick":
-            return "Generate a brief, accurate prompt for this image in 50-100 words."
-
-        elif analysis_mode == "Standard":
-            return """Analyze this image and generate a detailed prompt covering:
-1. FRAMING: Shot type, camera angle, depth of field
-2. SUBJECT: Ethnicity, gender, age, skin tone
-3. HAIR: Arrangement, color, texture
-4. FACE: Shape, expression, makeup
-5. CLOTHING: Garments, colors, materials (ONLY what's visible)
-6. POSE: Body position, posture
-7. LIGHTING: Direction, quality, background
-
-Generate a flowing paragraph combining all elements."""
-
-        elif analysis_mode == "Detailed":
-            return """Generate a COMPREHENSIVE prompt covering:
-FRAMING: Shot type, pose (standing/seated/lying), camera angle, depth of field
-SUBJECT: Specific ethnicity, skin tone with undertones, age, gender
-HAIR: Arrangement FIRST (updo/ponytail/loose), color, texture, length
-FACE: Shape, angle, expression
-EYES: Color, shape, gaze, makeup
-NOSE & LIPS: Shape, color, state
-BODY: Visible parts, posture, arm/hand positions
-CLOTHING: All visible garments with details
-INTIMATE APPAREL: If visible - bra style, bottoms, stockings
-TATTOOS: Location, style, subject
-ACCESSORIES: Jewelry details
-LIGHTING: Direction, quality, shadows, background
-
-Generate a detailed flowing description."""
-
-        else:  # Extreme
-            return """Generate an EXTREMELY detailed prompt with MAXIMUM precision.
-Analyze EVERY visible element: exact shot type, precise ethnicity, skin undertones,
-hair arrangement and styling, facial features, eye details with makeup,
-nose and lip shapes, full body pose, ALL clothing with materials/colors,
-ALL intimate apparel details if visible, ALL tattoos with locations/styles,
-ALL accessories, and complete lighting/background analysis.
-
-Output a comprehensive, flowing narrative with all details."""
+    @classmethod
+    def _get_stop_strings(cls, provider: str) -> List[str]:
+        """Get provider-specific stop strings to prevent text leakage."""
+        return config_loader.get_stop_strings(provider)
 
     @classmethod
     def _call_llm(cls, client, llm_model: LLMModelConfig, base64_image: str, system_prompt: str, user_prompt: str) -> str:
-        """Make LLM call."""
+        """Make LLM call with provider-specific stop strings."""
         if hasattr(client, 'messages'):
-            # Anthropic
+            # Anthropic - doesn't need stop strings, handles well
             response = client.messages.create(
                 model=llm_model.model,
                 max_tokens=llm_model.max_tokens,
@@ -623,31 +574,39 @@ Output a comprehensive, flowing narrative with all details."""
             )
             return response.content[0].text
         else:
-            # OpenAI-style
-            response = client.chat.completions.create(
-                model=llm_model.model,
-                max_tokens=llm_model.max_tokens,
-                temperature=llm_model.temperature,
-                messages=[
+            # OpenAI-style - add stop strings for local providers
+            stop_strings = cls._get_stop_strings(llm_model.provider)
+
+            request_params = {
+                "model": llm_model.model,
+                "max_tokens": llm_model.max_tokens,
+                "temperature": llm_model.temperature,
+                "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": [
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
                         {"type": "text", "text": user_prompt}
                     ]}
                 ]
-            )
+            }
+
+            # Add stop strings if provider needs them
+            if stop_strings:
+                request_params["stop"] = stop_strings
+
+            response = client.chat.completions.create(**request_params)
             return response.choices[0].message.content
 
     @classmethod
-    def _analyze_component(cls, client, model: str, base64_image: str, component_key: str) -> dict:
-        """Analyze single component."""
+    def _analyze_component(cls, client, llm_model: LLMModelConfig, base64_image: str, component_key: str) -> dict:
+        """Analyze single component with stop strings."""
         comp = COMPONENTS.get(component_key, {})
         system = "You are an expert visual analyst. Analyze ONLY the specific aspect requested. Output valid JSON only."
 
         try:
             if hasattr(client, 'messages'):
                 response = client.messages.create(
-                    model=model, max_tokens=1000, temperature=0.3,
+                    model=llm_model.model, max_tokens=1000, temperature=0.3,
                     system=system,
                     messages=[{"role": "user", "content": [
                         {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_image}},
@@ -656,16 +615,26 @@ Output a comprehensive, flowing narrative with all details."""
                 )
                 text = response.content[0].text
             else:
-                response = client.chat.completions.create(
-                    model=model, max_tokens=1000, temperature=0.3,
-                    messages=[
+                # OpenAI-style with stop strings for local providers
+                stop_strings = cls._get_stop_strings(llm_model.provider)
+
+                request_params = {
+                    "model": llm_model.model,
+                    "max_tokens": 1000,
+                    "temperature": 0.3,
+                    "messages": [
                         {"role": "system", "content": system},
                         {"role": "user", "content": [
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
                             {"type": "text", "text": comp.get("prompt", "")}
                         ]}
                     ]
-                )
+                }
+
+                if stop_strings:
+                    request_params["stop"] = stop_strings
+
+                response = client.chat.completions.create(**request_params)
                 text = response.choices[0].message.content
 
             return cls._parse_json(text)
@@ -707,7 +676,7 @@ Return a single JSON object:
 
     @classmethod
     def _call_reasoning_llm(cls, client, llm_model: LLMModelConfig, base64_image: str, prompt: str) -> dict:
-        """Call LLM with reasoning enabled."""
+        """Call LLM with reasoning enabled and stop strings."""
         try:
             if llm_model.provider.lower() == "anthropic" and hasattr(client, 'messages'):
                 response = client.messages.create(
@@ -725,14 +694,22 @@ Return a single JSON object:
                         text = block.text
                         break
             else:
-                response = client.chat.completions.create(
-                    model=llm_model.model,
-                    max_completion_tokens=16000,
-                    messages=[{"role": "user", "content": [
+                # OpenAI-style with stop strings for local providers
+                stop_strings = cls._get_stop_strings(llm_model.provider)
+
+                request_params = {
+                    "model": llm_model.model,
+                    "max_completion_tokens": 16000,
+                    "messages": [{"role": "user", "content": [
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
                         {"type": "text", "text": prompt}
                     ]}]
-                )
+                }
+
+                if stop_strings:
+                    request_params["stop"] = stop_strings
+
+                response = client.chat.completions.create(**request_params)
                 text = response.choices[0].message.content
 
             return cls._parse_json(text)
@@ -758,7 +735,7 @@ Return a single JSON object:
 
     @classmethod
     def _assemble_prompt(cls, components: dict, mode_config: dict, user_guidance: str) -> str:
-        """Assemble final prompt from components."""
+        """Assemble final prompt from components with example text filtering."""
         sections = []
 
         # Order: framing, ethnicity, face, hair, eyes, nose_lips, body_pose, clothing, intimate, tattoos, accessories, lighting
@@ -768,7 +745,10 @@ Return a single JSON object:
             if key in components and components[key]:
                 desc = components[key].get("prompt_description", "")
                 if desc:
-                    sections.append(desc)
+                    # Clean each component description to remove any leaked examples
+                    cleaned_desc = cls._clean_component_description(desc)
+                    if cleaned_desc:
+                        sections.append(cleaned_desc)
 
         # Combine
         if mode_config.get("raw_mode"):
@@ -784,18 +764,13 @@ Return a single JSON object:
         return prompt.strip()
 
     @classmethod
-    def _clean_output(cls, text: str) -> str:
-        """Clean LLM output."""
-        # Remove prefixes
-        prefixes = [r"^Here'?s? (?:the |a )?prompt[:\s]*", r"^(?:The )?prompt[:\s]*", r"^Output[:\s]*"]
-        for p in prefixes:
-            text = re.sub(p, "", text, flags=re.IGNORECASE)
-        # Remove markdown
-        text = re.sub(r'```[a-z]*\n?', '', text)
-        text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)
-        text = re.sub(r'\*([^*]+)\*', r'\1', text)
-        text = re.sub(r'^#+\s+', '', text, flags=re.MULTILINE)
-        # Clean whitespace
-        text = re.sub(r'\n\s*\n', ' ', text)
-        text = re.sub(r'\s+', ' ', text)
-        return text.strip()
+    def _clean_output(cls, text: str, provider: str = "default") -> str:
+        """Clean LLM output using TOML config patterns."""
+        return config_loader.clean_output(text, provider)
+
+    @classmethod
+    def _clean_component_description(cls, desc: str, provider: str = "default") -> str:
+        """Clean individual component description using TOML config patterns."""
+        if not desc:
+            return ""
+        return config_loader.clean_output(desc, provider)
