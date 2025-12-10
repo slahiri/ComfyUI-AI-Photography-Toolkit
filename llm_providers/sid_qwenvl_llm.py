@@ -3,7 +3,13 @@ SID_QwenVL_LLM Node
 
 QwenVL vision-language model provider using HuggingFace transformers.
 No llama-cpp-python required - uses transformers with BitsAndBytes quantization.
-Supports Qwen2.5-VL and Qwen3-VL models.
+Supports Qwen2.5-VL and Qwen3-VL models (Instruct and Thinking variants).
+
+Enhanced with features from ComfyUI-QwenVL:
+- VRAM auto-downgrade
+- Attention mode selection
+- Generation parameters (num_beams, repetition_penalty, top_p)
+- More model options including Thinking and FP8 variants
 """
 
 import os
@@ -26,6 +32,9 @@ LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
 QWENVL_DIR = os.path.join(folder_paths.models_dir, "LLM", "QwenVL")
 os.makedirs(QWENVL_DIR, exist_ok=True)
 
+# Attention modes
+ATTENTION_MODES = ["auto", "flash_attention_2", "sdpa", "eager"]
+
 
 @dataclass
 class QwenVLModelInfo:
@@ -35,46 +44,126 @@ class QwenVLModelInfo:
     vram_fp16: float  # GB
     vram_8bit: float  # GB
     vram_4bit: float  # GB
-    is_quantized: bool = False  # Pre-quantized FP8 models
+    is_fp8: bool = False  # Pre-quantized FP8 models
+    is_thinking: bool = False  # Thinking/reasoning models
     max_output_tokens: int = 4096
     description: str = ""
 
 
-# Available QwenVL models
+# Available QwenVL models - comprehensive list matching QwenVL node
 QWENVL_MODELS: Dict[str, QwenVLModelInfo] = {
-    # Qwen3-VL Series (Latest)
+    # =========================================================================
+    # Qwen3-VL Series (Latest) - Instruct
+    # =========================================================================
     "Qwen3-VL-2B-Instruct": QwenVLModelInfo(
-        name="Qwen3-VL 2B (4GB VRAM) - Fast",
+        name="Qwen3-VL 2B Instruct (4GB) - Fast",
         repo_id="Qwen/Qwen3-VL-2B-Instruct",
         vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
         description="Fast, good for 8GB GPUs"
     ),
     "Qwen3-VL-4B-Instruct": QwenVLModelInfo(
-        name="Qwen3-VL 4B (6GB VRAM) - Recommended",
+        name="Qwen3-VL 4B Instruct (6GB) - Recommended",
         repo_id="Qwen/Qwen3-VL-4B-Instruct",
         vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
         description="Best balance of speed and quality"
     ),
     "Qwen3-VL-8B-Instruct": QwenVLModelInfo(
-        name="Qwen3-VL 8B (12GB VRAM) - High Quality",
+        name="Qwen3-VL 8B Instruct (12GB) - High Quality",
         repo_id="Qwen/Qwen3-VL-8B-Instruct",
         vram_fp16=12.0, vram_8bit=7.0, vram_4bit=4.5,
-        description="High quality, needs more VRAM"
+        description="High quality, needs 12GB+ VRAM"
     ),
-    # Qwen2.5-VL Series
+    "Qwen3-VL-32B-Instruct": QwenVLModelInfo(
+        name="Qwen3-VL 32B Instruct (28GB) - Best",
+        repo_id="Qwen/Qwen3-VL-32B-Instruct",
+        vram_fp16=28.0, vram_8bit=14.0, vram_4bit=8.5,
+        description="Best quality, needs 24GB+ VRAM"
+    ),
+
+    # =========================================================================
+    # Qwen3-VL Series - Thinking (Reasoning)
+    # =========================================================================
+    "Qwen3-VL-2B-Thinking": QwenVLModelInfo(
+        name="Qwen3-VL 2B Thinking (4GB) - Reasoning",
+        repo_id="Qwen/Qwen3-VL-2B-Thinking",
+        vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
+        is_thinking=True,
+        description="Fast reasoning model"
+    ),
+    "Qwen3-VL-4B-Thinking": QwenVLModelInfo(
+        name="Qwen3-VL 4B Thinking (6GB) - Reasoning",
+        repo_id="Qwen/Qwen3-VL-4B-Thinking",
+        vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
+        is_thinking=True,
+        description="Balanced reasoning model"
+    ),
+    "Qwen3-VL-8B-Thinking": QwenVLModelInfo(
+        name="Qwen3-VL 8B Thinking (12GB) - Reasoning",
+        repo_id="Qwen/Qwen3-VL-8B-Thinking",
+        vram_fp16=12.0, vram_8bit=7.0, vram_4bit=4.5,
+        is_thinking=True,
+        description="High quality reasoning"
+    ),
+
+    # =========================================================================
+    # Qwen3-VL Series - Pre-quantized FP8
+    # =========================================================================
+    "Qwen3-VL-4B-Instruct-FP8": QwenVLModelInfo(
+        name="Qwen3-VL 4B FP8 (2.5GB) - Pre-quantized",
+        repo_id="Qwen/Qwen3-VL-4B-Instruct-FP8",
+        vram_fp16=2.5, vram_8bit=2.5, vram_4bit=2.5,  # FP8 has fixed size
+        is_fp8=True,
+        description="Pre-quantized, very fast loading"
+    ),
+    "Qwen3-VL-8B-Instruct-FP8": QwenVLModelInfo(
+        name="Qwen3-VL 8B FP8 (7.5GB) - Pre-quantized",
+        repo_id="Qwen/Qwen3-VL-8B-Instruct-FP8",
+        vram_fp16=7.5, vram_8bit=7.5, vram_4bit=7.5,
+        is_fp8=True,
+        description="Pre-quantized 8B, fast loading"
+    ),
+
+    # =========================================================================
+    # Qwen2.5-VL Series (Stable)
+    # =========================================================================
     "Qwen2.5-VL-3B-Instruct": QwenVLModelInfo(
-        name="Qwen2.5-VL 3B (6GB VRAM)",
+        name="Qwen2.5-VL 3B (6GB) - Stable",
         repo_id="Qwen/Qwen2.5-VL-3B-Instruct",
         vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
         description="Stable, well-tested"
     ),
     "Qwen2.5-VL-7B-Instruct": QwenVLModelInfo(
-        name="Qwen2.5-VL 7B (15GB VRAM) - Best Quality",
+        name="Qwen2.5-VL 7B (15GB) - Best Stable",
         repo_id="Qwen/Qwen2.5-VL-7B-Instruct",
         vram_fp16=15.0, vram_8bit=8.5, vram_4bit=5.0,
-        description="Best quality, needs 16GB+ VRAM"
+        description="Best quality 2.5 model"
     ),
 }
+
+
+def get_available_vram_gb() -> float:
+    """Get available VRAM in GB."""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            # Get free memory
+            free_mem = torch.cuda.get_device_properties(0).total_memory
+            allocated = torch.cuda.memory_allocated(0)
+            return (free_mem - allocated) / (1024**3)
+    except Exception:
+        pass
+    return 0.0
+
+
+def get_total_vram_gb() -> float:
+    """Get total VRAM in GB."""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            return torch.cuda.get_device_properties(0).total_memory / (1024**3)
+    except Exception:
+        pass
+    return 0.0
 
 
 class QwenVLClient:
@@ -94,7 +183,11 @@ class QwenVLClient:
         model_name: str,
         quantization: str = "4-bit",
         device: str = "auto",
+        attention_mode: str = "auto",
         keep_model_loaded: bool = True,
+        top_p: float = 0.9,
+        repetition_penalty: float = 1.2,
+        num_beams: int = 1,
     ):
         """
         Initialize the QwenVL client.
@@ -103,12 +196,20 @@ class QwenVLClient:
             model_name: Model key from QWENVL_MODELS
             quantization: "4-bit", "8-bit", or "None (FP16)"
             device: "auto", "cuda", "cpu", "mps"
+            attention_mode: "auto", "flash_attention_2", "sdpa", "eager"
             keep_model_loaded: Keep model in VRAM between calls
+            top_p: Nucleus sampling threshold (0.0-1.0)
+            repetition_penalty: Penalty for repeated tokens (0.5-2.0)
+            num_beams: Beam search width (1=sampling, >1=beam search)
         """
         self.model_name = model_name
         self.quantization = quantization
         self.device = device
+        self.attention_mode = attention_mode
         self.keep_model_loaded = keep_model_loaded
+        self.top_p = top_p
+        self.repetition_penalty = repetition_penalty
+        self.num_beams = num_beams
 
         # Will be loaded on first call
         self.model = None
@@ -135,7 +236,7 @@ class QwenVLClient:
             missing.append("accelerate")
 
         # bitsandbytes is optional (only needed for quantization on CUDA)
-        if self.quantization != "None (FP16)":
+        if self.quantization not in ["None (FP16)", "FP8"]:
             try:
                 import bitsandbytes
             except ImportError:
@@ -152,16 +253,53 @@ class QwenVLClient:
         """Detect GPU type and available memory."""
         import torch
 
-        info = {"type": "cpu", "available_gb": 0}
+        info = {"type": "cpu", "available_gb": 0, "total_gb": 0}
 
         if torch.cuda.is_available():
             info["type"] = "cuda"
-            info["available_gb"] = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+            props = torch.cuda.get_device_properties(0)
+            info["total_gb"] = props.total_memory / (1024**3)
+            info["available_gb"] = (props.total_memory - torch.cuda.memory_allocated(0)) / (1024**3)
         elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             info["type"] = "mps"
-            info["available_gb"] = 16  # Assume 16GB for Apple Silicon
+            info["total_gb"] = 16  # Assume 16GB for Apple Silicon
+            info["available_gb"] = 16
 
         return info
+
+    def _auto_downgrade_quantization(self, model_info: QwenVLModelInfo, device_info: Dict) -> str:
+        """
+        Automatically downgrade quantization if insufficient VRAM.
+        Uses 20% safety margin like QwenVL node.
+        """
+        if device_info["type"] not in ["cuda", "mps"]:
+            return self.quantization  # No auto-downgrade for CPU
+
+        available = device_info["available_gb"]
+        safety_margin = 1.2  # 20% safety margin
+
+        # Check each quantization level
+        if self.quantization == "None (FP16)":
+            needed = model_info.vram_fp16 * safety_margin
+            if needed > available:
+                print(f"[QwenVLClient] FP16 needs {needed:.1f}GB but only {available:.1f}GB available")
+                print(f"[QwenVLClient] Auto-downgrading to 8-bit")
+                self.quantization = "8-bit"
+
+        if self.quantization == "8-bit":
+            needed = model_info.vram_8bit * safety_margin
+            if needed > available:
+                print(f"[QwenVLClient] 8-bit needs {needed:.1f}GB but only {available:.1f}GB available")
+                print(f"[QwenVLClient] Auto-downgrading to 4-bit")
+                self.quantization = "4-bit"
+
+        if self.quantization == "4-bit":
+            needed = model_info.vram_4bit * safety_margin
+            if needed > available:
+                print(f"[QwenVLClient] WARNING: 4-bit needs {needed:.1f}GB but only {available:.1f}GB available")
+                print(f"[QwenVLClient] May run out of memory!")
+
+        return self.quantization
 
     def _load_model(self):
         """Load model, processor, and tokenizer."""
@@ -170,7 +308,7 @@ class QwenVLClient:
         from huggingface_hub import snapshot_download
 
         # Check if we can reuse cached model
-        signature = (self.model_name, self.quantization, self.device)
+        signature = (self.model_name, self.quantization, self.device, self.attention_mode)
         if (QwenVLClient._cached_model is not None and
             QwenVLClient._cached_signature == signature):
             print(f"[QwenVLClient] Reusing cached model: {self.model_name}")
@@ -185,7 +323,6 @@ class QwenVLClient:
 
         print(f"[QwenVLClient] Loading model: {model_info.name}")
         print(f"  Repo: {model_info.repo_id}")
-        print(f"  Quantization: {self.quantization}")
 
         # Download model if needed
         model_path = os.path.join(QWENVL_DIR, self.model_name)
@@ -204,7 +341,13 @@ class QwenVLClient:
         else:
             device = self.device
 
-        print(f"  Device: {device}")
+        print(f"  Device: {device} (Total: {device_info['total_gb']:.1f}GB, Available: {device_info['available_gb']:.1f}GB)")
+
+        # Auto-downgrade quantization if needed (skip for FP8 models)
+        if not model_info.is_fp8:
+            self._auto_downgrade_quantization(model_info, device_info)
+
+        print(f"  Quantization: {self.quantization}")
 
         # Setup quantization config
         load_kwargs = {
@@ -212,10 +355,29 @@ class QwenVLClient:
             "low_cpu_mem_usage": True,
         }
 
+        # Attention mode
+        if self.attention_mode != "auto":
+            load_kwargs["attn_implementation"] = self.attention_mode
+            print(f"  Attention: {self.attention_mode}")
+        else:
+            # Try flash_attention_2, fallback to sdpa
+            try:
+                import flash_attn
+                load_kwargs["attn_implementation"] = "flash_attention_2"
+                print(f"  Attention: flash_attention_2 (auto-detected)")
+            except ImportError:
+                load_kwargs["attn_implementation"] = "sdpa"
+                print(f"  Attention: sdpa (flash_attn not available)")
+
         if device == "cuda":
             load_kwargs["device_map"] = {"": 0}
 
-            if self.quantization == "4-bit":
+            # Skip quantization for FP8 models (already quantized)
+            if model_info.is_fp8:
+                load_kwargs["torch_dtype"] = torch.float16
+                print("  Using pre-quantized FP8 model")
+
+            elif self.quantization == "4-bit":
                 try:
                     from transformers import BitsAndBytesConfig
                     load_kwargs["quantization_config"] = BitsAndBytesConfig(
@@ -405,17 +567,31 @@ class QwenVLClient:
             for k, v in processed.items()
         }
 
+        # Build generation kwargs
+        gen_kwargs = {
+            "max_new_tokens": max_tokens,
+            "repetition_penalty": self.repetition_penalty,
+            "pad_token_id": self.tokenizer.pad_token_id,
+            "eos_token_id": self.tokenizer.eos_token_id,
+        }
+
+        # Beam search vs sampling
+        if self.num_beams > 1:
+            # Beam search mode - disables temperature/top_p
+            gen_kwargs["num_beams"] = self.num_beams
+            gen_kwargs["do_sample"] = False
+        else:
+            # Sampling mode
+            gen_kwargs["do_sample"] = temperature > 0
+            if temperature > 0:
+                gen_kwargs["temperature"] = temperature
+                gen_kwargs["top_p"] = self.top_p
+
         # Generate
         with torch.no_grad():
             outputs = self.model.generate(
                 **model_inputs,
-                max_new_tokens=max_tokens,
-                temperature=temperature if temperature > 0 else None,
-                do_sample=temperature > 0,
-                top_p=0.9 if temperature > 0 else None,
-                repetition_penalty=1.2,
-                pad_token_id=self.tokenizer.pad_token_id,
-                eos_token_id=self.tokenizer.eos_token_id,
+                **gen_kwargs
             )
 
         # Decode response
@@ -457,9 +633,18 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
     Uses HuggingFace transformers with BitsAndBytes quantization.
     No llama-cpp-python required - easier installation than GGUF.
 
+    Features:
+    - Auto VRAM management with downgrade
+    - Attention mode selection (flash_attention_2, sdpa)
+    - Generation parameters (num_beams, repetition_penalty, top_p)
+    - Thinking/Reasoning model variants
+    - Pre-quantized FP8 models for fast loading
+
     Supported models:
-    - Qwen3-VL 2B/4B/8B (latest generation)
-    - Qwen2.5-VL 3B/7B (stable, well-tested)
+    - Qwen3-VL 2B/4B/8B/32B Instruct
+    - Qwen3-VL 2B/4B/8B Thinking (reasoning)
+    - Qwen3-VL FP8 pre-quantized
+    - Qwen2.5-VL 3B/7B Instruct
     """
 
     PROVIDER_NAME = "qwenvl"
@@ -482,7 +667,9 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
 
     @classmethod
     def supports_reasoning(cls, model: str) -> bool:
-        return False  # Local models don't support reasoning mode
+        """Thinking models support reasoning."""
+        model_info = QWENVL_MODELS.get(model)
+        return model_info.is_thinking if model_info else False
 
     @classmethod
     def define_schema(cls) -> comfy_io.Schema:
@@ -496,16 +683,21 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             "None (FP16)",
         ]
 
+        # Get VRAM info for display
+        total_vram = get_total_vram_gb()
+        vram_info = f" [GPU: {total_vram:.0f}GB]" if total_vram > 0 else " [No GPU]"
+
         model_info_text = (
-            "QwenVL Local Vision Models - No API needed, no llama-cpp-python required.\n\n"
-            "Uses HuggingFace transformers with BitsAndBytes quantization.\n"
-            "Easier installation than GGUF models.\n\n"
-            "Models:\n"
-            "- Qwen3-VL 2B: 4GB VRAM, Fast\n"
-            "- Qwen3-VL 4B: 6GB VRAM, Recommended\n"
-            "- Qwen3-VL 8B: 12GB VRAM, High quality\n"
-            "- Qwen2.5-VL 3B: 6GB VRAM, Stable\n"
-            "- Qwen2.5-VL 7B: 15GB VRAM, Best quality"
+            f"QwenVL Local Vision Models{vram_info}\n\n"
+            "No API needed, no llama-cpp-python required.\n"
+            "Uses HuggingFace transformers + BitsAndBytes.\n\n"
+            "Instruct Models:\n"
+            "- 2B: 1.5-4GB, 4B: 2-6GB (Recommended)\n"
+            "- 8B: 4.5-12GB, 32B: 8.5-28GB\n\n"
+            "Thinking Models (Reasoning):\n"
+            "- 2B/4B/8B-Thinking: Better analysis\n\n"
+            "FP8 Pre-quantized:\n"
+            "- Fast loading, fixed VRAM"
         )
 
         return comfy_io.Schema(
@@ -518,13 +710,19 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     "model",
                     options=model_options,
                     default=cls.get_default_model(),
-                    tooltip="Select QwenVL model. Qwen3-VL-4B recommended for most users."
+                    tooltip="Select QwenVL model. Qwen3-VL-4B-Instruct recommended. Thinking models provide better analysis."
                 ),
                 comfy_io.Combo.Input(
                     "quantization",
                     options=quantization_options,
                     default="4-bit (VRAM-friendly)",
-                    tooltip="4-bit: lowest VRAM, 8-bit: balanced, FP16: best quality but most VRAM"
+                    tooltip="4-bit: lowest VRAM (auto-downgrades if needed), 8-bit: balanced, FP16: best quality"
+                ),
+                comfy_io.Combo.Input(
+                    "attention_mode",
+                    options=ATTENTION_MODES,
+                    default="auto",
+                    tooltip="auto: tries flash_attention_2 then sdpa. Override for debugging."
                 ),
                 comfy_io.Combo.Input(
                     "device",
@@ -540,7 +738,41 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     step=0.1,
                     round=0.1,
                     display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Creativity level (0=focused, 1=creative). 0.6 recommended."
+                    tooltip="Sampling randomness. 0.2-0.4=focused, 0.7+=creative. Disabled if num_beams>1."
+                ),
+                comfy_io.Float.Input(
+                    "top_p",
+                    default=0.9,
+                    min=0.0,
+                    max=1.0,
+                    step=0.05,
+                    round=0.05,
+                    display_mode=comfy_io.NumberDisplay.slider,
+                    tooltip="Nucleus sampling cutoff. 0.9-0.95 allows variety. Disabled if num_beams>1."
+                ),
+                comfy_io.Float.Input(
+                    "repetition_penalty",
+                    default=1.2,
+                    min=0.5,
+                    max=2.0,
+                    step=0.1,
+                    round=0.1,
+                    display_mode=comfy_io.NumberDisplay.slider,
+                    tooltip="Penalty for repeated phrases. >1 reduces repetition, 1.1-1.3 recommended."
+                ),
+                comfy_io.Int.Input(
+                    "num_beams",
+                    default=1,
+                    min=1,
+                    max=8,
+                    tooltip="Beam search width. 1=sampling mode, >1=beam search (disables temperature/top_p, more stable)."
+                ),
+                comfy_io.Int.Input(
+                    "max_tokens",
+                    default=512,
+                    min=64,
+                    max=4096,
+                    tooltip="Maximum tokens to generate. Higher=longer output but slower."
                 ),
                 comfy_io.Boolean.Input(
                     "keep_model_loaded",
@@ -563,8 +795,13 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         cls,
         model: str,
         quantization: str,
+        attention_mode: str,
         device: str,
         temperature: float,
+        top_p: float,
+        repetition_penalty: float,
+        num_beams: int,
+        max_tokens: int,
         keep_model_loaded: bool,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
@@ -582,27 +819,44 @@ class SID_QwenVL_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         }
         quant = quant_map.get(quantization, "4-bit")
 
+        # For FP8 models, override quantization
+        if model_info.is_fp8:
+            quant = "FP8"
+
+        # Thinking models support reasoning
+        supports_reasoning = model_info.is_thinking
+
         # Create configuration
         config = LLMModelConfig(
             provider=cls.PROVIDER_NAME,
             model=model,
             api_key="",  # No API key needed
             api_url="",  # Local model
-            max_tokens=model_info.max_output_tokens,
+            max_tokens=max_tokens,
             temperature=temperature,
             supports_vision=True,
             supports_system_prompt=True,
-            supports_reasoning=False,
+            supports_reasoning=supports_reasoning,
             extra_params={
                 "quantization": quant,
                 "device": device,
+                "attention_mode": attention_mode,
                 "keep_model_loaded": keep_model_loaded,
+                "top_p": top_p,
+                "repetition_penalty": repetition_penalty,
+                "num_beams": num_beams,
                 "repo_id": model_info.repo_id,
+                "is_thinking": model_info.is_thinking,
+                "is_fp8": model_info.is_fp8,
             },
         )
 
+        # Log configuration
         print(f"[SID_QwenVL_LLM] Configured: {model}")
-        print(f"  Quantization: {quant}, Device: {device}")
-        print(f"  Keep loaded: {keep_model_loaded}, Temperature: {temperature}")
+        print(f"  Quantization: {quant}, Device: {device}, Attention: {attention_mode}")
+        print(f"  Temperature: {temperature}, Top-P: {top_p}, Rep.Penalty: {repetition_penalty}")
+        print(f"  Num Beams: {num_beams}, Max Tokens: {max_tokens}")
+        if supports_reasoning:
+            print(f"  [Thinking Model - Reasoning Enabled]")
 
         return comfy_io.NodeOutput(config)

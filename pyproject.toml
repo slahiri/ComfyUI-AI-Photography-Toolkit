@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-ai-photography-toolkit"
 description = "AI-powered Z-Image prompt generator for ComfyUI. Analyzes images and generates flowing narrative prompts optimized for Z-Image models."
-version = "4.1.1"
+version = "4.2.0"
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10"

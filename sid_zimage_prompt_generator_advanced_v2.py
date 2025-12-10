@@ -1453,7 +1453,11 @@ Output ONLY the raw prompt text - no formatting, headers, or explanations."""
                 model_name=llm_model.model,
                 quantization=extra.get("quantization", "4-bit"),
                 device=extra.get("device", "auto"),
+                attention_mode=extra.get("attention_mode", "auto"),
                 keep_model_loaded=extra.get("keep_model_loaded", True),
+                top_p=extra.get("top_p", 0.9),
+                repetition_penalty=extra.get("repetition_penalty", 1.2),
+                num_beams=extra.get("num_beams", 1),
             )
         else:
             raise ValueError(f"Unsupported provider: {provider}")
