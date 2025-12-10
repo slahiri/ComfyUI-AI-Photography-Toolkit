@@ -209,11 +209,48 @@ class LocalGGUFClient:
         try:
             from llama_cpp import Llama
             from llama_cpp.llama_chat_format import Llava15ChatHandler, MoondreamChatHandler
-        except ImportError:
-            raise ImportError(
-                "llama-cpp-python is not installed. "
-                "Install with: pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121"
+        except ImportError as e:
+            import platform
+            system = platform.system()
+
+            error_msg = (
+                "\n" + "=" * 70 + "\n"
+                "ERROR: llama-cpp-python is not installed!\n"
+                "=" * 70 + "\n\n"
+                "This package requires platform-specific installation.\n\n"
             )
+
+            if system == "Windows":
+                error_msg += (
+                    "For Windows with NVIDIA GPU (CUDA 12.1+):\n"
+                    "  pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121\n\n"
+                    "For Windows CPU-only:\n"
+                    "  pip install llama-cpp-python\n\n"
+                )
+            elif system == "Darwin":  # macOS
+                error_msg += (
+                    "For macOS with Apple Silicon (M1/M2/M3):\n"
+                    "  CMAKE_ARGS=\"-DGGML_METAL=on\" pip install llama-cpp-python\n\n"
+                    "For macOS Intel:\n"
+                    "  pip install llama-cpp-python\n\n"
+                )
+            else:  # Linux
+                error_msg += (
+                    "For Linux with NVIDIA GPU (CUDA 12.1+):\n"
+                    "  pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121\n\n"
+                    "For Linux with AMD GPU (ROCm):\n"
+                    "  CMAKE_ARGS=\"-DGGML_HIPBLAS=on\" pip install llama-cpp-python\n\n"
+                    "For Linux CPU-only:\n"
+                    "  pip install llama-cpp-python\n\n"
+                )
+
+            error_msg += (
+                "After installing, restart ComfyUI.\n"
+                "=" * 70 + "\n"
+            )
+
+            print(error_msg)
+            raise ImportError(error_msg) from e
 
         self.model_path = model_path
         self.mmproj_path = mmproj_path
@@ -650,6 +687,52 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         max_image_size: str,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
+
+        # Early check for llama-cpp-python
+        import importlib.util
+        if importlib.util.find_spec("llama_cpp") is None:
+            import platform
+            system = platform.system()
+
+            error_msg = (
+                "\n" + "=" * 70 + "\n"
+                "ERROR: llama-cpp-python is not installed!\n"
+                "=" * 70 + "\n\n"
+                "The SID_GGUF_LLM node requires llama-cpp-python to run local models.\n"
+                "This package requires platform-specific installation.\n\n"
+            )
+
+            if system == "Windows":
+                error_msg += (
+                    "For Windows with NVIDIA GPU (CUDA 12.1+):\n"
+                    "  pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121\n\n"
+                    "For Windows CPU-only:\n"
+                    "  pip install llama-cpp-python\n\n"
+                )
+            elif system == "Darwin":  # macOS
+                error_msg += (
+                    "For macOS with Apple Silicon (M1/M2/M3):\n"
+                    "  CMAKE_ARGS=\"-DGGML_METAL=on\" pip install llama-cpp-python\n\n"
+                    "For macOS Intel:\n"
+                    "  pip install llama-cpp-python\n\n"
+                )
+            else:  # Linux
+                error_msg += (
+                    "For Linux with NVIDIA GPU (CUDA 12.1+):\n"
+                    "  pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121\n\n"
+                    "For Linux with AMD GPU (ROCm):\n"
+                    "  CMAKE_ARGS=\"-DGGML_HIPBLAS=on\" pip install llama-cpp-python\n\n"
+                    "For Linux CPU-only:\n"
+                    "  pip install llama-cpp-python\n\n"
+                )
+
+            error_msg += (
+                "After installing, restart ComfyUI.\n"
+                "=" * 70
+            )
+
+            print(error_msg)
+            raise RuntimeError(error_msg)
 
         # Convert memory preset to n_ctx and n_gpu_layers
         memory_settings = {
