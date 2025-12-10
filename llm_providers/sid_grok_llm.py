@@ -30,10 +30,10 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         "grok-vision-beta",      # Grok Vision Beta
     ]
 
-    # Model metadata - reasoning support (Grok doesn't have reasoning models yet)
+    # Model metadata - reasoning support and max output tokens
     MODEL_METADATA = {
-        "grok-2-vision-1212": {"supports_reasoning": False},
-        "grok-vision-beta": {"supports_reasoning": False},
+        "grok-2-vision-1212": {"supports_reasoning": False, "max_output_tokens": 32768},
+        "grok-vision-beta": {"supports_reasoning": False, "max_output_tokens": 8192},
     }
 
     @classmethod
@@ -44,6 +44,11 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
     def supports_reasoning(cls, model: str) -> bool:
         """Check if model supports reasoning mode."""
         return cls.MODEL_METADATA.get(model, {}).get("supports_reasoning", False)
+
+    @classmethod
+    def get_max_output_tokens(cls, model: str) -> int:
+        """Get max output tokens for a model."""
+        return cls.MODEL_METADATA.get(model, {}).get("max_output_tokens", 8192)
 
     @classmethod
     def get_default_model(cls) -> str:
@@ -123,15 +128,26 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         if not is_valid:
             print(f"[SID_Grok_LLM] Warning: {error_msg}")
 
+        # Get model's max output tokens limit and cap user's selection
+        model_max_output = cls.get_max_output_tokens(model)
+        actual_max_tokens = min(max_tokens, model_max_output)
+
+        if max_tokens > model_max_output:
+            print(f"[SID_Grok_LLM] Note: max_tokens capped from {max_tokens} to {model_max_output} (model limit)")
+
         # Create configuration
         config = cls.create_config(
             model=model,
             api_key=api_key.strip(),
             api_url=cls.get_default_url(),
-            max_tokens=max_tokens,
+            max_tokens=actual_max_tokens,
             temperature=temperature,
         )
 
-        print(f"[SID_Grok_LLM] Configured: {model} (max_tokens={max_tokens}, temp={temperature})")
+        # Add model max output tokens to extra_params
+        config.extra_params = {"model_max_output_tokens": model_max_output}
+
+        reasoning = cls.supports_reasoning(model)
+        print(f"[SID_Grok_LLM] Configured: {model} (max_tokens={actual_max_tokens}/{model_max_output}, temp={temperature}, reasoning={reasoning})")
 
         return comfy_io.NodeOutput(config)

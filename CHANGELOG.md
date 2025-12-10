@@ -5,6 +5,32 @@ All notable changes to ComfyUI-AI-Photography-Toolkit will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.4.0] - 2024-12-10
+
+### Added
+- **Read-only prompt display** on V2 generator node - shows generated prompt after execution
+- **Max output tokens metadata** for all LLM providers with model-specific limits:
+  - Anthropic: Claude Sonnet/Opus 4.x (64K), Claude 3.5 (8K)
+  - OpenAI: GPT-4o (16K), o1 series (32K-100K)
+  - Grok: grok-2-vision (32K), grok-vision-beta (8K)
+- **Max tokens guardrail** - automatically caps user's max_tokens to model's limit
+- **User prompt integration** into analysis pipeline (both agentic and iterative modes):
+  - Component analysis now receives user requirements as priority instructions
+  - Agentic mode includes "CRITICAL: USER'S SPECIAL REQUEST" section
+  - Final prompt shows user focus with `[USER FOCUS: ...]` prefix
+- **Logging for user requests** in both iterative and agentic pipelines
+
+### Changed
+- `_analyze_component()` now accepts optional `user_prompt` parameter
+- `_build_agentic_prompt()` includes user requirements as high-priority analysis instructions
+- `_assemble_prompt()` structures user requirements prominently at prompt start
+- LLM provider nodes now store `model_max_output_tokens` in `extra_params`
+
+### Technical
+- Added `get_max_output_tokens()` class method to all LLM providers
+- V2 generator validates max_tokens against model limits at execution time
+- `is_output_node=True` added to V2 schema for UI text display
+
 ## [4.3.0] - 2024-12-09
 
 ### Added

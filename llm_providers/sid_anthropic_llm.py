@@ -33,13 +33,13 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         "claude-3-5-haiku-20241022",     # Claude 3.5 Haiku
     ]
 
-    # Model metadata - reasoning support (extended thinking)
+    # Model metadata - reasoning support and max output tokens
     MODEL_METADATA = {
-        "claude-sonnet-4-5-20250929": {"supports_reasoning": True},   # Sonnet 4.5 - extended thinking
-        "claude-haiku-4-5-20251001": {"supports_reasoning": False},   # Haiku 4.5 - no reasoning (fast/cheap)
-        "claude-opus-4-1-20250805": {"supports_reasoning": True},     # Opus 4.1 - extended thinking
-        "claude-3-5-sonnet-20241022": {"supports_reasoning": True},   # 3.5 Sonnet - extended thinking
-        "claude-3-5-haiku-20241022": {"supports_reasoning": False},   # 3.5 Haiku - no reasoning
+        "claude-sonnet-4-5-20250929": {"supports_reasoning": True, "max_output_tokens": 64000},   # Sonnet 4.5 - extended thinking
+        "claude-haiku-4-5-20251001": {"supports_reasoning": False, "max_output_tokens": 64000},   # Haiku 4.5 - no reasoning (fast/cheap)
+        "claude-opus-4-1-20250805": {"supports_reasoning": True, "max_output_tokens": 64000},     # Opus 4.1 - extended thinking
+        "claude-3-5-sonnet-20241022": {"supports_reasoning": True, "max_output_tokens": 8192},   # 3.5 Sonnet - extended thinking
+        "claude-3-5-haiku-20241022": {"supports_reasoning": False, "max_output_tokens": 8192},   # 3.5 Haiku - no reasoning
     }
 
     @classmethod
@@ -50,6 +50,11 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
     def supports_reasoning(cls, model: str) -> bool:
         """Check if model supports extended thinking/reasoning."""
         return cls.MODEL_METADATA.get(model, {}).get("supports_reasoning", False)
+
+    @classmethod
+    def get_max_output_tokens(cls, model: str) -> int:
+        """Get max output tokens for a model."""
+        return cls.MODEL_METADATA.get(model, {}).get("max_output_tokens", 8192)
 
     @classmethod
     def get_default_model(cls) -> str:
@@ -104,6 +109,12 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     display_mode=comfy_io.NumberDisplay.slider,
                     tooltip="Creativity level (0=focused, 1=creative)"
                 ),
+                comfy_io.Boolean.Input(
+                    "use_reasoning",
+                    default=True,
+                    display_name="Enable Reasoning",
+                    tooltip="Enable extended thinking/reasoning mode for supported models (Sonnet 4.5, Opus 4.1, Sonnet 3.5). Uses single comprehensive call instead of iterative."
+                ),
             ],
             outputs=[
                 LLM_MODEL_Type.Output(
@@ -121,6 +132,7 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         model: str,
         max_tokens: int,
         temperature: float,
+        use_reasoning: bool,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
 
@@ -129,15 +141,35 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         if not is_valid:
             print(f"[SID_Anthropic_LLM] Warning: {error_msg}")
 
-        # Create configuration
-        config = cls.create_config(
+        # Determine if reasoning should be enabled
+        # Only enable if BOTH model supports it AND user enabled it
+        model_supports = cls.supports_reasoning(model)
+        actual_reasoning = model_supports and use_reasoning
+
+        if use_reasoning and not model_supports:
+            print(f"[SID_Anthropic_LLM] Note: {model} does not support reasoning mode")
+
+        # Get model's max output tokens limit and cap user's selection
+        model_max_output = cls.get_max_output_tokens(model)
+        actual_max_tokens = min(max_tokens, model_max_output)
+
+        if max_tokens > model_max_output:
+            print(f"[SID_Anthropic_LLM] Note: max_tokens capped from {max_tokens} to {model_max_output} (model limit)")
+
+        # Create configuration with reasoning decision
+        config = LLMModelConfig(
+            provider=cls.PROVIDER_NAME,
             model=model,
             api_key=api_key.strip(),
             api_url=cls.get_default_url(),
-            max_tokens=max_tokens,
+            max_tokens=actual_max_tokens,
             temperature=temperature,
+            supports_vision=True,
+            supports_system_prompt=True,
+            supports_reasoning=actual_reasoning,
+            extra_params={"model_max_output_tokens": model_max_output},
         )
 
-        print(f"[SID_Anthropic_LLM] Configured: {model} (max_tokens={max_tokens}, temp={temperature})")
+        print(f"[SID_Anthropic_LLM] Configured: {model} (max_tokens={actual_max_tokens}/{model_max_output}, temp={temperature}, reasoning={actual_reasoning})")
 
         return comfy_io.NodeOutput(config)

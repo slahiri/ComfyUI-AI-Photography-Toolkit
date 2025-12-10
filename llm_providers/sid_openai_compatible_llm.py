@@ -50,19 +50,19 @@ class SID_OpenAI_Compatible_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         # Use custom_model for other providers
     ]
 
-    # Model metadata - reasoning support
+    # Model metadata - reasoning support and max output tokens
     MODEL_METADATA = {
         # Standard models - no built-in reasoning
-        "gpt-4o": {"supports_reasoning": False},
-        "gpt-4o-mini": {"supports_reasoning": False},
-        "gpt-4-turbo": {"supports_reasoning": False},
-        # Reasoning models (o1 series)
-        "o1": {"supports_reasoning": True},
-        "o1-mini": {"supports_reasoning": True},
-        "o1-preview": {"supports_reasoning": True},
+        "gpt-4o": {"supports_reasoning": False, "max_output_tokens": 16384},
+        "gpt-4o-mini": {"supports_reasoning": False, "max_output_tokens": 16384},
+        "gpt-4-turbo": {"supports_reasoning": False, "max_output_tokens": 4096},
+        # Reasoning models (o1 series) - use max_completion_tokens
+        "o1": {"supports_reasoning": True, "max_output_tokens": 100000},
+        "o1-mini": {"supports_reasoning": True, "max_output_tokens": 65536},
+        "o1-preview": {"supports_reasoning": True, "max_output_tokens": 32768},
         # Together AI / LM Studio - no reasoning
-        "meta-llama/Llama-Vision-Free": {"supports_reasoning": False},
-        "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo": {"supports_reasoning": False},
+        "meta-llama/Llama-Vision-Free": {"supports_reasoning": False, "max_output_tokens": 4096},
+        "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo": {"supports_reasoning": False, "max_output_tokens": 4096},
     }
 
     @classmethod
@@ -73,6 +73,11 @@ class SID_OpenAI_Compatible_LLM(comfy_io.ComfyNode, BaseLLMProvider):
     def supports_reasoning(cls, model: str) -> bool:
         """Check if model supports reasoning mode."""
         return cls.MODEL_METADATA.get(model, {}).get("supports_reasoning", False)
+
+    @classmethod
+    def get_max_output_tokens(cls, model: str) -> int:
+        """Get max output tokens for a model."""
+        return cls.MODEL_METADATA.get(model, {}).get("max_output_tokens", 16384)
 
     @classmethod
     def get_default_model(cls) -> str:
@@ -139,6 +144,12 @@ class SID_OpenAI_Compatible_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     display_mode=comfy_io.NumberDisplay.slider,
                     tooltip="Creativity level (0=focused, 2=very creative)"
                 ),
+                comfy_io.Boolean.Input(
+                    "use_reasoning",
+                    default=True,
+                    display_name="Enable Reasoning",
+                    tooltip="Enable reasoning mode for supported models (o1, o1-mini, o1-preview). Uses single comprehensive call instead of iterative."
+                ),
             ],
             outputs=[
                 LLM_MODEL_Type.Output(
@@ -158,6 +169,7 @@ class SID_OpenAI_Compatible_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         custom_model: str,
         max_tokens: int,
         temperature: float,
+        use_reasoning: bool,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
 
@@ -181,20 +193,36 @@ class SID_OpenAI_Compatible_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             if not is_valid:
                 print(f"[SID_OpenAI_Compatible] Warning: {error_msg}")
 
+        # Determine if reasoning should be enabled
+        # Only enable if BOTH model supports it AND user enabled it
+        model_supports = cls.supports_reasoning(actual_model)
+        actual_reasoning = model_supports and use_reasoning
+
+        if use_reasoning and not model_supports:
+            print(f"[SID_OpenAI_Compatible] Note: {actual_model} does not support reasoning mode")
+
+        # Get model's max output tokens limit and cap user's selection
+        model_max_output = cls.get_max_output_tokens(actual_model)
+        actual_max_tokens = min(max_tokens, model_max_output)
+
+        if max_tokens > model_max_output:
+            print(f"[SID_OpenAI_Compatible] Note: max_tokens capped from {max_tokens} to {model_max_output} (model limit)")
+
         # Create configuration - use original model name for API call
         config = LLMModelConfig(
             provider=cls.PROVIDER_NAME,
             model=actual_model,  # Use actual model name for API
             api_key=api_key.strip(),
             api_url=api_url_clean,
-            max_tokens=max_tokens,
+            max_tokens=actual_max_tokens,
             temperature=temperature,
             supports_vision=True,
             supports_system_prompt=True,
-            extra_params={"routing_model": routing_model},  # For internal routing
+            supports_reasoning=actual_reasoning,
+            extra_params={"routing_model": routing_model, "model_max_output_tokens": model_max_output},
         )
 
         print(f"[SID_OpenAI_Compatible] Configured: {actual_model} @ {api_url_clean}")
-        print(f"  max_tokens={max_tokens}, temp={temperature}")
+        print(f"  max_tokens={actual_max_tokens}/{model_max_output}, temp={temperature}, reasoning={actual_reasoning}")
 
         return comfy_io.NodeOutput(config)

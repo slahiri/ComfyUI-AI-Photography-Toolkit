@@ -601,9 +601,12 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         mem_config = memory_settings.get(memory_mode, memory_settings["Auto (Recommended)"])
         n_ctx = mem_config["n_ctx"]
         n_gpu_layers = mem_config["n_gpu_layers"]
-        max_tokens = quality_settings.get(quality_mode, 500)
+        quality_max_tokens = quality_settings.get(quality_mode, 500)
 
-        # Get model info
+        # Get model info and metadata
+        model_supports_reasoning = False
+        model_max_output_tokens = 2048  # Default fallback
+
         if model not in GGUF_MODELS:
             if model.startswith("custom:"):
                 # Custom model - user placed it manually
@@ -622,6 +625,10 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             mmproj_path = os.path.join(LLM_GGUF_DIR, model_info.mmproj_filename) if model_info.mmproj_filename else None
             chat_format = model_info.chat_format
 
+            # Get model metadata
+            model_supports_reasoning = model_info.supports_reasoning
+            model_max_output_tokens = model_info.max_output_tokens
+
             # Check if model exists or needs download
             if not os.path.exists(model_path):
                 if auto_download:
@@ -636,6 +643,9 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                         f"{model_info.url}"
                     )
 
+        # Cap max_tokens against model's max_output_tokens limit
+        max_tokens = min(quality_max_tokens, model_max_output_tokens)
+
         # Create configuration with all needed info for client creation
         config = LLMModelConfig(
             provider=cls.PROVIDER_NAME,
@@ -646,6 +656,7 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             temperature=temperature,
             supports_vision=True,
             supports_system_prompt=True,
+            supports_reasoning=model_supports_reasoning,
             extra_params={
                 "model_path": model_path,
                 "mmproj_path": mmproj_path,
@@ -660,6 +671,7 @@ class SID_GGUF_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         if mmproj_path:
             print(f"  Vision: {mmproj_path}")
         print(f"  Memory: {memory_mode} (ctx={n_ctx}, gpu_layers={n_gpu_layers})")
-        print(f"  Quality: {quality_mode}, Creativity: {temperature}")
+        print(f"  Quality: {quality_mode} (max_tokens={max_tokens}, model_limit={model_max_output_tokens})")
+        print(f"  Creativity: {temperature}, Reasoning: {model_supports_reasoning}")
 
         return comfy_io.NodeOutput(config)

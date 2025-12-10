@@ -762,6 +762,7 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
             display_name="SID Z-Image Prompt Generator V2",
             category="SID Photography Toolkit/Z-Image",
             description="Advanced V2: Component-based analysis for accurate prompts. Analyzes hair, face, eyes, clothing separately.",
+            is_output_node=True,
             inputs=[
                 comfy_io.Image.Input(
                     "image",
@@ -802,13 +803,6 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
                     tooltip="Include body pose details"
                 ),
 
-                # Reasoning mode toggle
-                comfy_io.Boolean.Input(
-                    "use_reasoning",
-                    default=True,
-                    tooltip="Use agentic reasoning mode for capable models (single call). Disable to use multi-step iterative mode (multiple calls). Auto-disabled for models without reasoning support."
-                ),
-
                 # Generation settings
                 comfy_io.Int.Input(
                     "seed",
@@ -816,14 +810,7 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
                     min=0,
                     max=2147483647,
                     control_after_generate=True,
-                    tooltip="Random seed for reproducibility"
-                ),
-
-                comfy_io.Combo.Input(
-                    "seed_mode",
-                    options=["fixed", "randomize", "increment", "decrement"],
-                    default="fixed",
-                    tooltip="Seed behavior"
+                    tooltip="Random seed for reproducibility (use controls after input to randomize/increment/decrement)"
                 ),
 
                 comfy_io.Boolean.Input(
@@ -860,9 +847,7 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         user_prompt: str,
         include_lighting: bool,
         include_pose: bool,
-        use_reasoning: bool,
         seed: int,
-        seed_mode: str,
         cache_results: bool,
     ) -> comfy_io.NodeOutput:
         """Execute the component-based analysis pipeline."""
@@ -871,37 +856,41 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         img_tensor = image[0]
         img_height, img_width = img_tensor.shape[0], img_tensor.shape[1]
 
-        # Check if model supports reasoning
-        model_supports_reasoning = llm_model.supports_reasoning
+        # Reasoning mode is now determined by the LLM model node
+        # (model capability AND user toggle are combined there)
+        use_reasoning = llm_model.supports_reasoning
 
-        # Determine actual reasoning mode
-        # Only use reasoning if BOTH model supports it AND user enabled it
-        actual_use_reasoning = use_reasoning and model_supports_reasoning
+        # Guardrail: Log and validate max_tokens against model limits
+        max_tokens = llm_model.max_tokens
+        model_max = (llm_model.extra_params or {}).get("model_max_output_tokens", "unknown")
+        print(f"[V2] Model: {llm_model.model} (provider: {llm_model.provider})")
+        print(f"[V2] Max tokens: {max_tokens} (model limit: {model_max})")
 
-        if use_reasoning and not model_supports_reasoning:
-            print(f"[V2] Note: Model '{llm_model.model}' does not support reasoning mode. Using iterative mode.")
+        # Warn if max_tokens is very low for prompt generation
+        if max_tokens < 300:
+            print(f"[V2] Warning: max_tokens={max_tokens} is very low, may result in truncated prompts")
 
         try:
-            if actual_use_reasoning:
-                # NEW: Agentic single-call approach for reasoning models
+            if use_reasoning:
+                # Agentic single-call approach for reasoning models
                 print(f"[V2] Using AGENTIC mode (reasoning enabled)")
                 return cls._execute_agentic_pipeline(
                     image, llm_model, detail_mode, user_prompt,
-                    include_lighting, include_pose, seed, seed_mode, cache_results
+                    include_lighting, include_pose, seed, cache_results
                 )
             else:
-                # EXISTING: Multi-step iterative approach (UNTOUCHED)
+                # Multi-step iterative approach
                 print(f"[V2] Using ITERATIVE mode (multi-step)")
                 return cls._execute_pipeline(
                     image, llm_model, detail_mode, user_prompt,
-                    include_lighting, include_pose, seed, seed_mode, cache_results
+                    include_lighting, include_pose, seed, cache_results
                 )
         except Exception as e:
             error_msg = f"Error: {str(e)}"
             print(f"[V2] {error_msg}")
             import traceback
             traceback.print_exc()
-            return comfy_io.NodeOutput(error_msg, img_width, img_height)
+            return comfy_io.NodeOutput(error_msg, img_width, img_height, ui={"text": (error_msg,)})
 
     @classmethod
     def _execute_pipeline(
@@ -913,7 +902,6 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         include_lighting: bool,
         include_pose: bool,
         seed: int,
-        seed_mode: str,
         cache_results: bool,
     ) -> comfy_io.NodeOutput:
         """Internal execute with full pipeline."""
@@ -930,6 +918,8 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         log("=" * 60)
         log(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         log(f"Detail Mode: {detail_mode}")
+        if user_prompt and user_prompt.strip():
+            log(f"User Request: '{user_prompt.strip()[:50]}...' (will be incorporated into analysis)")
         log("")
 
         # Get image dimensions
@@ -1035,7 +1025,7 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
             result = cls._analyze_component(
                 client, model, base64_image,
                 component_key, component["prompt"],
-                mode_config
+                mode_config, user_prompt
             )
 
             component_results[component_key] = result
@@ -1070,7 +1060,7 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
 
         pbar.update(1)
 
-        return comfy_io.NodeOutput(prompt, width, height)
+        return comfy_io.NodeOutput(prompt, width, height, ui={"text": (prompt,)})
 
     @classmethod
     def _get_client(cls, llm_model: LLMModelConfig):
@@ -1116,11 +1106,22 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         component_key: str,
         component_prompt: str,
         mode_config: dict,
+        user_prompt: str = "",
     ) -> dict:
         """Analyze a single component of the image."""
 
-        system_prompt = f"""You are an expert visual analyst. Analyze ONLY the specific aspect requested.
+        # Build system prompt with user requirements if provided
+        system_prompt = """You are an expert visual analyst. Analyze ONLY the specific aspect requested.
 Be precise and specific in your descriptions. Output valid JSON only."""
+
+        # If user has special requirements, incorporate them into analysis
+        if user_prompt and user_prompt.strip():
+            system_prompt += f"""
+
+IMPORTANT USER REQUEST: The user has specifically asked for the following. Pay special attention to this aspect and ensure your analysis addresses it thoroughly:
+"{user_prompt.strip()}"
+
+When analyzing, prioritize capturing any details related to the user's request."""
 
         try:
             # Determine if Anthropic or OpenAI-style API
@@ -1397,9 +1398,14 @@ Be precise and specific in your descriptions. Output valid JSON only."""
             # Clean up
             prompt = prompt.replace(", ,", ",").replace("  ", " ")
 
-        # Add user prompt if provided
+        # Add user prompt if provided - structure it prominently at the beginning
+        # This ensures the user's special requirements are emphasized in the final prompt
         if user_prompt and user_prompt.strip():
-            prompt = f"{user_prompt.strip()}. {prompt}"
+            user_requirement = user_prompt.strip()
+            # Structure the user requirement as a primary emphasis
+            # The LLM analysis should have already incorporated these details,
+            # but we also add them at the front to ensure they're prioritized in generation
+            prompt = f"[USER FOCUS: {user_requirement}] {prompt}"
 
         return prompt.strip()
 
@@ -1546,7 +1552,6 @@ Be precise and specific in your descriptions. Output valid JSON only."""
         include_lighting: bool,
         include_pose: bool,
         seed: int,
-        seed_mode: str,
         cache_results: bool,
     ) -> comfy_io.NodeOutput:
         """
@@ -1571,6 +1576,8 @@ Be precise and specific in your descriptions. Output valid JSON only."""
         log(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         log(f"Detail Mode: {detail_mode}")
         log(f"Model: {llm_model.model} (reasoning enabled)")
+        if user_prompt and user_prompt.strip():
+            log(f"User Request: '{user_prompt.strip()[:50]}...' (HIGH PRIORITY in analysis)")
         log("")
 
         # Get image dimensions
@@ -1640,7 +1647,7 @@ Be precise and specific in your descriptions. Output valid JSON only."""
 
         # STEP 3: Build comprehensive agentic prompt from COMPONENTS
         agentic_prompt = cls._build_agentic_prompt(
-            subject_type, mapped_subject, detail_mode, components_to_analyze
+            subject_type, mapped_subject, detail_mode, components_to_analyze, user_prompt
         )
         pbar.update(1)
 
@@ -1687,7 +1694,7 @@ Be precise and specific in your descriptions. Output valid JSON only."""
         log(f"API calls: 2 (vs {len(components_to_analyze) + 1} iterative)")
         log("=" * 60)
 
-        return comfy_io.NodeOutput(prompt, width, height)
+        return comfy_io.NodeOutput(prompt, width, height, ui={"text": (prompt,)})
 
     @classmethod
     def _build_agentic_prompt(
@@ -1696,6 +1703,7 @@ Be precise and specific in your descriptions. Output valid JSON only."""
         mapped_subject: str,
         detail_mode: str,
         components_to_analyze: List[str],
+        user_prompt: str = "",
     ) -> str:
         """
         Build comprehensive analysis prompt dynamically from COMPONENTS dictionary.
@@ -1715,10 +1723,29 @@ Be precise and specific in your descriptions. Output valid JSON only."""
 
         components_section = "\n".join(component_specs)
 
+        # Build user request section if provided
+        user_request_section = ""
+        if user_prompt and user_prompt.strip():
+            user_request_section = f"""
+
+## CRITICAL: USER'S SPECIAL REQUEST
+
+The user has specifically asked for the following. This is a HIGH PRIORITY requirement:
+
+"{user_prompt.strip()}"
+
+**You MUST**:
+1. Pay special attention to this aspect throughout your analysis
+2. Ensure your component analyses capture details related to this request
+3. Make sure the final prompt_description fields emphasize any elements matching this request
+4. Place relevant details for this request PROMINENTLY in your descriptions
+
+"""
+
         # Build the comprehensive agentic prompt
         agentic_prompt = f"""You are an expert visual analyst for Z-Image prompt generation.
 Use your reasoning capabilities to methodically analyze this image.
-
+{user_request_section}
 ## ANALYSIS CONTEXT
 
 - **Subject Type**: {subject_type}
@@ -1731,6 +1758,7 @@ Use your reasoning capabilities to methodically analyze this image.
 2. For EACH component listed below, provide detailed analysis
 3. Think through each component carefully before providing your analysis
 4. Return ALL analyses in a single comprehensive JSON object
+5. {"PRIORITIZE capturing any details related to the user's special request above" if user_prompt else "Be thorough in your analysis"}
 
 ## CRITICAL: OUTPUT FORMAT
 
