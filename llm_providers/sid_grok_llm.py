@@ -83,16 +83,6 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     default=cls.get_default_model(),
                     tooltip="Grok model to use. grok-2-vision=latest"
                 ),
-                comfy_io.Int.Input(
-                    "max_tokens",
-                    default=500,
-                    min=100,
-                    max=8192,
-                    step=100,
-                    display_name="Max Output Tokens",
-                    display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Controls prompt length. 300=short (~150 words), 500=standard (~250 words), 800=detailed (~400 words), 1500+=very detailed."
-                ),
                 comfy_io.Float.Input(
                     "temperature",
                     default=0.7,
@@ -118,7 +108,6 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         cls,
         api_key: str,
         model: str,
-        max_tokens: int,
         temperature: float,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
@@ -128,19 +117,15 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         if not is_valid:
             print(f"[SID_Grok_LLM] Warning: {error_msg}")
 
-        # Get model's max output tokens limit and cap user's selection
+        # Get model's max output tokens from metadata
         model_max_output = cls.get_max_output_tokens(model)
-        actual_max_tokens = min(max_tokens, model_max_output)
 
-        if max_tokens > model_max_output:
-            print(f"[SID_Grok_LLM] Note: max_tokens capped from {max_tokens} to {model_max_output} (model limit)")
-
-        # Create configuration
+        # Create configuration using model's max_output_tokens
         config = cls.create_config(
             model=model,
             api_key=api_key.strip(),
             api_url=cls.get_default_url(),
-            max_tokens=actual_max_tokens,
+            max_tokens=model_max_output,
             temperature=temperature,
         )
 
@@ -148,6 +133,6 @@ class SID_Grok_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         config.extra_params = {"model_max_output_tokens": model_max_output}
 
         reasoning = cls.supports_reasoning(model)
-        print(f"[SID_Grok_LLM] Configured: {model} (max_tokens={actual_max_tokens}/{model_max_output}, temp={temperature}, reasoning={reasoning})")
+        print(f"[SID_Grok_LLM] Configured: {model} (max_tokens={model_max_output}, temp={temperature}, reasoning={reasoning})")
 
         return comfy_io.NodeOutput(config)

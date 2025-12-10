@@ -4,7 +4,7 @@ AI-powered Z-Image prompt generator for ComfyUI. Analyzes images and generates f
 
 ![Workflow Screenshot](docs/images/workflow-screenshot.png)
 
-**Version:** 4.3.0
+**Version:** 4.1.0
 **Author:** Siddhartha Lahiri
 
 ## Installation
@@ -61,7 +61,7 @@ LLM Provider Node ─┐
 | Setting | Value |
 |---------|-------|
 | API Key | Get from [console.anthropic.com](https://console.anthropic.com) |
-| Models | `claude-sonnet-4-5-20241022`, `claude-haiku-4-5-20241022` |
+| Models | `claude-sonnet-4-5-20250929`, `claude-haiku-4-5-20251001`, `claude-opus-4-1-20250805` |
 
 ---
 
@@ -149,24 +149,23 @@ ollama serve
 - **AMD** → ROCm support (Linux)
 - **CPU** → Fallback
 
-**Available Models:**
+**Available Models (High Resolution):**
 
-| Model | VRAM | Quality | Speed | Download |
-|-------|------|---------|-------|----------|
-| **moondream2-q4_k_m** | ~4GB | Good | Fast | [HuggingFace](https://huggingface.co/moondream/moondream2-gguf) |
-| **llava-v1.5-7b-q4_k_m** | ~8GB | Good | Medium | [HuggingFace](https://huggingface.co/mys/ggml_llava-v1.5-7b) |
-| **llava-v1.6-mistral-7b-q4_k_m** | ~8GB | Better | Medium | [HuggingFace](https://huggingface.co/cmp-nct/llava-1.6-gguf) |
-| **qwen2.5-vl-7b-q4_k_m** | ~6GB | Better | Medium | [HuggingFace](https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF) |
-| **qwen2.5-vl-7b-q8** | ~10GB | Excellent | Medium | [HuggingFace](https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF) |
-| **minicpm-v-2_6-q4_k_m** | ~10GB | Excellent | Medium | [HuggingFace](https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf) |
-| **llava-v1.5-13b-q4_k_m** | ~16GB | Very Good | Slow | [HuggingFace](https://huggingface.co/mys/ggml_llava-v1.5-13b) |
-| **llava-v1.6-34b-q4_k_m** | ~22GB | Best | Slow | [HuggingFace](https://huggingface.co/cjpais/llava-v1.6-34B-gguf) |
+All models support 1024x1024+ images natively for detailed analysis.
+
+| Model | VRAM | Max Resolution | Quality | Download |
+|-------|------|----------------|---------|----------|
+| **qwen3-vl-2b-q4** | ~4GB | Dynamic | Good | [HuggingFace](https://huggingface.co/bartowski/Qwen3-VL-2B-Instruct-GGUF) |
+| **qwen2.5-vl-7b-q4** | ~6GB | Dynamic | Better | [HuggingFace](https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF) |
+| **llama-3.2-vision-11b-q4** | ~8GB | 1120x1120 | Excellent | [HuggingFace](https://huggingface.co/leafspark/Llama-3.2-11B-Vision-Instruct-GGUF) |
+| **qwen2.5-vl-7b-q8** | ~10GB | Dynamic | Excellent | [HuggingFace](https://huggingface.co/Mungert/Qwen2.5-VL-7B-Instruct-GGUF) |
+| **minicpm-v-2_6-q4** | ~10GB | Dynamic | Excellent | [HuggingFace](https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf) |
+| **pixtral-12b-q4** | ~10GB | 1024x1024 | Excellent | [HuggingFace](https://huggingface.co/second-state/Pixtral-12B-2409-GGUF) |
 
 **Recommendations by VRAM:**
-- **8GB VRAM:** moondream2, llava-v1.5-7b, qwen2.5-vl-7b-q4
-- **12GB VRAM:** qwen2.5-vl-7b-q8, minicpm-v-2_6
-- **16GB VRAM:** llava-v1.5-13b
-- **24GB VRAM:** llava-v1.6-34b (best quality)
+- **4-6GB VRAM:** qwen3-vl-2b-q4 (fast, good quality)
+- **6-8GB VRAM:** qwen2.5-vl-7b-q4, llama-3.2-vision-11b-q4
+- **10GB+ VRAM:** qwen2.5-vl-7b-q8, minicpm-v-2_6, pixtral-12b (best quality)
 
 **Model Location:** `ComfyUI/models/LLM/GGUF/`
 
@@ -182,8 +181,8 @@ ollama serve
 | focus_override | Auto-detect, Portrait, Landscape, etc. | Force specific genre |
 | content_detail | minimal, standard, detailed, explicit | Body/clothing detail (NSFW) |
 | prompt_mode | Image Only, Prompt Guides, Prompt First, Prompt Dominates | How user prompt interacts |
-| max_tokens | 50-500 | Response length |
 | temperature | 0.0-2.0 | Creativity (0=focused, 2=creative) |
+| max_image_size | 512, 768, 1024, Original | GGUF only: resize before encoding (~4x faster at 512) |
 
 ## Outputs
 
@@ -231,16 +230,13 @@ All dependencies **auto-install** on first load:
 
 See [CHANGELOG.md](CHANGELOG.md) for full version history.
 
-### Version 4.3.0 (Latest)
-- **High-resolution prompt generation** for near-accurate image reproduction
-- **Detailed subject analysis**: ethnicity, precise skin tones with undertones
-- **Facial features**: eyes (with gaze direction), nose, lips, eyebrows in detail
-- **Comprehensive pose analysis**: all body parts including hand/palm orientation
-- **Clothing coverage analysis**: neckline, exposure levels, materials, gaps
-- **Cosmetics extraction**: foundation, eye makeup, lip color, blush
-- **Structured JSON output**: categorized data with all gathered information
-- **LLM interaction tracking**: all raw queries and responses for debugging
-- **Token-optimized prompts**: efficient use of max token limits
+### Version 4.1.0 (Latest)
+- **High-resolution GGUF models** - all local models support 1024x1024+ images natively
+- **Max Image Size option** for GGUF - resize images before encoding (~4x faster at 512)
+- **New models**: Qwen3-VL 2B, Llama 3.2 Vision 11B, Pixtral 12B
+- **Removed max_tokens slider** - uses model's optimal limit automatically
+- **Read-only prompt display** on V2 generator node
+- **User prompt integration** into agentic analysis pipeline
 
 ## License
 

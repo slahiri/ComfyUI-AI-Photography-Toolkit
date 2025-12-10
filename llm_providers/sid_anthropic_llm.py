@@ -89,16 +89,6 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
                     default=cls.get_default_model(),
                     tooltip="Claude model to use. Sonnet=balanced, Haiku=fast/cheap, Opus=most capable"
                 ),
-                comfy_io.Int.Input(
-                    "max_tokens",
-                    default=500,
-                    min=100,
-                    max=8192,
-                    step=100,
-                    display_name="Max Output Tokens",
-                    display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Controls prompt length. 300=short (~150 words), 500=standard (~250 words), 800=detailed (~400 words), 1500+=very detailed. Z-Image handles long prompts well."
-                ),
                 comfy_io.Float.Input(
                     "temperature",
                     default=0.7,
@@ -130,7 +120,6 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         cls,
         api_key: str,
         model: str,
-        max_tokens: int,
         temperature: float,
         use_reasoning: bool,
     ) -> comfy_io.NodeOutput:
@@ -149,12 +138,8 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
         if use_reasoning and not model_supports:
             print(f"[SID_Anthropic_LLM] Note: {model} does not support reasoning mode")
 
-        # Get model's max output tokens limit and cap user's selection
+        # Get model's max output tokens from metadata
         model_max_output = cls.get_max_output_tokens(model)
-        actual_max_tokens = min(max_tokens, model_max_output)
-
-        if max_tokens > model_max_output:
-            print(f"[SID_Anthropic_LLM] Note: max_tokens capped from {max_tokens} to {model_max_output} (model limit)")
 
         # Create configuration with reasoning decision
         config = LLMModelConfig(
@@ -162,7 +147,7 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             model=model,
             api_key=api_key.strip(),
             api_url=cls.get_default_url(),
-            max_tokens=actual_max_tokens,
+            max_tokens=model_max_output,
             temperature=temperature,
             supports_vision=True,
             supports_system_prompt=True,
@@ -170,6 +155,6 @@ class SID_Anthropic_LLM(comfy_io.ComfyNode, BaseLLMProvider):
             extra_params={"model_max_output_tokens": model_max_output},
         )
 
-        print(f"[SID_Anthropic_LLM] Configured: {model} (max_tokens={actual_max_tokens}/{model_max_output}, temp={temperature}, reasoning={actual_reasoning})")
+        print(f"[SID_Anthropic_LLM] Configured: {model} (max_tokens={model_max_output}, temp={temperature}, reasoning={actual_reasoning})")
 
         return comfy_io.NodeOutput(config)

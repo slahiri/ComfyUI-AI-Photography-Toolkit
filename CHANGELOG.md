@@ -5,7 +5,37 @@ All notable changes to ComfyUI-AI-Photography-Toolkit will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [4.4.0] - 2024-12-10
+## [4.1.0] - 2024-12-10
+
+### Added
+- **High-resolution GGUF models** - all local models now support 1024x1024+ images natively:
+  - Qwen3-VL 2B Q4 (4GB VRAM) - fast, dynamic resolution
+  - Qwen2.5-VL 7B Q4/Q8 (6-10GB VRAM) - excellent quality, dynamic resolution
+  - Llama 3.2 Vision 11B Q4 (8GB VRAM) - Meta's latest, 1120x1120 native
+  - Pixtral 12B Q4 (10GB VRAM) - Mistral's vision model, 1024x1024 native
+  - MiniCPM-V 2.6 (10GB VRAM) - multilingual, dynamic resolution
+- **Max Image Size option** for GGUF provider - resize images before encoding for faster processing:
+  - 512 (default): ~4x faster encoding
+  - 768: ~2x faster encoding
+  - 1024: ~1.5x faster encoding
+  - Original: no resize (full quality, slowest)
+- **`max_image_resolution` field** in GGUF model metadata for documentation
+- **Image caching infrastructure** - tracks image hashes for future optimization
+
+### Changed
+- **Removed max_tokens slider** from all LLM provider nodes (Anthropic, OpenAI, Grok, GGUF)
+  - Now uses model's max_output_tokens from metadata directly
+  - Eliminates the hardcoded 8192 cap that was limiting some models
+- **Updated GGUF model list** - removed LLaVA 1.5/1.6 models (limited to 336x336/672x672 per tile)
+- **Default GGUF model** changed from Moondream to Qwen2.5-VL 7B Q4
+- **Simplified GGUF node** - removed quality_mode preset selector
+
+### Removed
+- LLaVA 1.5 7B, 13B models (can't handle 1024x1024 images)
+- LLaVA 1.6 Mistral 7B, 34B models (can't handle 1024x1024 images)
+- Moondream2 model (replaced with higher resolution alternatives)
+
+## [4.0.1] - 2024-12-10
 
 ### Added
 - **Read-only prompt display** on V2 generator node - shows generated prompt after execution

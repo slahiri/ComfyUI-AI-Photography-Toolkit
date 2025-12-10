@@ -930,6 +930,20 @@ class SID_ZImagePromptGenerator_Advanced_V2(comfy_io.ComfyNode):
         # Convert image to base64
         img_np = (img_tensor.cpu().numpy() * 255).astype(np.uint8)
         pil_image = Image.fromarray(img_np)
+
+        # Check for max_image_size in extra_params (GGUF optimization)
+        max_image_size = llm_model.extra_params.get("max_image_size") if llm_model.extra_params else None
+        if max_image_size and max(width, height) > max_image_size:
+            # Resize while preserving aspect ratio
+            if width > height:
+                new_width = max_image_size
+                new_height = int(height * (max_image_size / width))
+            else:
+                new_height = max_image_size
+                new_width = int(width * (max_image_size / height))
+            pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            log(f"Image resized: {width}x{height} -> {new_width}x{new_height} (max_size={max_image_size})")
+
         buffer = io.BytesIO()
         pil_image.save(buffer, format="JPEG", quality=95)
         base64_image = base64.standard_b64encode(buffer.getvalue()).decode("utf-8")
@@ -1588,6 +1602,20 @@ When analyzing, prioritize capturing any details related to the user's request."
         # Convert image to base64
         img_np = (img_tensor.cpu().numpy() * 255).astype(np.uint8)
         pil_image = Image.fromarray(img_np)
+
+        # Check for max_image_size in extra_params (GGUF optimization)
+        max_image_size = llm_model.extra_params.get("max_image_size") if llm_model.extra_params else None
+        if max_image_size and max(width, height) > max_image_size:
+            # Resize while preserving aspect ratio
+            if width > height:
+                new_width = max_image_size
+                new_height = int(height * (max_image_size / width))
+            else:
+                new_height = max_image_size
+                new_width = int(width * (max_image_size / height))
+            pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            log(f"Image resized: {width}x{height} -> {new_width}x{new_height} (max_size={max_image_size})")
+
         buffer = io.BytesIO()
         pil_image.save(buffer, format="JPEG", quality=95)
         base64_image = base64.standard_b64encode(buffer.getvalue()).decode("utf-8")
