@@ -47,6 +47,11 @@ def setup_cuda_optimizations():
     """
     Configure CUDA for optimal inference speed.
     Call once at module load.
+
+    NOTE: We do NOT use torch.set_grad_enabled(False) globally because it affects
+    ALL PyTorch operations in the entire ComfyUI process, including VAE decode
+    and other nodes that may need gradients. Instead, we use torch.no_grad()
+    context managers locally where inference is performed.
     """
     try:
         import torch
@@ -56,8 +61,8 @@ def setup_cuda_optimizations():
             # Allow TF32 on Ampere+ GPUs for faster matrix ops
             torch.backends.cuda.matmul.allow_tf32 = True
             torch.backends.cudnn.allow_tf32 = True
-            # Disable gradient computation globally for inference
-            torch.set_grad_enabled(False)
+            # NOTE: Do NOT set torch.set_grad_enabled(False) globally!
+            # This breaks VAE decode and other ComfyUI nodes.
             print("[LocalModelClient] CUDA optimizations enabled: cudnn.benchmark, TF32")
     except Exception as e:
         print(f"[LocalModelClient] CUDA optimization setup warning: {e}")
@@ -1006,23 +1011,32 @@ class LocalModelClient:
 
     def _cleanup_after_generation(self):
         """
-        Clean up GPU memory after generation.
+        Clean up GPU state and memory after generation.
 
         This is critical to prevent ComfyUI's subsequent nodes (like VAE decode)
         from getting stuck due to:
         - Pending CUDA operations
         - Fragmented GPU memory
+        - Disabled gradient computation
         - Unreleased tensor references
         """
         import torch
 
         try:
+            # CRITICAL: Ensure gradient computation is enabled for other nodes
+            # Some transformers models or generation code may disable gradients
+            # and VAE/other nodes may need them enabled
+            torch.set_grad_enabled(True)
+
             if torch.cuda.is_available():
                 # Synchronize to ensure all CUDA operations are complete
                 torch.cuda.synchronize()
 
                 # Clear CUDA cache to free up memory for VAE
                 torch.cuda.empty_cache()
+
+            # Force garbage collection to release any dangling references
+            gc.collect()
 
         except Exception as e:
             print(f"[LocalModelClient] Warning: Cleanup failed: {e}")
