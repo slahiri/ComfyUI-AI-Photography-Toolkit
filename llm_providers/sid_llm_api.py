@@ -769,6 +769,16 @@ class SID_LLM_API(comfy_io.ComfyNode):
             if not actual_url:
                 raise ValueError(f"API URL is required for {provider}")
 
+            # Auto-fix common URL mistakes for local providers
+            # LM Studio and Ollama require /v1 suffix for OpenAI-compatible API
+            if provider_name in ("lmstudio", "ollama", "openai_compatible"):
+                # Remove trailing slash first
+                actual_url = actual_url.rstrip("/")
+                # Add /v1 if missing
+                if not actual_url.endswith("/v1"):
+                    actual_url = f"{actual_url}/v1"
+                    print(f"[SID_LLM_API] Auto-corrected URL to: {actual_url}")
+
             # Check if provider requires API key
             requires_key = provider_config.get("requires_key", True)
             is_local = provider_config.get("is_local", False)
