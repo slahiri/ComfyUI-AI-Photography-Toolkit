@@ -638,13 +638,16 @@ class LocalModelClient:
         # Add attention implementation for SmolVLM
         if device == "cuda":
             try:
+                # Check both import AND package metadata (transformers requires metadata)
                 import flash_attn
+                import importlib.metadata
+                importlib.metadata.version("flash_attn")  # This will raise if metadata missing
                 major, _ = torch.cuda.get_device_capability()
                 if major >= 8:
                     load_kwargs["attn_implementation"] = "flash_attention_2"
                 else:
                     load_kwargs["attn_implementation"] = "sdpa"
-            except ImportError:
+            except (ImportError, importlib.metadata.PackageNotFoundError):
                 load_kwargs["attn_implementation"] = "sdpa"
 
         if device == "cuda":
@@ -714,7 +717,10 @@ class LocalModelClient:
             print(f"  Using {self.attention_mode} (user-specified)")
         elif device == "cuda":
             try:
+                # Check both import AND package metadata (transformers requires metadata)
                 import flash_attn
+                import importlib.metadata
+                importlib.metadata.version("flash_attn")  # This will raise if metadata missing
                 major, _ = torch.cuda.get_device_capability()
                 if major >= 8:
                     load_kwargs["attn_implementation"] = "flash_attention_2"
@@ -724,10 +730,10 @@ class LocalModelClient:
                     load_kwargs["attn_implementation"] = "sdpa"
                     actual_attention_mode = "sdpa"
                     print("  Using SDPA (GPU compute capability < 8.0)")
-            except ImportError:
+            except (ImportError, importlib.metadata.PackageNotFoundError):
                 load_kwargs["attn_implementation"] = "sdpa"
                 actual_attention_mode = "sdpa"
-                print("  Using SDPA (flash_attn not installed)")
+                print("  Using SDPA (flash_attn not properly installed)")
 
         if device == "cuda":
             load_kwargs["device_map"] = {"": 0}
