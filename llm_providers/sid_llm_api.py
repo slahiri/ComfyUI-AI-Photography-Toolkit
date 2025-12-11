@@ -763,11 +763,18 @@ class SID_LLM_API(comfy_io.ComfyNode):
             if api_url.strip():
                 actual_url = api_url.strip()
             else:
-                actual_url = provider_config["api_url"]
+                actual_url = provider_config.get("api_url", "")
 
-            # Validate API URL
+            # Use default URLs for local providers if not specified
             if not actual_url:
-                raise ValueError(f"API URL is required for {provider}")
+                if provider_name == "lmstudio":
+                    actual_url = "http://localhost:1234/v1"
+                    print(f"[SID_LLM_API] Using default LM Studio URL: {actual_url}")
+                elif provider_name == "ollama":
+                    actual_url = "http://localhost:11434/v1"
+                    print(f"[SID_LLM_API] Using default Ollama URL: {actual_url}")
+                else:
+                    raise ValueError(f"API URL is required for {provider}")
 
             # Auto-fix common URL mistakes for local providers
             # LM Studio and Ollama require /v1 suffix for OpenAI-compatible API
