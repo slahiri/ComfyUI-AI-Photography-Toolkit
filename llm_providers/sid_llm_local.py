@@ -998,7 +998,34 @@ class LocalModelClient:
         if retry_count > 0:
             print(f"  Retries: {retry_count}")
 
+        # CRITICAL: Clean up GPU memory after generation to prevent VAE decode hangs
+        # This ensures CUDA operations are complete and memory is freed for subsequent nodes
+        self._cleanup_after_generation()
+
         return LocalModelResponse(response_text.strip())
+
+    def _cleanup_after_generation(self):
+        """
+        Clean up GPU memory after generation.
+
+        This is critical to prevent ComfyUI's subsequent nodes (like VAE decode)
+        from getting stuck due to:
+        - Pending CUDA operations
+        - Fragmented GPU memory
+        - Unreleased tensor references
+        """
+        import torch
+
+        try:
+            if torch.cuda.is_available():
+                # Synchronize to ensure all CUDA operations are complete
+                torch.cuda.synchronize()
+
+                # Clear CUDA cache to free up memory for VAE
+                torch.cuda.empty_cache()
+
+        except Exception as e:
+            print(f"[LocalModelClient] Warning: Cleanup failed: {e}")
 
     def _generate_florence2(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with Florence-2."""
