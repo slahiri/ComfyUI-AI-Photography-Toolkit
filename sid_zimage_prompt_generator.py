@@ -1068,6 +1068,17 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 request_params["stop"] = stop_strings
 
             response = client.chat.completions.create(**request_params)
+
+            # Handle empty or malformed response from LM Studio / local providers
+            if response is None:
+                raise ValueError("LLM returned None response - check if model is loaded")
+            if not hasattr(response, 'choices') or response.choices is None:
+                raise ValueError(f"LLM returned invalid response format: {response}")
+            if len(response.choices) == 0:
+                raise ValueError("LLM returned empty choices array")
+            if response.choices[0].message is None or response.choices[0].message.content is None:
+                raise ValueError("LLM returned empty message content - model may have failed to generate")
+
             return response.choices[0].message.content
 
     @classmethod
@@ -1108,7 +1119,13 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     request_params["stop"] = stop_strings
 
                 response = client.chat.completions.create(**request_params)
-                text = response.choices[0].message.content
+
+                # Validate response from OpenAI-style API
+                if response is None or not hasattr(response, 'choices') or response.choices is None:
+                    raise ValueError("LLM returned invalid response")
+                if len(response.choices) == 0 or response.choices[0].message is None:
+                    raise ValueError("LLM returned empty response")
+                text = response.choices[0].message.content or ""
 
             return cls._parse_json(text)
         except Exception as e:
