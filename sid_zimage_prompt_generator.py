@@ -844,6 +844,27 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
 
         # Step 5: Assemble prompt
         prompt = cls._assemble_prompt(component_results, mode_config, user_guidance)
+
+        # Step 6: If user guidance was provided but user_focus wasn't properly extracted,
+        # use second LLM call to apply the modification (same as single-shot pipeline)
+        if user_guidance and user_guidance.strip():
+            # Check if user_focus was successfully applied (prompt should start with the modification)
+            user_focus_raw = component_results.get("user_focus", "")
+            user_focus_valid = False
+            if isinstance(user_focus_raw, dict):
+                user_focus_valid = bool(user_focus_raw.get("user_focus", ""))
+            elif isinstance(user_focus_raw, str):
+                user_focus_valid = bool(user_focus_raw.strip())
+
+            if not user_focus_valid:
+                debug_lines.append("user_focus not found in agentic results, using enhancement call...")
+                print("[SID-Prompt] user_focus not found, making enhancement call...")
+                prompt, enhanced = cls._enhance_prompt_with_instructions(prompt, user_guidance, llm_model)
+                if enhanced:
+                    debug_lines.append("Successfully enhanced prompt with user instructions")
+                else:
+                    debug_lines.append("Enhancement call did not modify prompt")
+
         pbar.update(1)
 
         # Build metadata
@@ -1227,13 +1248,13 @@ Return a single JSON object:
             prompt = prompt.replace(", ,", ",").replace("  ", " ")
 
         # Add user modification at the BEGINNING (highest priority)
+        # Note: user_focus handling is done in execute methods where we have access to llm_model
+        # This method now just returns the base prompt; user_focus/enhancement is handled by caller
         if user_guidance and user_guidance.strip():
             if user_focus and isinstance(user_focus, str) and user_focus.strip():
                 # Use the LLM's modified description at the start
                 prompt = f"{user_focus.strip()}. {prompt}"
-            else:
-                # Fallback: insert raw user guidance as directive
-                prompt = f"[MODIFICATION: {user_guidance.strip()}] {prompt}"
+            # No else fallback here - let the caller handle enhancement
 
         return prompt.strip()
 
@@ -1257,10 +1278,11 @@ Return a single JSON object:
         llm_model: LLMModelConfig,
     ) -> Tuple[str, bool]:
         """
-        Make a second LLM call to enhance/modify the generated prompt based on user instructions.
+        Enhance/modify the generated prompt based on user instructions.
 
-        This uses the same LLM to rewrite the prompt according to user guidance, which is more
-        intelligent than regex-based post-processing.
+        For API providers: Makes a second LLM call to intelligently rewrite the prompt.
+        For local vision models: Uses string-based prepending since vision models
+        don't work well with text-only input.
 
         Args:
             prompt: The generated prompt from the first LLM call
@@ -1274,6 +1296,16 @@ Return a single JSON object:
             return prompt, False
 
         print(f"[SID-Prompt] Enhancing prompt with instructions: {user_guidance[:50]}...")
+
+        # For local vision models, use string-based enhancement
+        # Vision models don't work well with text-only LLM calls
+        provider_lower = llm_model.provider.lower()
+        if provider_lower == "local":
+            # Simple string-based approach: prepend the modification instruction
+            # and let the image generation model interpret it
+            enhanced = cls._apply_string_enhancement(prompt, user_guidance)
+            print(f"[SID-Prompt] Applied string-based enhancement for local model")
+            return enhanced, True
 
         try:
             client = cls._get_client(llm_model)
@@ -1311,15 +1343,8 @@ Apply the user's modification to the prompt. Output ONLY the modified prompt:"""
                     messages=[{"role": "user", "content": enhancement_prompt}]
                 )
                 enhanced = response.content[0].text.strip()
-            elif hasattr(client, 'generate'):
-                # Local model - use text-only generation
-                enhanced = client.generate(
-                    prompt=f"{enhancement_system}\n\n{enhancement_prompt}",
-                    max_tokens=2000,
-                    temperature=0.3
-                )
             else:
-                # OpenAI-style
+                # OpenAI-style (OpenAI, Gemini, Groq, Together, etc.)
                 response = client.chat.completions.create(
                     model=llm_model.model,
                     max_tokens=2000,
@@ -1339,9 +1364,79 @@ Apply the user's modification to the prompt. Output ONLY the modified prompt:"""
                 print(f"[SID-Prompt] Enhanced prompt: {len(enhanced)} chars")
                 return enhanced, True
             else:
-                print(f"[SID-Prompt] Enhancement response too short, using original")
-                return prompt, False
+                print(f"[SID-Prompt] Enhancement response too short, using string-based fallback")
+                return cls._apply_string_enhancement(prompt, user_guidance), True
 
         except Exception as e:
-            print(f"[SID-Prompt] Enhancement failed: {e}, using original prompt")
-            return prompt, False
+            print(f"[SID-Prompt] Enhancement failed: {e}, using string-based fallback")
+            return cls._apply_string_enhancement(prompt, user_guidance), True
+
+    @classmethod
+    def _apply_string_enhancement(cls, prompt: str, user_guidance: str) -> str:
+        """
+        Apply user guidance to prompt using string-based approach.
+
+        This is used for local vision models that can't do text-only generation,
+        or as a fallback when LLM enhancement fails.
+
+        The approach is to intelligently prepend or modify the prompt based on
+        common modification patterns.
+        """
+        guidance_lower = user_guidance.lower().strip()
+
+        # Common clothing/appearance modifications - add at the beginning
+        clothing_keywords = ["wear", "dress", "outfit", "clothing", "topless", "nude",
+                           "naked", "bikini", "lingerie", "shirt", "pants", "skirt"]
+        color_keywords = ["yellow", "red", "blue", "green", "black", "white", "pink",
+                         "purple", "orange", "color", "colour"]
+        hair_keywords = ["hair", "blonde", "brunette", "redhead", "braid", "ponytail"]
+
+        # Check if this is a clothing/color modification
+        is_clothing_mod = any(kw in guidance_lower for kw in clothing_keywords)
+        is_color_mod = any(kw in guidance_lower for kw in color_keywords)
+        is_hair_mod = any(kw in guidance_lower for kw in hair_keywords)
+
+        if is_clothing_mod or is_color_mod:
+            # For clothing/color mods, extract the key modification
+            mod_text = user_guidance.strip()
+
+            # Convert instruction to descriptive form by removing common prefixes
+            prefixes_to_remove = [
+                "make ", "change to ", "convert to ",
+                "make the ", "change the ", "convert the ",
+                "make it ", "change it to ", "convert it to ",
+            ]
+            mod_lower = mod_text.lower()
+            for prefix in prefixes_to_remove:
+                if mod_lower.startswith(prefix):
+                    mod_text = mod_text[len(prefix):]
+                    mod_lower = mod_text.lower()
+                    break
+
+            # Handle "X into Y" patterns (e.g., "dress into yellow colour")
+            if " into " in mod_lower:
+                # Extract what's after "into" as the key descriptor
+                parts = mod_text.split(" into ", 1)
+                if len(parts) == 2:
+                    # "dress into yellow colour" -> "yellow colour dress"
+                    subject = parts[0].strip()
+                    descriptor = parts[1].strip()
+                    mod_text = f"{descriptor} {subject}"
+
+            # Build modified prompt
+            return f"{mod_text}, {prompt}"
+
+        elif is_hair_mod:
+            # For hair mods, extract the modification
+            mod_text = user_guidance.strip()
+            prefixes_to_remove = ["make ", "make the ", "change to ", "change the "]
+            mod_lower = mod_text.lower()
+            for prefix in prefixes_to_remove:
+                if mod_lower.startswith(prefix):
+                    mod_text = mod_text[len(prefix):]
+                    break
+            return f"with {mod_text}, {prompt}"
+
+        else:
+            # General case: prepend as a style/modification directive
+            return f"{user_guidance.strip()}, {prompt}"
