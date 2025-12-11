@@ -1012,37 +1012,89 @@ class LocalModelClient:
         generated_tokens = outputs[0][input_len:]
         return self.processor.decode(generated_tokens, skip_special_tokens=True)
 
+    def _patch_dynamic_cache_compat(self):
+        """
+        Holistic compatibility fix for DynamicCache in newer transformers versions (4.49+).
+
+        Phi-3.5-Vision's custom modeling code expects deprecated/removed DynamicCache methods.
+        This patches the DynamicCache class to add compatibility shims for:
+        - seen_tokens property (deprecated in favor of cache_position tracking)
+        - get_max_length() method (removed in v4.49)
+        - get_usable_length(new_seq_length, layer_idx) method (removed in v4.49)
+
+        See: https://github.com/huggingface/transformers/issues/36071
+        """
+        try:
+            from transformers import DynamicCache
+
+            # Only patch if the methods are missing (avoid double-patching)
+            needs_patching = False
+
+            # Check if seen_tokens property exists
+            if not hasattr(DynamicCache, 'seen_tokens'):
+                needs_patching = True
+
+                @property
+                def seen_tokens_compat(self):
+                    """Compatibility shim for deprecated seen_tokens property."""
+                    if hasattr(self, '_seen_tokens'):
+                        return self._seen_tokens
+                    # Calculate from key_cache
+                    if self.key_cache and len(self.key_cache) > 0 and self.key_cache[0] is not None:
+                        return self.key_cache[0].shape[-2]
+                    return 0
+
+                DynamicCache.seen_tokens = seen_tokens_compat
+
+            # Check if get_max_length method exists
+            if not hasattr(DynamicCache, 'get_max_length'):
+                needs_patching = True
+
+                def get_max_length_compat(self):
+                    """Compatibility shim for removed get_max_length method."""
+                    return None  # DynamicCache has no max length limit
+
+                DynamicCache.get_max_length = get_max_length_compat
+
+            # Check if get_usable_length method exists
+            if not hasattr(DynamicCache, 'get_usable_length'):
+                needs_patching = True
+
+                def get_usable_length_compat(self, new_seq_length: int = 0, layer_idx: int = 0):
+                    """
+                    Compatibility shim for removed get_usable_length method.
+
+                    Args:
+                        new_seq_length: The new sequence length being added
+                        layer_idx: The layer index (not used, but required for signature)
+
+                    Returns:
+                        The current sequence length in the cache
+                    """
+                    # Return the current cache length for the specified layer
+                    if self.key_cache and len(self.key_cache) > layer_idx and self.key_cache[layer_idx] is not None:
+                        return self.key_cache[layer_idx].shape[-2]
+                    return 0
+
+                DynamicCache.get_usable_length = get_usable_length_compat
+
+            if needs_patching:
+                print("[LocalModelClient] DynamicCache compatibility patches applied for transformers 4.49+")
+
+        except ImportError:
+            # transformers not installed or DynamicCache not available
+            pass
+        except Exception as e:
+            print(f"[LocalModelClient] Warning: DynamicCache patching failed: {e}")
+
     def _generate_phi35_vision(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with Phi-3.5-Vision."""
         import torch
 
-        # Compatibility fix for newer transformers versions
-        # Phi-3.5-Vision's custom code expects attributes that newer transformers removed
-        try:
-            from transformers.cache_utils import DynamicCache
-            # seen_tokens was renamed/removed
-            if not hasattr(DynamicCache, 'seen_tokens'):
-                @property
-                def seen_tokens_compat(self):
-                    return self.get_seq_length()
-                DynamicCache.seen_tokens = seen_tokens_compat
-
-            # get_max_length was removed in newer transformers
-            if not hasattr(DynamicCache, 'get_max_length'):
-                def get_max_length_compat(self):
-                    # Return None as default (no max length limit)
-                    # Or return the max cache length if set
-                    return getattr(self, '_max_cache_len', None)
-                DynamicCache.get_max_length = get_max_length_compat
-
-            # get_usable_length was removed in newer transformers
-            if not hasattr(DynamicCache, 'get_usable_length'):
-                def get_usable_length_compat(self, new_seq_length: int = 0, layer_idx: int = 0):
-                    # Return current sequence length for the given layer (all cached tokens are usable)
-                    return self.get_seq_length(layer_idx)
-                DynamicCache.get_usable_length = get_usable_length_compat
-        except ImportError:
-            pass
+        # Holistic compatibility fix for newer transformers versions (4.49+)
+        # Phi-3.5-Vision's custom code expects deprecated/removed DynamicCache methods
+        # See: https://github.com/huggingface/transformers/issues/36071
+        self._patch_dynamic_cache_compat()
 
         messages = [{"role": "user", "content": ""}]
         if images:
