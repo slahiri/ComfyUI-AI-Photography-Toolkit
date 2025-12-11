@@ -57,6 +57,10 @@ SID_LLM_API ───────────┘
 
 **Local (free):** Ollama, LM Studio, or use SID_LLM_Local with built-in models
 
+## Sample Workflow
+
+Download: [sample_workflow.json](sample_workflows/sample_workflow.json)
+
 ## Tips
 
 - **Best quality:** Use Claude or GPT-4o with "Enable Reasoning" turned on
