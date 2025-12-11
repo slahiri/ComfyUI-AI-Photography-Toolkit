@@ -1558,12 +1558,6 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     tooltip="Custom max tokens (only used when preset is 'Custom')"
                 ),
                 comfy_io.Boolean.Input(
-                    "enable_reasoning",
-                    default=False,
-                    display_name="Enable Reasoning",
-                    tooltip="Enable reasoning for Thinking models (Qwen3-VL-*-Thinking). Disabled by default as local models work better with single-shot mode."
-                ),
-                comfy_io.Boolean.Input(
                     "keep_model_loaded",
                     default=True,
                     display_name="Keep Model Loaded",
@@ -1620,7 +1614,6 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
         temperature: float,
         max_tokens_preset: str,
         custom_max_tokens: int,
-        enable_reasoning: bool,
         keep_model_loaded: bool,
         attention_mode: str,
         repetition_penalty: float,
@@ -1677,10 +1670,9 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                 print(f"[SID_LLM_Local] Warning: Requested {max_tokens} tokens exceeds model max ({model_max_tokens}), capping")
                 max_tokens = model_max_tokens
 
-            # Handle reasoning - only enable for Thinking models
-            reasoning_enabled = enable_reasoning and model_info.is_thinking
-            if enable_reasoning and not model_info.is_thinking:
-                print(f"[SID_LLM_Local] Note: Reasoning disabled - {model} is not a Thinking model")
+            # Reasoning is permanently disabled for local models
+            # Local models output chain-of-thought mixed with results, breaking JSON parsing
+            reasoning_enabled = False
 
             config = LLMModelConfig(
                 provider=cls.PROVIDER_NAME,
@@ -1710,8 +1702,6 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
             print(f"[SID_LLM_Local] Configured: {model}")
             print(f"  Family: {model_info.family.value}, VRAM: {model_info.vram_4bit:.1f}-{model_info.vram_fp16:.1f}GB")
             print(f"  Quantization: {quant}, Device: {device}, Max Tokens: {max_tokens}")
-            if model_info.is_thinking:
-                print(f"  Reasoning: {'Enabled' if reasoning_enabled else 'Disabled'}")
 
             return comfy_io.NodeOutput(config)
 
