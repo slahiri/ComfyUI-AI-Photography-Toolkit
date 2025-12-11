@@ -363,32 +363,9 @@ PROVIDERS = {
         "provider_name": "ollama",
         "requires_key": False,
         "is_local": True,
-        "models": "dynamic",  # Will be populated by get_ollama_models()
-        "fallback_models": [
-            "llama3.2-vision:11b",
-            "llama3.2-vision:90b",
-            "llava:13b",
-            "llava:34b",
-            "bakllava",
-            "llama3.3:70b",
-            "llama3.1:70b",
-            "llama3.1:8b",
-            "qwen2.5:72b",
-            "qwen2.5:32b",
-            "qwen2.5:14b",
-            "qwen2.5:7b",
-            "mistral:7b",
-            "mixtral:8x7b",
-            "deepseek-r1:70b",
-            "deepseek-r1:32b",
-            "deepseek-r1:14b",
-            "deepseek-r1:7b",
-            "phi3.5:3.8b",
-            "gemma2:27b",
-            "gemma2:9b",
-            "gemma3:latest",
-        ],
-        "default_model": "llama3.2-vision:11b",
+        "models": "dynamic",  # Auto-detected from Ollama API, use custom_model for manual entry
+        "fallback_models": [],  # No fallback - use custom_model field instead
+        "default_model": "use custom_model field",
     },
     "LM Studio (Local)": {
         "api_url": "http://localhost:1234/v1",
@@ -396,17 +373,9 @@ PROVIDERS = {
         "provider_name": "lmstudio",
         "requires_key": False,
         "is_local": True,
-        "models": [
-            "local-model (auto-detect loaded model)",
-            "lmstudio-community/Llama-3.2-11B-Vision-Instruct-GGUF",
-            "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF",
-            "lmstudio-community/Qwen2.5-14B-Instruct-GGUF",
-            "lmstudio-community/Qwen2.5-7B-Instruct-GGUF",
-            "lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF",
-            "lmstudio-community/DeepSeek-R1-Distill-Qwen-14B-GGUF",
-            "lmstudio-community/DeepSeek-R1-Distill-Qwen-7B-GGUF",
-        ],
-        "default_model": "local-model (auto-detect loaded model)",
+        "models": "dynamic",  # Auto-detected from LM Studio API, use custom_model for manual entry
+        "fallback_models": [],  # No fallback - use custom_model field instead
+        "default_model": "use custom_model field",
     },
     "Custom OpenAI-Compatible": {
         "api_url": "http://localhost:8080/v1",
