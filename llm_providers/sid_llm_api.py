@@ -222,13 +222,14 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
-            # Vision-capable free models only
-            "meta-llama/llama-3.2-90b-vision-instruct:free",
-            "meta-llama/llama-3.2-11b-vision-instruct:free",
-            "qwen/qwen-2-vl-7b-instruct:free",
+            # Vision-capable free models (from /v1/models API Dec 2025)
+            "nvidia/nemotron-nano-12b-v2-vl:free",
             "google/gemini-2.0-flash-exp:free",
+            "google/gemma-3-27b-it:free",
+            "google/gemma-3-12b-it:free",
+            "amazon/nova-2-lite-v1:free",
         ],
-        "default_model": "meta-llama/llama-3.2-90b-vision-instruct:free",
+        "default_model": "nvidia/nemotron-nano-12b-v2-vl:free",
     },
     "Fireworks AI": {
         "api_url": "https://api.fireworks.ai/inference/v1",
