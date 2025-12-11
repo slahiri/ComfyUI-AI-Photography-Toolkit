@@ -1,7 +1,7 @@
 # ComfyUI-AI-Photography-Toolkit
 
 <p align="center">
-  <img src="assets/node_llm_local.png" width="400" alt="SID LLM Local Node"/>
+  <img src="assets/workflow_screenshot.png" width="800" alt="AI Photography Toolkit Workflow"/>
 </p>
 
 AI-powered Z-Image prompt generator for ComfyUI. Analyzes images and generates flowing narrative prompts optimized for Z-Image models.
@@ -22,17 +22,11 @@ Restart ComfyUI. All dependencies install automatically on first load.
 
 The toolkit provides **3 unified nodes**:
 
-| Node | Description |
-|------|-------------|
-| **SID_LLM_API** | Cloud LLM providers (Anthropic, OpenAI, Gemini, Grok, Ollama, LM Studio, and more) |
-| **SID_LLM_Local** | Local models (Florence-2, Moondream2, SmolVLM, Phi-3.5, QwenVL) |
-| **SID_ZImagePromptGenerator** | Z-Image prompt generation (auto-switches Single-Shot/Agentic based on LLM) |
-
-<p align="center">
-  <img src="assets/node_llm_local.png" width="280" alt="SID LLM Local Node"/>
-  <img src="assets/node_llm_api.png" width="280" alt="SID LLM API Node"/>
-  <img src="assets/node_prompt_generator.png" width="280" alt="SID Z-Image Prompt Generator Node"/>
-</p>
+| Node | Screenshot | Description |
+|------|------------|-------------|
+| **SID_LLM_Local** | <img src="assets/node_llm_local.png" width="250"/> | Run vision models locally without API keys. Supports Qwen3-VL, Florence-2, Moondream2, SmolVLM, Phi-3.5. Configurable quantization (4-bit/8-bit) and sampling parameters. |
+| **SID_LLM_API** | <img src="assets/node_llm_api.png" width="250"/> | Connect to 15+ cloud providers including Anthropic Claude, OpenAI GPT-4o, Google Gemini, xAI Grok, and more. Supports extended thinking/reasoning mode. |
+| **SID_ZImagePromptGenerator** | <img src="assets/node_prompt_generator.png" width="250"/> | Generate Z-Image optimized prompts from images. Auto-switches between Single-Shot and Agentic pipelines based on LLM capabilities. Configurable analysis modes and style presets. |
 
 ## Quick Start
 
