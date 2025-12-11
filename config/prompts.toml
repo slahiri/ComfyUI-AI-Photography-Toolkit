@@ -78,6 +78,306 @@ default_style = "photo"
 
 
 # =============================================================================
+# SUBJECT TYPE CLASSIFICATION
+# =============================================================================
+# Identifies what/who is the main subject of the image
+
+[subject_type]
+detect_subject = """Classify the PRIMARY SUBJECT of this image into ONE category:
+
+HUMAN SUBJECTS:
+- single_woman: One adult female (18+)
+- single_man: One adult male (18+)
+- couple: Two people together (romantic or posed)
+- group: Three or more people
+- child: Person appearing under 18
+- baby: Infant or toddler
+- elderly: Visibly older adult (60+)
+
+NON-HUMAN CHARACTERS:
+- humanoid: Human-like but not human (elf, vampire, android face)
+- robot: Mechanical/robotic character
+- cyborg: Human with visible mechanical parts
+- alien: Extraterrestrial being
+
+CREATURES:
+- animal_real: Real-world animal (dog, cat, horse, etc.)
+- animal_fantasy: Mythical creature (dragon, phoenix, unicorn)
+- monster: Horror/fantasy monster
+- hybrid: Part human, part creature (mermaid, centaur, but NOT furry)
+
+NON-LIVING:
+- landscape: Natural scenery (mountains, beach, forest)
+- cityscape: Urban environment, skyline
+- interior: Indoor space/room
+- architecture: Building, structure focus
+- vehicle: Car, plane, ship, etc.
+- object: Product, item, still life
+- food: Food/beverage photography
+- abstract: Patterns, textures, non-representational
+
+Respond with ONLY the category name, nothing else."""
+
+valid_subjects = [
+    "single_woman", "single_man", "couple", "group", "child", "baby", "elderly",
+    "humanoid", "robot", "cyborg", "alien",
+    "animal_real", "animal_fantasy", "monster", "hybrid",
+    "landscape", "cityscape", "interior", "architecture", "vehicle", "object", "food", "abstract"
+]
+
+# Subject groups for template selection
+[subject_type.groups]
+human = ["single_woman", "single_man", "couple", "group", "child", "baby", "elderly"]
+character = ["humanoid", "robot", "cyborg", "alien"]
+creature = ["animal_real", "animal_fantasy", "monster", "hybrid"]
+scene = ["landscape", "cityscape", "interior", "architecture"]
+object = ["vehicle", "object", "food"]
+abstract = ["abstract"]
+
+default_subject = "single_woman"
+
+
+# =============================================================================
+# SCENE TYPE / FRAMING CLASSIFICATION
+# =============================================================================
+# Identifies how the subject is framed/presented
+
+[scene_type]
+detect_scene = """Classify the SCENE TYPE / FRAMING of this image:
+
+PORTRAIT FRAMING (subject fills frame):
+- headshot: Face/head only, shoulders may be cropped
+- bust: Head and shoulders/upper chest
+- upper_body: Head to waist/hips
+- three_quarter: Head to knees
+- full_body: Entire body visible head to feet
+
+COMPOSITIONAL STYLE:
+- closeup_detail: Extreme closeup on specific feature (eyes, hands, lips)
+- environmental: Subject small in larger setting
+- group_shot: Multiple subjects arranged together
+
+ACTION/POSE TYPE:
+- static_posed: Still, deliberate pose
+- candid: Natural, unposed moment
+- action: Movement, dynamic pose
+- dramatic: Theatrical, exaggerated pose
+
+CAMERA DISTANCE:
+- intimate: Very close, personal
+- personal: Normal conversation distance
+- social: Full body with some environment
+- public: Subject smaller, environment dominant
+- distant: Landscape/wide scene
+
+Respond with ONLY the category name, nothing else."""
+
+valid_scenes = [
+    "headshot", "bust", "upper_body", "three_quarter", "full_body",
+    "closeup_detail", "environmental", "group_shot",
+    "static_posed", "candid", "action", "dramatic",
+    "intimate", "personal", "social", "public", "distant"
+]
+
+[scene_type.groups]
+portrait = ["headshot", "bust", "upper_body", "three_quarter", "full_body"]
+composition = ["closeup_detail", "environmental", "group_shot"]
+pose = ["static_posed", "candid", "action", "dramatic"]
+distance = ["intimate", "personal", "social", "public", "distant"]
+
+default_scene = "upper_body"
+
+
+# =============================================================================
+# CAMERA ANGLE CLASSIFICATION
+# =============================================================================
+
+[camera_angle]
+detect_angle = """Classify the CAMERA ANGLE of this image:
+
+VERTICAL ANGLE:
+- eye_level: Camera at subject's eye height
+- high_angle: Camera above, looking down
+- low_angle: Camera below, looking up
+- birds_eye: Directly overhead, top-down view
+- worms_eye: Directly below, looking straight up
+- dutch_angle: Tilted/canted frame
+
+HORIZONTAL ANGLE (for faces/subjects):
+- front_view: Facing camera directly (0°)
+- three_quarter_left: Turned ~45° to camera's right
+- three_quarter_right: Turned ~45° to camera's left
+- profile_left: Side view, facing camera's right (90°)
+- profile_right: Side view, facing camera's left (90°)
+- back_view: Back of subject to camera (180°)
+- over_shoulder: View from behind shoulder
+
+Respond with ONLY the category name, nothing else."""
+
+valid_angles = [
+    "eye_level", "high_angle", "low_angle", "birds_eye", "worms_eye", "dutch_angle",
+    "front_view", "three_quarter_left", "three_quarter_right",
+    "profile_left", "profile_right", "back_view", "over_shoulder"
+]
+
+[camera_angle.groups]
+vertical = ["eye_level", "high_angle", "low_angle", "birds_eye", "worms_eye", "dutch_angle"]
+horizontal = ["front_view", "three_quarter_left", "three_quarter_right", "profile_left", "profile_right", "back_view", "over_shoulder"]
+
+default_angle = "eye_level"
+
+
+# =============================================================================
+# CONTENT RATING CLASSIFICATION
+# =============================================================================
+
+[content_rating]
+detect_rating = """Classify the CONTENT RATING of this image:
+
+SAFE:
+- sfw: Completely safe for work, family-friendly
+- sfw_suggestive: Safe but mildly flirty/attractive (swimwear, form-fitting clothes)
+
+MATURE:
+- mature_suggestive: Revealing clothing, implied sensuality
+- mature_partial: Partial nudity, strategic coverage (lingerie, artistic nude)
+
+ADULT:
+- nsfw_nudity: Full nudity visible
+- nsfw_explicit: Explicit sexual content
+
+SPECIAL:
+- artistic_nude: Classical/artistic nude (non-sexual context)
+- medical: Clinical/educational context
+
+Respond with ONLY the category name, nothing else."""
+
+valid_ratings = [
+    "sfw", "sfw_suggestive",
+    "mature_suggestive", "mature_partial",
+    "nsfw_nudity", "nsfw_explicit",
+    "artistic_nude", "medical"
+]
+
+[content_rating.groups]
+safe = ["sfw", "sfw_suggestive"]
+mature = ["mature_suggestive", "mature_partial", "artistic_nude"]
+adult = ["nsfw_nudity", "nsfw_explicit"]
+special = ["medical"]
+
+default_rating = "sfw"
+
+
+# =============================================================================
+# LIGHTING CLASSIFICATION
+# =============================================================================
+
+[lighting]
+detect_lighting = """Classify the PRIMARY LIGHTING of this image:
+
+NATURAL LIGHT:
+- bright_daylight: Direct sunlight, harsh shadows
+- soft_daylight: Overcast/diffused natural light
+- golden_hour: Warm sunrise/sunset lighting
+- blue_hour: Twilight, cool blue tones
+- moonlight: Nighttime natural light
+- window_light: Indoor natural light from windows
+
+STUDIO/ARTIFICIAL:
+- studio_soft: Professional soft lighting (softbox, beauty dish)
+- studio_hard: Dramatic studio with hard shadows
+- ring_light: Circular catchlights, flat frontal light
+- flash: On-camera or direct flash
+- continuous: Video/continuous artificial light
+
+DRAMATIC/STYLIZED:
+- high_key: Bright, low contrast, minimal shadows
+- low_key: Dark, high contrast, deep shadows
+- rembrandt: Classic triangle light on cheek
+- split: Half face lit, half in shadow
+- rim_light: Strong backlight creating edge glow
+- silhouette: Subject dark against bright background
+
+ENVIRONMENTAL:
+- neon: Colorful artificial/neon lighting
+- candlelight: Warm, flickering light source
+- firelight: Orange/red fire illumination
+- streetlight: Urban night lighting
+- mixed: Multiple light sources/colors
+
+Respond with ONLY the category name, nothing else."""
+
+valid_lighting = [
+    "bright_daylight", "soft_daylight", "golden_hour", "blue_hour", "moonlight", "window_light",
+    "studio_soft", "studio_hard", "ring_light", "flash", "continuous",
+    "high_key", "low_key", "rembrandt", "split", "rim_light", "silhouette",
+    "neon", "candlelight", "firelight", "streetlight", "mixed"
+]
+
+[lighting.groups]
+natural = ["bright_daylight", "soft_daylight", "golden_hour", "blue_hour", "moonlight", "window_light"]
+studio = ["studio_soft", "studio_hard", "ring_light", "flash", "continuous"]
+dramatic = ["high_key", "low_key", "rembrandt", "split", "rim_light", "silhouette"]
+environmental = ["neon", "candlelight", "firelight", "streetlight", "mixed"]
+
+default_lighting = "soft_daylight"
+
+
+# =============================================================================
+# COLOR/MOOD CLASSIFICATION
+# =============================================================================
+
+[color_mood]
+detect_mood = """Classify the COLOR MOOD / PALETTE of this image:
+
+COLOR TEMPERATURE:
+- warm: Orange, yellow, red dominant tones
+- cool: Blue, cyan, teal dominant tones
+- neutral: Balanced, no strong color cast
+- mixed_warm_cool: Both warm and cool tones present
+
+SATURATION:
+- vibrant: Highly saturated, punchy colors
+- muted: Desaturated, subdued colors
+- pastel: Soft, light colors
+- monochrome: Single color or grayscale
+- black_white: True black and white
+
+COLOR PALETTE:
+- earth_tones: Browns, tans, natural colors
+- jewel_tones: Rich, deep colors (emerald, ruby, sapphire)
+- neon_colors: Bright fluorescent colors
+- skin_tones: Dominated by skin/flesh colors
+- natural_greens: Nature/foliage dominant
+- urban_grays: Concrete, metal, city palette
+
+MOOD:
+- bright_cheerful: Light, happy, uplifting
+- dark_moody: Shadowy, atmospheric, mysterious
+- dreamy_soft: Ethereal, hazy, romantic
+- harsh_gritty: High contrast, raw, edgy
+- cinematic: Film-like color grading
+- vintage_retro: Aged, nostalgic color treatment
+
+Respond with ONLY the category name, nothing else."""
+
+valid_moods = [
+    "warm", "cool", "neutral", "mixed_warm_cool",
+    "vibrant", "muted", "pastel", "monochrome", "black_white",
+    "earth_tones", "jewel_tones", "neon_colors", "skin_tones", "natural_greens", "urban_grays",
+    "bright_cheerful", "dark_moody", "dreamy_soft", "harsh_gritty", "cinematic", "vintage_retro"
+]
+
+[color_mood.groups]
+temperature = ["warm", "cool", "neutral", "mixed_warm_cool"]
+saturation = ["vibrant", "muted", "pastel", "monochrome", "black_white"]
+palette = ["earth_tones", "jewel_tones", "neon_colors", "skin_tones", "natural_greens", "urban_grays"]
+mood = ["bright_cheerful", "dark_moody", "dreamy_soft", "harsh_gritty", "cinematic", "vintage_retro"]
+
+default_mood = "neutral"
+
+
+# =============================================================================
 # ILLUSTRATED STYLE SYSTEM PROMPTS
 # =============================================================================
 # Specialized system prompts for anime/manga/cartoon/hentai styles
