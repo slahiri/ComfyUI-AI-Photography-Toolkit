@@ -240,6 +240,16 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         description="Balanced reasoning model",
         model_class="AutoModelForVision2Seq"
     ),
+    "Qwen3-VL-8B-Thinking": LocalModelInfo(
+        name="Qwen3-VL 8B Thinking | 4K tokens | 4.5GB VRAM (Best Reasoning)",
+        repo_id="Qwen/Qwen3-VL-8B-Thinking",
+        family=ModelFamily.QWENVL,
+        vram_fp16=12.0, vram_8bit=7.0, vram_4bit=4.5,
+        max_output_tokens=4096,
+        is_thinking=True,
+        description="High quality reasoning, needs 12GB+ VRAM",
+        model_class="AutoModelForVision2Seq"
+    ),
     "Qwen2.5-VL-3B-Instruct": LocalModelInfo(
         name="Qwen2.5-VL 3B | 4K tokens | 2GB VRAM",
         repo_id="Qwen/Qwen2.5-VL-3B-Instruct",
