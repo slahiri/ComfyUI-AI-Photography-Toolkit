@@ -1093,9 +1093,16 @@ class LocalModelClient:
                     """Compatibility shim for deprecated seen_tokens property."""
                     if hasattr(self, '_seen_tokens'):
                         return self._seen_tokens
-                    # Calculate from key_cache
-                    if self.key_cache and len(self.key_cache) > 0 and self.key_cache[0] is not None:
-                        return self.key_cache[0].shape[-2]
+                    # Try get_seq_length method (newer transformers)
+                    if hasattr(self, 'get_seq_length'):
+                        try:
+                            return self.get_seq_length(0)
+                        except (IndexError, TypeError):
+                            pass
+                    # Calculate from key_cache (older transformers)
+                    if hasattr(self, 'key_cache') and self.key_cache and len(self.key_cache) > 0:
+                        if self.key_cache[0] is not None:
+                            return self.key_cache[0].shape[-2]
                     return 0
 
                 DynamicCache.seen_tokens = seen_tokens_compat
@@ -1125,9 +1132,16 @@ class LocalModelClient:
                     Returns:
                         The current sequence length in the cache
                     """
-                    # Return the current cache length for the specified layer
-                    if self.key_cache and len(self.key_cache) > layer_idx and self.key_cache[layer_idx] is not None:
-                        return self.key_cache[layer_idx].shape[-2]
+                    # Try get_seq_length method (newer transformers)
+                    if hasattr(self, 'get_seq_length'):
+                        try:
+                            return self.get_seq_length(layer_idx)
+                        except (IndexError, TypeError):
+                            pass
+                    # Return the current cache length for the specified layer (older transformers)
+                    if hasattr(self, 'key_cache') and self.key_cache and len(self.key_cache) > layer_idx:
+                        if self.key_cache[layer_idx] is not None:
+                            return self.key_cache[layer_idx].shape[-2]
                     return 0
 
                 DynamicCache.get_usable_length = get_usable_length_compat
