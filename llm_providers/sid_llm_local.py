@@ -1034,6 +1034,13 @@ class LocalModelClient:
                     # Or return the max cache length if set
                     return getattr(self, '_max_cache_len', None)
                 DynamicCache.get_max_length = get_max_length_compat
+
+            # get_usable_length was removed in newer transformers
+            if not hasattr(DynamicCache, 'get_usable_length'):
+                def get_usable_length_compat(self, new_seq_length: int = 0):
+                    # Return current sequence length (all cached tokens are usable)
+                    return self.get_seq_length()
+                DynamicCache.get_usable_length = get_usable_length_compat
         except ImportError:
             pass
 
