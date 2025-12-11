@@ -628,6 +628,9 @@ class LocalModelClient:
         load_kwargs = {
             "trust_remote_code": True,
             "low_cpu_mem_usage": True,
+            # Force eager attention - Florence-2's custom code doesn't define _supports_sdpa
+            # which newer transformers (4.49+) checks for
+            "attn_implementation": "eager",
         }
 
         if device == "cuda":
@@ -646,6 +649,28 @@ class LocalModelClient:
 
         self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
         self.tokenizer = self.processor.tokenizer
+
+    def _clear_transformers_cache(self, model_name: str):
+        """
+        Clear corrupted transformers_modules cache for a specific model.
+        This helps recover from incomplete downloads or cache corruption.
+        """
+        import shutil
+        from pathlib import Path
+
+        cache_dir = Path.home() / ".cache" / "huggingface" / "modules" / "transformers_modules"
+        if not cache_dir.exists():
+            return
+
+        # Find and remove directories matching the model name
+        for item in cache_dir.iterdir():
+            # Match variations like "Moondream2", "moondream2", "vikhyatk_moondream2"
+            if model_name.lower() in item.name.lower():
+                try:
+                    shutil.rmtree(item)
+                    print(f"[LocalModelClient] Cleared corrupted cache: {item.name}")
+                except Exception as e:
+                    print(f"[LocalModelClient] Warning: Could not clear cache {item.name}: {e}")
 
     def _load_moondream2(self, model_path: str, device: str):
         """Load Moondream2 model with speed optimizations."""
@@ -666,7 +691,17 @@ class LocalModelClient:
             else:
                 load_kwargs["torch_dtype"] = dtype or torch.float16
 
-        self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
+        # Try loading, if cache is corrupted clear it and retry
+        try:
+            self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
+        except FileNotFoundError as e:
+            if "transformers_modules" in str(e):
+                print(f"[LocalModelClient] Detected corrupted cache, clearing and retrying...")
+                self._clear_transformers_cache("moondream")
+                self._clear_transformers_cache("Moondream")
+                self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
+            else:
+                raise
         self.model.eval()
 
         # Enable KV cache for faster generation
