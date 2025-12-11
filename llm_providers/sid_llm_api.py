@@ -530,12 +530,51 @@ def get_provider_models(provider_name: str, config: Dict) -> List[str]:
 
 
 def get_all_models() -> List[str]:
-    """Get all models from all providers with provider prefix."""
+    """
+    Get all models from all providers with provider prefix.
+
+    Models are organized with folder-like grouping:
+    - Models with "/" in their name are grouped by prefix (e.g., meta-llama/, Qwen/)
+    - Within each provider, models are sorted with grouped models together
+    - This creates a visual hierarchy in the dropdown
+    """
     all_models = []
+
     for provider_name, config in PROVIDERS.items():
         models = get_provider_models(provider_name, config)
+
+        # Separate models into groups based on their prefix
+        # Models with "/" get grouped, others stay as-is
+        grouped = {}  # prefix -> list of models
+        ungrouped = []  # models without "/"
+
         for model in models:
+            if "/" in model:
+                # Extract prefix (everything before the first /)
+                prefix = model.split("/")[0]
+                if prefix not in grouped:
+                    grouped[prefix] = []
+                grouped[prefix].append(model)
+            else:
+                ungrouped.append(model)
+
+        # Build the sorted list: ungrouped first, then grouped by prefix
+        provider_models = []
+
+        # Add ungrouped models first (they don't have subfolders)
+        provider_models.extend(ungrouped)
+
+        # Add grouped models, sorted by prefix
+        for prefix in sorted(grouped.keys()):
+            prefix_models = grouped[prefix]
+            # Sort models within each group
+            prefix_models.sort()
+            provider_models.extend(prefix_models)
+
+        # Add provider prefix to all models
+        for model in provider_models:
             all_models.append(f"[{provider_name}] {model}")
+
     return all_models
 
 
