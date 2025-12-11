@@ -110,7 +110,9 @@ The `SID_LLM_Local` node runs vision models locally without API keys:
 | **Moondream2** | ~4GB | Lightweight, fast inference |
 | **SmolVLM** | ~4GB | Compact vision-language model |
 | **Phi-3.5 Vision** | ~8GB | Microsoft's capable VLM |
-| **QwenVL 2B** | ~6GB | Alibaba's vision model |
+| **QwenVL 2B** | ~6GB | Alibaba's vision model (best quality) |
+
+> **Recommendation:** QwenVL currently produces the best quality prompts among local models. Use with reasoning disabled (single-shot mode) for optimal results.
 
 ### Quantization (CUDA only)
 - Auto: Automatic based on VRAM
