@@ -1,8 +1,10 @@
 # ComfyUI-AI-Photography-Toolkit
 
-AI-powered Z-Image prompt generator for ComfyUI. Analyzes images and generates flowing narrative prompts optimized for Z-Image models.
+<p align="center">
+  <img src="assets/node_llm_local.png" width="400" alt="SID LLM Local Node"/>
+</p>
 
-![Workflow Screenshot](docs/images/workflow-screenshot.png)
+AI-powered Z-Image prompt generator for ComfyUI. Analyzes images and generates flowing narrative prompts optimized for Z-Image models.
 
 **Version:** 4.2.0
 **Author:** Siddhartha Lahiri
@@ -25,6 +27,12 @@ The toolkit provides **3 unified nodes**:
 | **SID_LLM_API** | Cloud LLM providers (Anthropic, OpenAI, Gemini, Grok, Ollama, LM Studio, and more) |
 | **SID_LLM_Local** | Local models (Florence-2, Moondream2, SmolVLM, Phi-3.5, QwenVL) |
 | **SID_ZImagePromptGenerator** | Z-Image prompt generation (auto-switches Single-Shot/Agentic based on LLM) |
+
+<p align="center">
+  <img src="assets/node_llm_local.png" width="280" alt="SID LLM Local Node"/>
+  <img src="assets/node_llm_api.png" width="280" alt="SID LLM API Node"/>
+  <img src="assets/node_prompt_generator.png" width="280" alt="SID Z-Image Prompt Generator Node"/>
+</p>
 
 ## Quick Start
 
