@@ -842,10 +842,38 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         component_results = cls._call_reasoning_llm(client, llm_model, base64_image, agentic_prompt)
         debug_lines.append(f"Raw component results: {json.dumps(component_results, indent=2)}")
 
-        # Step 5: Assemble prompt
+        # Step 5: Handle fallback for local Thinking models that output text instead of JSON
+        if "_raw_fallback_text" in component_results:
+            # JSON parsing failed, use the raw text as the prompt
+            raw_text = component_results["_raw_fallback_text"]
+            debug_lines.append(f"Using raw fallback text ({len(raw_text)} chars) - JSON parsing failed")
+            print(f"[SID-Prompt] Using raw fallback text as prompt ({len(raw_text)} chars)")
+
+            # Clean the raw text
+            prompt = cls._clean_output(raw_text, llm_model.provider)
+
+            # If user guidance, try to enhance with string-based approach
+            if user_guidance and user_guidance.strip():
+                prompt, enhanced = cls._enhance_prompt_with_instructions(prompt, user_guidance, llm_model)
+                if enhanced:
+                    debug_lines.append("Enhanced fallback prompt with user instructions")
+
+            pbar.update(1)
+
+            metadata = {
+                "subject_type": subject_type,
+                "subject_detection": subject_result,
+                "components_analyzed": components,
+                "component_count": len(components),
+                "fallback_mode": True,
+                "component_results": component_results,  # Contains _raw_fallback_text
+            }
+            return prompt, metadata, debug_lines
+
+        # Step 6: Assemble prompt from components
         prompt = cls._assemble_prompt(component_results, mode_config, user_guidance)
 
-        # Step 6: If user guidance was provided but user_focus wasn't properly extracted,
+        # Step 7: If user guidance was provided but user_focus wasn't properly extracted,
         # use second LLM call to apply the modification (same as single-shot pipeline)
         if user_guidance and user_guidance.strip():
             # Check if user_focus was successfully applied (prompt should start with the modification)
@@ -867,12 +895,13 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
 
         pbar.update(1)
 
-        # Build metadata
+        # Build metadata with component data from LLM
         metadata = {
             "subject_type": subject_type,
             "subject_detection": subject_result,
             "components_analyzed": components,
             "component_count": len(components),
+            "component_results": component_results,  # Raw data from LLM for each component
         }
 
         return prompt, metadata, debug_lines
@@ -1173,7 +1202,19 @@ Return a single JSON object:
                 response = client.chat.completions.create(**request_params)
                 text = response.choices[0].message.content
 
-            return cls._parse_json(text)
+            # Try to parse JSON
+            parsed = cls._parse_json(text)
+
+            # If JSON parsing failed (empty dict) and we have text, store raw text as fallback
+            # This helps local Thinking models that output reasoning text instead of JSON
+            if not parsed and text and text.strip():
+                raw_text = cls._clean_thinking_text(text)
+
+                # Return special dict with raw text for fallback use
+                print(f"[SID-Prompt] JSON parsing failed, storing {len(raw_text)} chars as fallback")
+                return {"_raw_fallback_text": raw_text}
+
+            return parsed
         except Exception as e:
             print(f"[SID-Prompt] Reasoning call error: {e}")
             return {}
@@ -1193,6 +1234,76 @@ Return a single JSON object:
             except:
                 pass
         return {}
+
+    @classmethod
+    def _clean_thinking_text(cls, text: str) -> str:
+        """
+        Clean output from Thinking models by extracting useful content.
+
+        Handles:
+        - <think>...</think> tags (extract content after or inside)
+        - Chain-of-thought reasoning patterns
+        - Ensures non-empty output
+        """
+        if not text:
+            return ""
+
+        original_text = text
+
+        # Method 1: Try to extract content AFTER </think> tag
+        think_end_match = re.search(r'</think>\s*(.+)', text, re.DOTALL | re.IGNORECASE)
+        if think_end_match:
+            after_think = think_end_match.group(1).strip()
+            if after_think and len(after_think) > 30:
+                text = after_think
+            else:
+                # Method 2: Extract from INSIDE <think> tags if nothing useful after
+                think_content_match = re.search(r'<think>([\s\S]*?)</think>', original_text, re.IGNORECASE)
+                if think_content_match:
+                    text = think_content_match.group(1).strip()
+
+        # Method 3: Remove reasoning markers and preambles
+        reasoning_patterns = [
+            r'^(?:Let me|I will|I\'ll|First,|Now,|Okay,|Alright,)[^.]*\.\s*',
+            r'^(?:We are given|The user|Looking at|Based on|Given the)[^.]*\.\s*',
+            r'^(?:Step \d+:|Steps?:)[^\n]*\n?',
+            r'(?:Therefore|So|Thus|Hence|In conclusion)[,:]?\s*',
+            r'^\s*\d+\.\s+[^\n]*\n',  # Numbered steps at start
+        ]
+        for pattern in reasoning_patterns:
+            text = re.sub(pattern, '', text, flags=re.IGNORECASE | re.MULTILINE)
+
+        # Method 4: Look for final answer markers
+        final_markers = [
+            r'(?:Final (?:answer|prompt|description)[:\s]*)(.*)',
+            r'(?:Here is the (?:prompt|description)[:\s]*)(.*)',
+            r'(?:The (?:prompt|description) is[:\s]*)(.*)',
+        ]
+        for pattern in final_markers:
+            match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
+            if match and match.group(1).strip():
+                candidate = match.group(1).strip()
+                if len(candidate) > 30:
+                    text = candidate
+                    break
+
+        # Clean up whitespace
+        text = re.sub(r'\n{2,}', ' ', text)
+        text = re.sub(r'\s{2,}', ' ', text)
+        text = text.strip()
+
+        # Never return empty - use original if all cleaning failed
+        if not text or len(text) < 20:
+            # Try to find the longest sentence-like segment
+            sentences = re.split(r'[.!?]\s+', original_text)
+            if sentences:
+                longest = max(sentences, key=len)
+                if len(longest) > 20:
+                    text = longest.strip()
+                else:
+                    text = original_text.strip()
+
+        return text
 
     @classmethod
     def _assemble_prompt(cls, components: dict, mode_config: dict, user_guidance: str) -> str:
