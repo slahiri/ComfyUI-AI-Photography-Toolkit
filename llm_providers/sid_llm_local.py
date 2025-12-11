@@ -1480,9 +1480,9 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                 ),
                 comfy_io.Boolean.Input(
                     "enable_reasoning",
-                    default=True,
+                    default=False,
                     display_name="Enable Reasoning",
-                    tooltip="Enable reasoning for Thinking models (Qwen3-VL-*-Thinking)"
+                    tooltip="Enable reasoning for Thinking models (Qwen3-VL-*-Thinking). Disabled by default as local models work better with single-shot mode."
                 ),
                 comfy_io.Boolean.Input(
                     "keep_model_loaded",
