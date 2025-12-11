@@ -3,6 +3,26 @@
 # =============================================================================
 # Prompts are organized by tier (advanced/standard/basic) and mode (quick/standard/detailed/extreme)
 # Triple-quoted strings (""") allow multi-line prompts
+#
+# Z-IMAGE TURBO BEST PRACTICES:
+# - No negative prompts (guidance_scale=0) - all constraints go in positive prompt
+# - Structured format: Composition > Subject > Clothing > Environment > Lighting > Technical
+# - Use geometric face angles (front view, 45°, profile) not poetic descriptions
+# - Lighting keywords work exceptionally well
+# - Place cleanup constraints at the end (no text, no watermark)
+# - Natural language > tag soup
+
+
+# =============================================================================
+# PROMPT LENGTH CONFIGURATIONS
+# =============================================================================
+# Word count targets for each length setting
+
+[prompt_length]
+short = { min_words = 30, max_words = 60, description = "Quick overview (30-60 words)" }
+medium = { min_words = 80, max_words = 150, description = "Balanced detail (80-150 words)" }
+long = { min_words = 150, max_words = 250, description = "Comprehensive (150-250 words)" }
+free = { min_words = 0, max_words = 0, description = "No constraint - LLM decides" }
 
 
 # =============================================================================
@@ -11,30 +31,48 @@
 
 [system.advanced]
 # For Claude, GPT-4, Gemini - full capability
-base = """
-You are an expert visual analyst for text-to-image AI prompts.
-Generate a detailed, flowing narrative prompt capturing all visible elements.
-Focus on: composition, subject, clothing, lighting, background.
-Output ONLY the prompt text - no explanations or formatting.
-"""
+base = """You are an expert visual analyst generating prompts for Z-Image Turbo text-to-image AI.
+
+Z-Image CRITICAL RULES:
+- Use STRUCTURED format: composition → subject → clothing → environment → lighting → technical
+- Use GEOMETRIC face angles: "front view", "45° angle", "profile", "left-side half-face"
+- Describe lighting with specific keywords: "soft diffused daylight", "cinematic warm key light", "rim lighting"
+- Keep clothing descriptions minimal (3-5 words per item)
+- End with cleanup constraints: "no text, no watermark, no logos"
+- Write natural flowing sentences, NOT comma-separated tags
+- Be precise and direct, avoid poetic flourishes
+
+Output ONLY the prompt text - no explanations, no formatting, no markdown."""
 
 [system.standard]
 # For mid-tier models - slightly simplified
-base = """
-You are an image analysis expert creating prompts for AI image generation.
-Describe the image in detail focusing on subject, clothing, pose, and setting.
-Output only the description, no extra text.
-"""
+base = """You are an image analysis expert creating prompts for Z-Image AI image generation.
+
+Follow this structure:
+1. Composition and framing (shot type, angle)
+2. Subject appearance (ethnicity, age, features)
+3. Clothing (3-5 words per item: color, material, style)
+4. Environment and background
+5. Lighting (use specific keywords like "soft natural light", "studio lighting")
+6. Technical (lens, depth of field)
+7. Cleanup: "no text, no watermark"
+
+Write flowing sentences, not tags. Output only the description."""
 
 [system.basic]
 # For local models like LLaVA, Moondream, Ollama - direct single-shot prompts
-base = """
-You are an image captioning assistant. Your task is to write a detailed description of what you see in the image.
+base = """You are an image captioning assistant creating prompts for AI image generation.
 
-Write a flowing paragraph that could be used as a prompt to recreate this image. Include: the subject's appearance, what they're wearing, their pose, and the setting/background.
+Write a flowing description covering:
+- Composition (shot type, camera angle)
+- Subject (appearance, expression)
+- Clothing (color, material, style - keep brief)
+- Setting (background, environment)
+- Lighting (describe light quality and direction)
 
-Important: Output ONLY the description. No introductory phrases like "Here is" or "This image shows". Start directly with the description.
-"""
+End with: "no text, no watermark"
+
+Output ONLY the description. Start directly - no "Here is" or "This image shows"."""
 
 
 # =============================================================================
@@ -42,20 +80,20 @@ Important: Output ONLY the description. No introductory phrases like "Here is" o
 # =============================================================================
 
 [styles.portrait]
-system_addon = "Focus heavily on facial features, expression, skin quality, and makeup details."
-user_addon = "Emphasize the subject's face, expression, and upper body appearance."
+system_addon = "Focus heavily on facial features: face shape, expression, eye details, skin quality, makeup. Use geometric face angle (front view/45°/profile)."
+user_addon = "Emphasize the subject's face, expression, and upper body. Describe face angle geometrically."
 
 [styles.fashion]
-system_addon = "Focus heavily on clothing details, materials, colors, fit, and accessories."
-user_addon = "Emphasize all clothing items, materials, textures, and fashion styling."
+system_addon = "Focus on clothing details with minimal descriptions (3-5 words per item): type, color, material, fit. Include color palette keywords (warm/cool/muted/neon)."
+user_addon = "Describe each clothing item concisely: type, color, material. Add overall color palette."
 
 [styles.artistic]
-system_addon = "Focus on artistic and photographic qualities - composition, lighting, color palette, mood."
-user_addon = "Emphasize the artistic qualities: composition, lighting style, color tones, and overall mood."
+system_addon = "Focus on photographic qualities: composition style (rule of thirds/centered/symmetrical), lighting direction and quality, color palette and mood."
+user_addon = "Emphasize composition, lighting style (soft diffused/dramatic/rim), color tones, and atmosphere."
 
 [styles.nsfw]
-system_addon = "Include comprehensive body and intimate apparel details. Be specific about all visible features."
-user_addon = "Provide detailed analysis of body, intimate apparel, and all visible features."
+system_addon = "Include comprehensive body proportions and intimate apparel details. Be specific about all visible features, coverage levels, and exposure."
+user_addon = "Provide detailed body proportions, intimate apparel description, and coverage analysis."
 
 [styles.auto]
 # No addon - let the model decide
@@ -64,56 +102,76 @@ user_addon = ""
 
 
 # =============================================================================
+# LENGTH CONSTRAINT ADDONS - Added based on prompt_length setting
+# =============================================================================
+
+[length_constraints]
+short = "OUTPUT LENGTH: Write a SHORT prompt of 30-60 words. Be concise - only essential elements."
+medium = "OUTPUT LENGTH: Write a MEDIUM prompt of 80-150 words. Include key details with good flow."
+long = "OUTPUT LENGTH: Write a LONG prompt of 150-250 words. Be comprehensive and detailed."
+free = ""  # No constraint
+
+
+# =============================================================================
 # USER PROMPTS BY MODE - ADVANCED TIER (Claude, GPT-4, Gemini)
 # =============================================================================
 
 [user.advanced.quick]
-prompt = "Generate a brief, accurate prompt for this image in 50-100 words."
+prompt = """Generate a brief Z-Image prompt (30-60 words) covering:
+- Shot type and face angle (geometric: front/45°/profile)
+- Subject basics (ethnicity, age, expression)
+- Clothing (one line)
+- Lighting keyword
+- End with "no text, no watermark"
+
+Write as flowing sentences, not tags."""
 
 [user.advanced.standard]
-prompt = """
-Analyze this image and generate a detailed prompt covering:
-1. FRAMING: Shot type, camera angle, depth of field
-2. SUBJECT: Ethnicity, gender, age, skin tone
-3. HAIR: Arrangement, color, texture
-4. FACE: Shape, expression, makeup
-5. CLOTHING: Garments, colors, materials (ONLY what's visible)
-6. POSE: Body position, posture
-7. LIGHTING: Direction, quality, background
+prompt = """Generate a Z-Image prompt covering:
+COMPOSITION: Shot type, camera angle (geometric: eye level/high/low), depth of field
+SUBJECT: Ethnicity, age, gender, skin tone, face angle (front view/45°/profile)
+HAIR: Style, color, length (describe arrangement first)
+CLOTHING: Each item in 3-5 words (type, color, material)
+POSE: Body position, posture
+LIGHTING: Use specific keywords (soft diffused daylight, studio portrait lighting, rim lighting, etc.)
+BACKGROUND: Simple description
 
-Generate a flowing paragraph combining all elements.
-"""
+Write as flowing natural sentences. End with "no text, no watermark, no logos"."""
 
 [user.advanced.detailed]
-prompt = """
-Generate a COMPREHENSIVE prompt covering:
-FRAMING: Shot type, pose (standing/seated/lying), camera angle, depth of field
-SUBJECT: Specific ethnicity, skin tone with undertones, age, gender
-HAIR: Arrangement FIRST (updo/ponytail/loose), color, texture, length
-FACE: Shape, angle, expression
-EYES: Color, shape, gaze, makeup
-NOSE & LIPS: Shape, color, state
-BODY: Visible parts, posture, arm/hand positions
-CLOTHING: All visible garments with details
-INTIMATE APPAREL: If visible - bra style, bottoms, stockings
-TATTOOS: Location, style, subject
-ACCESSORIES: Jewelry details
-LIGHTING: Direction, quality, shadows, background
+prompt = """Generate a COMPREHENSIVE Z-Image prompt:
 
-Generate a detailed flowing description.
-"""
+COMPOSITION: Shot type, camera angle (geometric terms), depth of field, composition style
+SUBJECT: Specific ethnicity, skin tone with undertones, age, gender, face angle (front/45°/profile)
+HAIR: Arrangement FIRST (updo/ponytail/loose), then color, texture, length
+FACE: Shape, expression, eye color and shape, makeup details
+BODY: Visible proportions, posture, arm/hand positions
+CLOTHING: Each garment in 3-5 words (type, color, material, fit)
+INTIMATE APPAREL: If visible - style, coverage, material
+TATTOOS/ACCESSORIES: Location and details
+LIGHTING: Specific style (soft diffused daylight, cinematic warm key light, rim lighting, split lighting)
+BACKGROUND: Type, color, blur level
+
+Write as flowing natural sentences. End with "correct human anatomy, no text, no watermark, no logos"."""
 
 [user.advanced.extreme]
-prompt = """
-Generate an EXTREMELY detailed prompt with MAXIMUM precision.
-Analyze EVERY visible element: exact shot type, precise ethnicity, skin undertones,
-hair arrangement and styling, facial features, eye details with makeup,
-nose and lip shapes, full body pose, ALL clothing with materials/colors,
-ALL intimate apparel details if visible, ALL tattoos with locations/styles,
-ALL accessories, and complete lighting/background analysis.
+prompt = """Generate an EXTREMELY detailed Z-Image prompt with MAXIMUM precision.
 
-Output a comprehensive, flowing narrative with all details.
-"""
+Analyze EVERY visible element:
+- Exact composition: shot type, geometric camera angle, depth of field style
+- Precise subject: specific ethnicity, skin tone with undertones, approximate age
+- Hair: arrangement style first, then exact color, texture, length
+- Face: shape, geometric angle (front/45°/profile/etc), expression details
+- Eyes: color, shape, gaze direction, makeup style
+- Body: full proportions, bust details if visible, waist definition, posture
+- ALL clothing with type, color, material (3-5 words each)
+- ALL intimate apparel if visible with coverage details
+- ALL tattoos with locations and styles
+- ALL accessories and jewelry
+- Lighting: use specific keywords (soft diffused daylight, cinematic warm key light, rim lighting, high-contrast noir, studio portrait)
+- Background: type, color palette, blur level
+
+Write as a comprehensive flowing narrative. End with "correct human anatomy, natural hands, no text, no watermark, no logos, sharp focus"."""
 
 
 # =============================================================================
@@ -121,45 +179,43 @@ Output a comprehensive, flowing narrative with all details.
 # =============================================================================
 
 [user.standard.quick]
-prompt = "Describe this image in 50 words for AI generation."
+prompt = """Describe this image in 30-60 words for Z-Image:
+- Shot type and angle
+- Subject appearance
+- Clothing (brief)
+- Lighting style
+End with "no text, no watermark"."""
 
 [user.standard.standard]
-prompt = """
-Describe this image covering:
-- Shot type and framing
-- Subject appearance (ethnicity, age, gender)
+prompt = """Describe this image for Z-Image covering:
+- Shot type and camera angle
+- Subject appearance (ethnicity, age, expression)
 - Hair style and color
-- Clothing details
-- Pose and expression
-- Lighting and background
+- Clothing (color, material for each item)
+- Pose
+- Lighting style
+- Background
 
-Write a flowing description.
-"""
+Write flowing sentences. End with "no text, no watermark"."""
 
 [user.standard.detailed]
-prompt = """
-Describe this image in detail:
-- Framing and camera angle
-- Subject: ethnicity, skin tone, age
+prompt = """Describe this image in detail for Z-Image:
+- Composition and camera angle
+- Subject: ethnicity, skin tone, age, face angle
 - Hair: style, color, length
 - Face: shape, expression, makeup
-- Clothing: all visible items with colors and materials
+- Clothing: all items with colors and materials
 - Body pose and positioning
-- Lighting quality and direction
+- Lighting: use keywords like "soft natural light", "studio lighting"
 - Background details
 
-Write a comprehensive description.
-"""
+Write comprehensively. End with "no text, no watermark, no logos"."""
 
 [user.standard.extreme]
-prompt = """
-Describe every visible detail:
-Subject appearance, hair styling, facial features, eye details,
-all clothing items, body pose, any tattoos or accessories,
-and complete lighting/background analysis.
+prompt = """Describe every visible detail for Z-Image:
+Subject appearance, hair styling, facial features and angle, eye details, all clothing items with materials, body pose and proportions, any tattoos or accessories, lighting style (specific keywords), and complete background analysis.
 
-Write the most detailed description possible.
-"""
+Write the most detailed description possible. End with "correct human anatomy, no text, no watermark"."""
 
 
 # =============================================================================
@@ -169,34 +225,36 @@ Write the most detailed description possible.
 # explicit output format instructions
 
 [user.basic.quick]
-prompt = """Write a brief 30-50 word description of this image. Start directly with the description, for example: "A woman with long dark hair wearing a red dress stands in a garden..."
+prompt = """Write a brief 30-50 word description of this image for AI generation.
 
-Describe the person, their clothing, and the setting."""
+Example: "A medium shot of an adult Asian woman, front view, dark hair in ponytail, wearing white blouse and black pants, soft natural lighting, plain gray background, no text, no watermark."
+
+Describe this image in similar format:"""
 
 [user.basic.standard]
-prompt = """Write a detailed description of this image that could be used as an AI image generation prompt.
+prompt = """Write a description of this image for Z-Image AI generation.
 
-Include: who is in the image (appearance, ethnicity, age), what they are wearing (colors, materials), their pose and expression, and the background/lighting.
+Include: shot type, subject appearance (ethnicity, age), face angle (front/side/45 degrees), hair style and color, clothing with colors and materials, pose, lighting style, background.
 
-Example format: "A young Asian woman with shoulder-length black hair, wearing a white blouse and blue jeans, sitting on a wooden bench in a sunlit park. Soft natural lighting, blurred trees in background."
+Example: "A close-up portrait of an adult European woman, 45 degree angle view, shoulder-length blonde wavy hair, wearing a fitted navy blue blazer over white shirt, confident smile, soft diffused daylight from left, blurred office background, no text, no watermark."
 
-Now describe this image in similar format:"""
+Describe this image:"""
 
 [user.basic.detailed]
-prompt = """Write a comprehensive description of this image for AI image generation.
+prompt = """Write a comprehensive description of this image for Z-Image AI generation.
 
-Cover these aspects in a flowing paragraph: the subject's appearance (ethnicity, skin tone, age, build), their hair (color, style, length), facial expression and features, all visible clothing (specific items, colors, materials), their body pose and positioning, and the setting (background, lighting quality).
+Cover: shot type and camera angle, subject's appearance (ethnicity, skin tone, age), face angle (front view/profile/45 degrees), hair (style first, then color and length), facial expression and features, all visible clothing (type, color, material for each item), body pose, lighting style (describe quality and direction), background.
 
-Example: "A Hispanic woman in her late twenties with olive skin and wavy chestnut brown hair falling past her shoulders. She has a warm smile and brown eyes with subtle makeup. She wears a fitted emerald green dress with thin straps. She stands with one hand on her hip, leaning slightly against a white wall. Warm golden hour lighting from the left creates soft shadows."
+Example: "A medium shot at eye level of an adult South Asian woman in her late twenties, front view, warm olive skin tone, long black hair loose over shoulders, gentle smile with brown eyes, wearing fitted emerald green silk dress with thin straps, standing with relaxed posture, soft diffused daylight from large window, shallow depth of field, cream-colored wall background, no text, no watermark."
 
-Now describe this image in similar detail:"""
+Describe this image in similar detail:"""
 
 [user.basic.extreme]
-prompt = """Write the most detailed description possible of this image for AI image generation.
+prompt = """Write the most detailed description possible of this image for Z-Image AI generation.
 
-Describe everything visible: the subject's complete appearance (precise ethnicity, skin tone with undertones, approximate age), hair (exact color, style, texture, length), facial features (shape, expression, eye details, makeup), ALL clothing items with specific colors and materials, body pose and positioning, any visible tattoos or accessories, jewelry, and the complete setting including lighting direction, quality, and background details.
+Describe everything: shot type, precise camera angle, subject's complete appearance (specific ethnicity, skin tone, approximate age), face angle in geometric terms (front view/45 degree left/profile), hair (arrangement first - updo/ponytail/loose, then color, texture, length), facial features (shape, expression, eye color and details, makeup), ALL clothing items (type, color, material, fit for each), body pose and proportions, any tattoos or accessories with locations, lighting (use specific keywords like "soft diffused daylight" or "studio portrait lighting"), background details.
 
-Start directly with the description - no introduction needed. Write a single flowing paragraph covering all visible details:"""
+Start directly with "A..." - write one flowing paragraph. End with "correct human anatomy, no text, no watermark":"""
 
 
 # =============================================================================
@@ -205,31 +263,51 @@ Start directly with the description - no introduction needed. Write a single flo
 
 [agentic.advanced]
 # Full agentic prompt for advanced models
-intro = """
-You are performing a comprehensive visual analysis for Z-Image prompt generation.
-Analyze each component separately, then synthesize into a flowing prompt.
-"""
+intro = """You are performing a comprehensive visual analysis for Z-Image prompt generation.
 
-synthesis = """
-Now combine all analysis into a single flowing narrative prompt.
-Start with framing, then subject, then details, then lighting.
-Output ONLY the final prompt text.
-"""
+Z-Image requires:
+- Structured format: composition → subject → details → lighting
+- Geometric face angles (front view, 45°, profile)
+- Specific lighting keywords (soft diffused daylight, cinematic warm key, rim lighting)
+- Minimal clothing descriptions (3-5 words each)
+- Cleanup constraints at end
+
+Analyze each component separately, then synthesize into a flowing prompt."""
+
+synthesis = """Now combine all analysis into a single flowing Z-Image prompt.
+
+Structure: Shot type → Camera angle → Subject demographics → Hair → Face angle → Expression → Clothing → Pose → Lighting → Background
+
+Use geometric terms for face angles. Use specific lighting keywords.
+End with "correct human anatomy, no text, no watermark, no logos".
+
+Output ONLY the final prompt text."""
 
 [agentic.standard]
-intro = """
-Analyze this image step by step for prompt generation.
-Focus on the most important visual elements.
-"""
+intro = """Analyze this image step by step for Z-Image prompt generation.
+Focus on: composition, subject, clothing, lighting, background.
+Use geometric face angles and specific lighting keywords."""
 
-synthesis = """
-Combine your analysis into a single description.
-Focus on subject, clothing, pose, and setting.
-"""
+synthesis = """Combine your analysis into a flowing Z-Image prompt.
+Structure: composition → subject → clothing → lighting → background.
+End with "no text, no watermark".
+Output only the final prompt."""
 
 [agentic.basic]
 # Simplified for local models - single pass instead of multi-step
 # Local models don't benefit from multi-step reasoning, use direct prompts
-intro = """Write a detailed description of this image for AI image generation. Include the subject's appearance, clothing, pose, and the setting. Start directly with the description - no introduction needed."""
+intro = """Write a detailed description of this image for Z-Image AI generation. Include shot type, subject appearance, face angle, clothing, pose, lighting, and background. Start directly - no introduction needed."""
 
-synthesis = """Now write the final description as a single flowing paragraph. Start directly with "A..." or the subject description. Do not include phrases like "Here is" or "The image shows"."""
+synthesis = """Write the final description as a single flowing paragraph. Use geometric face angles (front view/45°/profile). End with "no text, no watermark". Start directly with "A..." or the subject description."""
+
+
+# =============================================================================
+# LIGHTING KEYWORDS LIBRARY (for reference)
+# =============================================================================
+# These lighting keywords work exceptionally well with Z-Image:
+#
+# Natural: soft diffused daylight, golden hour warm light, overcast soft light
+# Studio: studio portrait lighting, three-point lighting, soft box lighting
+# Dramatic: cinematic warm key light, high-contrast noir lighting, rim lighting
+# Creative: split lighting, Rembrandt lighting, butterfly lighting, top-down spotlight
+# Mood: cool ambient light, warm candlelight, neon glow, backlit silhouette

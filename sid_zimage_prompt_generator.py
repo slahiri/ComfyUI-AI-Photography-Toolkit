@@ -589,6 +589,12 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     default="auto",
                     tooltip="auto=optimal for model, max=highest detail, min=fastest, original=no resize"
                 ),
+                comfy_io.Combo.Input(
+                    "prompt_length",
+                    options=["Short", "Medium", "Long", "Free"],
+                    default="Free",
+                    tooltip="Short=30-60 words, Medium=80-150 words, Long=150-250 words, Free=no constraint"
+                ),
                 comfy_io.String.Input(
                     "user_guidance",
                     default="",
@@ -621,6 +627,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         analysis_mode: str,
         preset_style: str,
         image_resize: str,
+        prompt_length: str,
         user_guidance: str,
         seed: int,
     ) -> comfy_io.NodeOutput:
@@ -646,8 +653,8 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         log("=" * 60)
         log(f"Image: {width}x{height}")
         log(f"Provider: {llm_model.provider} | Model: {llm_model.model}")
-        log(f"Analysis: {analysis_mode} | Style: {preset_style} | Resize: {image_resize}")
-        log(f"Pipeline: {pipeline_type}")
+        log(f"Analysis: {analysis_mode} | Style: {preset_style} | Length: {prompt_length}")
+        log(f"Resize: {image_resize} | Pipeline: {pipeline_type}")
 
         # Initialize metadata dict
         metadata_dict = {
@@ -657,6 +664,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             "model": llm_model.model,
             "analysis_mode": analysis_mode,
             "preset_style": preset_style,
+            "prompt_length": prompt_length,
             "image_resize": image_resize,
             "pipeline": pipeline_type,
             "seed": seed,
@@ -665,11 +673,11 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         try:
             if supports_reasoning:
                 result = cls._execute_agentic(
-                    image, llm_model, analysis_mode, preset_style, user_guidance, image_resize
+                    image, llm_model, analysis_mode, preset_style, user_guidance, image_resize, prompt_length
                 )
             else:
                 result = cls._execute_single_shot(
-                    image, llm_model, analysis_mode, preset_style, user_guidance, image_resize
+                    image, llm_model, analysis_mode, preset_style, user_guidance, image_resize, prompt_length
                 )
 
             # Handle result (can be tuple with metadata or just prompt string)
@@ -716,6 +724,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         preset_style: str,
         user_guidance: str,
         image_resize: str = "auto",
+        prompt_length: str = "Free",
     ) -> tuple:
         """Fast single-call prompt generation. Returns (prompt, metadata, debug_lines)."""
 
@@ -730,9 +739,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             debug_lines.append(resize_info)
             print(f"[SID-Prompt] {resize_info}")
 
-        # Build prompts (tier-aware based on provider)
-        system_prompt = cls._build_system_prompt(llm_model.provider, preset_style, user_guidance)
-        user_prompt = cls._build_user_prompt(llm_model.provider, analysis_mode, preset_style)
+        # Build prompts (tier-aware based on provider, with length constraints)
+        system_prompt = cls._build_system_prompt(llm_model.provider, preset_style, user_guidance, prompt_length)
+        user_prompt = cls._build_user_prompt(llm_model.provider, analysis_mode, preset_style, prompt_length)
         debug_lines.append(f"System prompt length: {len(system_prompt)} chars")
         debug_lines.append(f"User prompt length: {len(user_prompt)} chars")
 
@@ -779,6 +788,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         preset_style: str,
         user_guidance: str,
         image_resize: str = "auto",
+        prompt_length: str = "Free",
     ) -> tuple:
         """Reasoning-enabled comprehensive analysis. Returns (prompt, metadata, debug_lines)."""
 
@@ -835,7 +845,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         print(f"[SID-Prompt] Subject type: {subject_type}, analyzing {len(components)} components: {components}")
 
         # Step 3: Build comprehensive agentic prompt
-        agentic_prompt = cls._build_agentic_prompt(components, preset_style, user_guidance)
+        agentic_prompt = cls._build_agentic_prompt(components, preset_style, user_guidance, prompt_length)
         pbar.update(1)
 
         # Step 4: Single reasoning call
@@ -1003,14 +1013,14 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             raise ValueError(f"Unsupported provider: {provider}")
 
     @classmethod
-    def _build_system_prompt(cls, provider: str, preset_style: str, user_guidance: str) -> str:
+    def _build_system_prompt(cls, provider: str, preset_style: str, user_guidance: str, prompt_length: str = "Free") -> str:
         """Build system prompt using TOML config based on provider tier."""
-        return config_loader.build_system_prompt(provider, preset_style, user_guidance)
+        return config_loader.build_system_prompt(provider, preset_style, user_guidance, prompt_length)
 
     @classmethod
-    def _build_user_prompt(cls, provider: str, analysis_mode: str, preset_style: str) -> str:
+    def _build_user_prompt(cls, provider: str, analysis_mode: str, preset_style: str, prompt_length: str = "Free") -> str:
         """Build user prompt using TOML config based on provider tier and mode."""
-        return config_loader.build_user_prompt(provider, analysis_mode, preset_style)
+        return config_loader.build_user_prompt(provider, analysis_mode, preset_style, prompt_length)
 
     @classmethod
     def _get_stop_strings(cls, provider: str) -> List[str]:
@@ -1106,7 +1116,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             return {}
 
     @classmethod
-    def _build_agentic_prompt(cls, components: List[str], preset_style: str, user_guidance: str) -> str:
+    def _build_agentic_prompt(cls, components: List[str], preset_style: str, user_guidance: str, prompt_length: str = "Free") -> str:
         """Build comprehensive agentic prompt."""
         comp_specs = []
         for key in components:
@@ -1143,11 +1153,16 @@ Output JSON:
 {{"user_focus": "<description with user modification APPLIED, not just acknowledged>"}}
 """
 
+        # Get length constraint
+        length_constraint = config_loader.get_length_constraint(prompt_length)
+        length_section = f"\n\n## OUTPUT LENGTH\n{length_constraint}" if length_constraint else ""
+
         return f"""You are an expert visual analyst. Use reasoning to analyze this image comprehensively.
 {user_section}
 ## INSTRUCTIONS
 Analyze ALL components below and return a single JSON object with each component as a key.
 {"REMEMBER: Apply the user's modification request to ALL relevant component descriptions!" if user_guidance else ""}
+{length_section}
 
 ## COMPONENTS TO ANALYZE
 

@@ -148,6 +148,23 @@ def get_agentic_prompt(tier: str, prompt_type: str = "intro") -> str:
     return tier_config.get(prompt_type, "")
 
 
+def get_length_constraint(prompt_length: str) -> str:
+    """
+    Get the length constraint instruction for a prompt_length setting.
+
+    Args:
+        prompt_length: "Short", "Medium", "Long", or "Free"
+
+    Returns:
+        Length constraint instruction string (empty for "Free")
+    """
+    config = _load_toml("prompts.toml")
+    constraints = config.get("length_constraints", {})
+    # Normalize to lowercase for key lookup
+    key = prompt_length.lower()
+    return constraints.get(key, "")
+
+
 # =============================================================================
 # Component Configuration
 # =============================================================================
@@ -284,7 +301,7 @@ def clean_output(text: str, provider: str = "default") -> str:
 # Convenience Functions
 # =============================================================================
 
-def build_system_prompt(provider: str, preset_style: str, user_guidance: str = "") -> str:
+def build_system_prompt(provider: str, preset_style: str, user_guidance: str = "", prompt_length: str = "Free") -> str:
     """
     Build complete system prompt based on provider tier and style.
 
@@ -292,6 +309,7 @@ def build_system_prompt(provider: str, preset_style: str, user_guidance: str = "
         provider: LLM provider name
         preset_style: Selected style preset
         user_guidance: Optional user guidance text
+        prompt_length: Output length setting (Short/Medium/Long/Free)
 
     Returns:
         Complete system prompt string
@@ -302,6 +320,11 @@ def build_system_prompt(provider: str, preset_style: str, user_guidance: str = "
     style_addon = get_style_addon(preset_style, "system_addon")
     if style_addon:
         base += f"\n\n{style_addon}"
+
+    # Add length constraint
+    length_constraint = get_length_constraint(prompt_length)
+    if length_constraint:
+        base += f"\n\n{length_constraint}"
 
     if user_guidance and user_guidance.strip():
         base += f"""
@@ -319,7 +342,7 @@ This is a MODIFICATION directive. You MUST:
     return base
 
 
-def build_user_prompt(provider: str, analysis_mode: str, preset_style: str) -> str:
+def build_user_prompt(provider: str, analysis_mode: str, preset_style: str, prompt_length: str = "Free") -> str:
     """
     Build user prompt based on provider tier and analysis mode.
 
@@ -327,6 +350,7 @@ def build_user_prompt(provider: str, analysis_mode: str, preset_style: str) -> s
         provider: LLM provider name
         analysis_mode: Analysis mode (Quick/Standard/Detailed/Extreme)
         preset_style: Selected style preset
+        prompt_length: Output length setting (Short/Medium/Long/Free)
 
     Returns:
         Complete user prompt string
@@ -337,6 +361,11 @@ def build_user_prompt(provider: str, analysis_mode: str, preset_style: str) -> s
     style_addon = get_style_addon(preset_style, "user_addon")
     if style_addon:
         prompt += f"\n\n{style_addon}"
+
+    # Reinforce length constraint in user prompt (already in system, but reinforce)
+    length_constraint = get_length_constraint(prompt_length)
+    if length_constraint:
+        prompt += f"\n\nREMEMBER: {length_constraint}"
 
     return prompt
 
