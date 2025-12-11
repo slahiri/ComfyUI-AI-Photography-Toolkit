@@ -23,18 +23,55 @@
 # Prompt to classify image style before detailed analysis
 detect_style = """Classify this image into ONE of these categories:
 
+PHOTOGRAPHIC:
 - photo: Real photograph of actual people/scenes
+- cosplay: Real photo of person in anime/game costume with stylized makeup
+
+JAPANESE STYLES:
 - anime: Japanese animation style (large eyes, colorful hair, stylized features)
 - manga: Japanese comic/black-and-white illustration style
-- cartoon: Western animation/cartoon style (Disney, Pixar, etc.)
 - hentai: Adult anime/manga illustration style
+- chibi: Super-deformed cute anime style (large head, small body)
+- webtoon: Korean webcomic style (vertical scroll format, soft shading)
+
+WESTERN STYLES:
+- cartoon: Western animation style (Disney, Pixar, etc.)
+- comic: Western comic book style (Marvel, DC - bold lines, dynamic poses)
+
+DIGITAL ART:
 - illustration: Digital art, concept art, or painted style
-- 3d_render: 3D rendered/CGI character or scene
+- pixel_art: Retro pixel-based art style (8-bit, 16-bit game graphics)
+- sketch: Lineart, pencil drawings, or uncolored artwork
+- painting: Traditional art styles (oil painting, watercolor, acrylic)
+
+3D/CGI:
+- 3d_render: Stylized 3D rendered/CGI character or scene
+- realistic_render: Photorealistic CGI/AI-generated faces (Unreal Engine quality)
+
+SPECIAL:
+- furry: Anthropomorphic animal characters
+- vtuber: Virtual YouTuber style (Live2D aesthetic, modern anime)
 
 Respond with ONLY the category name, nothing else."""
 
 # Valid classification values
-valid_styles = ["photo", "anime", "manga", "cartoon", "hentai", "illustration", "3d_render"]
+valid_styles = [
+    "photo", "cosplay",
+    "anime", "manga", "hentai", "chibi", "webtoon",
+    "cartoon", "comic",
+    "illustration", "pixel_art", "sketch", "painting",
+    "3d_render", "realistic_render",
+    "furry", "vtuber"
+]
+
+# Style groups for prompt template selection
+# Styles in same group use same prompt templates
+[classification.style_groups]
+photographic = ["photo", "cosplay", "realistic_render"]
+anime_style = ["anime", "manga", "hentai", "chibi", "webtoon", "vtuber"]
+western_style = ["cartoon", "comic"]
+artistic = ["illustration", "painting", "sketch"]
+special = ["pixel_art", "3d_render", "furry"]
 
 # Default if classification fails
 default_style = "photo"
@@ -86,6 +123,233 @@ Write a description covering:
 - Color palette
 
 Output ONLY the description. Start directly - no "This is" or "The image shows"."""
+
+
+# =============================================================================
+# WESTERN COMIC STYLE SYSTEM PROMPTS
+# =============================================================================
+
+[system.comic.advanced]
+base = """You are an expert visual analyst generating prompts for Western comic book style AI image generation.
+
+For COMIC BOOK images (Marvel, DC, indie comics), use this approach:
+- Describe the COMIC STYLE (American superhero, indie, graphic novel, noir)
+- Note line art characteristics (bold outlines, hatching, cross-hatching)
+- Describe dynamic poses and action compositions
+- Include color style (Ben-Day dots, flat colors, painted)
+- Note panel composition elements if present
+- Describe heroic proportions and muscular physiques if applicable
+
+Structure: Comic style → Line art → Character design → Costume/outfit → Pose/action → Background → Color treatment
+
+Output ONLY the prompt text - no explanations, no formatting, no markdown."""
+
+[system.comic.standard]
+base = """You are an image analysis expert creating prompts for comic book style AI image generation.
+
+Follow this structure:
+1. Comic style (superhero, indie, graphic novel)
+2. Line art style (bold, hatched, clean)
+3. Character design and proportions
+4. Costume or outfit details
+5. Pose and action
+6. Background and setting
+7. Color treatment (flat, painted, halftone)
+
+Write flowing sentences. Output only the description."""
+
+[system.comic.basic]
+base = """You are an image captioning assistant for comic book images.
+
+Write a description covering:
+- Comic art style
+- Character appearance and costume
+- Pose and expression
+- Background
+- Color style
+
+Output ONLY the description. Start directly."""
+
+
+# =============================================================================
+# ARTISTIC STYLE SYSTEM PROMPTS (painting, sketch, illustration)
+# =============================================================================
+
+[system.artistic.advanced]
+base = """You are an expert visual analyst generating prompts for artistic/traditional media AI image generation.
+
+For ARTISTIC images (paintings, sketches, illustrations), use this approach:
+- Identify the MEDIUM (oil painting, watercolor, pencil sketch, digital painting)
+- Describe brushwork or line quality (loose, precise, textured)
+- Note color palette and harmony (complementary, analogous, monochromatic)
+- Describe composition and focal points
+- Include lighting mood and atmosphere
+- Note art movement influence if apparent (impressionist, realistic, abstract)
+
+Structure: Medium → Technique → Subject → Composition → Color palette → Lighting/mood → Style influence
+
+Output ONLY the prompt text - no explanations, no formatting, no markdown."""
+
+[system.artistic.standard]
+base = """You are an image analysis expert creating prompts for artistic AI image generation.
+
+Follow this structure:
+1. Art medium (oil, watercolor, pencil, digital)
+2. Technique and brushwork
+3. Subject description
+4. Color palette
+5. Lighting and mood
+6. Composition style
+
+Write flowing sentences. Output only the description."""
+
+[system.artistic.basic]
+base = """You are an image captioning assistant for paintings and artistic images.
+
+Write a description covering:
+- Art medium and style
+- Subject appearance
+- Color palette
+- Mood and atmosphere
+- Composition
+
+Output ONLY the description. Start directly."""
+
+
+# =============================================================================
+# PIXEL ART STYLE SYSTEM PROMPTS
+# =============================================================================
+
+[system.pixel_art.advanced]
+base = """You are an expert visual analyst generating prompts for pixel art AI image generation.
+
+For PIXEL ART images, use this approach:
+- Identify the PIXEL STYLE (8-bit, 16-bit, modern HD pixel art)
+- Note sprite resolution and scale
+- Describe color palette limitations (limited palette, dithering patterns)
+- Include character/sprite design elements
+- Note animation frame if applicable
+- Describe background tile patterns
+
+Structure: Pixel style → Resolution → Color palette → Character design → Pose → Background → Dithering/effects
+
+Output ONLY the prompt text - no explanations, no formatting, no markdown."""
+
+[system.pixel_art.standard]
+base = """You are an image analysis expert creating prompts for pixel art AI image generation.
+
+Follow this structure:
+1. Pixel art style (8-bit, 16-bit, modern)
+2. Color palette (limited colors, specific palette)
+3. Character/sprite design
+4. Pose or animation frame
+5. Background elements
+6. Special effects or dithering
+
+Write flowing sentences. Output only the description."""
+
+[system.pixel_art.basic]
+base = """You are an image captioning assistant for pixel art images.
+
+Write a description covering:
+- Pixel art style (8-bit, 16-bit, etc.)
+- Color palette
+- Character appearance
+- Pose
+- Background
+
+Output ONLY the description. Start directly."""
+
+
+# =============================================================================
+# FURRY STYLE SYSTEM PROMPTS
+# =============================================================================
+
+[system.furry.advanced]
+base = """You are an expert visual analyst generating prompts for anthropomorphic character AI image generation.
+
+For FURRY/ANTHROPOMORPHIC images, use this approach:
+- Identify the SPECIES and anthropomorphism level (full anthro, feral, kemono)
+- Describe fur/scale/feather patterns and colors
+- Note body type and proportions (plantigrade, digitigrade)
+- Include facial features (muzzle shape, ear type, eye style)
+- Describe clothing or accessories if present
+- Note art style (western furry, kemono, realistic)
+
+Structure: Species → Anthropomorphism level → Fur/markings → Body type → Facial features → Expression → Clothing → Pose → Background
+
+Output ONLY the prompt text - no explanations, no formatting, no markdown."""
+
+[system.furry.standard]
+base = """You are an image analysis expert creating prompts for anthropomorphic character AI image generation.
+
+Follow this structure:
+1. Species and anthro style (full anthro, kemono)
+2. Fur color and markings
+3. Body type (digitigrade/plantigrade)
+4. Facial features
+5. Clothing or accessories
+6. Pose and expression
+7. Background
+
+Write flowing sentences. Output only the description."""
+
+[system.furry.basic]
+base = """You are an image captioning assistant for anthropomorphic character images.
+
+Write a description covering:
+- Animal species and anthro style
+- Fur color and markings
+- Clothing if any
+- Pose and expression
+- Background
+
+Output ONLY the description. Start directly."""
+
+
+# =============================================================================
+# 3D RENDER STYLE SYSTEM PROMPTS
+# =============================================================================
+
+[system.render_3d.advanced]
+base = """You are an expert visual analyst generating prompts for 3D rendered character AI image generation.
+
+For 3D RENDERED images, use this approach:
+- Identify the RENDER STYLE (stylized, semi-realistic, photorealistic)
+- Note surface qualities (subsurface scattering, specular highlights)
+- Describe character model details (topology quality, proportions)
+- Include material descriptions (skin shader, cloth simulation, hair cards)
+- Note lighting setup (HDRI, three-point, dramatic)
+- Describe render quality indicators (ray-tracing, ambient occlusion)
+
+Structure: Render style → Character model → Materials/shaders → Lighting setup → Camera/composition → Post-processing
+
+Output ONLY the prompt text - no explanations, no formatting, no markdown."""
+
+[system.render_3d.standard]
+base = """You are an image analysis expert creating prompts for 3D rendered AI image generation.
+
+Follow this structure:
+1. Render style (stylized, realistic, Pixar-style)
+2. Character design and proportions
+3. Material quality (skin, cloth, hair)
+4. Lighting setup
+5. Background/environment
+6. Overall quality level
+
+Write flowing sentences. Output only the description."""
+
+[system.render_3d.basic]
+base = """You are an image captioning assistant for 3D rendered images.
+
+Write a description covering:
+- Render style
+- Character appearance
+- Clothing and materials
+- Lighting
+- Background
+
+Output ONLY the description. Start directly."""
 
 
 # =============================================================================
@@ -279,6 +543,988 @@ prompt = """Write the most detailed description possible of this anime/manga/car
 Describe: exact art style and shading technique, character design (eye size and style, face shape, body proportions), hair (exact color including any gradients, specific anime hairstyle name, length, accessories), eye color and details (highlights, pupil shape), expression with any anime elements (blush, sparkles), complete outfit (every garment with colors and details), pose (body position, arm positions, hand gestures), background (setting, detail level, atmosphere), overall color palette.
 
 Start directly with the style - write one flowing paragraph:"""
+
+
+# =============================================================================
+# WESTERN COMIC STYLE USER PROMPTS
+# =============================================================================
+
+[user.comic.advanced.quick]
+prompt = """Generate a brief comic book style prompt (30-60 words) covering:
+- Comic style (superhero, indie, graphic novel)
+- Line art style
+- Character basics (costume, physique)
+- Pose
+- Background type
+
+Write as flowing sentences."""
+
+[user.comic.advanced.standard]
+prompt = """Generate a comic book style prompt covering:
+COMIC STYLE: Specific style (American superhero, indie, noir, manga-influenced)
+LINE ART: Bold outlines, hatching, clean lines
+CHARACTER: Physique, costume design, heroic proportions if applicable
+FACE: Expression, eye style, jawline
+POSE: Dynamic action pose or static
+COLORING: Flat colors, painted, halftone/Ben-Day dots
+BACKGROUND: Setting, panel-style composition
+
+Write as flowing natural sentences. End with "bold lines, dynamic comic art"."""
+
+[user.comic.advanced.detailed]
+prompt = """Generate a COMPREHENSIVE comic book style prompt:
+
+COMIC STYLE:
+- Specific era/publisher style (Golden Age, Modern Marvel, DC, Image, indie)
+- Panel composition influence
+- Narrative tone (action, dramatic, noir)
+
+LINE ART:
+- Outline thickness (bold, medium, thin)
+- Hatching and cross-hatching for shading
+- Ink quality (clean, rough, expressive)
+
+CHARACTER DESIGN:
+- Body type (heroic proportions, realistic, stylized)
+- Costume/outfit with all details
+- Face style (square jaw, expressive, stylized)
+- Hair treatment
+
+POSE & ACTION:
+- Dynamic pose or static composition
+- Foreshortening and perspective
+- Action lines if present
+- Weight and balance
+
+COLORING:
+- Color treatment (flat, gradient, painted)
+- Halftone/Ben-Day dots presence
+- Color palette (primary colors, muted, noir)
+- Shadow rendering
+
+BACKGROUND:
+- Setting type
+- Level of detail
+- Perspective and depth
+
+Write as flowing natural sentences. End with "bold dynamic lines, professional comic book art, high contrast"."""
+
+[user.comic.advanced.extreme]
+prompt = """Generate an EXTREMELY detailed comic book style prompt with MAXIMUM precision.
+
+Analyze EVERY visible element:
+
+COMIC STYLE SPECIFICS:
+- Publisher/era influence (Marvel, DC, Image, Dark Horse, indie)
+- Artist style influence if recognizable
+- Genre (superhero, noir, horror, sci-fi, fantasy)
+- Panel composition elements
+
+LINE ART TECHNIQUE:
+- Primary outline weight
+- Secondary detail lines
+- Hatching patterns for shadow
+- Cross-hatching density
+- Speed lines or motion indicators
+- Ink texture (smooth, rough, splatter)
+
+CHARACTER DESIGN:
+- Body proportions (heroic 8-9 heads tall, realistic, stylized)
+- Musculature definition
+- Costume design with all elements
+- Mask/helmet details if present
+- Cape/accessory dynamics
+- Face rendering style
+- Expression intensity
+
+POSE & COMPOSITION:
+- Dynamic angle and foreshortening
+- Action pose specifics
+- Weight distribution
+- Hands and fingers rendering
+- Perspective distortion for drama
+
+COLOR TREATMENT:
+- Coloring style (flat, cel-shaded, painted, digital)
+- Halftone/Ben-Day dots (size, placement)
+- Color holds (colored line art)
+- Palette choice (traditional primary, modern muted, noir limited)
+- Highlight and shadow colors
+- Rim lighting effects
+
+BACKGROUND & ENVIRONMENT:
+- Setting details
+- Depth of field
+- Environmental effects
+- Logo/symbol placement
+
+Write as a comprehensive flowing narrative. End with "professional comic book art, bold dynamic lines, high contrast, print quality"."""
+
+[user.comic.standard.quick]
+prompt = """Describe this comic book image in 30-60 words:
+- Comic style
+- Character appearance and costume
+- Pose
+- Coloring style
+- Background"""
+
+[user.comic.standard.standard]
+prompt = """Describe this comic book image covering:
+- Comic art style (superhero, indie, noir)
+- Line art quality
+- Character design and costume
+- Pose and action
+- Color treatment
+- Background
+
+Write flowing sentences."""
+
+[user.comic.standard.detailed]
+prompt = """Describe this comic book image in detail:
+- Comic style and influence
+- Line art technique (outlines, hatching)
+- Character physique and costume
+- Facial expression and style
+- Pose and dynamics
+- Coloring (flat, painted, halftone)
+- Background and composition
+
+Write comprehensively."""
+
+[user.comic.standard.extreme]
+prompt = """Describe every detail of this comic book image:
+Comic style and publisher influence, line art technique (outline weight, hatching, ink quality), character design (proportions, costume details, face style), dynamic pose and action, coloring treatment (flat/painted/halftone, color palette), background details and composition.
+
+Write the most detailed description possible."""
+
+[user.comic.basic.quick]
+prompt = """Write a brief 30-50 word description of this comic book image.
+
+Example: "American superhero comic style, bold black outlines, muscular male figure in red and blue costume, dynamic action pose, flat colors with halftone shading, city skyline background."
+
+Describe this image:"""
+
+[user.comic.basic.standard]
+prompt = """Write a description of this comic book image.
+
+Include: comic style, line art quality, character appearance and costume, pose, coloring style, background.
+
+Example: "Modern Marvel style comic art with bold black outlines, a woman in sleek black bodysuit with silver accents, athletic build, confident standing pose with hands on hips, flat colors with gradient shading, dramatic shadows, urban rooftop background, dynamic composition."
+
+Describe this image:"""
+
+[user.comic.basic.detailed]
+prompt = """Write a detailed description of this comic book image.
+
+Cover: comic style (superhero, indie, noir), line art technique (outline weight, hatching), character design (physique, costume details), face and expression, pose and action, coloring (flat, painted, halftone dots), color palette, background setting.
+
+Example: "Classic American superhero comic style with heavy black outlines and detailed cross-hatching, a muscular male hero in blue costume with red cape, square jaw, determined expression, dynamic flying pose with fist forward, flat primary colors with Ben-Day dot shading, bold shadows, cloudy sky background with city below."
+
+Describe this image in similar detail:"""
+
+[user.comic.basic.extreme]
+prompt = """Write the most detailed description possible of this comic book image.
+
+Describe: exact comic style and influence, line art technique (outline thickness, hatching patterns, ink quality), character design (body proportions, musculature, costume with all details), face rendering and expression, dynamic pose (foreshortening, weight, action), coloring style (flat/gradient/painted, halftone presence, color palette), shadow treatment, background composition.
+
+Start directly - write one flowing paragraph:"""
+
+
+# =============================================================================
+# ARTISTIC STYLE USER PROMPTS (painting, sketch, illustration)
+# =============================================================================
+
+[user.artistic.advanced.quick]
+prompt = """Generate a brief artistic style prompt (30-60 words) covering:
+- Art medium (oil, watercolor, digital, pencil)
+- Subject basics
+- Color palette
+- Mood/atmosphere
+
+Write as flowing sentences."""
+
+[user.artistic.advanced.standard]
+prompt = """Generate an artistic style prompt covering:
+MEDIUM: Specific art medium (oil painting, watercolor, digital painting, pencil sketch)
+TECHNIQUE: Brushwork or line quality (loose, precise, textured, smooth)
+SUBJECT: Main subject description
+COLOR PALETTE: Dominant colors, harmony type (warm/cool, complementary)
+COMPOSITION: Framing, focal point
+LIGHTING: Light source and mood
+STYLE: Art movement influence if apparent
+
+Write as flowing natural sentences. End with "artistic masterwork, fine art quality"."""
+
+[user.artistic.advanced.detailed]
+prompt = """Generate a COMPREHENSIVE artistic style prompt:
+
+MEDIUM & TECHNIQUE:
+- Primary medium (oil, acrylic, watercolor, gouache, digital, pencil, charcoal)
+- Surface/canvas texture influence
+- Brushwork style (impasto, glazing, wet-on-wet, dry brush)
+- Stroke visibility and direction
+
+SUBJECT:
+- Main subject description
+- Positioning and scale
+- Level of detail/abstraction
+
+COLOR PALETTE:
+- Dominant colors
+- Color harmony (complementary, analogous, triadic, split-complementary)
+- Saturation level
+- Temperature (warm, cool, neutral)
+
+COMPOSITION:
+- Framing and crop
+- Rule of thirds or centered
+- Depth and perspective
+- Negative space usage
+
+LIGHTING & MOOD:
+- Light source direction
+- Light quality (soft, harsh, diffused)
+- Shadow treatment
+- Atmospheric effects
+- Emotional tone
+
+STYLE INFLUENCE:
+- Art movement (impressionist, realist, expressionist, etc.)
+- Historical period influence
+- Contemporary or traditional
+
+Write as flowing natural sentences. End with "fine art quality, artistic masterpiece, gallery worthy"."""
+
+[user.artistic.advanced.extreme]
+prompt = """Generate an EXTREMELY detailed artistic style prompt with MAXIMUM precision.
+
+Analyze EVERY visible element:
+
+MEDIUM IDENTIFICATION:
+- Primary medium with confidence
+- Possible secondary mediums (mixed media)
+- Surface texture (canvas weave, paper grain, digital)
+- Varnish or finish if apparent
+
+TECHNIQUE ANALYSIS:
+- Brushwork style (impasto thickness, glazing layers, alla prima)
+- Stroke direction and rhythm
+- Edge handling (soft, hard, lost edges)
+- Blending technique
+- Detail rendering vs suggestion
+- Underpainting evidence
+
+SUBJECT RENDERING:
+- Main subject with full description
+- Level of realism vs stylization
+- Anatomical accuracy if figure
+- Detail distribution (focal vs peripheral)
+
+COLOR ANALYSIS:
+- Full palette breakdown
+- Color mixing approach (optical vs physical)
+- Temperature shifts
+- Value range (high key, low key, full range)
+- Chromatic intensity
+- Color harmony system
+
+COMPOSITION ELEMENTS:
+- Format and aspect ratio
+- Subject placement
+- Leading lines
+- Visual weight distribution
+- Depth creation methods
+- Cropping and framing choices
+
+LIGHTING MASTERY:
+- Primary light source
+- Secondary/reflected light
+- Shadow color and softness
+- Highlight treatment
+- Atmospheric perspective
+- Time of day/quality suggestion
+
+STYLE ATTRIBUTION:
+- Art movement influence
+- Period characteristics
+- Specific artist influence if apparent
+- Regional style markers
+
+Write as a comprehensive flowing narrative. End with "museum quality fine art, masterful technique, artistic excellence"."""
+
+[user.artistic.standard.quick]
+prompt = """Describe this artistic image in 30-60 words:
+- Art medium
+- Subject
+- Color palette
+- Mood"""
+
+[user.artistic.standard.standard]
+prompt = """Describe this artistic image covering:
+- Art medium (painting, sketch, digital art)
+- Technique and brushwork
+- Subject description
+- Color palette
+- Lighting and mood
+- Style influence
+
+Write flowing sentences."""
+
+[user.artistic.standard.detailed]
+prompt = """Describe this artistic image in detail:
+- Medium and technique
+- Brushwork or line quality
+- Subject rendering
+- Color palette and harmony
+- Composition
+- Lighting and atmosphere
+- Art style influence
+
+Write comprehensively."""
+
+[user.artistic.standard.extreme]
+prompt = """Describe every detail of this artistic image:
+Medium and technique (brushwork, texture, stroke style), subject rendering, complete color palette analysis, composition and framing, lighting quality and mood, art movement influence, overall artistic quality.
+
+Write the most detailed description possible."""
+
+[user.artistic.basic.quick]
+prompt = """Write a brief 30-50 word description of this artistic image.
+
+Example: "Oil painting of a woman in blue dress, impressionist style with visible brushstrokes, warm golden lighting, soft focus background, harmonious earth tone palette."
+
+Describe this image:"""
+
+[user.artistic.basic.standard]
+prompt = """Write a description of this artistic image.
+
+Include: art medium, technique/brushwork, subject, color palette, mood, style influence.
+
+Example: "Digital painting in realistic style, smooth blending with subtle brushwork, portrait of a young woman with flowing auburn hair, rich warm palette of amber and sienna, dramatic side lighting creating deep shadows, renaissance-influenced composition, painterly quality."
+
+Describe this image:"""
+
+[user.artistic.basic.detailed]
+prompt = """Write a detailed description of this artistic image.
+
+Cover: medium (oil, watercolor, digital, etc.), technique (brushwork, texture, style), subject description, color palette (specific colors, harmony), composition, lighting quality and direction, mood/atmosphere, art style influence.
+
+Example: "Watercolor painting with loose, expressive brushwork and wet-on-wet technique, portrait of elderly man with weathered features, limited palette of ultramarine blue, burnt sienna, and yellow ochre, soft diffused lighting from left, contemplative mood, impressionist influence with focus on light and atmosphere, visible paper texture through transparent washes."
+
+Describe this image in similar detail:"""
+
+[user.artistic.basic.extreme]
+prompt = """Write the most detailed description possible of this artistic image.
+
+Describe: exact medium and materials, technique (brushwork type, stroke direction, blending), subject with full details, complete color palette (specific colors, temperature, harmony), composition (framing, focal point, depth), lighting (source, quality, shadow treatment), mood and atmosphere, art movement influence.
+
+Start directly - write one flowing paragraph:"""
+
+
+# =============================================================================
+# PIXEL ART STYLE USER PROMPTS
+# =============================================================================
+
+[user.pixel_art.advanced.quick]
+prompt = """Generate a brief pixel art prompt (30-60 words) covering:
+- Pixel style (8-bit, 16-bit, modern)
+- Character/subject basics
+- Color palette (limited colors)
+- Background type
+
+Write as flowing sentences."""
+
+[user.pixel_art.advanced.standard]
+prompt = """Generate a pixel art prompt covering:
+PIXEL STYLE: Era (8-bit NES, 16-bit SNES/Genesis, 32-bit, modern HD)
+RESOLUTION: Approximate sprite size/scale
+CHARACTER: Subject design, key features
+COLOR PALETTE: Limited palette description (number of colors)
+POSE: Character pose or frame
+BACKGROUND: Setting, tile-based elements
+EFFECTS: Dithering, anti-aliasing presence
+
+Write as flowing natural sentences. End with "clean pixel art, retro gaming aesthetic"."""
+
+[user.pixel_art.advanced.detailed]
+prompt = """Generate a COMPREHENSIVE pixel art prompt:
+
+PIXEL STYLE:
+- Specific era (8-bit, 16-bit, 32-bit, modern indie)
+- Platform influence (NES, SNES, Genesis, GBA, modern)
+- Resolution tier (low-res, mid-res, HD pixel art)
+
+TECHNICAL SPECS:
+- Apparent sprite resolution
+- Pixel scaling/size
+- Aspect ratio considerations
+- Sub-pixel animation presence
+
+CHARACTER/SUBJECT:
+- Design with pixel constraints in mind
+- Key silhouette features
+- Readable details at size
+- Iconic elements
+
+COLOR PALETTE:
+- Palette type (4-color, 16-color, 256-color, unlimited)
+- Specific colors if identifiable
+- Ramp structure (hue shifting)
+- Palette limitations or choices
+
+SHADING TECHNIQUE:
+- Dithering patterns (checkerboard, ordered, none)
+- Anti-aliasing approach
+- Banding avoidance
+- Light source consistency
+
+BACKGROUND:
+- Tile-based elements
+- Parallax layers if apparent
+- Environmental details
+- Color palette coordination
+
+Write as flowing natural sentences. End with "professional pixel art, clean readable sprites, retro gaming quality"."""
+
+[user.pixel_art.advanced.extreme]
+prompt = """Generate an EXTREMELY detailed pixel art prompt with MAXIMUM precision.
+
+Analyze EVERY visible element:
+
+STYLE IDENTIFICATION:
+- Exact era/generation (8-bit/16-bit/32-bit/modern)
+- Platform aesthetic (NES, SNES, Genesis, GBA, arcade, modern indie)
+- Artist style influence if recognizable
+- Genre (platformer, RPG, fighting game, idle game)
+
+TECHNICAL ANALYSIS:
+- Canvas/sprite resolution
+- Pixel aspect ratio (square vs non-square)
+- Upscaling factor if present
+- Outline style (black, colored, selective, none)
+
+CHARACTER RENDERING:
+- Silhouette clarity
+- Detail distribution
+- Face/expression rendering at low resolution
+- Body proportions in pixel form
+- Costume/outfit elements
+- Animation frame if apparent
+
+PALETTE BREAKDOWN:
+- Total color count
+- Color ramps (how many steps per hue)
+- Hue shifting in ramps (warm to cool shadows)
+- Highlight and shadow colors
+- Skin tone palette
+- Special effect colors
+
+SHADING METHODS:
+- Dithering type (none, checkerboard, ordered, pattern)
+- Dither density and placement
+- Anti-aliasing (none, manual, selout)
+- Pillow shading avoidance
+- Banding presence
+- Light source direction
+
+BACKGROUND ELEMENTS:
+- Tile construction
+- Repeating patterns
+- Depth layers
+- Environmental storytelling
+- UI elements if present
+
+Write as a comprehensive flowing narrative. End with "pixel perfect art, clean readable design, professional retro game quality, authentic [era] aesthetic"."""
+
+[user.pixel_art.standard.quick]
+prompt = """Describe this pixel art image in 30-60 words:
+- Pixel style (8-bit, 16-bit, etc.)
+- Character/subject
+- Color palette
+- Background"""
+
+[user.pixel_art.standard.standard]
+prompt = """Describe this pixel art image covering:
+- Pixel art era/style
+- Character design
+- Color palette (limited colors)
+- Shading technique
+- Background elements
+
+Write flowing sentences."""
+
+[user.pixel_art.standard.detailed]
+prompt = """Describe this pixel art image in detail:
+- Pixel style and resolution
+- Character/sprite design
+- Color palette breakdown
+- Dithering and shading
+- Background tiles
+- Overall aesthetic
+
+Write comprehensively."""
+
+[user.pixel_art.standard.extreme]
+prompt = """Describe every detail of this pixel art image:
+Pixel style (8-bit/16-bit/modern), resolution, character design, complete color palette, shading technique (dithering type), outline style, background elements, animation frame if present.
+
+Write the most detailed description possible."""
+
+[user.pixel_art.basic.quick]
+prompt = """Write a brief 30-50 word description of this pixel art image.
+
+Example: "16-bit SNES style pixel art, female warrior character with blue armor and sword, limited 16-color palette, clean outlines, simple dithering for shading, green grass tileset background."
+
+Describe this image:"""
+
+[user.pixel_art.basic.standard]
+prompt = """Write a description of this pixel art image.
+
+Include: pixel style era, character design, color palette, shading technique, background.
+
+Example: "Modern indie pixel art with HD resolution, cute chibi-style character with pink hair and mage robes, rich 32-color palette with smooth color ramps, minimal dithering with anti-aliased edges, magical forest background with parallax layers, clean professional sprite work."
+
+Describe this image:"""
+
+[user.pixel_art.basic.detailed]
+prompt = """Write a detailed description of this pixel art image.
+
+Cover: pixel art style (8-bit, 16-bit, modern), platform influence, character design, sprite resolution, color palette (number of colors, key colors), shading technique (dithering type, anti-aliasing), outline style, background elements.
+
+Example: "16-bit Genesis style pixel art with bold black outlines, action hero character in idle pose with red jacket and jeans, limited 15-color palette using warm sunset hues, ordered dithering for smooth gradients, selout technique on edges, brick wall background with graffiti details, fighting game aesthetic."
+
+Describe this image in similar detail:"""
+
+[user.pixel_art.basic.extreme]
+prompt = """Write the most detailed description possible of this pixel art image.
+
+Describe: exact pixel style and era, platform aesthetic, sprite resolution, character design (silhouette, details, pose), complete color palette (count, specific colors, ramp structure), shading technique (dithering patterns, anti-aliasing), outline treatment, background construction (tiles, layers), overall game genre aesthetic.
+
+Start directly - write one flowing paragraph:"""
+
+
+# =============================================================================
+# FURRY/ANTHRO STYLE USER PROMPTS
+# =============================================================================
+
+[user.furry.advanced.quick]
+prompt = """Generate a brief anthropomorphic character prompt (30-60 words) covering:
+- Species and anthro style
+- Fur color/markings
+- Clothing (if any)
+- Pose
+- Background type
+
+Write as flowing sentences."""
+
+[user.furry.advanced.standard]
+prompt = """Generate an anthropomorphic character prompt covering:
+SPECIES: Animal species and anthropomorphism level (full anthro, kemono, feral)
+FUR/SCALES: Color, pattern, markings
+BODY TYPE: Digitigrade/plantigrade, build, proportions
+FACE: Muzzle shape, ear type, eye style
+EXPRESSION: Mood and emotion
+CLOTHING: Outfit if present
+POSE: Body position
+ART STYLE: Western furry, kemono, realistic
+BACKGROUND: Setting
+
+Write as flowing natural sentences. End with "high quality anthro art, clean detailed fur"."""
+
+[user.furry.advanced.detailed]
+prompt = """Generate a COMPREHENSIVE anthropomorphic character prompt:
+
+SPECIES & STYLE:
+- Exact animal species (or hybrid)
+- Anthropomorphism level (full anthro, semi-anthro, kemono, feral)
+- Art style (western furry, kemono/eastern, realistic, toony)
+
+PHYSICAL CHARACTERISTICS:
+- Fur/scale/feather type and texture
+- Primary color and pattern
+- Secondary colors and markings
+- Special features (wings, horns, tails)
+
+BODY STRUCTURE:
+- Leg type (plantigrade, digitigrade, unguligrade)
+- Body build (slim, average, muscular, chubby)
+- Height/proportions
+- Hands/paws style
+
+FACIAL FEATURES:
+- Muzzle shape and length
+- Ear type and position
+- Eye style (anime, realistic, toony)
+- Eye color
+- Nose type
+- Teeth/fangs visibility
+
+EXPRESSION & POSE:
+- Emotion and mood
+- Body language
+- Hand/paw position
+- Tail position
+
+CLOTHING & ACCESSORIES:
+- Outfit type and style
+- Colors and materials
+- Jewelry or accessories
+- Collar if present
+
+BACKGROUND:
+- Setting type
+- Detail level
+- Atmosphere
+
+Write as flowing natural sentences. End with "detailed anthro character art, high quality furry illustration, clean fur rendering"."""
+
+[user.furry.advanced.extreme]
+prompt = """Generate an EXTREMELY detailed anthropomorphic character prompt with MAXIMUM precision.
+
+Analyze EVERY visible element:
+
+SPECIES IDENTIFICATION:
+- Primary species with subspecies if applicable
+- Hybrid species elements if present
+- Real vs fantasy species
+- Species-accurate features
+
+ANTHROPOMORPHISM ANALYSIS:
+- Level (full anthro, semi-anthro, kemono style, feral+)
+- Human vs animal feature ratio
+- Posture type (bipedal, quadrupedal)
+- Hand structure (paw pads, fingers, claws)
+
+FUR/COAT DETAILS:
+- Primary coat color
+- Secondary colors and distribution
+- Marking patterns (stripes, spots, patches)
+- Marking colors
+- Fur length variations (cheek fluff, chest tuft, etc.)
+- Fur texture rendering
+
+BODY ANATOMY:
+- Leg structure (plantigrade/digitigrade/unguligrade)
+- Paw/foot design
+- Body type (lean, athletic, stocky, plus-size)
+- Muscle definition level
+- Tail type, length, position, fluffiness
+
+FACIAL STRUCTURE:
+- Muzzle shape and proportions
+- Nose type and color
+- Ear shape, size, position, inner color
+- Eye style (anime, realistic, western toon)
+- Eye color with details
+- Eyebrow rendering
+- Whiskers presence
+- Teeth/fang visibility
+
+EXPRESSION & EMOTION:
+- Primary emotion
+- Ear position indicating mood
+- Tail position indicating mood
+- Eye expression
+- Mouth position
+
+CLOTHING & ACCESSORIES:
+- Each garment with full details
+- Fit and style
+- Tail accommodation
+- Species-appropriate modifications
+- Collar, tags, jewelry
+- Props or items held
+
+ART STYLE MARKERS:
+- Western furry vs kemono influence
+- Artist style characteristics
+- Color saturation choices
+- Line art style
+- Shading technique
+
+Write as a comprehensive flowing narrative. End with "professional anthro character art, detailed fur rendering, expressive character design, high quality furry illustration"."""
+
+[user.furry.standard.quick]
+prompt = """Describe this anthropomorphic character in 30-60 words:
+- Species and anthro style
+- Fur color and markings
+- Clothing if any
+- Pose
+- Background"""
+
+[user.furry.standard.standard]
+prompt = """Describe this anthropomorphic character covering:
+- Species and anthro level
+- Fur/coat colors and patterns
+- Body type
+- Facial features
+- Expression
+- Clothing
+- Pose
+- Background
+
+Write flowing sentences."""
+
+[user.furry.standard.detailed]
+prompt = """Describe this anthropomorphic character in detail:
+- Species identification
+- Anthropomorphism style
+- Fur details (colors, markings, texture)
+- Body structure (digitigrade/plantigrade)
+- Facial features (muzzle, ears, eyes)
+- Expression and mood
+- Complete outfit
+- Pose and body language
+- Art style
+- Background
+
+Write comprehensively."""
+
+[user.furry.standard.extreme]
+prompt = """Describe every detail of this anthropomorphic character:
+Species and anthro style, fur colors and all markings, body type and structure, facial features (muzzle, ears, eyes, expression), tail details, all clothing items, pose and body language, art style (western furry, kemono, etc.), background setting.
+
+Write the most detailed description possible."""
+
+[user.furry.basic.quick]
+prompt = """Write a brief 30-50 word description of this anthropomorphic character image.
+
+Example: "Kemono style anthro wolf character with gray and white fur, digitigrade legs, wearing casual hoodie and jeans, friendly smile, simple gradient background."
+
+Describe this image:"""
+
+[user.furry.basic.standard]
+prompt = """Write a description of this anthropomorphic character.
+
+Include: species, anthro style, fur colors and markings, body type, facial features, expression, clothing, pose, background.
+
+Example: "Western furry style anthro fox character, orange fur with white chest and muzzle markings, black ear tips, digitigrade stance, athletic build, large expressive blue eyes, playful grin, wearing green t-shirt and cargo shorts, standing pose with one hand raised, forest background."
+
+Describe this image:"""
+
+[user.furry.basic.detailed]
+prompt = """Write a detailed description of this anthropomorphic character.
+
+Cover: species and anthro level, fur color and all markings, body structure (plantigrade or digitigrade, build), facial features (muzzle shape, ear type, eye style and color), expression, complete outfit with colors, pose and body language, tail position, art style (western, kemono, etc.), background.
+
+Example: "Kemono style anthro cat girl with soft cream-colored fur and pink inner ears, plantigrade stance with human-like feet, slim feminine build, short muzzle with small pink nose, large sparkling anime-style amber eyes, cheerful smile showing small fangs, wearing frilly pink maid dress with white apron, standing in cute pose with hands clasped, fluffy cream tail raised happily, pastel bakery interior background."
+
+Describe this image in similar detail:"""
+
+[user.furry.basic.extreme]
+prompt = """Write the most detailed description possible of this anthropomorphic character.
+
+Describe: exact species, anthropomorphism level (full anthro, kemono, etc.), all fur colors and marking patterns, fur texture, body structure (leg type, build, proportions), facial features (muzzle, ears, eyes, nose), expression and mood indicators (ear position, tail position), complete outfit with all details, pose and body language, art style influences, background setting.
+
+Start directly - write one flowing paragraph:"""
+
+
+# =============================================================================
+# 3D RENDER STYLE USER PROMPTS
+# =============================================================================
+
+[user.render_3d.advanced.quick]
+prompt = """Generate a brief 3D render prompt (30-60 words) covering:
+- Render style (stylized, realistic, Pixar-style)
+- Character basics
+- Lighting setup
+- Background type
+
+Write as flowing sentences."""
+
+[user.render_3d.advanced.standard]
+prompt = """Generate a 3D render style prompt covering:
+RENDER STYLE: Type (stylized/semi-realistic/photorealistic/Pixar/anime-3D)
+CHARACTER: Design, proportions, key features
+MATERIALS: Skin shader quality, hair rendering, cloth
+LIGHTING: Setup type (HDRI, three-point, dramatic)
+CAMERA: Angle, focal length feel
+BACKGROUND: Environment or backdrop
+QUALITY: Render quality indicators
+
+Write as flowing natural sentences. End with "high quality 3D render, detailed materials, professional lighting"."""
+
+[user.render_3d.advanced.detailed]
+prompt = """Generate a COMPREHENSIVE 3D render style prompt:
+
+RENDER STYLE:
+- Style category (Pixar-like, anime-3D, realistic, stylized, hyperreal)
+- Software aesthetic if apparent (Blender, Unreal, Cinema4D)
+- Quality tier (professional, indie, AAA game)
+
+CHARACTER MODEL:
+- Design style (stylized proportions, realistic, chibi-3D)
+- Topology quality indicators
+- Silhouette appeal
+- Facial rig quality
+
+MATERIALS & SHADERS:
+- Skin (subsurface scattering quality, pore detail)
+- Hair (strand-based, cards, geometry)
+- Eyes (shader complexity, reflections)
+- Cloth (simulation quality, material type)
+
+LIGHTING SETUP:
+- Key light direction and color
+- Fill light presence
+- Rim/back light
+- Ambient occlusion
+- Global illumination quality
+
+CAMERA & COMPOSITION:
+- Focal length feel (wide, normal, telephoto)
+- Depth of field
+- Camera angle
+- Composition style
+
+POST-PROCESSING:
+- Color grading
+- Bloom or glow
+- Chromatic aberration
+- Film grain
+
+ENVIRONMENT:
+- Background type
+- Environmental lighting contribution
+- Props and set dressing
+
+Write as flowing natural sentences. End with "professional 3D render, cinematic lighting, detailed materials, high quality CG"."""
+
+[user.render_3d.advanced.extreme]
+prompt = """Generate an EXTREMELY detailed 3D render style prompt with MAXIMUM precision.
+
+Analyze EVERY visible element:
+
+RENDER PIPELINE ANALYSIS:
+- Render engine indicators (path-traced, rasterized, hybrid)
+- Style classification (stylized, semi-realistic, photorealistic)
+- Production quality tier (student, professional, AAA, film)
+- Software aesthetic markers
+
+CHARACTER MODEL DETAILS:
+- Poly count impression (low, mid, high, sculpted)
+- Topology flow quality
+- Subdivision level
+- Proportions (realistic, stylized, exaggerated)
+- Silhouette design
+- Edge flow and deformation quality
+
+MATERIAL BREAKDOWN:
+Skin:
+- Subsurface scattering (depth, color)
+- Specular/roughness variation
+- Micro-detail (pores, imperfections)
+- Makeup or paint layers
+
+Hair:
+- Rendering method (geometry, cards, strands, groom)
+- Shine and specularity
+- Flyaways and detail
+- Color variation
+
+Eyes:
+- Shader complexity (simple, anatomical)
+- Reflection quality
+- Catchlight placement
+- Iris detail
+
+Clothing:
+- Cloth simulation quality
+- Fabric material (cotton, silk, leather, etc.)
+- Wrinkle detail
+- Seams and stitching
+
+LIGHTING ANALYSIS:
+- Key light (direction, intensity, color temperature)
+- Fill light (ratio to key, color)
+- Rim/hair light (presence, color)
+- Ambient/environment light
+- Shadow softness and color
+- Specular highlights quality
+- Global illumination presence
+
+CAMERA SETTINGS:
+- Focal length (wide/normal/telephoto feel)
+- Aperture (depth of field)
+- Camera height and angle
+- Lens distortion
+
+POST-PROCESSING:
+- Color grading style
+- Contrast and saturation
+- Bloom/glow effects
+- Lens effects (CA, vignette, flares)
+- Grain or noise
+
+Write as a comprehensive flowing narrative. End with "professional CG render, cinematic quality, detailed materials, realistic lighting, production quality 3D art"."""
+
+[user.render_3d.standard.quick]
+prompt = """Describe this 3D render in 30-60 words:
+- Render style
+- Character/subject
+- Lighting
+- Background"""
+
+[user.render_3d.standard.standard]
+prompt = """Describe this 3D render covering:
+- Render style (stylized, realistic, Pixar-like)
+- Character design and proportions
+- Material quality (skin, hair, cloth)
+- Lighting setup
+- Background
+- Overall quality
+
+Write flowing sentences."""
+
+[user.render_3d.standard.detailed]
+prompt = """Describe this 3D render in detail:
+- Render style and quality
+- Character model design
+- Material rendering (skin, hair, eyes, cloth)
+- Lighting (key, fill, rim lights)
+- Camera angle and composition
+- Post-processing effects
+- Background/environment
+
+Write comprehensively."""
+
+[user.render_3d.standard.extreme]
+prompt = """Describe every detail of this 3D render:
+Render style and pipeline, character model quality, all materials (skin shader, hair rendering, eye details, cloth simulation), lighting setup (key, fill, rim, ambient), camera settings, post-processing effects, background environment.
+
+Write the most detailed description possible."""
+
+[user.render_3d.basic.quick]
+prompt = """Write a brief 30-50 word description of this 3D rendered image.
+
+Example: "Pixar-style 3D render of young girl character with big eyes, stylized proportions, smooth skin shader, bouncy hair cards, soft three-point lighting, colorful bedroom background."
+
+Describe this image:"""
+
+[user.render_3d.basic.standard]
+prompt = """Write a description of this 3D rendered image.
+
+Include: render style, character design, material quality, lighting setup, background.
+
+Example: "Semi-realistic 3D render in modern game engine style, female character with detailed skin subsurface scattering, strand-based hair with realistic shine, wearing leather jacket with detailed material, dramatic rim lighting from behind, cinematic depth of field, urban night scene background."
+
+Describe this image:"""
+
+[user.render_3d.basic.detailed]
+prompt = """Write a detailed description of this 3D rendered image.
+
+Cover: render style (Pixar, realistic, anime-3D, etc.), character model (design, proportions), materials (skin quality, hair type, eye detail, clothing materials), lighting (key light direction, fill, rim, ambient), camera (angle, depth of field), any post-processing effects, background environment.
+
+Example: "High-quality Pixar-style 3D render, stylized male character with exaggerated proportions and large expressive eyes, smooth skin with subtle subsurface scattering, geometry-based hair with cartoon shine, wearing knit sweater with fabric texture detail, warm key light from upper left, soft blue fill from right, subtle rim light on hair, shallow depth of field, cozy living room environment with soft ambient lighting."
+
+Describe this image in similar detail:"""
+
+[user.render_3d.basic.extreme]
+prompt = """Write the most detailed description possible of this 3D rendered image.
+
+Describe: exact render style and quality tier, character model (design style, proportions, topology quality), all materials (skin shader with subsurface scattering, hair rendering method, eye shader details, clothing materials and simulation), lighting setup (key light direction/color, fill light, rim/back light, ambient occlusion, global illumination), camera settings (focal length feel, depth of field), post-processing (color grading, bloom, lens effects), background environment.
+
+Start directly - write one flowing paragraph:"""
 
 
 # =============================================================================
@@ -646,6 +1892,216 @@ Output only the final prompt."""
 intro = """Write a detailed description of this anime/manga/cartoon image. Include art style, character design (eyes, face), hair color and style, outfit, pose, and background. Start directly - no introduction needed."""
 
 synthesis = """Write the final description as a single flowing paragraph. Use anime terminology for hair styles (twin tails, ahoge, etc). End with "clean lines, high quality anime art". Start directly with the art style."""
+
+
+# =============================================================================
+# AGENTIC PROMPTS - WESTERN COMIC STYLES
+# =============================================================================
+
+[agentic.comic.advanced]
+intro = """You are performing a comprehensive visual analysis for Western comic book style prompt generation.
+
+For comic book content, focus on:
+- Comic style identification (superhero, indie, noir, graphic novel)
+- Line art technique (outline weight, hatching, inking style)
+- Character design (heroic proportions, costume details)
+- Dynamic poses and action composition
+- Color treatment (flat, painted, halftone)
+
+Analyze each component separately, then synthesize into a flowing prompt."""
+
+synthesis = """Now combine all analysis into a single flowing comic book style prompt.
+
+Structure: Comic style → Line art → Character design → Costume → Pose/action → Coloring → Background
+
+Use comic-specific terminology where appropriate.
+End with "bold dynamic lines, professional comic book art, high contrast".
+
+Output ONLY the final prompt text."""
+
+[agentic.comic.standard]
+intro = """Analyze this comic book image step by step.
+Focus on: comic style, line art, character design, costume, pose, coloring, background.
+Use comic-specific terms for art techniques."""
+
+synthesis = """Combine your analysis into a flowing comic book style prompt.
+Structure: comic style → line art → character → costume → pose → colors → background.
+End with "bold lines, dynamic comic art".
+Output only the final prompt."""
+
+[agentic.comic.basic]
+intro = """Write a detailed description of this comic book image. Include comic style, line art quality, character design and costume, pose, coloring style, and background. Start directly - no introduction needed."""
+
+synthesis = """Write the final description as a single flowing paragraph. Describe the comic style, line art, and coloring technique. End with "professional comic book art". Start directly with the comic style."""
+
+
+# =============================================================================
+# AGENTIC PROMPTS - ARTISTIC STYLES (painting, sketch, illustration)
+# =============================================================================
+
+[agentic.artistic.advanced]
+intro = """You are performing a comprehensive visual analysis for artistic/traditional media prompt generation.
+
+For artistic content, focus on:
+- Medium identification (oil, watercolor, digital, pencil, etc.)
+- Technique analysis (brushwork, stroke quality, texture)
+- Color palette and harmony
+- Composition and focal points
+- Lighting mood and atmosphere
+- Art movement or style influence
+
+Analyze each component separately, then synthesize into a flowing prompt."""
+
+synthesis = """Now combine all analysis into a single flowing artistic prompt.
+
+Structure: Medium → Technique → Subject → Color palette → Composition → Lighting/mood → Style influence
+
+Use art terminology where appropriate.
+End with "fine art quality, artistic masterpiece, museum quality".
+
+Output ONLY the final prompt text."""
+
+[agentic.artistic.standard]
+intro = """Analyze this artistic image step by step.
+Focus on: art medium, technique, subject, color palette, composition, lighting, style.
+Use art-specific terminology."""
+
+synthesis = """Combine your analysis into a flowing artistic prompt.
+Structure: medium → technique → subject → colors → mood → style.
+End with "fine art quality".
+Output only the final prompt."""
+
+[agentic.artistic.basic]
+intro = """Write a detailed description of this artistic image. Include art medium, technique/brushwork, subject, color palette, mood, and style influence. Start directly - no introduction needed."""
+
+synthesis = """Write the final description as a single flowing paragraph. Describe the medium, technique, and artistic style. End with "artistic masterwork". Start directly with the medium."""
+
+
+# =============================================================================
+# AGENTIC PROMPTS - PIXEL ART STYLES
+# =============================================================================
+
+[agentic.pixel_art.advanced]
+intro = """You are performing a comprehensive visual analysis for pixel art prompt generation.
+
+For pixel art content, focus on:
+- Era/style identification (8-bit, 16-bit, modern indie)
+- Resolution and sprite scale
+- Color palette (limited colors, specific palette choices)
+- Shading technique (dithering patterns, anti-aliasing)
+- Character/sprite design
+- Background tile construction
+
+Analyze each component separately, then synthesize into a flowing prompt."""
+
+synthesis = """Now combine all analysis into a single flowing pixel art prompt.
+
+Structure: Pixel era → Resolution → Color palette → Character design → Shading → Background
+
+Use pixel art terminology where appropriate.
+End with "pixel perfect, clean readable design, professional retro game quality".
+
+Output ONLY the final prompt text."""
+
+[agentic.pixel_art.standard]
+intro = """Analyze this pixel art image step by step.
+Focus on: pixel style era, resolution, color palette, character design, shading/dithering, background.
+Use pixel art-specific terminology."""
+
+synthesis = """Combine your analysis into a flowing pixel art prompt.
+Structure: era/style → palette → character → shading → background.
+End with "clean pixel art, retro gaming aesthetic".
+Output only the final prompt."""
+
+[agentic.pixel_art.basic]
+intro = """Write a detailed description of this pixel art image. Include pixel style (8-bit/16-bit/modern), color palette, character design, shading technique, and background. Start directly - no introduction needed."""
+
+synthesis = """Write the final description as a single flowing paragraph. Describe the pixel era, palette, and shading style. End with "professional pixel art". Start directly with the pixel style."""
+
+
+# =============================================================================
+# AGENTIC PROMPTS - FURRY/ANTHRO STYLES
+# =============================================================================
+
+[agentic.furry.advanced]
+intro = """You are performing a comprehensive visual analysis for anthropomorphic character prompt generation.
+
+For furry/anthro content, focus on:
+- Species identification and anthropomorphism level
+- Fur/coat details (colors, markings, texture)
+- Body structure (plantigrade/digitigrade, build)
+- Facial features (muzzle, ears, eyes)
+- Expression and body language
+- Art style (western furry, kemono, realistic)
+- Clothing and accessories
+
+Analyze each component separately, then synthesize into a flowing prompt."""
+
+synthesis = """Now combine all analysis into a single flowing anthro character prompt.
+
+Structure: Species → Anthro level → Fur/markings → Body type → Facial features → Expression → Clothing → Pose → Background → Art style
+
+Use furry art terminology where appropriate.
+End with "detailed anthro character art, high quality furry illustration, clean fur rendering".
+
+Output ONLY the final prompt text."""
+
+[agentic.furry.standard]
+intro = """Analyze this anthropomorphic character image step by step.
+Focus on: species, anthro style, fur details, body structure, facial features, expression, clothing, pose.
+Use furry art terminology."""
+
+synthesis = """Combine your analysis into a flowing anthro character prompt.
+Structure: species → fur → body → face → expression → clothing → pose → background.
+End with "high quality anthro art".
+Output only the final prompt."""
+
+[agentic.furry.basic]
+intro = """Write a detailed description of this anthropomorphic character. Include species, anthro style, fur colors and markings, body type, facial features, expression, clothing, and pose. Start directly - no introduction needed."""
+
+synthesis = """Write the final description as a single flowing paragraph. Describe the species, fur details, and anthro style. End with "detailed furry character art". Start directly with the species and anthro style."""
+
+
+# =============================================================================
+# AGENTIC PROMPTS - 3D RENDER STYLES
+# =============================================================================
+
+[agentic.render_3d.advanced]
+intro = """You are performing a comprehensive visual analysis for 3D rendered character prompt generation.
+
+For 3D render content, focus on:
+- Render style (Pixar, realistic, anime-3D, stylized)
+- Character model quality (proportions, topology)
+- Material rendering (skin SSS, hair, eyes, cloth)
+- Lighting setup (key, fill, rim, ambient)
+- Camera and composition
+- Post-processing effects
+
+Analyze each component separately, then synthesize into a flowing prompt."""
+
+synthesis = """Now combine all analysis into a single flowing 3D render prompt.
+
+Structure: Render style → Character model → Materials (skin, hair, eyes, cloth) → Lighting setup → Camera → Post-processing → Background
+
+Use 3D/CG terminology where appropriate.
+End with "professional CG render, cinematic quality, detailed materials, production quality 3D art".
+
+Output ONLY the final prompt text."""
+
+[agentic.render_3d.standard]
+intro = """Analyze this 3D render step by step.
+Focus on: render style, character model, materials (skin, hair, cloth), lighting, camera, background.
+Use 3D rendering terminology."""
+
+synthesis = """Combine your analysis into a flowing 3D render prompt.
+Structure: render style → character → materials → lighting → background.
+End with "high quality 3D render, professional lighting".
+Output only the final prompt."""
+
+[agentic.render_3d.basic]
+intro = """Write a detailed description of this 3D rendered image. Include render style, character design, material quality, lighting setup, and background. Start directly - no introduction needed."""
+
+synthesis = """Write the final description as a single flowing paragraph. Describe the render style, materials, and lighting. End with "professional 3D render". Start directly with the render style."""
 
 
 # =============================================================================
