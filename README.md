@@ -182,7 +182,9 @@ This is controlled by the `Enable Reasoning` toggle on the LLM provider nodes.
 | max_tokens_preset | Output length preset |
 | temperature | Creativity (0.0-2.0) |
 | quantization | 4-bit/8-bit/None/Auto |
-| enable_reasoning | Enable reasoning mode |
+| enable_reasoning | Enable reasoning mode (disabled by default) |
+
+> **Note:** Local models perform better with **reasoning disabled** (single-shot mode). The agentic/reasoning mode requires structured JSON output which local Thinking models struggle with. For best results with local models like Qwen3-VL, keep `enable_reasoning` off and use the default single-shot pipeline.
 
 ## Outputs
 
