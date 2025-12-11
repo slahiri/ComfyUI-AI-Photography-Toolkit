@@ -1238,7 +1238,80 @@ class LocalModelClient:
 
         input_len = model_inputs["input_ids"].shape[1]
         response_ids = outputs[0][input_len:]
-        return self.tokenizer.decode(response_ids, skip_special_tokens=True)
+        raw_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
+
+        # Clean thinking output for Thinking models
+        if self.model_info.is_thinking:
+            return self._clean_thinking_output(raw_output)
+        return raw_output
+
+    def _clean_thinking_output(self, text: str) -> str:
+        """
+        Clean output from Thinking models by removing chain-of-thought reasoning.
+
+        Qwen3-VL-*-Thinking models output their reasoning before the actual answer.
+        This can be wrapped in <think>...</think> tags or appear as plain text.
+        """
+        import re
+
+        if not text:
+            return text
+
+        original_text = text
+
+        # Method 1: Remove <think>...</think> blocks (including newlines)
+        text = re.sub(r'<think>[\s\S]*?</think>\s*', '', text, flags=re.IGNORECASE)
+
+        # Method 2: If output still contains reasoning markers, try to extract final answer
+        # Common reasoning patterns to skip
+        reasoning_markers = [
+            r'^(?:Let me|Let\'s|We are given|First,|Step \d|Steps:)',
+            r'^(?:I need to|I\'ll|I will|Now,|So,|Therefore|However)',
+            r'^(?:Looking at|Analyzing|Checking|Based on)',
+            r'^(?:The user|The original|The prompt|Given)',
+        ]
+
+        # Check if output still looks like reasoning
+        first_100_chars = text[:100].strip()
+        is_reasoning = any(re.match(pattern, first_100_chars, re.IGNORECASE) for pattern in reasoning_markers)
+
+        if is_reasoning:
+            # Try to find the actual answer after reasoning
+
+            # Look for JSON block (common in agentic mode)
+            json_match = re.search(r'```(?:json)?\s*(\{[\s\S]*?\})\s*```', text)
+            if json_match:
+                return json_match.group(1)
+
+            # Look for raw JSON object
+            json_match = re.search(r'(\{[\s\S]*"prompt_description"[\s\S]*?\})', text)
+            if json_match:
+                return json_match.group(1)
+
+            # Look for text after common delimiters
+            delimiters = [
+                r'(?:Output|Result|Answer|Modified prompt|Final prompt)[:\s]*\n?(.+)',
+                r'(?:Here is|Here\'s)[^:]*:\s*\n?(.+)',
+            ]
+            for delimiter in delimiters:
+                match = re.search(delimiter, text, re.IGNORECASE | re.DOTALL)
+                if match:
+                    result = match.group(1).strip()
+                    # Make sure we got something meaningful (not just more reasoning)
+                    if len(result) > 50 and not any(re.match(p, result[:50], re.IGNORECASE) for p in reasoning_markers):
+                        return result
+
+            # Last resort: Take the last substantial paragraph
+            # Split by double newlines and take the last non-empty block
+            paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
+            if paragraphs:
+                for para in reversed(paragraphs):
+                    # Skip short paragraphs (likely conclusions like "Done." or "That's it.")
+                    if len(para) > 100:
+                        return para
+
+        # If no cleaning was needed or possible, return cleaned text
+        return text.strip() if text.strip() else original_text
 
 
 class LocalModelResponse:
