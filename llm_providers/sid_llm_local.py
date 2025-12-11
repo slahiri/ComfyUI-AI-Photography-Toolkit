@@ -700,7 +700,9 @@ class LocalModelClient:
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
-        quant_config, dtype = self._get_quantization_config(device)
+        # Note: Moondream2's vision encoder doesn't support bitsandbytes quantization
+        # (causes Float vs Half dtype mismatch in layer_norm). Always use FP16/BF16.
+        _, dtype = self._get_quantization_config(device)
 
         load_kwargs = {
             "trust_remote_code": True,
@@ -709,10 +711,12 @@ class LocalModelClient:
 
         if device == "cuda":
             load_kwargs["device_map"] = {"": 0}
-            if quant_config:
-                load_kwargs["quantization_config"] = quant_config
+            # Skip quantization for Moondream2 - use BF16 if supported, else FP16
+            major, _ = torch.cuda.get_device_capability()
+            if major >= 8:  # Ampere+ supports BF16
+                load_kwargs["torch_dtype"] = torch.bfloat16
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.float16
+                load_kwargs["torch_dtype"] = torch.float16
 
         # Try loading, if cache is corrupted clear it and retry from HuggingFace
         try:
@@ -1024,6 +1028,7 @@ class LocalModelClient:
                 outputs = self.model.generate(
                     **inputs,
                     max_new_tokens=max_tokens,
+                    num_beams=1,  # Use greedy decoding - beam search has cache issues with newer transformers
                     do_sample=temperature > 0,
                     temperature=temperature if temperature > 0 else None,
                 )
