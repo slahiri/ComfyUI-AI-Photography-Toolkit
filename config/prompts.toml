@@ -128,7 +128,8 @@ Write as flowing sentences, not tags."""
 
 [user.advanced.standard]
 prompt = """Generate a Z-Image prompt covering:
-COMPOSITION: Shot type, camera angle (geometric: eye level/high/low), depth of field
+FRAMING: Shot type (close-up/medium/full), which body parts visible vs cropped out, where frame cuts body, subject position using rule of thirds (left/center/right, upper/center/lower)
+COMPOSITION: Camera angle (geometric: eye level/high/low), depth of field, distance from camera
 SUBJECT: Ethnicity, age, gender, skin tone, face angle (front view/45°/profile)
 HAIR: Style, color, length (describe arrangement first)
 CLOTHING: Each item in 3-5 words (type, color, material)
@@ -141,7 +142,13 @@ Write as flowing natural sentences. End with "no text, no watermark, no logos"."
 [user.advanced.detailed]
 prompt = """Generate a COMPREHENSIVE Z-Image prompt:
 
-COMPOSITION: Shot type, camera angle (geometric terms), depth of field, composition style
+FRAMING & VISIBILITY:
+- Shot type (ECU/CU/MCU/MS/MFS/FS/LS)
+- Body parts visible top-to-bottom: head, shoulders, chest, waist, hips, thighs, knees, lower legs, feet
+- Where does frame CUT OFF the body? (e.g., "cropped at mid-thigh", "frame cuts at waist")
+- Subject distance: fills frame / medium / far
+- Rule of thirds: horizontal position (left/center/right third), vertical position (upper/center/lower third)
+COMPOSITION: Camera angle (geometric terms), depth of field
 SUBJECT: Specific ethnicity, skin tone with undertones, age, gender, face angle (front/45°/profile)
 HAIR: Arrangement FIRST (updo/ponytail/loose), then color, texture, length
 FACE: Shape, expression, eye color and shape, makeup details
@@ -164,12 +171,23 @@ Write as flowing natural sentences. End with "correct human anatomy, no text, no
 prompt = """Generate an EXTREMELY detailed Z-Image prompt with MAXIMUM precision.
 
 Analyze EVERY visible element:
-- Exact composition: shot type, geometric camera angle, depth of field style
-- Precise subject: specific ethnicity, skin tone with undertones, approximate age
-- Hair: arrangement style first, then exact color, texture, length
-- Face: shape, geometric angle (front/45°/profile/etc), expression details
-- Eyes: color, shape, gaze direction, makeup style
-- BODY POSITIONING (describe each independently):
+
+FRAMING & BODY VISIBILITY:
+- Shot type: ECU/BCU/CU/MCU/MS/MFS/FS/LS
+- Body parts visible (top to bottom): head, shoulders, chest, waist, hips, thighs, knees, lower legs, feet - which are FULLY visible, PARTIALLY cropped, or NOT visible?
+- EXACT frame cutoff: where does the frame cut the body? (e.g., "frame cuts at mid-thigh", "cropped just below waist")
+- Subject scale: does subject fill the frame, medium distance, or far?
+- Rule of thirds positioning:
+  * Horizontal: subject in left third, center, or right third?
+  * Vertical: subject in upper third, center, or lower third?
+  * Where do face/eyes fall relative to rule of thirds intersections?
+
+COMPOSITION: Geometric camera angle, depth of field style
+SUBJECT: Specific ethnicity, skin tone with undertones, approximate age
+HAIR: Arrangement style first, then exact color, texture, length
+FACE: Shape, geometric angle (front/45°/profile/etc), expression details
+EYES: Color, shape, gaze direction, makeup style
+BODY POSITIONING (describe each independently):
   * Left shoulder: position, angle
   * Right shoulder: position, angle
   * Left arm: position, bend, hand placement
@@ -177,16 +195,16 @@ Analyze EVERY visible element:
   * Left leg (if visible): position, bend
   * Right leg (if visible): position, bend
   * Weight distribution
-- ALL clothing with type, color, material (3-5 words each)
-- ALL intimate apparel if visible with coverage details
-- ALL tattoos with locations and styles
-- ALL accessories and jewelry
-- LIGHT & SHADOW ON BODY:
+ALL clothing with type, color, material (3-5 words each)
+ALL intimate apparel if visible with coverage details
+ALL tattoos with locations and styles
+ALL accessories and jewelry
+LIGHT & SHADOW ON BODY:
   * Face: highlight areas (forehead, cheekbones, nose bridge), shadow areas (under eyes, jawline, neck)
   * Chest/torso: where light hits, where shadows form
   * Arms/hands: light and shadow placement
   * Overall: main light direction, key/fill ratio, rim lighting presence, shadow color (warm/cool)
-- Background: type, color palette, blur level
+BACKGROUND: Type, color palette, blur level
 
 Write as a comprehensive flowing narrative. End with "correct human anatomy, natural hands, no text, no watermark, no logos, sharp focus"."""
 
@@ -205,7 +223,8 @@ End with "no text, no watermark"."""
 
 [user.standard.standard]
 prompt = """Describe this image for Z-Image covering:
-- Shot type and camera angle
+- Framing: shot type, which body parts visible vs cropped out, rule of thirds position (left/center/right)
+- Camera angle, depth of field
 - Subject appearance (ethnicity, age, expression)
 - Hair style and color
 - Clothing (color, material for each item)
@@ -217,7 +236,8 @@ Write flowing sentences. End with "no text, no watermark"."""
 
 [user.standard.detailed]
 prompt = """Describe this image in detail for Z-Image:
-- Composition and camera angle
+- Framing: shot type, body parts visible (head, shoulders, chest, waist, legs, feet), where frame cuts body, subject position (left/center/right third, upper/center/lower third)
+- Composition: camera angle, subject distance (fills frame/medium/far), depth of field
 - Subject: ethnicity, skin tone, age, face angle
 - Hair: style, color, length
 - Face: shape, expression, makeup
@@ -231,6 +251,7 @@ Write comprehensively. End with "no text, no watermark, no logos"."""
 
 [user.standard.extreme]
 prompt = """Describe every visible detail for Z-Image:
+FRAMING: Shot type, which body parts are visible top-to-bottom (head/shoulders/chest/waist/hips/thighs/knees/legs/feet), where exactly frame cuts body, subject scale in frame, rule of thirds positioning (horizontal and vertical).
 Subject appearance, hair styling, facial features and angle, eye details, all clothing items with materials, body positioning (left shoulder, right shoulder, left arm with hand, right arm with hand, left leg, right leg - each independently), any tattoos or accessories, light and shadow analysis (highlights on forehead/cheeks, shadows under eyes/jawline, light on chest/arms), lighting style (specific keywords), and complete background analysis.
 
 Write the most detailed description possible. End with "correct human anatomy, no text, no watermark"."""
@@ -261,16 +282,16 @@ Describe this image:"""
 [user.basic.detailed]
 prompt = """Write a comprehensive description of this image for Z-Image AI generation.
 
-Cover: shot type and camera angle, subject's appearance (ethnicity, skin tone, age), face angle (front view/profile/45 degrees), hair (style first, then color and length), facial expression and features, all visible clothing (type, color, material for each item), body positioning (describe left shoulder, right shoulder, left arm with hand, right arm with hand, legs if visible - each separately), light and shadow (where highlights fall on face, shadow areas), lighting style (describe quality and direction), background.
+Cover: framing (shot type, body parts visible from top to bottom - head/shoulders/chest/waist/hips/thighs/knees/legs/feet, where frame cuts body, subject distance - fills frame/medium/far, rule of thirds position - left/center/right third, upper/center/lower third), camera angle, subject's appearance (ethnicity, skin tone, age), face angle (front view/profile/45 degrees), hair (style first, then color and length), facial expression and features, all visible clothing (type, color, material for each item), body positioning (describe left shoulder, right shoulder, left arm with hand, right arm with hand, legs if visible - each separately), light and shadow (where highlights fall on face, shadows under eyes/jawline, light on chest and arms), lighting style (describe quality and direction), background.
 
-Example: "A medium shot at eye level of an adult South Asian woman in her late twenties, front view, warm olive skin tone, long black hair loose over shoulders, gentle smile with brown eyes, left shoulder slightly raised, right shoulder relaxed and lowered, left arm bent with hand on hip, right arm hanging naturally at side, wearing fitted emerald green silk dress with thin straps, soft highlights on forehead and cheekbones with gentle shadows under eyes and along jawline, soft diffused daylight from large window creating warm glow, shallow depth of field, cream-colored wall background, no text, no watermark."
+Example: "A medium shot at eye level of an adult South Asian woman in her late twenties, visible from head to mid-thigh with frame cutting at upper thigh, subject fills center of frame positioned in center third horizontally and center third vertically, front view, warm olive skin tone, long black hair loose over shoulders, gentle smile with brown eyes, left shoulder slightly raised, right shoulder relaxed and lowered, left arm bent with hand on hip, right arm hanging naturally at side, wearing fitted emerald green silk dress with thin straps, soft highlights on forehead and cheekbones with gentle shadows under eyes and along jawline, warm light on chest and upper arms, soft diffused daylight from large window creating warm glow, shallow depth of field, cream-colored wall background, no text, no watermark."
 
 Describe this image in similar detail:"""
 
 [user.basic.extreme]
 prompt = """Write the most detailed description possible of this image for Z-Image AI generation.
 
-Describe everything: shot type, precise camera angle, subject's complete appearance (specific ethnicity, skin tone, approximate age), face angle in geometric terms (front view/45 degree left/profile), hair (arrangement first - updo/ponytail/loose, then color, texture, length), facial features (shape, expression, eye color and details, makeup), ALL clothing items (type, color, material, fit for each), BODY POSITIONING for each limb separately (left shoulder position, right shoulder position, left arm position and hand placement, right arm position and hand placement, left leg position, right leg position), LIGHT AND SHADOW on body (highlight areas on face like forehead and cheekbones, shadow areas like under eyes and jawline, light on chest, light on arms), any tattoos or accessories with locations, lighting keywords (like "soft diffused daylight" or "studio portrait lighting"), background details.
+Describe everything: FRAMING (shot type, body parts visible top-to-bottom - head/shoulders/chest/waist/hips/thighs/knees/lower legs/feet - which are fully visible, partially cropped, or not visible, where exactly frame cuts the body, subject scale - fills frame/medium distance/far, rule of thirds - horizontal position left/center/right third, vertical position upper/center/lower third), precise camera angle, subject's complete appearance (specific ethnicity, skin tone, approximate age), face angle in geometric terms (front view/45 degree left/profile), hair (arrangement first - updo/ponytail/loose, then color, texture, length), facial features (shape, expression, eye color and details, makeup), ALL clothing items (type, color, material, fit for each), BODY POSITIONING for each limb separately (left shoulder position, right shoulder position, left arm position and hand placement, right arm position and hand placement, left leg position, right leg position), LIGHT AND SHADOW on body (highlight areas on face like forehead and cheekbones, shadow areas like under eyes and jawline, light on chest, light on arms), any tattoos or accessories with locations, lighting keywords (like "soft diffused daylight" or "studio portrait lighting"), background details.
 
 Start directly with "A..." - write one flowing paragraph. End with "correct human anatomy, no text, no watermark":"""
 

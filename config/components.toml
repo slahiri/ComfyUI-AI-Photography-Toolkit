@@ -14,28 +14,80 @@ name = "Framing & Composition"
 
 [framing.advanced]
 prompt = """
-Analyze ONLY the framing and composition:
-1. COLOR MODE: Color or black & white?
-2. SHOT TYPE: ECU/BCU/CU/MCU/MS/MFS/FS/LS
-3. SUBJECT POSE: Standing/Seated/Lying/Kneeling/Leaning
-4. CAMERA ANGLE: Eye level, above, below?
-5. DEPTH OF FIELD: Shallow/medium/deep?
+Analyze the framing and composition in detail:
+
+1. SHOT TYPE: ECU (extreme close-up) / BCU (big close-up) / CU (close-up) / MCU (medium close-up) / MS (medium shot) / MFS (medium full shot) / FS (full shot) / LS (long shot)
+
+2. BODY VISIBILITY (top to bottom):
+   - Head: fully visible / partially cropped / not visible
+   - Shoulders: fully visible / partially cropped / not visible
+   - Chest/torso: fully visible / partially cropped / not visible
+   - Waist/hips: fully visible / partially cropped / not visible
+   - Thighs: fully visible / partially cropped / not visible
+   - Knees: fully visible / partially cropped / not visible
+   - Lower legs: fully visible / partially cropped / not visible
+   - Feet: fully visible / partially cropped / not visible
+   - Where does the frame CUT OFF the body? (e.g., "frame cuts at mid-thigh", "cropped at chest")
+
+3. DISTANCE/SCALE: How much of the frame does the subject fill? (fills frame / medium distance / far from camera)
+
+4. RULE OF THIRDS POSITIONING:
+   - Subject horizontal position: left third / center / right third
+   - Subject vertical position: upper third / center / lower third
+   - Face/eyes position relative to rule of thirds intersections
+
+5. CAMERA ANGLE: Eye level / slightly above / high angle / slightly below / low angle
+6. DEPTH OF FIELD: Shallow (blurry background) / medium / deep (sharp background)
+7. COLOR MODE: Color or black & white
 
 Output JSON:
-{"shot_type": "<code>", "subject_pose": "<pose>", "frame_fill_percent": <number>, "camera_angle": "<angle>", "depth_of_field": "<dof>", "color_mode": "<color/bw>", "prompt_description": "<complete framing description>"}
+{
+  "shot_type": "<ECU/BCU/CU/MCU/MS/MFS/FS/LS>",
+  "body_visible": {
+    "head": "<fully/partial/none>",
+    "shoulders": "<fully/partial/none>",
+    "chest": "<fully/partial/none>",
+    "waist": "<fully/partial/none>",
+    "thighs": "<fully/partial/none>",
+    "knees": "<fully/partial/none>",
+    "lower_legs": "<fully/partial/none>",
+    "feet": "<fully/partial/none>"
+  },
+  "frame_cutoff": "<where frame cuts body>",
+  "subject_distance": "<fills frame/medium/far>",
+  "rule_of_thirds": {
+    "horizontal": "<left/center/right>",
+    "vertical": "<upper/center/lower>",
+    "face_position": "<intersection point or position>"
+  },
+  "camera_angle": "<angle>",
+  "depth_of_field": "<shallow/medium/deep>",
+  "color_mode": "<color/bw>",
+  "prompt_description": "<complete framing description for image generation>"
+}
 """
 
 [framing.standard]
 prompt = """
-Describe the framing:
-- Shot type (close-up, medium, full shot)
-- Camera angle (eye level, above, below)
-- Subject position in frame
-- Depth of field (blurry or sharp background)
+Describe the framing and composition:
+
+SHOT TYPE: What type of shot? (close-up, medium, full shot, etc.)
+
+BODY VISIBILITY (from top to bottom):
+- Which body parts are VISIBLE in frame? (head, shoulders, chest, waist, hips, thighs, knees, legs, feet)
+- Which body parts are CROPPED/CUT OFF?
+- Where exactly does the frame cut the body?
+
+POSITIONING:
+- Rule of thirds: Is the subject positioned left, center, or right third?
+- Is the subject in upper, center, or lower third of frame?
+- How close/far is the subject? Does subject fill the frame or is there space around them?
+
+CAMERA: Angle (eye level, above, below), depth of field (blurry or sharp background)
 """
 
 [framing.basic]
-prompt = "Describe the camera shot type and angle. Is the background blurry or sharp?"
+prompt = "Describe the shot type, which body parts are visible vs cropped out of frame, where the subject is positioned (left/center/right, upper/center/lower), and whether the background is blurry or sharp."
 
 
 # =============================================================================
