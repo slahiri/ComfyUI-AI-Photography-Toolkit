@@ -940,6 +940,9 @@ class LocalModelClient:
         """Generate with Florence-2."""
         import torch
 
+        # DynamicCache compatibility fix for transformers 4.49+
+        self._patch_dynamic_cache_compat()
+
         # Florence-2 uses task prompts like <DETAILED_CAPTION>
         task_prompt = "<MORE_DETAILED_CAPTION>"
 
@@ -966,6 +969,9 @@ class LocalModelClient:
         """Generate with Moondream2."""
         import torch
 
+        # DynamicCache compatibility fix for transformers 4.49+
+        self._patch_dynamic_cache_compat()
+
         if images:
             # Moondream has built-in image encoding
             enc_image = self.model.encode_image(images[0])
@@ -979,6 +985,9 @@ class LocalModelClient:
     def _generate_smolvlm(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with SmolVLM."""
         import torch
+
+        # DynamicCache compatibility fix for transformers 4.49+
+        self._patch_dynamic_cache_compat()
 
         messages = [{"role": "user", "content": []}]
         if images:
