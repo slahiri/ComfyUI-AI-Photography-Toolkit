@@ -664,23 +664,36 @@ class LocalModelClient:
         """
         Clear corrupted transformers_modules cache for a specific model.
         This helps recover from incomplete downloads or cache corruption.
+        Also clears Python's sys.modules cache to prevent stale imports.
         """
         import shutil
+        import sys
         from pathlib import Path
 
         cache_dir = Path.home() / ".cache" / "huggingface" / "modules" / "transformers_modules"
-        if not cache_dir.exists():
-            return
+        if cache_dir.exists():
+            # Find and remove directories matching the model name
+            for item in cache_dir.iterdir():
+                # Match variations like "Moondream2", "moondream2", "vikhyatk_moondream2"
+                if model_name.lower() in item.name.lower():
+                    try:
+                        shutil.rmtree(item)
+                        print(f"[LocalModelClient] Cleared corrupted cache: {item.name}")
+                    except Exception as e:
+                        print(f"[LocalModelClient] Warning: Could not clear cache {item.name}: {e}")
 
-        # Find and remove directories matching the model name
-        for item in cache_dir.iterdir():
-            # Match variations like "Moondream2", "moondream2", "vikhyatk_moondream2"
-            if model_name.lower() in item.name.lower():
-                try:
-                    shutil.rmtree(item)
-                    print(f"[LocalModelClient] Cleared corrupted cache: {item.name}")
-                except Exception as e:
-                    print(f"[LocalModelClient] Warning: Could not clear cache {item.name}: {e}")
+        # Clear any related entries from sys.modules to prevent stale imports
+        modules_to_remove = [
+            key for key in sys.modules.keys()
+            if model_name.lower() in key.lower() or "transformers_modules" in key
+        ]
+        for mod in modules_to_remove:
+            try:
+                del sys.modules[mod]
+            except Exception:
+                pass
+        if modules_to_remove:
+            print(f"[LocalModelClient] Cleared {len(modules_to_remove)} cached Python modules")
 
     def _load_moondream2(self, model_path: str, device: str):
         """Load Moondream2 model with speed optimizations."""
@@ -701,15 +714,17 @@ class LocalModelClient:
             else:
                 load_kwargs["torch_dtype"] = dtype or torch.float16
 
-        # Try loading, if cache is corrupted clear it and retry
+        # Try loading, if cache is corrupted clear it and retry from HuggingFace
         try:
             self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
         except FileNotFoundError as e:
             if "transformers_modules" in str(e):
-                print(f"[LocalModelClient] Detected corrupted cache, clearing and retrying...")
+                print(f"[LocalModelClient] Detected corrupted cache, clearing and retrying from HuggingFace...")
                 self._clear_transformers_cache("moondream")
                 self._clear_transformers_cache("Moondream")
-                self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
+                # Use repo name with force_download to re-fetch modules
+                retry_kwargs = {**load_kwargs, "force_download": True}
+                self.model = AutoModelForCausalLM.from_pretrained("vikhyatk/moondream2", **retry_kwargs)
             else:
                 raise
         self.model.eval()
@@ -997,7 +1012,12 @@ class LocalModelClient:
             inputs = self.processor(text=task_prompt, return_tensors="pt")
 
         device = next(self.model.parameters()).device
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+        dtype = next(self.model.parameters()).dtype
+        # Move inputs to device and cast float tensors to model dtype
+        inputs = {
+            k: v.to(device, dtype=dtype) if v.dtype.is_floating_point else v.to(device)
+            for k, v in inputs.items()
+        }
 
         with InferenceProgressSpinner("Generating (Florence-2)"):
             with torch.inference_mode():
