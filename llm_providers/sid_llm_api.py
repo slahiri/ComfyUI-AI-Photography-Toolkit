@@ -93,10 +93,11 @@ def is_likely_vision_model(model_name: str) -> bool:
         "moondream", "florence", "phi-3-vision", "phi3-vision", "smolvlm",
         "llama-3.2-11b", "llama-3.2-90b",  # Llama 3.2 vision models
         "llama3.2-vision", "llama3.2:11b", "llama3.2:90b",
-        "gpt-4o", "gpt-4-turbo",  # OpenAI vision models
+        "llama-4", "llama4",  # Llama 4 models are multimodal
+        "gpt-4o", "gpt-4-turbo", "gpt-4.1",  # OpenAI vision models
         "claude",  # All Claude models support vision
         "gemini",  # Gemini supports vision
-        "grok-vision", "grok-2-vision",
+        "grok-vision", "grok-2-vision", "grok-4",  # Grok vision models
     ]
     return any(kw in model_lower for kw in vision_keywords)
 
@@ -116,9 +117,16 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
+            # Claude 4.5 series (latest)
+            "claude-opus-4-5-20251101",
             "claude-sonnet-4-5-20250929",
             "claude-haiku-4-5-20251001",
+            # Claude 4.1 series
             "claude-opus-4-1-20250805",
+            # Claude 4 series
+            "claude-sonnet-4-20250514",
+            "claude-opus-4-20250514",
+            # Legacy (still available)
             "claude-3-5-sonnet-20241022",
             "claude-3-5-haiku-20241022",
         ],
@@ -131,20 +139,21 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
-            "gpt-4o",
-            "gpt-4o-mini",
+            # GPT-4.1 series (latest, recommended)
             "gpt-4.1",
             "gpt-4.1-mini",
             "gpt-4.1-nano",
-            "gpt-4-turbo",
-            "o1",
-            "o1-mini",
-            "o1-preview",
+            # GPT-4o series (vision capable)
+            "gpt-4o",
+            "gpt-4o-mini",
+            # o-series reasoning models
             "o3",
             "o3-mini",
             "o4-mini",
+            # Legacy
+            "gpt-4-turbo",
         ],
-        "default_model": "gpt-4o",
+        "default_model": "gpt-4.1",
     },
     "Google Gemini": {
         "api_url": "https://generativelanguage.googleapis.com/v1beta",
@@ -172,10 +181,15 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
-            "grok-2-vision-1212",
-            "grok-vision-beta",
+            # Grok 4 series (latest)
+            "grok-4-1-fast",
+            "grok-4-fast",
+            "grok-4",
+            # Grok 3 series
             "grok-3",
             "grok-3-mini",
+            # Grok 2 vision (for image analysis)
+            "grok-2-vision-1212",
         ],
         "default_model": "grok-2-vision-1212",
     },
@@ -186,12 +200,21 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
+            # Pixtral (vision models)
             "pixtral-large-latest",
             "pixtral-12b-2409",
+            # Large models
             "mistral-large-latest",
+            # Medium models
             "mistral-medium-latest",
+            "mistral-medium-2508",
+            # Small models
             "mistral-small-latest",
+            "mistral-small-2506",
+            # Coding models
             "codestral-latest",
+            "devstral-small-2507",
+            # Open models
             "open-mistral-nemo",
         ],
         "default_model": "pixtral-large-latest",
@@ -219,17 +242,20 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
+            # Llama 4 multimodal (latest, recommended)
+            "meta-llama/llama-4-scout-17b-16e-instruct",
+            "meta-llama/llama-4-maverick-17b-128e-instruct",
+            # Llama 3.3
             "llama-3.3-70b-versatile",
-            "llama-3.1-70b-versatile",
-            "llama-3.1-8b-instant",
+            # Llama 3.2 vision
             "llama-3.2-90b-vision-preview",
             "llama-3.2-11b-vision-preview",
-            "llama-3.2-3b-preview",
-            "llama-3.2-1b-preview",
+            # Other models
+            "llama-3.1-8b-instant",
             "mixtral-8x7b-32768",
             "gemma2-9b-it",
         ],
-        "default_model": "llama-3.2-90b-vision-preview",
+        "default_model": "meta-llama/llama-4-scout-17b-16e-instruct",
     },
     "Together AI (Free Tier)": {
         "api_url": "https://api.together.xyz/v1",
@@ -238,15 +264,21 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
+            # Free vision models
             "meta-llama/Llama-Vision-Free",
+            "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+            # Llama 4 (latest)
+            "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+            "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+            # Vision models
             "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
             "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
-            "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-            "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+            "Qwen/Qwen2.5-VL-72B-Instruct",
+            # Text models
             "Qwen/Qwen2.5-72B-Instruct-Turbo",
-            "Qwen/QwQ-32B-Preview",
-            "mistralai/Mixtral-8x7B-Instruct-v0.1",
-            "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
+            "Qwen/QwQ-32B",
+            "deepseek-ai/DeepSeek-R1",
+            "deepseek-ai/DeepSeek-V3",
         ],
         "default_model": "meta-llama/Llama-Vision-Free",
     },
@@ -276,15 +308,21 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
+            # Llama 4 multimodal (latest)
+            "accounts/fireworks/models/llama4-maverick-instruct-basic",
+            "accounts/fireworks/models/llama4-scout-instruct-basic",
+            # Llama 3.2 vision
             "accounts/fireworks/models/llama-v3p2-90b-vision-instruct",
             "accounts/fireworks/models/llama-v3p2-11b-vision-instruct",
+            # Qwen vision
+            "accounts/fireworks/models/qwen2p5-vl-32b-instruct",
+            # Other vision
             "accounts/fireworks/models/phi-3-vision-128k-instruct",
+            # Text models
             "accounts/fireworks/models/llama-v3p1-70b-instruct",
-            "accounts/fireworks/models/llama-v3p1-8b-instruct",
-            "accounts/fireworks/models/mixtral-8x7b-instruct",
             "accounts/fireworks/models/qwen2p5-72b-instruct",
         ],
-        "default_model": "accounts/fireworks/models/llama-v3p2-90b-vision-instruct",
+        "default_model": "accounts/fireworks/models/llama4-maverick-instruct-basic",
     },
     "Cerebras (Free Tier)": {
         "api_url": "https://api.cerebras.ai/v1",
