@@ -226,6 +226,150 @@ prompt = "Describe how the person is posed and what body parts are visible."
 
 
 # =============================================================================
+# BODY POSITIONING (Detailed Limb Analysis)
+# =============================================================================
+
+[body_positioning]
+name = "Body Positioning"
+
+[body_positioning.advanced]
+prompt = """
+Analyze detailed body positioning for EACH LIMB INDEPENDENTLY:
+
+SHOULDERS:
+- LEFT SHOULDER: Position (raised/lowered/level), angle, visibility
+- RIGHT SHOULDER: Position (raised/lowered/level), angle, visibility
+
+ARMS:
+- LEFT ARM: Position (raised/lowered/bent/straight/behind/crossed), angle relative to body, hand placement
+- RIGHT ARM: Position (raised/lowered/bent/straight/behind/crossed), angle relative to body, hand placement
+
+LEGS (if visible):
+- LEFT LEG: Position (straight/bent/crossed/extended), weight distribution
+- RIGHT LEG: Position (straight/bent/crossed/extended), weight distribution
+
+Output JSON:
+{
+  "left_shoulder": {"position": "<position>", "angle": "<angle>", "visible": true/false},
+  "right_shoulder": {"position": "<position>", "angle": "<angle>", "visible": true/false},
+  "left_arm": {"position": "<position>", "bend_angle": "<angle>", "hand_placement": "<placement>", "visible": true/false},
+  "right_arm": {"position": "<position>", "bend_angle": "<angle>", "hand_placement": "<placement>", "visible": true/false},
+  "left_leg": {"position": "<position>", "bend": "<bend>", "visible": true/false},
+  "right_leg": {"position": "<position>", "bend": "<bend>", "visible": true/false},
+  "weight_distribution": "<description>",
+  "prompt_description": "<complete body positioning description>"
+}
+"""
+
+[body_positioning.standard]
+prompt = """
+Describe the body positioning in detail:
+
+SHOULDERS:
+- Left shoulder: position and angle
+- Right shoulder: position and angle
+
+ARMS:
+- Left arm: position, bend, hand placement
+- Right arm: position, bend, hand placement
+
+LEGS (if visible):
+- Left leg: position and bend
+- Right leg: position and bend
+"""
+
+[body_positioning.basic]
+prompt = "Describe shoulder positions (left/right), arm positions (left/right including hands), and leg positions (left/right) if visible."
+
+
+# =============================================================================
+# LIGHT & SHADOW ON BODY
+# =============================================================================
+
+[light_shadow_body]
+name = "Light & Shadow Analysis"
+
+[light_shadow_body.advanced]
+prompt = """
+Analyze how light and shadow fall on EACH BODY PART:
+
+FACE:
+- Highlight areas (forehead, cheekbones, nose bridge)
+- Shadow areas (under eyes, jawline, neck shadow)
+- Light direction on face
+- Shadow density (soft/hard)
+
+CHEST/TORSO (if visible):
+- Highlight areas
+- Shadow areas (cleavage shadow, under-bust, side shadows)
+- Light wrap-around
+
+ARMS & HANDS (if visible):
+- Highlight placement
+- Shadow placement
+- Muscle definition from shadows
+
+BODY OVERALL:
+- Main light direction
+- Key light vs fill light ratio
+- Rim/edge lighting presence
+- Color temperature of shadows (warm/cool/neutral)
+
+Output JSON:
+{
+  "face_lighting": {
+    "highlights": ["<areas>"],
+    "shadows": ["<areas>"],
+    "direction": "<direction>",
+    "shadow_density": "<soft/medium/hard>"
+  },
+  "chest_lighting": {
+    "highlights": ["<areas>"],
+    "shadows": ["<areas>"],
+    "visible": true/false
+  },
+  "arm_lighting": {
+    "highlights": "<description>",
+    "shadows": "<description>",
+    "visible": true/false
+  },
+  "overall": {
+    "main_direction": "<direction>",
+    "key_fill_ratio": "<ratio>",
+    "rim_light": true/false,
+    "shadow_color_temp": "<warm/cool/neutral>"
+  },
+  "prompt_description": "<comprehensive lighting description for image generation>"
+}
+"""
+
+[light_shadow_body.standard]
+prompt = """
+Describe light and shadow on the body:
+
+FACE:
+- Where are the highlights? (forehead, cheeks, nose)
+- Where are the shadows? (under eyes, jawline)
+- Light direction
+
+CHEST/TORSO (if visible):
+- Highlight and shadow areas
+- How light wraps around the body
+
+ARMS/HANDS (if visible):
+- Light and shadow placement
+
+OVERALL:
+- Main light direction
+- Is there rim lighting/backlighting?
+- Are shadows warm or cool?
+"""
+
+[light_shadow_body.basic]
+prompt = "Describe how light falls on the face (highlights and shadows), on the chest/body, and on the arms. What direction is the light coming from?"
+
+
+# =============================================================================
 # CLOTHING ANALYSIS
 # =============================================================================
 
@@ -423,16 +567,16 @@ include_intimate = false
 include_tattoos = false
 
 [modes.detailed]
-components = ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"]
-description = "Full analysis with intimate/tattoos"
+components = ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_positioning", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting", "light_shadow_body"]
+description = "Full analysis with body positioning and lighting details"
 include_lighting = true
 include_pose = true
 include_intimate = true
 include_tattoos = true
 
 [modes.extreme]
-components = ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"]
-description = "Maximum detail, raw output"
+components = ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_positioning", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting", "light_shadow_body"]
+description = "Maximum detail with full body positioning and shadow analysis"
 include_lighting = true
 include_pose = true
 include_intimate = true
