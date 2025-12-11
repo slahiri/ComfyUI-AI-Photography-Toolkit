@@ -191,11 +191,10 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
-            # Vision-capable models only
+            # Vision-capable models only (Llama 4 multimodal)
+            # Note: Llama 3.2 vision preview models have been decommissioned
             "meta-llama/llama-4-scout-17b-16e-instruct",
             "meta-llama/llama-4-maverick-17b-128e-instruct",
-            "llama-3.2-90b-vision-preview",
-            "llama-3.2-11b-vision-preview",
         ],
         "default_model": "meta-llama/llama-4-scout-17b-16e-instruct",
     },
