@@ -1037,9 +1037,9 @@ class LocalModelClient:
 
             # get_usable_length was removed in newer transformers
             if not hasattr(DynamicCache, 'get_usable_length'):
-                def get_usable_length_compat(self, new_seq_length: int = 0):
-                    # Return current sequence length (all cached tokens are usable)
-                    return self.get_seq_length()
+                def get_usable_length_compat(self, new_seq_length: int = 0, layer_idx: int = 0):
+                    # Return current sequence length for the given layer (all cached tokens are usable)
+                    return self.get_seq_length(layer_idx)
                 DynamicCache.get_usable_length = get_usable_length_compat
         except ImportError:
             pass
