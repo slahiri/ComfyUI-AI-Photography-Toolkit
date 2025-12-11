@@ -153,15 +153,17 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
+            # Gemini 2.5 series (stable, recommended)
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-lite",
+            "gemini-2.5-pro",
+            # Gemini 2.0 series
             "gemini-2.0-flash",
             "gemini-2.0-flash-lite",
-            "gemini-1.5-pro",
-            "gemini-1.5-flash",
-            "gemini-1.5-flash-8b",
-            "gemini-2.5-pro-preview-06-05",
-            "gemini-2.5-flash-preview-05-20",
+            # Gemini 3 preview
+            "gemini-3-pro-preview",
         ],
-        "default_model": "gemini-2.0-flash",
+        "default_model": "gemini-2.5-flash",
     },
     "xAI Grok": {
         "api_url": "https://api.x.ai/v1",
