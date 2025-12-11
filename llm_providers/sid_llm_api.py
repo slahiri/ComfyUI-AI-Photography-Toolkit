@@ -1,30 +1,29 @@
 """
 SID_LLM_API Node - Unified Cloud LLM Provider
 
-Single node for all cloud-based and local LLM providers:
+Single node for all cloud-based and local LLM providers.
+Only vision-capable models are listed (required for image analysis).
 
 Cloud Providers (API key required):
-- Anthropic (Claude)
-- OpenAI (GPT-4o, o1, o3)
-- Google Gemini
-- xAI Grok
-- Mistral AI
-- DeepSeek
+- Anthropic (Claude - all models support vision)
+- OpenAI (GPT-4o, GPT-4.1 - vision models)
+- Google Gemini (all models support vision)
+- xAI Grok (grok-2-vision)
+- Mistral AI (Pixtral vision models)
 
 Free/Freemium Cloud Providers:
-- Groq (free tier, very fast)
-- Together AI (free tier)
-- OpenRouter (aggregator, has free models)
-- Fireworks AI
-- Cerebras (free tier, fast)
-- HuggingFace Inference
+- Groq (free tier - Llama 4, Llama 3.2 vision)
+- Together AI (free tier - Llama Vision, Qwen2.5-VL)
+- OpenRouter (aggregator - free vision models)
+- Fireworks AI (Llama 4, Llama 3.2 vision, Qwen VL)
+- HuggingFace Inference (Llama 3.2 vision, Qwen VL)
 
 Local Providers (no API key):
-- Ollama
-- LM Studio
+- Ollama (dynamic detection)
+- LM Studio (dynamic detection)
 - Custom OpenAI-compatible endpoints
 
-For local vision models, use SID_LLM_Local instead.
+For local vision models with VRAM management, use SID_LLM_Local instead.
 """
 
 from typing import List, Dict, Any, Tuple
@@ -117,18 +116,12 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
-            # Claude 4.5 series (latest)
-            "claude-opus-4-5-20251101",
+            # All Claude models support vision
             "claude-sonnet-4-5-20250929",
             "claude-haiku-4-5-20251001",
-            # Claude 4.1 series
-            "claude-opus-4-1-20250805",
-            # Claude 4 series
+            "claude-opus-4-5-20251101",
             "claude-sonnet-4-20250514",
-            "claude-opus-4-20250514",
-            # Legacy (still available)
             "claude-3-5-sonnet-20241022",
-            "claude-3-5-haiku-20241022",
         ],
         "default_model": "claude-sonnet-4-5-20250929",
     },
@@ -139,21 +132,13 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
-            # GPT-4.1 series (latest, recommended)
+            # Vision-capable models only
             "gpt-4.1",
             "gpt-4.1-mini",
-            "gpt-4.1-nano",
-            # GPT-4o series (vision capable)
             "gpt-4o",
             "gpt-4o-mini",
-            # o-series reasoning models
-            "o3",
-            "o3-mini",
-            "o4-mini",
-            # Legacy
-            "gpt-4-turbo",
         ],
-        "default_model": "gpt-4.1",
+        "default_model": "gpt-4o",
     },
     "Google Gemini": {
         "api_url": "https://generativelanguage.googleapis.com/v1beta",
@@ -162,15 +147,10 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
-            # Gemini 2.5 series (stable, recommended)
+            # All Gemini models support vision
             "gemini-2.5-flash",
-            "gemini-2.5-flash-lite",
             "gemini-2.5-pro",
-            # Gemini 2.0 series
             "gemini-2.0-flash",
-            "gemini-2.0-flash-lite",
-            # Gemini 3 preview
-            "gemini-3-pro-preview",
         ],
         "default_model": "gemini-2.5-flash",
     },
@@ -181,14 +161,7 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
-            # Grok 4 series (latest)
-            "grok-4-1-fast",
-            "grok-4-fast",
-            "grok-4",
-            # Grok 3 series
-            "grok-3",
-            "grok-3-mini",
-            # Grok 2 vision (for image analysis)
+            # Vision-capable models only
             "grok-2-vision-1212",
         ],
         "default_model": "grok-2-vision-1212",
@@ -200,37 +173,13 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
-            # Pixtral (vision models)
+            # Pixtral (vision models only)
             "pixtral-large-latest",
             "pixtral-12b-2409",
-            # Large models
-            "mistral-large-latest",
-            # Medium models
-            "mistral-medium-latest",
-            "mistral-medium-2508",
-            # Small models
-            "mistral-small-latest",
-            "mistral-small-2506",
-            # Coding models
-            "codestral-latest",
-            "devstral-small-2507",
-            # Open models
-            "open-mistral-nemo",
         ],
         "default_model": "pixtral-large-latest",
     },
-    "DeepSeek": {
-        "api_url": "https://api.deepseek.com/v1",
-        "api_key_url": "https://platform.deepseek.com/api_keys",
-        "provider_name": "deepseek",
-        "requires_key": True,
-        "is_local": False,
-        "models": [
-            "deepseek-chat",
-            "deepseek-reasoner",
-        ],
-        "default_model": "deepseek-chat",
-    },
+    # DeepSeek removed - no vision models available
 
     # =========================================================================
     # Free/Freemium Cloud Providers
@@ -242,18 +191,11 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
-            # Llama 4 multimodal (latest, recommended)
+            # Vision-capable models only
             "meta-llama/llama-4-scout-17b-16e-instruct",
             "meta-llama/llama-4-maverick-17b-128e-instruct",
-            # Llama 3.3
-            "llama-3.3-70b-versatile",
-            # Llama 3.2 vision
             "llama-3.2-90b-vision-preview",
             "llama-3.2-11b-vision-preview",
-            # Other models
-            "llama-3.1-8b-instant",
-            "mixtral-8x7b-32768",
-            "gemma2-9b-it",
         ],
         "default_model": "meta-llama/llama-4-scout-17b-16e-instruct",
     },
@@ -264,21 +206,13 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
-            # Free vision models
+            # Vision-capable models only
             "meta-llama/Llama-Vision-Free",
-            "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
-            # Llama 4 (latest)
             "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
             "meta-llama/Llama-4-Scout-17B-16E-Instruct",
-            # Vision models
             "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
             "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
             "Qwen/Qwen2.5-VL-72B-Instruct",
-            # Text models
-            "Qwen/Qwen2.5-72B-Instruct-Turbo",
-            "Qwen/QwQ-32B",
-            "deepseek-ai/DeepSeek-R1",
-            "deepseek-ai/DeepSeek-V3",
         ],
         "default_model": "meta-llama/Llama-Vision-Free",
     },
@@ -289,15 +223,11 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
+            # Vision-capable free models only
             "meta-llama/llama-3.2-90b-vision-instruct:free",
             "meta-llama/llama-3.2-11b-vision-instruct:free",
             "qwen/qwen-2-vl-7b-instruct:free",
             "google/gemini-2.0-flash-exp:free",
-            "deepseek/deepseek-r1:free",
-            "deepseek/deepseek-chat:free",
-            "meta-llama/llama-3.3-70b-instruct:free",
-            "microsoft/phi-3-medium-128k-instruct:free",
-            "mistralai/mistral-7b-instruct:free",
         ],
         "default_model": "meta-llama/llama-3.2-90b-vision-instruct:free",
     },
@@ -308,6 +238,7 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
+            # Vision-capable models only
             # Llama 4 multimodal (latest)
             "accounts/fireworks/models/llama4-maverick-instruct-basic",
             "accounts/fireworks/models/llama4-scout-instruct-basic",
@@ -316,27 +247,12 @@ PROVIDERS = {
             "accounts/fireworks/models/llama-v3p2-11b-vision-instruct",
             # Qwen vision
             "accounts/fireworks/models/qwen2p5-vl-32b-instruct",
-            # Other vision
+            # Phi vision
             "accounts/fireworks/models/phi-3-vision-128k-instruct",
-            # Text models
-            "accounts/fireworks/models/llama-v3p1-70b-instruct",
-            "accounts/fireworks/models/qwen2p5-72b-instruct",
         ],
         "default_model": "accounts/fireworks/models/llama4-maverick-instruct-basic",
     },
-    "Cerebras (Free Tier)": {
-        "api_url": "https://api.cerebras.ai/v1",
-        "api_key_url": "https://cloud.cerebras.ai/",
-        "provider_name": "cerebras",
-        "requires_key": True,
-        "is_local": False,
-        "models": [
-            "llama3.1-70b",
-            "llama3.1-8b",
-            "llama-3.3-70b",
-        ],
-        "default_model": "llama-3.3-70b",
-    },
+    # Cerebras removed - no vision models available (text-only: llama3.1-70b, llama3.1-8b, llama-3.3-70b)
     "HuggingFace Inference": {
         "api_url": "https://api-inference.huggingface.co/v1",
         "api_key_url": "https://huggingface.co/settings/tokens",
@@ -344,12 +260,10 @@ PROVIDERS = {
         "requires_key": True,
         "is_local": False,
         "models": [
+            # Vision-capable models only
             "meta-llama/Llama-3.2-11B-Vision-Instruct",
-            "meta-llama/Meta-Llama-3.1-70B-Instruct",
-            "meta-llama/Meta-Llama-3.1-8B-Instruct",
-            "Qwen/Qwen2.5-72B-Instruct",
-            "mistralai/Mixtral-8x7B-Instruct-v0.1",
-            "microsoft/Phi-3.5-mini-instruct",
+            "meta-llama/Llama-3.2-90B-Vision-Instruct",
+            "Qwen/Qwen2-VL-7B-Instruct",
         ],
         "default_model": "meta-llama/Llama-3.2-11B-Vision-Instruct",
     },
@@ -607,26 +521,25 @@ def get_model_metadata(model: str) -> Dict[str, Any]:
 class SID_LLM_API(comfy_io.ComfyNode):
     """
     Unified LLM Provider for Cloud and Local APIs.
+    Only vision-capable models are listed (required for image analysis).
 
     Cloud Providers (API key required):
-    - Anthropic (Claude 4.5, 4.1, 3.5)
-    - OpenAI (GPT-4o, o1, o3, o4)
-    - Google Gemini (1.5, 2.0, 2.5)
-    - xAI Grok (grok-2, grok-3)
-    - Mistral AI (Pixtral, Mistral Large)
-    - DeepSeek (Chat, Reasoner)
+    - Anthropic (Claude - all models support vision)
+    - OpenAI (GPT-4o, GPT-4.1 - vision models)
+    - Google Gemini (all models support vision)
+    - xAI Grok (grok-2-vision)
+    - Mistral AI (Pixtral vision models)
 
     Free/Freemium Cloud Providers:
-    - Groq (free tier, very fast inference)
-    - Together AI (free models available)
-    - OpenRouter (aggregator with free models)
-    - Fireworks AI
-    - Cerebras (free tier, fast)
-    - HuggingFace Inference
+    - Groq (free tier - Llama 4, Llama 3.2 vision)
+    - Together AI (free tier - Llama Vision, Qwen2.5-VL)
+    - OpenRouter (aggregator - free vision models)
+    - Fireworks AI (Llama 4, Llama 3.2 vision, Qwen VL)
+    - HuggingFace Inference (Llama 3.2 vision, Qwen VL)
 
     Local Providers (no API key):
-    - Ollama (localhost:11434)
-    - LM Studio (localhost:1234)
+    - Ollama (localhost:11434 - dynamic detection)
+    - LM Studio (localhost:1234 - dynamic detection)
     - Custom OpenAI-compatible endpoints
 
     For local vision models with VRAM management, use SID_LLM_Local instead.
