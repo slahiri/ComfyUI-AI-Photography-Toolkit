@@ -114,13 +114,13 @@ COMPONENTS = {
         "name": "Framing & Composition",
         "prompt": """Analyze ONLY the framing and composition:
 1. COLOR MODE: Color or black & white?
-2. SHOT TYPE: ECU/BCU/CU/MCU/MS/MFS/FS/LS
-3. SUBJECT POSE: Standing/Seated/Lying/Kneeling/Leaning
-4. CAMERA ANGLE: Eye level, above, below?
-5. DEPTH OF FIELD: Shallow/medium/deep?
+2. SHOT TYPE: Close-up (CU) / Medium (MS) / Wide (WS) / Extreme wide (EWS) / Detail shot
+3. CAMERA ANGLE: Eye level / High angle / Low angle / Bird's eye / Worm's eye
+4. DEPTH OF FIELD: Shallow (blurred background) / Medium / Deep (sharp throughout)
+5. COMPOSITION: Rule of thirds / Centered / Leading lines / Symmetrical / Golden ratio
 
 Output JSON:
-{"shot_type": "<code>", "subject_pose": "<pose>", "frame_fill_percent": <number>, "camera_angle": "<angle>", "depth_of_field": "<dof>", "color_mode": "<color/bw>", "prompt_description": "<complete framing description>"}"""
+{"shot_type": "<type>", "camera_angle": "<angle>", "depth_of_field": "<dof>", "composition": "<style>", "color_mode": "<color/bw>", "prompt_description": "<complete framing and composition description>"}"""
     },
 
     "ethnicity": {
@@ -300,6 +300,117 @@ WOMAN, MAN, COUPLE, GROUP, VEHICLE, LANDSCAPE, ANIMAL, PRODUCT, OTHER
 Output JSON:
 {"subject_type": "<type>", "has_human": true/false, "human_gender": "<female/male/none>", "main_focus": "<description>"}"""
     },
+
+    # Landscape-specific components
+    "landscape_terrain": {
+        "name": "Landscape Terrain",
+        "prompt": """Analyze the TERRAIN and NATURAL FEATURES:
+1. TERRAIN TYPE: Mountains/Hills/Plains/Desert/Forest/Beach/Ocean/Lake/River/Urban/Rural
+2. GROUND COVER: Grass/Sand/Rock/Snow/Water/Pavement/Dirt
+3. VEGETATION: Dense forest/Sparse trees/Grassland/Tropical/None
+4. WATER FEATURES: Ocean/Lake/River/Waterfall/Stream/Pond/None
+5. ELEVATION: Flat/Rolling/Mountainous/Cliffs/Valleys
+
+Output JSON:
+{"terrain_type": "<type>", "ground_cover": "<cover>", "vegetation": "<type>", "water_features": "<type>", "elevation": "<type>", "prompt_description": "<terrain description>"}"""
+    },
+
+    "landscape_weather": {
+        "name": "Weather & Atmosphere",
+        "prompt": """Analyze the WEATHER and ATMOSPHERIC CONDITIONS:
+1. SKY CONDITION: Clear/Partly cloudy/Overcast/Stormy/Sunset/Sunrise/Night
+2. CLOUD TYPES: None/Cumulus/Stratus/Cirrus/Dramatic storm clouds
+3. VISIBILITY: Clear/Hazy/Foggy/Misty/Smoky
+4. WEATHER: Sunny/Rainy/Snowy/Windy/Calm
+5. TIME OF DAY: Dawn/Morning/Midday/Afternoon/Golden hour/Dusk/Night
+
+Output JSON:
+{"sky_condition": "<condition>", "clouds": "<type>", "visibility": "<visibility>", "weather": "<weather>", "time_of_day": "<time>", "prompt_description": "<weather and atmosphere description>"}"""
+    },
+
+    "landscape_scenery": {
+        "name": "Scenery & Elements",
+        "prompt": """Analyze the SCENIC ELEMENTS and COMPOSITION:
+1. FOCAL POINT: What draws the eye (mountain peak, building, tree, horizon, etc.)
+2. FOREGROUND: What's in the nearest plane
+3. MIDGROUND: Middle distance elements
+4. BACKGROUND: Distant elements (horizon, sky, mountains)
+5. MAN-MADE ELEMENTS: Buildings/Roads/Bridges/Fences/None
+6. NATURAL LANDMARKS: Peaks/Rock formations/Trees/Rivers/None
+
+Output JSON:
+{"focal_point": "<element>", "foreground": "<description>", "midground": "<description>", "background": "<description>", "man_made": ["<elements>"], "natural_landmarks": ["<landmarks>"], "prompt_description": "<scenery description>"}"""
+    },
+
+    # Vehicle-specific components
+    "vehicle_details": {
+        "name": "Vehicle Details",
+        "prompt": """Analyze the VEHICLE in detail:
+1. VEHICLE TYPE: Car/Motorcycle/Truck/Bus/Bicycle/Boat/Aircraft/Train
+2. MAKE/MODEL: If identifiable (e.g., "Ferrari", "Harley Davidson")
+3. BODY STYLE: Sedan/Coupe/SUV/Convertible/Hatchback/Sports/Classic/etc.
+4. COLOR: Primary color and any accents
+5. CONDITION: New/Used/Vintage/Restored/Modified/Damaged
+6. ANGLE: Front/Rear/Side/3-quarter/Top-down
+7. NOTABLE FEATURES: Spoilers/Rims/Decals/Custom parts
+
+Output JSON:
+{"vehicle_type": "<type>", "make_model": "<make_model>", "body_style": "<style>", "color": "<color>", "condition": "<condition>", "angle": "<angle>", "features": ["<features>"], "prompt_description": "<vehicle description>"}"""
+    },
+
+    # Animal-specific component
+    "animal_details": {
+        "name": "Animal Details",
+        "prompt": """Analyze the ANIMAL in detail:
+1. SPECIES: Specific animal type (dog, cat, horse, bird, etc.)
+2. BREED: If identifiable
+3. COLORING: Fur/feather color and pattern
+4. POSE: Standing/Sitting/Lying/Running/Flying/Swimming
+5. EXPRESSION: Alert/Relaxed/Playful/Aggressive/Sleeping
+6. SIZE: Small/Medium/Large (relative to frame)
+
+Output JSON:
+{"species": "<species>", "breed": "<breed>", "coloring": "<description>", "pose": "<pose>", "expression": "<expression>", "size": "<size>", "prompt_description": "<animal description>"}"""
+    },
+
+    # Product-specific component
+    "product_details": {
+        "name": "Product Details",
+        "prompt": """Analyze the PRODUCT in detail:
+1. PRODUCT TYPE: Electronics/Food/Cosmetics/Clothing/Furniture/Tool/etc.
+2. BRAND: If visible
+3. COLOR: Primary colors
+4. MATERIAL: Metal/Plastic/Glass/Wood/Fabric/etc.
+5. CONDITION: New/Used/Packaged/Displayed
+6. STYLING: Product photography style (studio/lifestyle/flat-lay)
+
+Output JSON:
+{"product_type": "<type>", "brand": "<brand>", "color": "<color>", "material": "<material>", "condition": "<condition>", "styling": "<style>", "prompt_description": "<product description>"}"""
+    },
+}
+
+
+# =============================================================================
+# Subject Type to Components Mapping
+# =============================================================================
+
+# Components that are human-specific (only apply to WOMAN, MAN, COUPLE, GROUP)
+HUMAN_COMPONENTS = {
+    "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure",
+    "clothing", "intimate_apparel", "tattoos", "accessories"
+}
+
+# Components for each subject type
+SUBJECT_COMPONENTS = {
+    "WOMAN": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
+    "MAN": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "tattoos", "accessories", "lighting"],
+    "COUPLE": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "clothing", "accessories", "lighting"],
+    "GROUP": ["framing", "ethnicity", "clothing", "lighting"],
+    "LANDSCAPE": ["framing", "landscape_terrain", "landscape_weather", "landscape_scenery", "lighting"],
+    "VEHICLE": ["framing", "vehicle_details", "lighting"],
+    "ANIMAL": ["framing", "animal_details", "lighting"],
+    "PRODUCT": ["framing", "product_details", "lighting"],
+    "OTHER": ["framing", "lighting"],
 }
 
 
@@ -371,6 +482,8 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 comfy_io.String.Output("prompt", display_name="prompt"),
                 comfy_io.Int.Output("width", display_name="width"),
                 comfy_io.Int.Output("height", display_name="height"),
+                comfy_io.String.Output("metadata", display_name="metadata", tooltip="JSON metadata about the analysis (subject type, components, timing)"),
+                comfy_io.String.Output("debug", display_name="debug", tooltip="Debug information and raw component outputs"),
             ],
         )
 
@@ -387,6 +500,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         """Execute prompt generation with auto mode selection."""
 
         start_time = time.time()
+        debug_lines = []
 
         # Get image dimensions
         img_tensor = image[0]
@@ -394,9 +508,11 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
 
         # Auto-detect pipeline based on LLM capabilities
         supports_reasoning = llm_model.supports_reasoning
+        pipeline_type = "AGENTIC" if supports_reasoning else "SINGLE-SHOT"
 
         def log(msg: str):
             print(f"[SID-Prompt] {msg}")
+            debug_lines.append(msg)
 
         log("=" * 60)
         log("SID Z-Image Prompt Generator")
@@ -404,17 +520,37 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         log(f"Image: {width}x{height}")
         log(f"Provider: {llm_model.provider} | Model: {llm_model.model}")
         log(f"Analysis: {analysis_mode} | Style: {preset_style}")
-        log(f"Pipeline: {'AGENTIC' if supports_reasoning else 'SINGLE-SHOT'}")
+        log(f"Pipeline: {pipeline_type}")
+
+        # Initialize metadata dict
+        metadata_dict = {
+            "image_width": width,
+            "image_height": height,
+            "provider": llm_model.provider,
+            "model": llm_model.model,
+            "analysis_mode": analysis_mode,
+            "preset_style": preset_style,
+            "pipeline": pipeline_type,
+            "seed": seed,
+        }
 
         try:
             if supports_reasoning:
-                prompt = cls._execute_agentic(
+                result = cls._execute_agentic(
                     image, llm_model, analysis_mode, preset_style, user_guidance
                 )
             else:
-                prompt = cls._execute_single_shot(
+                result = cls._execute_single_shot(
                     image, llm_model, analysis_mode, preset_style, user_guidance
                 )
+
+            # Handle result (can be tuple with metadata or just prompt string)
+            if isinstance(result, tuple):
+                prompt, extra_metadata, extra_debug = result
+                metadata_dict.update(extra_metadata)
+                debug_lines.extend(extra_debug)
+            else:
+                prompt = result
 
             # Stats
             total_time = time.time() - start_time
@@ -422,7 +558,15 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             log(f"Generated: {word_count} words in {total_time:.1f}s")
             log("=" * 60)
 
-            return comfy_io.NodeOutput(prompt, width, height, ui={"text": (prompt,)})
+            # Finalize metadata
+            metadata_dict["total_time_seconds"] = round(total_time, 2)
+            metadata_dict["word_count"] = word_count
+
+            # Convert to JSON strings
+            metadata_str = json.dumps(metadata_dict, indent=2)
+            debug_str = "\n".join(debug_lines)
+
+            return comfy_io.NodeOutput(prompt, width, height, metadata_str, debug_str, ui={"text": (prompt,)})
 
         except Exception as e:
             error_msg = f"Error: {str(e)}"
@@ -443,9 +587,11 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         analysis_mode: str,
         preset_style: str,
         user_guidance: str,
-    ) -> str:
-        """Fast single-call prompt generation."""
+    ) -> tuple:
+        """Fast single-call prompt generation. Returns (prompt, metadata, debug_lines)."""
 
+        debug_lines = []
+        debug_lines.append("Single-shot mode...")
         print(f"[SID-Prompt] Single-shot mode...")
 
         # Convert image
@@ -455,6 +601,8 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         # Build prompts (tier-aware based on provider)
         system_prompt = cls._build_system_prompt(llm_model.provider, preset_style, user_guidance)
         user_prompt = cls._build_user_prompt(llm_model.provider, analysis_mode, preset_style)
+        debug_lines.append(f"System prompt length: {len(system_prompt)} chars")
+        debug_lines.append(f"User prompt length: {len(user_prompt)} chars")
 
         # Get client and call
         client = cls._get_client(llm_model)
@@ -463,14 +611,22 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         pbar.update(1)
 
         response = cls._call_llm(client, llm_model, base64_image, system_prompt, user_prompt)
+        debug_lines.append(f"Raw LLM response length: {len(response)} chars")
         prompt = cls._clean_output(response, llm_model.provider)
 
-        # Add user focus if provided
-        if user_guidance and user_guidance.strip():
-            prompt = f"[FOCUS: {user_guidance.strip()}] {prompt}"
+        # Note: User guidance is already included in system_prompt via config_loader
+        # The LLM considers it during generation, so no need to prepend it again
 
         pbar.update(1)
-        return prompt
+
+        # Build metadata
+        metadata = {
+            "subject_type": "unknown",  # Single-shot doesn't do subject detection
+            "components_analyzed": [],
+            "component_count": 0,
+        }
+
+        return prompt, metadata, debug_lines
 
     # =========================================================================
     # AGENTIC PIPELINE
@@ -484,9 +640,11 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         analysis_mode: str,
         preset_style: str,
         user_guidance: str,
-    ) -> str:
-        """Reasoning-enabled comprehensive analysis."""
+    ) -> tuple:
+        """Reasoning-enabled comprehensive analysis. Returns (prompt, metadata, debug_lines)."""
 
+        debug_lines = []
+        debug_lines.append("Agentic mode (reasoning enabled)...")
         print(f"[SID-Prompt] Agentic mode (reasoning enabled)...")
 
         # Convert image
@@ -500,18 +658,39 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
 
         # Step 1: Subject detection (if Auto-Detect)
         subject_type = "WOMAN"  # Default
+        subject_result = {}
         if preset_style == "Auto-Detect":
+            debug_lines.append("Detecting subject...")
             print(f"[SID-Prompt] Detecting subject...")
             subject_result = cls._analyze_component(client, llm_model, base64_image, "subject_detection")
             subject_type = subject_result.get("subject_type", "WOMAN").upper()
+            debug_lines.append(f"Subject detection result: {json.dumps(subject_result)}")
             print(f"[SID-Prompt] Subject: {subject_type}")
         pbar.update(1)
 
-        # Step 2: Get components for this mode
+        # Step 2: Get components for this mode, filtered by subject type
         mode_config = ANALYSIS_MODES.get(analysis_mode, ANALYSIS_MODES["Standard"])
-        components = mode_config["components"].copy()
+        mode_components = mode_config["components"].copy()
 
-        print(f"[SID-Prompt] Analyzing {len(components)} components...")
+        # Get allowed components for this subject type
+        allowed_components = set(SUBJECT_COMPONENTS.get(subject_type, SUBJECT_COMPONENTS["OTHER"]))
+
+        # Filter mode components to only include those valid for this subject type
+        # Also add any subject-specific components that aren't in the base mode
+        if subject_type in ["LANDSCAPE", "VEHICLE", "ANIMAL", "PRODUCT"]:
+            # For non-human subjects, replace human components with subject-specific ones
+            components = [c for c in mode_components if c in allowed_components]
+            # Add subject-specific components that might not be in mode_components
+            subject_specific = SUBJECT_COMPONENTS.get(subject_type, [])
+            for sc in subject_specific:
+                if sc not in components and sc in COMPONENTS:
+                    components.append(sc)
+        else:
+            # For human subjects, use mode components as-is
+            components = mode_components
+
+        debug_lines.append(f"Subject type: {subject_type}, analyzing {len(components)} components: {components}")
+        print(f"[SID-Prompt] Subject type: {subject_type}, analyzing {len(components)} components: {components}")
 
         # Step 3: Build comprehensive agentic prompt
         agentic_prompt = cls._build_agentic_prompt(components, preset_style, user_guidance)
@@ -519,12 +698,21 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
 
         # Step 4: Single reasoning call
         component_results = cls._call_reasoning_llm(client, llm_model, base64_image, agentic_prompt)
+        debug_lines.append(f"Raw component results: {json.dumps(component_results, indent=2)}")
 
         # Step 5: Assemble prompt
         prompt = cls._assemble_prompt(component_results, mode_config, user_guidance)
         pbar.update(1)
 
-        return prompt
+        # Build metadata
+        metadata = {
+            "subject_type": subject_type,
+            "subject_detection": subject_result,
+            "components_analyzed": components,
+            "component_count": len(components),
+        }
+
+        return prompt, metadata, debug_lines
 
     # =========================================================================
     # HELPER METHODS
@@ -698,8 +886,25 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 comp_specs.append(f"### {comp['name']} ({key})\n{comp['prompt']}")
 
         user_section = ""
+        user_focus_instruction = ""
         if user_guidance and user_guidance.strip():
-            user_section = f"\n\n## USER REQUEST (HIGH PRIORITY)\n\"{user_guidance.strip()}\"\nEnsure your analysis captures details related to this request.\n"
+            user_section = f"""
+
+## USER REQUEST (HIGH PRIORITY)
+"{user_guidance.strip()}"
+Pay special attention to this request throughout your analysis.
+"""
+            user_focus_instruction = f"""
+### User Focus Integration (user_focus)
+The user requested: "{user_guidance.strip()}"
+Based on what you SEE in the image, create a contextual description that:
+1. Identifies which visual elements relate to the user's request
+2. Describes those specific elements in detail as they appear in THIS image
+3. If the request doesn't match what's visible, describe what IS visible that's most relevant
+
+Output JSON:
+{{"user_focus": "<contextual description integrating user request with actual image content>"}}
+"""
 
         return f"""You are an expert visual analyst. Use reasoning to analyze this image comprehensively.
 {user_section}
@@ -709,14 +914,15 @@ Analyze ALL components below and return a single JSON object with each component
 ## COMPONENTS TO ANALYZE
 
 {chr(10).join(comp_specs)}
-
+{user_focus_instruction}
 ## OUTPUT FORMAT
 Return a single JSON object:
 ```json
 {{
     "framing": {{ ... }},
     "ethnicity": {{ ... }},
-    ... etc for each component ...
+    ... etc for each component ...,
+    "user_focus": "<contextual focus description>" // Only if user provided guidance
 }}
 ```"""
 
@@ -785,7 +991,13 @@ Return a single JSON object:
         sections = []
 
         # Order: framing, ethnicity, face, hair, eyes, nose_lips, body_pose, body_figure, clothing, intimate, tattoos, accessories, lighting
-        order = ["framing", "ethnicity", "face", "hair", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"]
+        # Also include landscape/vehicle/animal/product components
+        order = [
+            "framing", "ethnicity", "face", "hair", "eyes", "nose_lips", "body_pose", "body_figure",
+            "clothing", "intimate_apparel", "tattoos", "accessories", "lighting",
+            "landscape_terrain", "landscape_weather", "landscape_scenery",
+            "vehicle_details", "animal_details", "product_details"
+        ]
 
         for key in order:
             if key in components and components[key]:
@@ -803,9 +1015,19 @@ Return a single JSON object:
             prompt = ", ".join(s for s in sections if s)
             prompt = prompt.replace(", ,", ",").replace("  ", " ")
 
-        # Add user focus
+        # Add contextualized user focus (prefer LLM-generated context over raw input)
         if user_guidance and user_guidance.strip():
-            prompt = f"[FOCUS: {user_guidance.strip()}] {prompt}"
+            # Check if LLM provided a contextualized user_focus
+            user_focus = components.get("user_focus", "")
+            if isinstance(user_focus, dict):
+                user_focus = user_focus.get("user_focus", "")
+
+            if user_focus and isinstance(user_focus, str) and user_focus.strip():
+                # Use the LLM's contextualized interpretation
+                prompt = f"{user_focus.strip()}. {prompt}"
+            else:
+                # Fallback to raw user guidance if LLM didn't provide context
+                prompt = f"[FOCUS: {user_guidance.strip()}] {prompt}"
 
         return prompt.strip()
 
