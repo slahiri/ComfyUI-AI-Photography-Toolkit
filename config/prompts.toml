@@ -1328,6 +1328,426 @@ default_monument = "no_monument"
 
 
 # =============================================================================
+# NSFW SCENE TYPE CLASSIFICATION
+# =============================================================================
+# Adult content scene types and settings
+
+[nsfw_scene]
+detect_nsfw_scene = """Classify the NSFW SCENE TYPE in this image.
+
+SOLO SCENES:
+- solo_female: Single female subject
+- solo_male: Single male subject
+- solo_trans: Single trans/non-binary subject
+- solo_selfie: Self-shot/selfie style
+- solo_mirror: Mirror selfie/reflection
+- solo_shower_bath: Shower or bath scene
+- solo_bedroom: Bedroom setting
+- solo_outdoor: Outdoor/nature setting
+
+COUPLE SCENES:
+- couple_mf: Male-female couple
+- couple_ff: Female-female couple
+- couple_mm: Male-male couple
+- couple_romantic: Romantic/intimate mood
+- couple_passionate: Passionate/intense mood
+- couple_playful: Playful/teasing mood
+
+GROUP SCENES:
+- group_threesome: Three participants
+- group_foursome: Four participants
+- group_orgy: Five or more participants
+- group_gangbang: Multiple partners with one focus
+
+PROFESSIONAL STYLES:
+- professional_studio: Studio photography
+- professional_glamour: Glamour/artistic style
+- professional_boudoir: Boudoir photography
+- professional_pinup: Pin-up style
+- professional_editorial: Editorial/magazine style
+
+AMATEUR STYLES:
+- amateur_homemade: Homemade/amateur quality
+- amateur_pov: Point-of-view perspective
+- amateur_candid: Candid/spontaneous
+- amateur_webcam: Webcam style
+
+FETISH/KINK:
+- fetish_bdsm: BDSM elements
+- fetish_bondage: Bondage/restraints
+- fetish_leather: Leather/latex
+- fetish_feet: Foot focus
+- fetish_lingerie: Lingerie focus
+- fetish_costume: Costume/roleplay
+- fetish_dominant: Dominant theme
+- fetish_submissive: Submissive theme
+
+NONE:
+- not_nsfw: Not an NSFW scene
+- nsfw_other: Other NSFW content
+
+Respond with ONLY the category name, nothing else."""
+
+valid_nsfw_scenes = [
+    # Solo
+    "solo_female", "solo_male", "solo_trans", "solo_selfie", "solo_mirror",
+    "solo_shower_bath", "solo_bedroom", "solo_outdoor",
+    # Couple
+    "couple_mf", "couple_ff", "couple_mm", "couple_romantic", "couple_passionate", "couple_playful",
+    # Group
+    "group_threesome", "group_foursome", "group_orgy", "group_gangbang",
+    # Professional
+    "professional_studio", "professional_glamour", "professional_boudoir", "professional_pinup", "professional_editorial",
+    # Amateur
+    "amateur_homemade", "amateur_pov", "amateur_candid", "amateur_webcam",
+    # Fetish
+    "fetish_bdsm", "fetish_bondage", "fetish_leather", "fetish_feet", "fetish_lingerie",
+    "fetish_costume", "fetish_dominant", "fetish_submissive",
+    # Other
+    "not_nsfw", "nsfw_other"
+]
+
+[nsfw_scene.groups]
+solo = ["solo_female", "solo_male", "solo_trans", "solo_selfie", "solo_mirror", "solo_shower_bath", "solo_bedroom", "solo_outdoor"]
+couple = ["couple_mf", "couple_ff", "couple_mm", "couple_romantic", "couple_passionate", "couple_playful"]
+group = ["group_threesome", "group_foursome", "group_orgy", "group_gangbang"]
+professional = ["professional_studio", "professional_glamour", "professional_boudoir", "professional_pinup", "professional_editorial"]
+amateur = ["amateur_homemade", "amateur_pov", "amateur_candid", "amateur_webcam"]
+fetish = ["fetish_bdsm", "fetish_bondage", "fetish_leather", "fetish_feet", "fetish_lingerie", "fetish_costume", "fetish_dominant", "fetish_submissive"]
+
+default_nsfw_scene = "not_nsfw"
+
+
+# =============================================================================
+# BODY POSITION CLASSIFICATION
+# =============================================================================
+# Body positions and poses for adult content
+
+[body_position]
+detect_position = """Classify the BODY POSITION in this image.
+
+STANDING POSITIONS:
+- standing_front: Standing facing camera
+- standing_back: Standing back to camera
+- standing_side: Standing side profile
+- standing_bent: Standing bent over
+- standing_wall: Against wall
+- standing_leaning: Leaning on surface
+
+SITTING POSITIONS:
+- sitting_chair: Sitting on chair
+- sitting_floor: Sitting on floor
+- sitting_edge: Sitting on edge (bed, table)
+- sitting_crossed: Sitting cross-legged
+- sitting_knees: Sitting on knees/kneeling
+- sitting_spread: Sitting with legs spread
+- sitting_straddle: Straddling position
+
+LYING POSITIONS:
+- lying_back: Lying on back (supine)
+- lying_front: Lying on front (prone)
+- lying_side: Lying on side
+- lying_fetal: Fetal/curled position
+- lying_spread: Lying spread eagle
+- lying_propped: Propped on elbows
+
+KNEELING POSITIONS:
+- kneeling_upright: Kneeling upright
+- kneeling_forward: Kneeling bent forward
+- kneeling_sitting: Sitting on heels
+- kneeling_one_knee: One knee down
+
+ALL FOURS:
+- all_fours_standard: Standard hands and knees
+- all_fours_lowered: Chest lowered
+- all_fours_raised: Hips raised
+- all_fours_arched: Back arched
+
+SPECIALTY:
+- position_splits: Splits position
+- position_bridge: Bridge/backbend
+- position_squat: Squatting
+- position_crawling: Crawling pose
+- position_inverted: Upside down/inverted
+- position_suspended: Suspended/hanging
+- position_contorted: Contorted/flexible pose
+
+NONE:
+- position_unclear: Position unclear
+- position_other: Other position
+
+Respond with ONLY the category name, nothing else."""
+
+valid_positions = [
+    # Standing
+    "standing_front", "standing_back", "standing_side", "standing_bent", "standing_wall", "standing_leaning",
+    # Sitting
+    "sitting_chair", "sitting_floor", "sitting_edge", "sitting_crossed", "sitting_knees", "sitting_spread", "sitting_straddle",
+    # Lying
+    "lying_back", "lying_front", "lying_side", "lying_fetal", "lying_spread", "lying_propped",
+    # Kneeling
+    "kneeling_upright", "kneeling_forward", "kneeling_sitting", "kneeling_one_knee",
+    # All fours
+    "all_fours_standard", "all_fours_lowered", "all_fours_raised", "all_fours_arched",
+    # Specialty
+    "position_splits", "position_bridge", "position_squat", "position_crawling", "position_inverted", "position_suspended", "position_contorted",
+    # Other
+    "position_unclear", "position_other"
+]
+
+[body_position.groups]
+standing = ["standing_front", "standing_back", "standing_side", "standing_bent", "standing_wall", "standing_leaning"]
+sitting = ["sitting_chair", "sitting_floor", "sitting_edge", "sitting_crossed", "sitting_knees", "sitting_spread", "sitting_straddle"]
+lying = ["lying_back", "lying_front", "lying_side", "lying_fetal", "lying_spread", "lying_propped"]
+kneeling = ["kneeling_upright", "kneeling_forward", "kneeling_sitting", "kneeling_one_knee"]
+all_fours = ["all_fours_standard", "all_fours_lowered", "all_fours_raised", "all_fours_arched"]
+specialty = ["position_splits", "position_bridge", "position_squat", "position_crawling", "position_inverted", "position_suspended", "position_contorted"]
+
+default_position = "position_unclear"
+
+
+# =============================================================================
+# INTIMATE POSITION CLASSIFICATION
+# =============================================================================
+# Sexual positions for explicit content
+
+[intimate_position]
+detect_intimate = """Classify the INTIMATE/SEXUAL POSITION in this image.
+
+MISSIONARY VARIATIONS:
+- missionary_standard: Standard missionary
+- missionary_legs_up: Legs raised/on shoulders
+- missionary_wrapped: Legs wrapped around
+- missionary_folded: Folded/pressed knees to chest
+- missionary_spread: Legs spread wide
+
+DOGGY STYLE VARIATIONS:
+- doggy_standard: Standard doggy style
+- doggy_flat: Flat/prone bone
+- doggy_standing: Standing doggy
+- doggy_side: Side doggy
+- doggy_face_down: Face down position
+
+COWGIRL VARIATIONS:
+- cowgirl_standard: Standard cowgirl
+- cowgirl_reverse: Reverse cowgirl
+- cowgirl_asian: Asian cowgirl (squatting)
+- cowgirl_leaning: Leaning forward/back
+
+SPOONING/SIDE:
+- spooning_standard: Standard spooning
+- spooning_lifted: Leg lifted
+- side_scissors: Scissors position
+- side_pretzel: Pretzel position
+
+STANDING:
+- standing_front: Standing face to face
+- standing_behind: Standing from behind
+- standing_lifted: Lifted/carried
+- standing_wall: Against wall
+- standing_bent: Bent over standing
+
+SITTING:
+- sitting_lap: Lap sitting (facing)
+- sitting_reverse_lap: Reverse lap
+- sitting_edge: Edge of surface
+- sitting_chair: Chair position
+
+ORAL:
+- oral_kneeling: Kneeling oral
+- oral_lying: Lying oral
+- oral_69: 69 position
+- oral_standing: Standing oral
+- oral_sitting: Sitting oral
+
+OTHER:
+- position_pile_driver: Pile driver
+- position_wheelbarrow: Wheelbarrow
+- position_lotus: Lotus position
+- position_amazon: Amazon position
+- not_intimate: Not an intimate position
+- intimate_other: Other intimate position
+
+Respond with ONLY the category name, nothing else."""
+
+valid_intimate = [
+    # Missionary
+    "missionary_standard", "missionary_legs_up", "missionary_wrapped", "missionary_folded", "missionary_spread",
+    # Doggy
+    "doggy_standard", "doggy_flat", "doggy_standing", "doggy_side", "doggy_face_down",
+    # Cowgirl
+    "cowgirl_standard", "cowgirl_reverse", "cowgirl_asian", "cowgirl_leaning",
+    # Spooning/Side
+    "spooning_standard", "spooning_lifted", "side_scissors", "side_pretzel",
+    # Standing
+    "standing_front", "standing_behind", "standing_lifted", "standing_wall", "standing_bent",
+    # Sitting
+    "sitting_lap", "sitting_reverse_lap", "sitting_edge", "sitting_chair",
+    # Oral
+    "oral_kneeling", "oral_lying", "oral_69", "oral_standing", "oral_sitting",
+    # Other
+    "position_pile_driver", "position_wheelbarrow", "position_lotus", "position_amazon",
+    "not_intimate", "intimate_other"
+]
+
+[intimate_position.groups]
+missionary = ["missionary_standard", "missionary_legs_up", "missionary_wrapped", "missionary_folded", "missionary_spread"]
+doggy = ["doggy_standard", "doggy_flat", "doggy_standing", "doggy_side", "doggy_face_down"]
+cowgirl = ["cowgirl_standard", "cowgirl_reverse", "cowgirl_asian", "cowgirl_leaning"]
+side_positions = ["spooning_standard", "spooning_lifted", "side_scissors", "side_pretzel"]
+standing_intimate = ["standing_front", "standing_behind", "standing_lifted", "standing_wall", "standing_bent"]
+sitting_intimate = ["sitting_lap", "sitting_reverse_lap", "sitting_edge", "sitting_chair"]
+oral_positions = ["oral_kneeling", "oral_lying", "oral_69", "oral_standing", "oral_sitting"]
+
+default_intimate = "not_intimate"
+
+
+# =============================================================================
+# NSFW STYLE/AESTHETIC CLASSIFICATION
+# =============================================================================
+# Visual styles for adult content
+
+[nsfw_aesthetic]
+detect_aesthetic = """Classify the NSFW AESTHETIC/STYLE in this image.
+
+PHOTOGRAPHY STYLES:
+- aesthetic_artistic: Artistic/fine art nude
+- aesthetic_glamour: Glamour photography
+- aesthetic_boudoir: Boudoir style
+- aesthetic_pinup: Classic pin-up
+- aesthetic_fashion: Fashion/editorial
+- aesthetic_documentary: Documentary/candid
+
+LIGHTING STYLES:
+- lighting_high_key: High key/bright
+- lighting_low_key: Low key/dark moody
+- lighting_natural: Natural light
+- lighting_studio: Studio lighting
+- lighting_neon: Neon/colored lighting
+- lighting_silhouette: Silhouette
+- lighting_backlit: Backlit/rim light
+
+MOOD/TONE:
+- mood_romantic: Romantic/sensual
+- mood_passionate: Passionate/intense
+- mood_playful: Playful/fun
+- mood_dominant: Dominant/powerful
+- mood_submissive: Submissive/vulnerable
+- mood_mysterious: Mysterious/dark
+- mood_innocent: Innocent/soft
+
+COLOR TREATMENT:
+- color_vibrant: Vibrant/saturated
+- color_muted: Muted/desaturated
+- color_warm: Warm tones
+- color_cool: Cool tones
+- color_bw: Black and white
+- color_sepia: Sepia/vintage
+- color_high_contrast: High contrast
+
+SETTING STYLES:
+- setting_luxury: Luxury/upscale
+- setting_minimalist: Minimalist/clean
+- setting_industrial: Industrial/urban
+- setting_natural: Natural/outdoor
+- setting_domestic: Domestic/home
+- setting_fantasy: Fantasy/themed
+
+NONE:
+- aesthetic_standard: Standard/no specific style
+- aesthetic_other: Other aesthetic
+
+Respond with ONLY the category name, nothing else."""
+
+valid_aesthetics = [
+    # Photography
+    "aesthetic_artistic", "aesthetic_glamour", "aesthetic_boudoir", "aesthetic_pinup", "aesthetic_fashion", "aesthetic_documentary",
+    # Lighting
+    "lighting_high_key", "lighting_low_key", "lighting_natural", "lighting_studio", "lighting_neon", "lighting_silhouette", "lighting_backlit",
+    # Mood
+    "mood_romantic", "mood_passionate", "mood_playful", "mood_dominant", "mood_submissive", "mood_mysterious", "mood_innocent",
+    # Color
+    "color_vibrant", "color_muted", "color_warm", "color_cool", "color_bw", "color_sepia", "color_high_contrast",
+    # Setting
+    "setting_luxury", "setting_minimalist", "setting_industrial", "setting_natural", "setting_domestic", "setting_fantasy",
+    # Other
+    "aesthetic_standard", "aesthetic_other"
+]
+
+[nsfw_aesthetic.groups]
+photography = ["aesthetic_artistic", "aesthetic_glamour", "aesthetic_boudoir", "aesthetic_pinup", "aesthetic_fashion", "aesthetic_documentary"]
+lighting = ["lighting_high_key", "lighting_low_key", "lighting_natural", "lighting_studio", "lighting_neon", "lighting_silhouette", "lighting_backlit"]
+mood = ["mood_romantic", "mood_passionate", "mood_playful", "mood_dominant", "mood_submissive", "mood_mysterious", "mood_innocent"]
+color_treatment = ["color_vibrant", "color_muted", "color_warm", "color_cool", "color_bw", "color_sepia", "color_high_contrast"]
+setting = ["setting_luxury", "setting_minimalist", "setting_industrial", "setting_natural", "setting_domestic", "setting_fantasy"]
+
+default_aesthetic = "aesthetic_standard"
+
+
+# =============================================================================
+# EXPOSURE/NUDITY LEVEL CLASSIFICATION
+# =============================================================================
+# Level of exposure and nudity
+
+[exposure_level]
+detect_exposure = """Classify the EXPOSURE/NUDITY LEVEL in this image.
+
+CLOTHED:
+- clothed_full: Fully clothed
+- clothed_revealing: Revealing clothing
+- clothed_sheer: Sheer/see-through
+- clothed_underwear: Underwear/lingerie visible
+- clothed_swimwear: Swimwear
+
+PARTIAL NUDITY:
+- partial_topless: Topless
+- partial_bottomless: Bottomless
+- partial_side_exposure: Side boob/butt
+- partial_covered: Strategically covered
+- partial_implied: Implied nudity
+
+FULL NUDITY:
+- nude_artistic: Artistic nude
+- nude_frontal: Full frontal
+- nude_rear: Rear view nude
+- nude_full_body: Full body visible
+- nude_close_up: Close-up/detail
+
+EXPLICIT:
+- explicit_genital: Genital focus
+- explicit_penetration: Penetration visible
+- explicit_oral: Oral activity
+- explicit_ejaculation: Ejaculation/climax
+
+NONE:
+- exposure_none: No nudity/exposure
+- exposure_unclear: Unclear/ambiguous
+
+Respond with ONLY the category name, nothing else."""
+
+valid_exposure = [
+    # Clothed
+    "clothed_full", "clothed_revealing", "clothed_sheer", "clothed_underwear", "clothed_swimwear",
+    # Partial
+    "partial_topless", "partial_bottomless", "partial_side_exposure", "partial_covered", "partial_implied",
+    # Full nudity
+    "nude_artistic", "nude_frontal", "nude_rear", "nude_full_body", "nude_close_up",
+    # Explicit
+    "explicit_genital", "explicit_penetration", "explicit_oral", "explicit_ejaculation",
+    # None
+    "exposure_none", "exposure_unclear"
+]
+
+[exposure_level.groups]
+clothed = ["clothed_full", "clothed_revealing", "clothed_sheer", "clothed_underwear", "clothed_swimwear"]
+partial = ["partial_topless", "partial_bottomless", "partial_side_exposure", "partial_covered", "partial_implied"]
+full_nude = ["nude_artistic", "nude_frontal", "nude_rear", "nude_full_body", "nude_close_up"]
+explicit = ["explicit_genital", "explicit_penetration", "explicit_oral", "explicit_ejaculation"]
+
+default_exposure = "exposure_none"
+
+
+# =============================================================================
 # ILLUSTRATED STYLE SYSTEM PROMPTS
 # =============================================================================
 # Specialized system prompts for anime/manga/cartoon/hentai styles
