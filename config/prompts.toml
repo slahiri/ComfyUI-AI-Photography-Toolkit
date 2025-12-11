@@ -950,6 +950,384 @@ default_animal = "no_animal"
 
 
 # =============================================================================
+# LANDMARK / LOCATION CLASSIFICATION
+# =============================================================================
+# Recognizable landmarks, famous locations, tourist destinations
+
+[landmark]
+detect_landmark = """Classify the LANDMARK / FAMOUS LOCATION in this image.
+
+WORLD FAMOUS LANDMARKS:
+- eiffel_tower: Eiffel Tower, Paris
+- statue_of_liberty: Statue of Liberty, New York
+- big_ben: Big Ben, Elizabeth Tower, London
+- tower_of_london: Tower of London
+- colosseum: Roman Colosseum
+- leaning_tower_pisa: Leaning Tower of Pisa
+- taj_mahal: Taj Mahal, India
+- great_wall: Great Wall of China
+- forbidden_city: Forbidden City, Beijing
+- pyramids_giza: Pyramids of Giza, Sphinx
+- machu_picchu: Machu Picchu
+- christ_redeemer: Christ the Redeemer, Rio
+- sydney_opera: Sydney Opera House
+- golden_gate: Golden Gate Bridge
+- brooklyn_bridge: Brooklyn Bridge
+- tower_bridge: Tower Bridge, London
+- burj_khalifa: Burj Khalifa, Dubai
+- empire_state: Empire State Building
+- chrysler_building: Chrysler Building
+- cn_tower: CN Tower, Toronto
+- space_needle: Space Needle, Seattle
+- tokyo_tower: Tokyo Tower
+- tokyo_skytree: Tokyo Skytree
+
+RELIGIOUS/HISTORICAL:
+- notre_dame: Notre-Dame Cathedral
+- sagrada_familia: Sagrada Familia, Barcelona
+- st_peters: St. Peter's Basilica, Vatican
+- westminster_abbey: Westminster Abbey
+- hagia_sophia: Hagia Sophia, Istanbul
+- blue_mosque: Blue Mosque, Istanbul
+- angkor_wat: Angkor Wat, Cambodia
+- petra: Petra, Jordan
+- stonehenge: Stonehenge
+- acropolis: Acropolis, Parthenon, Athens
+- kremlin: Kremlin, Moscow
+- red_square: Red Square, Moscow
+- st_basils: St. Basil's Cathedral
+
+PALACES/CASTLES:
+- buckingham_palace: Buckingham Palace
+- windsor_castle: Windsor Castle
+- versailles: Palace of Versailles
+- neuschwanstein: Neuschwanstein Castle
+- edinburgh_castle: Edinburgh Castle
+- alhambra: Alhambra, Spain
+
+NATURAL LANDMARKS:
+- grand_canyon: Grand Canyon
+- niagara_falls: Niagara Falls
+- victoria_falls: Victoria Falls
+- mount_rushmore: Mount Rushmore
+- mount_fuji: Mount Fuji
+- uluru: Uluru/Ayers Rock
+- northern_lights: Aurora Borealis
+
+CITY SCENES:
+- times_square: Times Square, NYC
+- piccadilly_circus: Piccadilly Circus, London
+- shibuya_crossing: Shibuya Crossing, Tokyo
+- champs_elysees: Champs-Elysees, Paris
+- las_vegas_strip: Las Vegas Strip
+- hollywood_sign: Hollywood Sign
+
+NONE:
+- no_landmark: No recognizable landmark
+
+Respond with ONLY the category name, nothing else."""
+
+valid_landmarks = [
+    # World Famous
+    "eiffel_tower", "statue_of_liberty", "big_ben", "tower_of_london", "colosseum",
+    "leaning_tower_pisa", "taj_mahal", "great_wall", "forbidden_city", "pyramids_giza",
+    "machu_picchu", "christ_redeemer", "sydney_opera", "golden_gate", "brooklyn_bridge",
+    "tower_bridge", "burj_khalifa", "empire_state", "chrysler_building", "cn_tower",
+    "space_needle", "tokyo_tower", "tokyo_skytree",
+    # Religious/Historical
+    "notre_dame", "sagrada_familia", "st_peters", "westminster_abbey", "hagia_sophia",
+    "blue_mosque", "angkor_wat", "petra", "stonehenge", "acropolis", "kremlin",
+    "red_square", "st_basils",
+    # Palaces/Castles
+    "buckingham_palace", "windsor_castle", "versailles", "neuschwanstein", "edinburgh_castle", "alhambra",
+    # Natural
+    "grand_canyon", "niagara_falls", "victoria_falls", "mount_rushmore", "mount_fuji", "uluru", "northern_lights",
+    # City Scenes
+    "times_square", "piccadilly_circus", "shibuya_crossing", "champs_elysees", "las_vegas_strip", "hollywood_sign",
+    # None
+    "no_landmark"
+]
+
+[landmark.groups]
+towers_monuments = ["eiffel_tower", "statue_of_liberty", "big_ben", "tokyo_tower", "tokyo_skytree", "cn_tower", "space_needle", "burj_khalifa"]
+bridges = ["golden_gate", "brooklyn_bridge", "tower_bridge"]
+religious = ["notre_dame", "sagrada_familia", "st_peters", "westminster_abbey", "hagia_sophia", "blue_mosque", "angkor_wat", "st_basils"]
+ancient = ["colosseum", "pyramids_giza", "machu_picchu", "petra", "stonehenge", "acropolis", "great_wall"]
+palaces = ["buckingham_palace", "windsor_castle", "versailles", "neuschwanstein", "edinburgh_castle", "alhambra", "forbidden_city", "kremlin"]
+natural = ["grand_canyon", "niagara_falls", "victoria_falls", "mount_rushmore", "mount_fuji", "uluru", "northern_lights"]
+city_scenes = ["times_square", "piccadilly_circus", "shibuya_crossing", "champs_elysees", "las_vegas_strip", "hollywood_sign"]
+
+default_landmark = "no_landmark"
+
+
+# =============================================================================
+# ARCHITECTURE STYLE CLASSIFICATION
+# =============================================================================
+# Architectural styles and building types
+
+[architecture_style]
+detect_architecture = """Classify the ARCHITECTURE STYLE in this image.
+
+HISTORICAL PERIODS:
+- ancient_egyptian: Egyptian temples, pyramids, obelisks
+- ancient_greek: Greek columns, temples, Doric/Ionic/Corinthian
+- ancient_roman: Roman arches, domes, aqueducts
+- byzantine: Byzantine domes, mosaics, Orthodox churches
+- romanesque: Romanesque rounded arches, thick walls
+- gothic: Gothic pointed arches, flying buttresses, cathedrals
+- renaissance: Renaissance symmetry, domes, classical revival
+- baroque: Baroque ornate decoration, grandeur
+- rococo: Rococo playful, ornate, pastel colors
+- neoclassical: Neoclassical columns, pediments, government buildings
+- victorian: Victorian ornate, varied styles, gingerbread trim
+- art_nouveau: Art Nouveau organic curves, nature motifs
+- art_deco: Art Deco geometric, bold lines, 1920s-30s
+- beaux_arts: Beaux-Arts grand, classical French
+
+MODERN:
+- bauhaus: Bauhaus functional, geometric, minimalist
+- international: International Style glass curtain walls, minimal
+- brutalist: Brutalist raw concrete, massive forms
+- postmodern: Postmodern playful, eclectic, historical references
+- deconstructivist: Deconstructivist fragmented, angular, Gehry-style
+- high_tech: High-tech exposed structure, industrial aesthetic
+- minimalist: Minimalist clean lines, simple forms
+- contemporary: Contemporary current trends, mixed styles
+
+REGIONAL:
+- japanese_traditional: Japanese traditional, pagodas, temples
+- chinese_traditional: Chinese traditional, curved roofs, red/gold
+- indian_traditional: Indian traditional, temples, Mughal
+- islamic: Islamic geometric patterns, minarets, domes
+- mediterranean: Mediterranean white walls, terracotta roofs
+- spanish_colonial: Spanish Colonial missions, courtyards
+- tudor: Tudor half-timbered, steep roofs
+- colonial_american: Colonial American clapboard, symmetrical
+- craftsman: Craftsman bungalows, natural materials
+- mid_century_modern: Mid-Century Modern 1950s-60s, organic forms
+
+BUILDING TYPES:
+- skyscraper: Skyscraper tall buildings, urban
+- residential_house: Residential houses, homes
+- religious_building: Churches, temples, mosques
+- commercial_retail: Shops, malls, storefronts
+- industrial: Factories, warehouses, industrial
+- civic_government: Government buildings, courthouses
+- educational: Schools, universities, libraries
+- entertainment: Theaters, stadiums, arenas
+
+NONE:
+- no_architecture: No significant architecture visible
+
+Respond with ONLY the category name, nothing else."""
+
+valid_architecture = [
+    # Historical
+    "ancient_egyptian", "ancient_greek", "ancient_roman", "byzantine", "romanesque",
+    "gothic", "renaissance", "baroque", "rococo", "neoclassical", "victorian",
+    "art_nouveau", "art_deco", "beaux_arts",
+    # Modern
+    "bauhaus", "international", "brutalist", "postmodern", "deconstructivist",
+    "high_tech", "minimalist", "contemporary",
+    # Regional
+    "japanese_traditional", "chinese_traditional", "indian_traditional", "islamic",
+    "mediterranean", "spanish_colonial", "tudor", "colonial_american", "craftsman", "mid_century_modern",
+    # Building Types
+    "skyscraper", "residential_house", "religious_building", "commercial_retail",
+    "industrial", "civic_government", "educational", "entertainment",
+    # None
+    "no_architecture"
+]
+
+[architecture_style.groups]
+ancient = ["ancient_egyptian", "ancient_greek", "ancient_roman", "byzantine", "romanesque"]
+classical = ["gothic", "renaissance", "baroque", "rococo", "neoclassical", "beaux_arts"]
+ornate = ["victorian", "art_nouveau", "art_deco", "baroque", "rococo"]
+modern_movements = ["bauhaus", "international", "brutalist", "postmodern", "deconstructivist", "high_tech", "minimalist", "contemporary"]
+asian = ["japanese_traditional", "chinese_traditional", "indian_traditional"]
+western_traditional = ["tudor", "colonial_american", "craftsman", "spanish_colonial", "mediterranean"]
+
+default_architecture = "no_architecture"
+
+
+# =============================================================================
+# ARTWORK / PAINTING CLASSIFICATION
+# =============================================================================
+# Famous artworks, paintings, sculptures, and art movements
+
+[artwork]
+detect_artwork = """Classify the ARTWORK / PAINTING in this image.
+
+FAMOUS PAINTINGS:
+- mona_lisa: Mona Lisa (Leonardo da Vinci)
+- starry_night: Starry Night (Van Gogh)
+- the_scream: The Scream (Munch)
+- girl_pearl_earring: Girl with a Pearl Earring (Vermeer)
+- birth_of_venus: Birth of Venus (Botticelli)
+- the_kiss: The Kiss (Klimt)
+- persistence_of_memory: Persistence of Memory (Dali)
+- american_gothic: American Gothic (Grant Wood)
+- water_lilies: Water Lilies series (Monet)
+- sunflowers: Sunflowers (Van Gogh)
+- the_last_supper: The Last Supper (Leonardo)
+- creation_of_adam: Creation of Adam (Michelangelo)
+- guernica: Guernica (Picasso)
+- night_watch: The Night Watch (Rembrandt)
+- great_wave: Great Wave off Kanagawa (Hokusai)
+- vitruvian_man: Vitruvian Man (Leonardo)
+
+FAMOUS SCULPTURES:
+- david_michelangelo: David (Michelangelo)
+- venus_de_milo: Venus de Milo
+- the_thinker: The Thinker (Rodin)
+- winged_victory: Winged Victory of Samothrace
+- pieta: Pieta (Michelangelo)
+- discus_thrower: Discobolus/Discus Thrower
+- terracotta_army: Terracotta Army
+
+ART MOVEMENTS (style reference):
+- style_renaissance: Renaissance style
+- style_baroque: Baroque style
+- style_impressionist: Impressionist style
+- style_post_impressionist: Post-Impressionist style
+- style_expressionist: Expressionist style
+- style_cubist: Cubist style
+- style_surrealist: Surrealist style
+- style_pop_art: Pop Art style
+- style_abstract: Abstract Expressionist style
+- style_minimalist_art: Minimalist art style
+- style_street_art: Street art, graffiti style
+- style_ukiyo_e: Ukiyo-e Japanese woodblock style
+
+MUSEUM/GALLERY:
+- in_museum: Artwork displayed in museum
+- in_gallery: Artwork in gallery setting
+- reproduction: Art reproduction/print
+
+NONE:
+- no_artwork: No recognizable artwork
+
+Respond with ONLY the category name, nothing else."""
+
+valid_artworks = [
+    # Famous Paintings
+    "mona_lisa", "starry_night", "the_scream", "girl_pearl_earring", "birth_of_venus",
+    "the_kiss", "persistence_of_memory", "american_gothic", "water_lilies", "sunflowers",
+    "the_last_supper", "creation_of_adam", "guernica", "night_watch", "great_wave", "vitruvian_man",
+    # Famous Sculptures
+    "david_michelangelo", "venus_de_milo", "the_thinker", "winged_victory", "pieta",
+    "discus_thrower", "terracotta_army",
+    # Art Styles
+    "style_renaissance", "style_baroque", "style_impressionist", "style_post_impressionist",
+    "style_expressionist", "style_cubist", "style_surrealist", "style_pop_art",
+    "style_abstract", "style_minimalist_art", "style_street_art", "style_ukiyo_e",
+    # Museum/Gallery
+    "in_museum", "in_gallery", "reproduction",
+    # None
+    "no_artwork"
+]
+
+[artwork.groups]
+leonardo = ["mona_lisa", "the_last_supper", "vitruvian_man"]
+van_gogh = ["starry_night", "sunflowers"]
+michelangelo = ["david_michelangelo", "creation_of_adam", "pieta"]
+impressionist = ["water_lilies", "style_impressionist", "style_post_impressionist"]
+modern_art = ["the_scream", "persistence_of_memory", "guernica", "style_cubist", "style_surrealist", "style_expressionist"]
+sculptures = ["david_michelangelo", "venus_de_milo", "the_thinker", "winged_victory", "pieta", "discus_thrower", "terracotta_army"]
+asian_art = ["great_wave", "style_ukiyo_e", "terracotta_army"]
+
+default_artwork = "no_artwork"
+
+
+# =============================================================================
+# MONUMENT / STATUE CLASSIFICATION
+# =============================================================================
+# Public monuments, statues, memorials
+
+[monument]
+detect_monument = """Classify the MONUMENT / STATUE in this image.
+
+AMERICAN MONUMENTS:
+- lincoln_memorial: Lincoln Memorial
+- washington_monument: Washington Monument
+- jefferson_memorial: Jefferson Memorial
+- mlk_memorial: Martin Luther King Jr. Memorial
+- vietnam_memorial: Vietnam Veterans Memorial
+- wwii_memorial: World War II Memorial
+- iwo_jima_memorial: Marine Corps War Memorial (Iwo Jima)
+- liberty_bell: Liberty Bell
+- mount_rushmore: Mount Rushmore
+
+EUROPEAN MONUMENTS:
+- arc_de_triomphe: Arc de Triomphe, Paris
+- brandenburg_gate: Brandenburg Gate, Berlin
+- trafalgar_column: Nelson's Column, Trafalgar Square
+- albert_memorial: Albert Memorial, London
+- victor_emmanuel: Vittoriano/Victor Emmanuel Monument, Rome
+- manneken_pis: Manneken Pis, Brussels
+- little_mermaid: Little Mermaid, Copenhagen
+
+ASIAN MONUMENTS:
+- great_buddha: Great Buddha statues (Kamakura, Lantau, etc.)
+- moai: Moai statues, Easter Island
+- terracotta_warriors: Terracotta Army
+- tiananmen_monument: Monument to the People's Heroes
+
+WAR MEMORIALS:
+- war_memorial_generic: Generic war memorial
+- tomb_unknown_soldier: Tomb of the Unknown Soldier
+- cenotaph: Cenotaph-style memorial
+- eternal_flame: Eternal flame memorial
+
+RELIGIOUS STATUES:
+- christ_statue: Christ statues (Rio, Lisbon, etc.)
+- virgin_mary: Virgin Mary statues
+- buddha_statue: Buddha statues
+- hindu_deity: Hindu deity statues
+- angel_statue: Angel statues
+
+PUBLIC ART:
+- fountain: Decorative fountains (Trevi, etc.)
+- obelisk: Obelisks
+- equestrian: Equestrian statues (horse and rider)
+- abstract_sculpture: Abstract public sculptures
+- modern_monument: Modern/contemporary monuments
+
+NONE:
+- no_monument: No monument or statue visible
+
+Respond with ONLY the category name, nothing else."""
+
+valid_monuments = [
+    # American
+    "lincoln_memorial", "washington_monument", "jefferson_memorial", "mlk_memorial",
+    "vietnam_memorial", "wwii_memorial", "iwo_jima_memorial", "liberty_bell", "mount_rushmore",
+    # European
+    "arc_de_triomphe", "brandenburg_gate", "trafalgar_column", "albert_memorial",
+    "victor_emmanuel", "manneken_pis", "little_mermaid",
+    # Asian
+    "great_buddha", "moai", "terracotta_warriors", "tiananmen_monument",
+    # War Memorials
+    "war_memorial_generic", "tomb_unknown_soldier", "cenotaph", "eternal_flame",
+    # Religious
+    "christ_statue", "virgin_mary", "buddha_statue", "hindu_deity", "angel_statue",
+    # Public Art
+    "fountain", "obelisk", "equestrian", "abstract_sculpture", "modern_monument",
+    # None
+    "no_monument"
+]
+
+[monument.groups]
+american = ["lincoln_memorial", "washington_monument", "jefferson_memorial", "mlk_memorial", "vietnam_memorial", "wwii_memorial", "iwo_jima_memorial", "liberty_bell", "mount_rushmore"]
+european = ["arc_de_triomphe", "brandenburg_gate", "trafalgar_column", "albert_memorial", "victor_emmanuel", "manneken_pis", "little_mermaid"]
+war_memorials = ["war_memorial_generic", "tomb_unknown_soldier", "cenotaph", "eternal_flame", "vietnam_memorial", "wwii_memorial", "iwo_jima_memorial"]
+religious = ["christ_statue", "virgin_mary", "buddha_statue", "hindu_deity", "angel_statue", "great_buddha"]
+public_art = ["fountain", "obelisk", "equestrian", "abstract_sculpture", "modern_monument"]
+
+default_monument = "no_monument"
+
+
+# =============================================================================
 # ILLUSTRATED STYLE SYSTEM PROMPTS
 # =============================================================================
 # Specialized system prompts for anime/manga/cartoon/hentai styles
