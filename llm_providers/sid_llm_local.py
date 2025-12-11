@@ -45,27 +45,26 @@ LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
 
 def setup_cuda_optimizations():
     """
-    Configure CUDA for optimal inference speed.
-    Call once at module load.
+    DISABLED: Global CUDA optimizations removed.
 
-    NOTE: We do NOT use torch.set_grad_enabled(False) globally because it affects
-    ALL PyTorch operations in the entire ComfyUI process, including VAE decode
-    and other nodes that may need gradients. Instead, we use torch.no_grad()
-    context managers locally where inference is performed.
+    We no longer set global CUDA settings because they interfere with ComfyUI:
+
+    1. torch.backends.cudnn.benchmark = True
+       - Caches convolution algorithms for specific input sizes
+       - Causes re-benchmarking overhead when switching between our models and KSampler
+       - Results in slower diffusion sampling after local model inference
+
+    2. torch.backends.cuda.matmul.allow_tf32 = True
+       - Changes precision globally, may affect other nodes' outputs
+
+    3. torch.set_grad_enabled(False)
+       - Breaks VAE decode and other nodes that need gradients
+
+    Instead, optimizations should be applied ONLY within our inference context
+    and restored afterward. ComfyUI manages its own CUDA settings.
     """
-    try:
-        import torch
-        if torch.cuda.is_available():
-            # Enable cuDNN autotuner for faster convolutions
-            torch.backends.cudnn.benchmark = True
-            # Allow TF32 on Ampere+ GPUs for faster matrix ops
-            torch.backends.cuda.matmul.allow_tf32 = True
-            torch.backends.cudnn.allow_tf32 = True
-            # NOTE: Do NOT set torch.set_grad_enabled(False) globally!
-            # This breaks VAE decode and other ComfyUI nodes.
-            print("[LocalModelClient] CUDA optimizations enabled: cudnn.benchmark, TF32")
-    except Exception as e:
-        print(f"[LocalModelClient] CUDA optimization setup warning: {e}")
+    # Intentionally empty - do not modify global PyTorch/CUDA state
+    pass
 
 
 def clear_memory():
