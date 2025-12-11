@@ -1259,16 +1259,33 @@ class LocalModelClient:
 
         original_text = text
 
-        # Method 1: Remove <think>...</think> blocks (including newlines)
-        text = re.sub(r'<think>[\s\S]*?</think>\s*', '', text, flags=re.IGNORECASE)
+        # Method 1: Check for <think>...</think> pattern
+        # First try to get content AFTER </think> tag
+        think_end_match = re.search(r'</think>\s*(.+)', text, re.DOTALL | re.IGNORECASE)
+        if think_end_match:
+            after_think = think_end_match.group(1).strip()
+            if after_think and len(after_think) > 20:
+                text = after_think
+            else:
+                # If nothing useful after </think>, extract from inside the tags
+                think_content_match = re.search(r'<think>([\s\S]*?)</think>', text, re.IGNORECASE)
+                if think_content_match:
+                    text = think_content_match.group(1).strip()
+        else:
+            # No </think> tag - just remove any <think> tags if present
+            text = re.sub(r'</?think>', '', text, flags=re.IGNORECASE).strip()
 
-        # Method 2: If output still contains reasoning markers, try to extract final answer
+        # If we still have no text, return original
+        if not text.strip():
+            return original_text
+
         # Common reasoning patterns to skip
         reasoning_markers = [
             r'^(?:Let me|Let\'s|We are given|First,|Step \d|Steps:)',
             r'^(?:I need to|I\'ll|I will|Now,|So,|Therefore|However)',
             r'^(?:Looking at|Analyzing|Checking|Based on)',
             r'^(?:The user|The original|The prompt|Given)',
+            r'^(?:Alright|Okay|OK,)',
         ]
 
         # Check if output still looks like reasoning
@@ -1283,15 +1300,26 @@ class LocalModelClient:
             if json_match:
                 return json_match.group(1)
 
-            # Look for raw JSON object
+            # Look for raw JSON object with prompt_description
             json_match = re.search(r'(\{[\s\S]*"prompt_description"[\s\S]*?\})', text)
             if json_match:
                 return json_match.group(1)
+
+            # Look for any JSON object
+            json_match = re.search(r'(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})', text)
+            if json_match:
+                try:
+                    import json
+                    json.loads(json_match.group(1))  # Validate it's valid JSON
+                    return json_match.group(1)
+                except:
+                    pass
 
             # Look for text after common delimiters
             delimiters = [
                 r'(?:Output|Result|Answer|Modified prompt|Final prompt)[:\s]*\n?(.+)',
                 r'(?:Here is|Here\'s)[^:]*:\s*\n?(.+)',
+                r'(?:The final|Final)[^:]*:\s*\n?(.+)',
             ]
             for delimiter in delimiters:
                 match = re.search(delimiter, text, re.IGNORECASE | re.DOTALL)
@@ -1310,7 +1338,10 @@ class LocalModelClient:
                     if len(para) > 100:
                         return para
 
-        # If no cleaning was needed or possible, return cleaned text
+            # If nothing worked, return the cleaned text as-is (better than nothing)
+            return text.strip()
+
+        # If not reasoning pattern, return cleaned text
         return text.strip() if text.strip() else original_text
 
 
