@@ -304,7 +304,17 @@ def build_system_prompt(provider: str, preset_style: str, user_guidance: str = "
         base += f"\n\n{style_addon}"
 
     if user_guidance and user_guidance.strip():
-        base += f"\n\nUSER REQUEST (high priority): {user_guidance.strip()}"
+        base += f"""
+
+USER MODIFICATION REQUEST (CRITICAL - MUST APPLY):
+"{user_guidance.strip()}"
+
+This is a MODIFICATION directive. You MUST:
+1. Apply this modification to your description, overriding what's literally visible
+2. Describe the subject AS IF this modification is true
+3. For clothing/nudity changes: describe the MODIFIED state (e.g., if "make topless" and image shows bikini, describe as topless)
+4. Do NOT describe the original state that contradicts the user request
+5. Start your description with the modified element"""
 
     return base
 

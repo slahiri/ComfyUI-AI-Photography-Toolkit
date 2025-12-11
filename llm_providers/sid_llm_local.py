@@ -22,6 +22,8 @@ import os
 import gc
 import sys
 import hashlib
+import threading
+import time as time_module
 from typing import List, Optional, Dict, Any, Tuple
 from dataclasses import dataclass
 from pathlib import Path
@@ -94,6 +96,57 @@ def get_optimal_dtype(device: str) -> "torch.dtype":
             return torch.float16
     except Exception:
         return torch.float16
+
+
+class InferenceProgressSpinner:
+    """
+    A console progress spinner that shows activity during model inference.
+    Shows elapsed time and a spinning animation.
+    """
+
+    SPINNER_CHARS = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
+    def __init__(self, message: str = "Generating"):
+        self.message = message
+        self._stop_event = threading.Event()
+        self._thread = None
+        self._start_time = None
+
+    def _spinner_loop(self):
+        """Background thread that displays the spinner."""
+        idx = 0
+        while not self._stop_event.is_set():
+            elapsed = time_module.time() - self._start_time
+            spinner = self.SPINNER_CHARS[idx % len(self.SPINNER_CHARS)]
+            # Print progress on same line
+            sys.stdout.write(f"\r[LocalModelClient] {spinner} {self.message}... {elapsed:.1f}s")
+            sys.stdout.flush()
+            idx += 1
+            time_module.sleep(0.1)
+
+    def start(self):
+        """Start the spinner."""
+        self._start_time = time_module.time()
+        self._stop_event.clear()
+        self._thread = threading.Thread(target=self._spinner_loop, daemon=True)
+        self._thread.start()
+
+    def stop(self):
+        """Stop the spinner and print completion."""
+        self._stop_event.set()
+        if self._thread:
+            self._thread.join(timeout=0.5)
+        elapsed = time_module.time() - self._start_time if self._start_time else 0
+        # Clear the spinner line and print done
+        sys.stdout.write(f"\r[LocalModelClient] ✓ {self.message} complete ({elapsed:.1f}s)        \n")
+        sys.stdout.flush()
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, *args):
+        self.stop()
 
 
 # Run CUDA optimizations on module load
@@ -898,13 +951,14 @@ class LocalModelClient:
         device = next(self.model.parameters()).device
         inputs = {k: v.to(device) for k, v in inputs.items()}
 
-        with torch.inference_mode():
-            outputs = self.model.generate(
-                **inputs,
-                max_new_tokens=max_tokens,
-                do_sample=temperature > 0,
-                temperature=temperature if temperature > 0 else None,
-            )
+        with InferenceProgressSpinner("Generating (Florence-2)"):
+            with torch.inference_mode():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                )
 
         return self.processor.batch_decode(outputs, skip_special_tokens=True)[0]
 
@@ -915,8 +969,9 @@ class LocalModelClient:
         if images:
             # Moondream has built-in image encoding
             enc_image = self.model.encode_image(images[0])
-            with torch.inference_mode():
-                response = self.model.answer_question(enc_image, prompt.strip(), self.tokenizer)
+            with InferenceProgressSpinner("Generating (Moondream2)"):
+                with torch.inference_mode():
+                    response = self.model.answer_question(enc_image, prompt.strip(), self.tokenizer)
             return response
         else:
             return "No image provided"
@@ -941,19 +996,46 @@ class LocalModelClient:
         device = next(self.model.parameters()).device
         inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in inputs.items()}
 
-        with torch.inference_mode():
-            outputs = self.model.generate(
-                **inputs,
-                max_new_tokens=max_tokens,
-                do_sample=temperature > 0,
-                temperature=temperature if temperature > 0 else None,
-            )
+        # Get input length to extract only generated tokens later
+        input_len = inputs["input_ids"].shape[1]
 
-        return self.processor.decode(outputs[0], skip_special_tokens=True)
+        with InferenceProgressSpinner("Generating (SmolVLM)"):
+            with torch.inference_mode():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                )
+
+        # Only decode the NEW tokens (exclude the input prompt)
+        generated_tokens = outputs[0][input_len:]
+        return self.processor.decode(generated_tokens, skip_special_tokens=True)
 
     def _generate_phi35_vision(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with Phi-3.5-Vision."""
         import torch
+
+        # Compatibility fix for newer transformers versions
+        # Phi-3.5-Vision's custom code expects attributes that newer transformers removed
+        try:
+            from transformers.cache_utils import DynamicCache
+            # seen_tokens was renamed/removed
+            if not hasattr(DynamicCache, 'seen_tokens'):
+                @property
+                def seen_tokens_compat(self):
+                    return self.get_seq_length()
+                DynamicCache.seen_tokens = seen_tokens_compat
+
+            # get_max_length was removed in newer transformers
+            if not hasattr(DynamicCache, 'get_max_length'):
+                def get_max_length_compat(self):
+                    # Return None as default (no max length limit)
+                    # Or return the max cache length if set
+                    return getattr(self, '_max_cache_len', None)
+                DynamicCache.get_max_length = get_max_length_compat
+        except ImportError:
+            pass
 
         messages = [{"role": "user", "content": ""}]
         if images:
@@ -970,16 +1052,22 @@ class LocalModelClient:
         device = next(self.model.parameters()).device
         inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in inputs.items()}
 
-        with torch.inference_mode():
-            outputs = self.model.generate(
-                **inputs,
-                max_new_tokens=max_tokens,
-                do_sample=temperature > 0,
-                temperature=temperature if temperature > 0 else None,
-                eos_token_id=self.processor.tokenizer.eos_token_id,
-            )
+        # Get input length to extract only generated tokens later
+        input_len = inputs["input_ids"].shape[1]
 
-        return self.processor.decode(outputs[0], skip_special_tokens=True)
+        with InferenceProgressSpinner("Generating (Phi-3.5-Vision)"):
+            with torch.inference_mode():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                    eos_token_id=self.processor.tokenizer.eos_token_id,
+                )
+
+        # Only decode the NEW tokens (exclude the input prompt)
+        generated_tokens = outputs[0][input_len:]
+        return self.processor.decode(generated_tokens, skip_special_tokens=True)
 
     def _generate_qwenvl(self, messages: List, images: List, max_tokens: int, temperature: float) -> str:
         """Generate with QwenVL."""
@@ -1031,8 +1119,9 @@ class LocalModelClient:
                 gen_kwargs["temperature"] = temperature
                 gen_kwargs["top_p"] = self.top_p
 
-        with torch.inference_mode():
-            outputs = self.model.generate(**model_inputs, **gen_kwargs)
+        with InferenceProgressSpinner("Generating (QwenVL)"):
+            with torch.inference_mode():
+                outputs = self.model.generate(**model_inputs, **gen_kwargs)
 
         input_len = model_inputs["input_ids"].shape[1]
         response_ids = outputs[0][input_len:]

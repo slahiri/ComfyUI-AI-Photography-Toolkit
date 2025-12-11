@@ -9,6 +9,7 @@ Features:
 - Auto-detects reasoning capability from llm_model
 - Component analysis based on analysis_mode
 - Preset styles for common use cases
+- Image resize options for optimal model performance
 """
 
 import base64
@@ -17,7 +18,7 @@ import json
 import re
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from PIL import Image
@@ -26,6 +27,125 @@ import comfy.utils
 
 from .llm_providers.llm_model_type import LLMModelConfig
 from . import config_loader
+
+
+# =============================================================================
+# Model Resolution Configurations
+# =============================================================================
+
+# Optimal image sizes for different providers/models
+# Format: (min_pixels, optimal_pixels, max_pixels)
+# Pixels = width * height
+
+MODEL_RESOLUTION_LIMITS = {
+    # API providers - generally handle larger images well
+    "anthropic": {
+        "min_pixels": 256 * 256,      # ~65K pixels
+        "optimal_pixels": 1024 * 1024, # ~1M pixels (good balance)
+        "max_pixels": 2048 * 2048,    # ~4M pixels
+    },
+    "openai": {
+        "min_pixels": 256 * 256,
+        "optimal_pixels": 1024 * 1024,
+        "max_pixels": 2048 * 2048,
+    },
+    "gemini": {
+        "min_pixels": 256 * 256,
+        "optimal_pixels": 1024 * 1024,
+        "max_pixels": 3072 * 3072,
+    },
+    "grok": {
+        "min_pixels": 256 * 256,
+        "optimal_pixels": 1024 * 1024,
+        "max_pixels": 2048 * 2048,
+    },
+    # Free/budget providers - smaller is faster
+    "groq": {
+        "min_pixels": 384 * 384,
+        "optimal_pixels": 768 * 768,
+        "max_pixels": 1024 * 1024,
+    },
+    "openrouter": {
+        "min_pixels": 256 * 256,
+        "optimal_pixels": 1024 * 1024,
+        "max_pixels": 2048 * 2048,
+    },
+    "together": {
+        "min_pixels": 384 * 384,
+        "optimal_pixels": 768 * 768,
+        "max_pixels": 1536 * 1536,
+    },
+    "fireworks": {
+        "min_pixels": 384 * 384,
+        "optimal_pixels": 768 * 768,
+        "max_pixels": 1536 * 1536,
+    },
+    # Local providers - optimized for VRAM efficiency
+    "local": {
+        "min_pixels": 256 * 256,       # Fast processing
+        "optimal_pixels": 672 * 672,   # Good balance for 4-8GB VRAM
+        "max_pixels": 1280 * 1280,     # Maximum detail
+    },
+    "ollama": {
+        "min_pixels": 256 * 256,
+        "optimal_pixels": 672 * 672,
+        "max_pixels": 1280 * 1280,
+    },
+    "lmstudio": {
+        "min_pixels": 256 * 256,
+        "optimal_pixels": 672 * 672,
+        "max_pixels": 1280 * 1280,
+    },
+    # Default for unknown providers
+    "default": {
+        "min_pixels": 384 * 384,
+        "optimal_pixels": 768 * 768,
+        "max_pixels": 1536 * 1536,
+    },
+}
+
+# Image resize modes
+IMAGE_RESIZE_MODES = ["auto", "max", "min", "original"]
+
+
+def calculate_resize_dimensions(
+    width: int,
+    height: int,
+    target_pixels: int,
+    maintain_aspect: bool = True
+) -> Tuple[int, int]:
+    """
+    Calculate new dimensions to achieve target pixel count while maintaining aspect ratio.
+
+    Args:
+        width: Original width
+        height: Original height
+        target_pixels: Target total pixels (width * height)
+        maintain_aspect: Whether to maintain aspect ratio
+
+    Returns:
+        Tuple of (new_width, new_height)
+    """
+    current_pixels = width * height
+
+    if current_pixels <= target_pixels:
+        return width, height
+
+    # Calculate scale factor
+    scale = (target_pixels / current_pixels) ** 0.5
+
+    new_width = int(width * scale)
+    new_height = int(height * scale)
+
+    # Ensure dimensions are at least 64 pixels
+    new_width = max(64, new_width)
+    new_height = max(64, new_height)
+
+    # Round to nearest multiple of 8 for better model compatibility
+    new_width = (new_width // 8) * 8
+    new_height = (new_height // 8) * 8
+
+    return new_width, new_height
 
 # Create custom LLM_MODEL type for ComfyUI
 LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
@@ -463,6 +583,12 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     default="Auto-Detect",
                     tooltip="Focus area: Auto-Detect, Portrait, Fashion, Artistic, NSFW"
                 ),
+                comfy_io.Combo.Input(
+                    "image_resize",
+                    options=IMAGE_RESIZE_MODES,
+                    default="auto",
+                    tooltip="auto=optimal for model, max=highest detail, min=fastest, original=no resize"
+                ),
                 comfy_io.String.Input(
                     "user_guidance",
                     default="",
@@ -494,6 +620,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         llm_model: LLMModelConfig,
         analysis_mode: str,
         preset_style: str,
+        image_resize: str,
         user_guidance: str,
         seed: int,
     ) -> comfy_io.NodeOutput:
@@ -519,7 +646,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         log("=" * 60)
         log(f"Image: {width}x{height}")
         log(f"Provider: {llm_model.provider} | Model: {llm_model.model}")
-        log(f"Analysis: {analysis_mode} | Style: {preset_style}")
+        log(f"Analysis: {analysis_mode} | Style: {preset_style} | Resize: {image_resize}")
         log(f"Pipeline: {pipeline_type}")
 
         # Initialize metadata dict
@@ -530,6 +657,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             "model": llm_model.model,
             "analysis_mode": analysis_mode,
             "preset_style": preset_style,
+            "image_resize": image_resize,
             "pipeline": pipeline_type,
             "seed": seed,
         }
@@ -537,11 +665,11 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         try:
             if supports_reasoning:
                 result = cls._execute_agentic(
-                    image, llm_model, analysis_mode, preset_style, user_guidance
+                    image, llm_model, analysis_mode, preset_style, user_guidance, image_resize
                 )
             else:
                 result = cls._execute_single_shot(
-                    image, llm_model, analysis_mode, preset_style, user_guidance
+                    image, llm_model, analysis_mode, preset_style, user_guidance, image_resize
                 )
 
             # Handle result (can be tuple with metadata or just prompt string)
@@ -587,6 +715,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         analysis_mode: str,
         preset_style: str,
         user_guidance: str,
+        image_resize: str = "auto",
     ) -> tuple:
         """Fast single-call prompt generation. Returns (prompt, metadata, debug_lines)."""
 
@@ -594,9 +723,12 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         debug_lines.append("Single-shot mode...")
         print(f"[SID-Prompt] Single-shot mode...")
 
-        # Convert image
+        # Convert image with resize
         img_tensor = image[0]
-        base64_image = cls._image_to_base64(img_tensor, llm_model)
+        base64_image, resize_info = cls._image_to_base64(img_tensor, llm_model, image_resize)
+        if resize_info:
+            debug_lines.append(resize_info)
+            print(f"[SID-Prompt] {resize_info}")
 
         # Build prompts (tier-aware based on provider)
         system_prompt = cls._build_system_prompt(llm_model.provider, preset_style, user_guidance)
@@ -614,8 +746,14 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         debug_lines.append(f"Raw LLM response length: {len(response)} chars")
         prompt = cls._clean_output(response, llm_model.provider)
 
-        # Note: User guidance is already included in system_prompt via config_loader
-        # The LLM considers it during generation, so no need to prepend it again
+        # Second LLM call: Enhance prompt with user instructions (only if instructions provided)
+        if user_guidance and user_guidance.strip():
+            debug_lines.append(f"Making second LLM call to apply user instructions...")
+            prompt, enhanced = cls._enhance_prompt_with_instructions(prompt, user_guidance, llm_model)
+            if enhanced:
+                debug_lines.append(f"Successfully enhanced prompt with user instructions")
+            else:
+                debug_lines.append(f"Enhancement call did not modify prompt")
 
         pbar.update(1)
 
@@ -640,6 +778,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         analysis_mode: str,
         preset_style: str,
         user_guidance: str,
+        image_resize: str = "auto",
     ) -> tuple:
         """Reasoning-enabled comprehensive analysis. Returns (prompt, metadata, debug_lines)."""
 
@@ -647,9 +786,12 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         debug_lines.append("Agentic mode (reasoning enabled)...")
         print(f"[SID-Prompt] Agentic mode (reasoning enabled)...")
 
-        # Convert image
+        # Convert image with resize
         img_tensor = image[0]
-        base64_image = cls._image_to_base64(img_tensor, llm_model)
+        base64_image, resize_info = cls._image_to_base64(img_tensor, llm_model, image_resize)
+        if resize_info:
+            debug_lines.append(resize_info)
+            print(f"[SID-Prompt] {resize_info}")
 
         # Get client
         client = cls._get_client(llm_model)
@@ -719,24 +861,61 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
     # =========================================================================
 
     @classmethod
-    def _image_to_base64(cls, img_tensor, llm_model: LLMModelConfig) -> str:
-        """Convert image tensor to base64."""
+    def _image_to_base64(
+        cls,
+        img_tensor,
+        llm_model: LLMModelConfig,
+        resize_mode: str = "auto"
+    ) -> Tuple[str, Optional[str]]:
+        """
+        Convert image tensor to base64 with optional resizing.
+
+        Args:
+            img_tensor: Image tensor from ComfyUI
+            llm_model: LLM model configuration
+            resize_mode: "auto", "max", "min", or "original"
+
+        Returns:
+            Tuple of (base64_string, resize_info_string or None)
+        """
         img_np = (img_tensor.cpu().numpy() * 255).astype(np.uint8)
         pil_image = Image.fromarray(img_np)
 
-        # Resize if needed
+        # Get original dimensions
         height, width = img_tensor.shape[0], img_tensor.shape[1]
-        max_size = llm_model.extra_params.get("max_image_size") if llm_model.extra_params else None
-        if max_size and max(width, height) > max_size:
-            if width > height:
-                new_width, new_height = max_size, int(height * (max_size / width))
-            else:
-                new_height, new_width = max_size, int(width * (max_size / height))
-            pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        original_pixels = width * height
+        resize_info = None
+
+        # Get provider resolution limits
+        provider = llm_model.provider.lower()
+        limits = MODEL_RESOLUTION_LIMITS.get(provider, MODEL_RESOLUTION_LIMITS["default"])
+
+        # Determine target pixels based on resize mode
+        if resize_mode == "original":
+            # No resizing
+            target_pixels = original_pixels
+        elif resize_mode == "min":
+            # Use minimum pixels for fastest processing
+            target_pixels = limits["min_pixels"]
+        elif resize_mode == "max":
+            # Use maximum pixels for best detail
+            target_pixels = limits["max_pixels"]
+        else:  # "auto" (default)
+            # Use optimal pixels for balance of quality and speed
+            target_pixels = limits["optimal_pixels"]
+
+        # Calculate new dimensions if resizing is needed
+        if resize_mode != "original" and original_pixels > target_pixels:
+            new_width, new_height = calculate_resize_dimensions(width, height, target_pixels)
+
+            # Only resize if there's a meaningful difference (at least 10% reduction)
+            if (new_width * new_height) < (original_pixels * 0.9):
+                pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                resize_info = f"Image resized: {width}x{height} -> {new_width}x{new_height} ({resize_mode} mode, {original_pixels//1000}K -> {(new_width*new_height)//1000}K pixels)"
 
         buffer = io.BytesIO()
         pil_image.save(buffer, format="JPEG", quality=95)
-        return base64.standard_b64encode(buffer.getvalue()).decode("utf-8")
+        return base64.standard_b64encode(buffer.getvalue()).decode("utf-8"), resize_info
 
     @classmethod
     def _get_client(cls, llm_model: LLMModelConfig):
@@ -890,26 +1069,35 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         if user_guidance and user_guidance.strip():
             user_section = f"""
 
-## USER REQUEST (HIGH PRIORITY)
+## USER MODIFICATION REQUEST (CRITICAL - MUST APPLY)
 "{user_guidance.strip()}"
-Pay special attention to this request throughout your analysis.
+
+IMPORTANT: This is a MODIFICATION directive, not just a focus area. You MUST:
+1. Apply this modification to ALL relevant components in your analysis
+2. Describe the subject AS IF this modification is true, overriding what's literally visible
+3. For clothing/nudity changes: describe the MODIFIED state, not the original
+4. For other changes: incorporate the modification into your descriptions
+
+Example: If user says "make topless" and image shows bikini, describe as topless (no bikini top).
+Example: If user says "wearing red dress" and image shows blue, describe as red dress.
 """
             user_focus_instruction = f"""
-### User Focus Integration (user_focus)
+### User Modification Applied (user_focus)
 The user requested: "{user_guidance.strip()}"
-Based on what you SEE in the image, create a contextual description that:
-1. Identifies which visual elements relate to the user's request
-2. Describes those specific elements in detail as they appear in THIS image
-3. If the request doesn't match what's visible, describe what IS visible that's most relevant
+Create a description that APPLIES this modification:
+1. Describe the subject AS IF the modification is already applied
+2. Do NOT describe the original/visible state that contradicts the user request
+3. Be specific and detailed about the modified appearance
 
 Output JSON:
-{{"user_focus": "<contextual description integrating user request with actual image content>"}}
+{{"user_focus": "<description with user modification APPLIED, not just acknowledged>"}}
 """
 
         return f"""You are an expert visual analyst. Use reasoning to analyze this image comprehensively.
 {user_section}
 ## INSTRUCTIONS
 Analyze ALL components below and return a single JSON object with each component as a key.
+{"REMEMBER: Apply the user's modification request to ALL relevant component descriptions!" if user_guidance else ""}
 
 ## COMPONENTS TO ANALYZE
 
@@ -922,7 +1110,7 @@ Return a single JSON object:
     "framing": {{ ... }},
     "ethnicity": {{ ... }},
     ... etc for each component ...,
-    "user_focus": "<contextual focus description>" // Only if user provided guidance
+    "user_focus": "<description with modification applied>" // Only if user provided guidance
 }}
 ```"""
 
@@ -987,8 +1175,23 @@ Return a single JSON object:
 
     @classmethod
     def _assemble_prompt(cls, components: dict, mode_config: dict, user_guidance: str) -> str:
-        """Assemble final prompt from components with example text filtering."""
+        """Assemble final prompt from components with example text filtering and user modification handling."""
         sections = []
+
+        # Check if user_focus contains modification (should override clothing/body_figure)
+        user_focus = ""
+        if user_guidance and user_guidance.strip():
+            user_focus_raw = components.get("user_focus", "")
+            if isinstance(user_focus_raw, dict):
+                user_focus = user_focus_raw.get("user_focus", "")
+            elif isinstance(user_focus_raw, str):
+                user_focus = user_focus_raw
+
+        # Determine which components might be overridden by user modification
+        # Common modification targets: clothing, body_figure, intimate_apparel
+        override_keywords = ["topless", "nude", "naked", "dress", "wear", "outfit", "clothing", "bikini", "lingerie"]
+        user_guidance_lower = user_guidance.lower() if user_guidance else ""
+        has_clothing_modification = any(kw in user_guidance_lower for kw in override_keywords)
 
         # Order: framing, ethnicity, face, hair, eyes, nose_lips, body_pose, body_figure, clothing, intimate, tattoos, accessories, lighting
         # Also include landscape/vehicle/animal/product components
@@ -999,10 +1202,18 @@ Return a single JSON object:
             "vehicle_details", "animal_details", "product_details"
         ]
 
+        # Components that user_focus might override
+        clothing_components = {"clothing", "intimate_apparel", "body_figure"}
+
         for key in order:
             if key in components and components[key]:
                 desc = components[key].get("prompt_description", "")
                 if desc:
+                    # Skip clothing-related components if user guidance has clothing modification
+                    # (user_focus will provide the modified description instead)
+                    if has_clothing_modification and key in clothing_components and user_focus:
+                        continue
+
                     # Clean each component description to remove any leaked examples
                     cleaned_desc = cls._clean_component_description(desc)
                     if cleaned_desc:
@@ -1015,19 +1226,14 @@ Return a single JSON object:
             prompt = ", ".join(s for s in sections if s)
             prompt = prompt.replace(", ,", ",").replace("  ", " ")
 
-        # Add contextualized user focus (prefer LLM-generated context over raw input)
+        # Add user modification at the BEGINNING (highest priority)
         if user_guidance and user_guidance.strip():
-            # Check if LLM provided a contextualized user_focus
-            user_focus = components.get("user_focus", "")
-            if isinstance(user_focus, dict):
-                user_focus = user_focus.get("user_focus", "")
-
             if user_focus and isinstance(user_focus, str) and user_focus.strip():
-                # Use the LLM's contextualized interpretation
+                # Use the LLM's modified description at the start
                 prompt = f"{user_focus.strip()}. {prompt}"
             else:
-                # Fallback to raw user guidance if LLM didn't provide context
-                prompt = f"[FOCUS: {user_guidance.strip()}] {prompt}"
+                # Fallback: insert raw user guidance as directive
+                prompt = f"[MODIFICATION: {user_guidance.strip()}] {prompt}"
 
         return prompt.strip()
 
@@ -1042,3 +1248,100 @@ Return a single JSON object:
         if not desc:
             return ""
         return config_loader.clean_output(desc, provider)
+
+    @classmethod
+    def _enhance_prompt_with_instructions(
+        cls,
+        prompt: str,
+        user_guidance: str,
+        llm_model: LLMModelConfig,
+    ) -> Tuple[str, bool]:
+        """
+        Make a second LLM call to enhance/modify the generated prompt based on user instructions.
+
+        This uses the same LLM to rewrite the prompt according to user guidance, which is more
+        intelligent than regex-based post-processing.
+
+        Args:
+            prompt: The generated prompt from the first LLM call
+            user_guidance: User's modification/enhancement request
+            llm_model: LLM model configuration
+
+        Returns:
+            Tuple of (enhanced_prompt, was_enhanced)
+        """
+        if not prompt or not user_guidance or not user_guidance.strip():
+            return prompt, False
+
+        print(f"[SID-Prompt] Enhancing prompt with instructions: {user_guidance[:50]}...")
+
+        try:
+            client = cls._get_client(llm_model)
+
+            enhancement_system = """You are an expert prompt modifier for AI image generation.
+Your task is to modify an existing image description prompt based on user instructions.
+
+RULES:
+1. Apply the user's modification to the prompt
+2. Keep all other details from the original prompt
+3. Remove any descriptions that conflict with the user's modification
+4. Output ONLY the modified prompt text - no explanations, no markdown, no quotes
+5. Maintain the same descriptive style and flow as the original
+
+Examples:
+- If user says "make topless" and prompt mentions bikini top, remove bikini top description and add "topless, bare chest"
+- If user says "change hair to blonde", find hair description and change the color
+- If user says "add a red dress", replace/add clothing description accordingly"""
+
+            enhancement_prompt = f"""Original prompt:
+{prompt}
+
+User modification request: {user_guidance.strip()}
+
+Apply the user's modification to the prompt. Output ONLY the modified prompt:"""
+
+            # Make text-only LLM call (no image needed)
+            if hasattr(client, 'messages'):
+                # Anthropic
+                response = client.messages.create(
+                    model=llm_model.model,
+                    max_tokens=2000,
+                    temperature=0.3,
+                    system=enhancement_system,
+                    messages=[{"role": "user", "content": enhancement_prompt}]
+                )
+                enhanced = response.content[0].text.strip()
+            elif hasattr(client, 'generate'):
+                # Local model - use text-only generation
+                enhanced = client.generate(
+                    prompt=f"{enhancement_system}\n\n{enhancement_prompt}",
+                    max_tokens=2000,
+                    temperature=0.3
+                )
+            else:
+                # OpenAI-style
+                response = client.chat.completions.create(
+                    model=llm_model.model,
+                    max_tokens=2000,
+                    temperature=0.3,
+                    messages=[
+                        {"role": "system", "content": enhancement_system},
+                        {"role": "user", "content": enhancement_prompt}
+                    ]
+                )
+                enhanced = response.choices[0].message.content.strip()
+
+            # Clean up the response
+            enhanced = cls._clean_output(enhanced, llm_model.provider)
+
+            # Verify we got a valid response
+            if enhanced and len(enhanced) > 20:
+                print(f"[SID-Prompt] Enhanced prompt: {len(enhanced)} chars")
+                return enhanced, True
+            else:
+                print(f"[SID-Prompt] Enhancement response too short, using original")
+                return prompt, False
+
+        except Exception as e:
+            print(f"[SID-Prompt] Enhancement failed: {e}, using original prompt")
+            return prompt, False
