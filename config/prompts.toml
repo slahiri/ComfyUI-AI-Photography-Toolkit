@@ -378,6 +378,129 @@ default_mood = "neutral"
 
 
 # =============================================================================
+# CONTEXT / GENRE CLASSIFICATION
+# =============================================================================
+# Identifies the thematic context or genre of the image
+
+[context_genre]
+detect_context = """Classify the CONTEXT / GENRE of this image:
+
+ACTIVITIES:
+- sports: Athletic activity, competition, exercise, fitness
+- dance: Dancing, ballet, performance movement
+- music: Musical performance, instruments, concerts
+- gaming: Video games, esports, tabletop gaming
+- cooking: Food preparation, kitchen activity
+- crafts: Art creation, DIY, handmade activities
+
+PROFESSIONAL/OCCUPATIONAL:
+- military: Armed forces, soldiers, combat, uniforms
+- police_security: Law enforcement, security personnel
+- medical: Healthcare, doctors, nurses, hospitals
+- business: Corporate, office, professional setting
+- construction: Building, labor, industrial work
+- service_industry: Retail, hospitality, customer service
+
+TRANSPORTATION/VEHICLES:
+- aviation: Aircraft, planes, helicopters, pilots
+- maritime: Boats, ships, sailing, naval
+- automotive: Cars, motorcycles, racing
+- railway: Trains, stations, rail transport
+- space: Spacecraft, astronauts, space scenes
+
+EVENTS/OCCASIONS:
+- wedding: Weddings, ceremonies, bridal
+- party: Celebrations, nightlife, social gatherings
+- festival: Cultural festivals, parades, fairs
+- graduation: Academic ceremonies
+- religious: Religious ceremonies, spiritual contexts
+- funeral: Memorial services, mourning
+
+LIFESTYLE:
+- fashion: Fashion shoots, runway, style-focused
+- beauty: Makeup, skincare, cosmetics focus
+- fitness: Gym, workout, exercise (non-competitive)
+- travel: Tourism, vacation, exploration
+- nature: Wildlife, outdoors, hiking
+- urban: Street photography, city life
+
+ENTERTAINMENT:
+- film_tv: Movie/TV production, cinema
+- theater: Stage performance, plays
+- cosplay: Costume play, character recreation
+- modeling: Professional modeling, poses
+- influencer: Social media content style
+
+EDUCATIONAL/DOCUMENTARY:
+- documentary: Journalistic, reportage style
+- scientific: Research, laboratory, experiments
+- historical: Historical recreation, period pieces
+- educational: Teaching, learning environments
+
+FANTASY/FICTION:
+- fantasy: Magical, fantastical settings
+- scifi: Science fiction, futuristic
+- horror: Scary, creepy, horror genre
+- superhero: Comic book heroes, powers
+- steampunk: Victorian-futurism aesthetic
+- cyberpunk: High-tech dystopian aesthetic
+
+DOMESTIC/PERSONAL:
+- family: Family activities, gatherings
+- pets: Pet photography, animal companions
+- home: Domestic scenes, everyday life
+- garden: Gardening, outdoor home spaces
+
+SPECIALIZED:
+- boudoir: Intimate, sensual photography style
+- maternity: Pregnancy, expecting mothers
+- newborn: Baby photography
+- senior: Senior portraits, elderly focus
+- headshot: Professional headshots
+
+Respond with ONLY the category name, nothing else. If no specific genre applies, respond with "general"."""
+
+valid_contexts = [
+    # Activities
+    "sports", "dance", "music", "gaming", "cooking", "crafts",
+    # Professional
+    "military", "police_security", "medical", "business", "construction", "service_industry",
+    # Transportation
+    "aviation", "maritime", "automotive", "railway", "space",
+    # Events
+    "wedding", "party", "festival", "graduation", "religious", "funeral",
+    # Lifestyle
+    "fashion", "beauty", "fitness", "travel", "nature", "urban",
+    # Entertainment
+    "film_tv", "theater", "cosplay", "modeling", "influencer",
+    # Educational
+    "documentary", "scientific", "historical", "educational",
+    # Fantasy/Fiction
+    "fantasy", "scifi", "horror", "superhero", "steampunk", "cyberpunk",
+    # Domestic
+    "family", "pets", "home", "garden",
+    # Specialized
+    "boudoir", "maternity", "newborn", "senior", "headshot",
+    # Default
+    "general"
+]
+
+[context_genre.groups]
+activities = ["sports", "dance", "music", "gaming", "cooking", "crafts"]
+professional = ["military", "police_security", "medical", "business", "construction", "service_industry"]
+transportation = ["aviation", "maritime", "automotive", "railway", "space"]
+events = ["wedding", "party", "festival", "graduation", "religious", "funeral"]
+lifestyle = ["fashion", "beauty", "fitness", "travel", "nature", "urban"]
+entertainment = ["film_tv", "theater", "cosplay", "modeling", "influencer"]
+educational = ["documentary", "scientific", "historical", "educational"]
+fiction = ["fantasy", "scifi", "horror", "superhero", "steampunk", "cyberpunk"]
+domestic = ["family", "pets", "home", "garden"]
+specialized = ["boudoir", "maternity", "newborn", "senior", "headshot"]
+
+default_context = "general"
+
+
+# =============================================================================
 # ILLUSTRATED STYLE SYSTEM PROMPTS
 # =============================================================================
 # Specialized system prompts for anime/manga/cartoon/hentai styles
