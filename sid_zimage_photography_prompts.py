@@ -465,13 +465,8 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                     default=0,
                     min=0,
                     max=0xffffffffffffffff,
+                    control_after_generate=True,
                     tooltip="Seed for reproducible results. Same seed = same output (cached)"
-                ),
-                comfy_io.Combo.Input(
-                    "control_after_generate",
-                    options=["fixed", "increment", "decrement", "randomize"],
-                    default="randomize",
-                    tooltip="How to change seed after generation"
                 ),
             ],
             outputs=[
@@ -640,7 +635,6 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
         color_grade: str,
         film_stock: str,
         seed: int,
-        control_after_generate: str,
     ) -> comfy_io.NodeOutput:
         """Build and optionally enhance photography prompt."""
         global _photography_cache
