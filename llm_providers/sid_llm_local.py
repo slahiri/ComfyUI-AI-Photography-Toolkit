@@ -171,17 +171,31 @@ class ModelFamily(Enum):
     MOONDREAM2 = "moondream2"
     SMOLVLM = "smolvlm"
     PHI35_VISION = "phi35_vision"
+    # Text-only models
+    QWEN_TEXT = "qwen_text"
+    LLAMA_TEXT = "llama_text"
+    PHI_TEXT = "phi_text"
+    MISTRAL_TEXT = "mistral_text"
+    GEMMA_TEXT = "gemma_text"
+
+
+class ModelType(Enum):
+    """Model capability type."""
+    VISION = "vision"   # Vision-only (requires images)
+    TEXT = "text"       # Text-only (no image support)
+    BOTH = "both"       # Supports both vision and text
 
 
 @dataclass
 class LocalModelInfo:
-    """Information about a local vision model."""
+    """Information about a local model."""
     name: str
     repo_id: str
     family: ModelFamily
     vram_fp16: float  # GB
     vram_8bit: float  # GB
     vram_4bit: float  # GB
+    model_type: ModelType = ModelType.VISION  # Vision, Text, or Both
     is_fp8: bool = False
     is_thinking: bool = False
     max_output_tokens: int = 4096
@@ -195,178 +209,289 @@ class LocalModelInfo:
 
 LOCAL_MODELS: Dict[str, LocalModelInfo] = {
     # =========================================================================
-    # QwenVL Series - Full Featured VLM (Listed first as recommended)
+    # QwenVL Series - Full Featured VLM (Vision)
     # =========================================================================
     "Qwen3-VL-2B-Instruct": LocalModelInfo(
-        name="Qwen3-VL 2B | 4K tokens | 1.5GB VRAM (Fast)",
+        name="Qwen3-VL 2B (Vision) | 4K | 1.5GB",
         repo_id="Qwen/Qwen3-VL-2B-Instruct",
         family=ModelFamily.QWENVL,
         vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
+        model_type=ModelType.VISION,
         max_output_tokens=4096,
-        description="Fast, good for 8GB GPUs",
+        description="Fast vision model",
         model_class="AutoModelForVision2Seq"
     ),
     "Qwen3-VL-4B-Instruct": LocalModelInfo(
-        name="Qwen3-VL 4B | 4K tokens | 2GB VRAM (Recommended)",
+        name="Qwen3-VL 4B (Vision) | 4K | 2GB [Recommended]",
         repo_id="Qwen/Qwen3-VL-4B-Instruct",
         family=ModelFamily.QWENVL,
         vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
+        model_type=ModelType.VISION,
         max_output_tokens=4096,
-        description="Best balance of speed and quality",
+        description="Best balance for vision",
         model_class="AutoModelForVision2Seq"
     ),
     "Qwen3-VL-8B-Instruct": LocalModelInfo(
-        name="Qwen3-VL 8B | 4K tokens | 4.5GB VRAM (Quality)",
+        name="Qwen3-VL 8B (Vision) | 4K | 4.5GB",
         repo_id="Qwen/Qwen3-VL-8B-Instruct",
         family=ModelFamily.QWENVL,
         vram_fp16=12.0, vram_8bit=7.0, vram_4bit=4.5,
+        model_type=ModelType.VISION,
         max_output_tokens=4096,
-        description="High quality, needs 12GB+ VRAM",
+        description="High quality vision",
         model_class="AutoModelForVision2Seq"
     ),
     "Qwen3-VL-2B-Thinking": LocalModelInfo(
-        name="Qwen3-VL 2B Thinking | 4K tokens | 1.5GB VRAM (Reasoning)",
+        name="Qwen3-VL 2B Thinking (Vision) | 4K | 1.5GB",
         repo_id="Qwen/Qwen3-VL-2B-Thinking",
         family=ModelFamily.QWENVL,
         vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
-        max_output_tokens=4096,
+        model_type=ModelType.VISION,
         is_thinking=True,
-        description="Fast reasoning model",
+        max_output_tokens=4096,
+        description="Fast reasoning vision",
         model_class="AutoModelForVision2Seq"
     ),
     "Qwen3-VL-4B-Thinking": LocalModelInfo(
-        name="Qwen3-VL 4B Thinking | 4K tokens | 2GB VRAM (Reasoning)",
+        name="Qwen3-VL 4B Thinking (Vision) | 4K | 2GB",
         repo_id="Qwen/Qwen3-VL-4B-Thinking",
         family=ModelFamily.QWENVL,
         vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
-        max_output_tokens=4096,
+        model_type=ModelType.VISION,
         is_thinking=True,
-        description="Balanced reasoning model",
+        max_output_tokens=4096,
+        description="Balanced reasoning vision",
         model_class="AutoModelForVision2Seq"
     ),
     "Qwen3-VL-8B-Thinking": LocalModelInfo(
-        name="Qwen3-VL 8B Thinking | 4K tokens | 4.5GB VRAM (Best Reasoning)",
+        name="Qwen3-VL 8B Thinking (Vision) | 4K | 4.5GB",
         repo_id="Qwen/Qwen3-VL-8B-Thinking",
         family=ModelFamily.QWENVL,
         vram_fp16=12.0, vram_8bit=7.0, vram_4bit=4.5,
-        max_output_tokens=4096,
+        model_type=ModelType.VISION,
         is_thinking=True,
-        description="High quality reasoning, needs 12GB+ VRAM",
+        max_output_tokens=4096,
+        description="Best reasoning vision",
         model_class="AutoModelForVision2Seq"
     ),
     "Qwen2.5-VL-3B-Instruct": LocalModelInfo(
-        name="Qwen2.5-VL 3B | 4K tokens | 2GB VRAM",
+        name="Qwen2.5-VL 3B (Vision) | 4K | 2GB",
         repo_id="Qwen/Qwen2.5-VL-3B-Instruct",
         family=ModelFamily.QWENVL,
         vram_fp16=5.0, vram_8bit=3.0, vram_4bit=2.0,
+        model_type=ModelType.VISION,
         max_output_tokens=4096,
-        description="Previous gen, compact model",
+        description="Compact vision model",
         model_class="AutoModelForVision2Seq"
     ),
     "Qwen2.5-VL-7B-Instruct": LocalModelInfo(
-        name="Qwen2.5-VL 7B | 4K tokens | 4GB VRAM",
+        name="Qwen2.5-VL 7B (Vision) | 4K | 4GB",
         repo_id="Qwen/Qwen2.5-VL-7B-Instruct",
         family=ModelFamily.QWENVL,
         vram_fp16=10.0, vram_8bit=6.0, vram_4bit=4.0,
+        model_type=ModelType.VISION,
         max_output_tokens=4096,
-        description="Previous gen, stable quality",
+        description="Stable quality vision",
         model_class="AutoModelForVision2Seq"
     ),
 
     # =========================================================================
-    # Florence-2 Series (Microsoft) - Ultra Fast Captioning
+    # Florence-2 Series (Microsoft) - Vision Only
     # =========================================================================
     "Florence-2-base": LocalModelInfo(
-        name="Florence-2 Base | 1K tokens | 0.6GB VRAM (Ultra Fast)",
+        name="Florence-2 Base (Vision) | 1K | 0.6GB",
         repo_id="microsoft/Florence-2-base",
         family=ModelFamily.FLORENCE2,
         vram_fp16=1.5, vram_8bit=1.0, vram_4bit=0.6,
+        model_type=ModelType.VISION,
         max_output_tokens=1024,
-        description="Ultra-fast captioning, 0.23B params",
+        description="Ultra-fast captioning",
         model_class="AutoModelForCausalLM"
     ),
     "Florence-2-large": LocalModelInfo(
-        name="Florence-2 Large | 1K tokens | 1.2GB VRAM (Fast)",
+        name="Florence-2 Large (Vision) | 1K | 1.2GB",
         repo_id="microsoft/Florence-2-large",
         family=ModelFamily.FLORENCE2,
         vram_fp16=3.0, vram_8bit=2.0, vram_4bit=1.2,
+        model_type=ModelType.VISION,
         max_output_tokens=1024,
-        description="Better quality captioning, 0.77B params",
+        description="Better captioning quality",
         model_class="AutoModelForCausalLM"
     ),
     "Florence-2-base-ft": LocalModelInfo(
-        name="Florence-2 Base FT | 1K tokens | 0.6GB VRAM",
+        name="Florence-2 Base FT (Vision) | 1K | 0.6GB",
         repo_id="microsoft/Florence-2-base-ft",
         family=ModelFamily.FLORENCE2,
         vram_fp16=1.5, vram_8bit=1.0, vram_4bit=0.6,
+        model_type=ModelType.VISION,
         max_output_tokens=1024,
-        description="Fine-tuned for downstream tasks",
+        description="Fine-tuned for tasks",
         model_class="AutoModelForCausalLM"
     ),
     "Florence-2-large-ft": LocalModelInfo(
-        name="Florence-2 Large FT | 1K tokens | 1.2GB VRAM",
+        name="Florence-2 Large FT (Vision) | 1K | 1.2GB",
         repo_id="microsoft/Florence-2-large-ft",
         family=ModelFamily.FLORENCE2,
         vram_fp16=3.0, vram_8bit=2.0, vram_4bit=1.2,
+        model_type=ModelType.VISION,
         max_output_tokens=1024,
-        description="Fine-tuned, best Florence quality",
+        description="Best Florence quality",
         model_class="AutoModelForCausalLM"
     ),
 
     # =========================================================================
-    # Moondream2 - Efficient VLM
+    # Moondream2 - Vision Only
     # =========================================================================
     "Moondream2": LocalModelInfo(
-        name="Moondream2 | 2K tokens | 1.5GB VRAM (Efficient)",
+        name="Moondream2 (Vision) | 2K | 1.5GB",
         repo_id="vikhyatk/moondream2",
         family=ModelFamily.MOONDREAM2,
         vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
+        model_type=ModelType.VISION,
         max_output_tokens=2048,
-        description="Efficient VLM, runs on CPU too",
+        description="Efficient VLM",
         model_class="AutoModelForCausalLM"
     ),
 
     # =========================================================================
-    # SmolVLM Series (HuggingFace) - Ultra Efficient
+    # SmolVLM Series (HuggingFace) - Vision Only
     # =========================================================================
     "SmolVLM-256M": LocalModelInfo(
-        name="SmolVLM 256M | 1K tokens | 0.3GB VRAM (Tiny)",
+        name="SmolVLM 256M (Vision) | 1K | 0.3GB",
         repo_id="HuggingFaceTB/SmolVLM-256M-Instruct",
         family=ModelFamily.SMOLVLM,
         vram_fp16=0.8, vram_8bit=0.5, vram_4bit=0.3,
+        model_type=ModelType.VISION,
         max_output_tokens=1024,
-        description="Tiniest VLM, edge/mobile ready",
+        description="Tiniest VLM",
         model_class="AutoModelForVision2Seq"
     ),
     "SmolVLM-500M": LocalModelInfo(
-        name="SmolVLM 500M | 1K tokens | 0.6GB VRAM (Small)",
+        name="SmolVLM 500M (Vision) | 1K | 0.6GB",
         repo_id="HuggingFaceTB/SmolVLM-500M-Instruct",
         family=ModelFamily.SMOLVLM,
         vram_fp16=1.5, vram_8bit=1.0, vram_4bit=0.6,
+        model_type=ModelType.VISION,
         max_output_tokens=1024,
-        description="Very small, good balance",
+        description="Very small VLM",
         model_class="AutoModelForVision2Seq"
     ),
     "SmolVLM-2B": LocalModelInfo(
-        name="SmolVLM 2B | 2K tokens | 2GB VRAM",
+        name="SmolVLM 2B (Vision) | 2K | 2GB",
         repo_id="HuggingFaceTB/SmolVLM-Instruct",
         family=ModelFamily.SMOLVLM,
         vram_fp16=4.5, vram_8bit=3.0, vram_4bit=2.0,
+        model_type=ModelType.VISION,
         max_output_tokens=2048,
-        description="Best SmolVLM quality",
+        description="Best SmolVLM",
         model_class="AutoModelForVision2Seq"
     ),
 
     # =========================================================================
-    # Phi-3.5-Vision (Microsoft) - High Quality
+    # Phi-3.5-Vision (Microsoft) - Vision Only
     # =========================================================================
     "Phi-3.5-Vision": LocalModelInfo(
-        name="Phi-3.5 Vision | 4K tokens | 3GB VRAM (Quality)",
+        name="Phi-3.5 Vision (Vision) | 4K | 3GB",
         repo_id="microsoft/Phi-3.5-vision-instruct",
         family=ModelFamily.PHI35_VISION,
         vram_fp16=8.5, vram_8bit=5.0, vram_4bit=3.0,
+        model_type=ModelType.VISION,
         max_output_tokens=4096,
-        description="High quality vision reasoning",
+        description="High quality vision",
+        model_class="AutoModelForCausalLM"
+    ),
+
+    # =========================================================================
+    # TEXT-ONLY MODELS - For Prompt Enhancement
+    # =========================================================================
+
+    # Qwen2.5 Text Models - Excellent for prompt enhancement
+    "Qwen2.5-1.5B-Instruct": LocalModelInfo(
+        name="Qwen2.5 1.5B (Text) | 32K | 1GB [Fast]",
+        repo_id="Qwen/Qwen2.5-1.5B-Instruct",
+        family=ModelFamily.QWEN_TEXT,
+        vram_fp16=3.0, vram_8bit=2.0, vram_4bit=1.0,
+        model_type=ModelType.TEXT,
+        max_output_tokens=4096,
+        description="Ultra-fast text model",
+        model_class="AutoModelForCausalLM"
+    ),
+    "Qwen2.5-3B-Instruct": LocalModelInfo(
+        name="Qwen2.5 3B (Text) | 32K | 2GB [Recommended]",
+        repo_id="Qwen/Qwen2.5-3B-Instruct",
+        family=ModelFamily.QWEN_TEXT,
+        vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
+        model_type=ModelType.TEXT,
+        max_output_tokens=4096,
+        description="Best balance for text",
+        model_class="AutoModelForCausalLM"
+    ),
+    "Qwen2.5-7B-Instruct": LocalModelInfo(
+        name="Qwen2.5 7B (Text) | 32K | 4GB [Quality]",
+        repo_id="Qwen/Qwen2.5-7B-Instruct",
+        family=ModelFamily.QWEN_TEXT,
+        vram_fp16=14.0, vram_8bit=8.0, vram_4bit=4.0,
+        model_type=ModelType.TEXT,
+        max_output_tokens=4096,
+        description="High quality text",
+        model_class="AutoModelForCausalLM"
+    ),
+
+    # Llama 3.2 Text Models
+    "Llama-3.2-1B-Instruct": LocalModelInfo(
+        name="Llama 3.2 1B (Text) | 128K | 0.8GB",
+        repo_id="meta-llama/Llama-3.2-1B-Instruct",
+        family=ModelFamily.LLAMA_TEXT,
+        vram_fp16=2.0, vram_8bit=1.2, vram_4bit=0.8,
+        model_type=ModelType.TEXT,
+        max_output_tokens=4096,
+        description="Smallest Llama, very fast",
+        model_class="AutoModelForCausalLM"
+    ),
+    "Llama-3.2-3B-Instruct": LocalModelInfo(
+        name="Llama 3.2 3B (Text) | 128K | 2GB",
+        repo_id="meta-llama/Llama-3.2-3B-Instruct",
+        family=ModelFamily.LLAMA_TEXT,
+        vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
+        model_type=ModelType.TEXT,
+        max_output_tokens=4096,
+        description="Fast with huge context",
+        model_class="AutoModelForCausalLM"
+    ),
+
+    # Phi-3.5 Mini (Text only)
+    "Phi-3.5-mini-instruct": LocalModelInfo(
+        name="Phi-3.5 Mini (Text) | 128K | 2.5GB",
+        repo_id="microsoft/Phi-3.5-mini-instruct",
+        family=ModelFamily.PHI_TEXT,
+        vram_fp16=7.5, vram_8bit=4.5, vram_4bit=2.5,
+        model_type=ModelType.TEXT,
+        max_output_tokens=4096,
+        description="Strong reasoning",
+        model_class="AutoModelForCausalLM"
+    ),
+
+    # Mistral 7B (Text only)
+    "Mistral-7B-Instruct-v0.3": LocalModelInfo(
+        name="Mistral 7B (Text) | 32K | 4GB [Creative]",
+        repo_id="mistralai/Mistral-7B-Instruct-v0.3",
+        family=ModelFamily.MISTRAL_TEXT,
+        vram_fp16=14.0, vram_8bit=8.0, vram_4bit=4.0,
+        model_type=ModelType.TEXT,
+        max_output_tokens=4096,
+        description="Creative writing",
+        model_class="AutoModelForCausalLM"
+    ),
+
+    # Gemma 2 (Text only)
+    "Gemma-2-2B-it": LocalModelInfo(
+        name="Gemma 2 2B (Text) | 8K | 1.5GB",
+        repo_id="google/gemma-2-2b-it",
+        family=ModelFamily.GEMMA_TEXT,
+        vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
+        model_type=ModelType.TEXT,
+        max_output_tokens=2048,
+        description="Efficient text model",
         model_class="AutoModelForCausalLM"
     ),
 }
@@ -587,6 +712,10 @@ class LocalModelClient:
             self._load_phi35_vision(model_path, device)
         elif self.model_info.family == ModelFamily.QWENVL:
             self._load_qwenvl(model_path, device)
+        elif self.model_info.family in [ModelFamily.QWEN_TEXT, ModelFamily.LLAMA_TEXT,
+                                         ModelFamily.PHI_TEXT, ModelFamily.MISTRAL_TEXT,
+                                         ModelFamily.GEMMA_TEXT]:
+            self._load_text_model(model_path, device)
 
         # Cache for reuse
         if self.keep_model_loaded:
@@ -902,6 +1031,118 @@ class LocalModelClient:
             max_pixels=max_pixels,
         )
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+
+    def _load_text_model(self, model_path: str, device: str):
+        """Load text-only model (Qwen2.5, Llama, Phi, Mistral, Gemma)."""
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        quant_config, dtype = self._get_quantization_config(device)
+
+        load_kwargs = {
+            "trust_remote_code": True,
+            "low_cpu_mem_usage": True,
+        }
+
+        # Select optimal attention implementation
+        if device == "cuda":
+            try:
+                import flash_attn
+                import importlib.metadata
+                importlib.metadata.version("flash_attn")
+                major, _ = torch.cuda.get_device_capability()
+                if major >= 8:
+                    load_kwargs["attn_implementation"] = "flash_attention_2"
+                    print("  Using Flash Attention 2")
+                else:
+                    load_kwargs["attn_implementation"] = "sdpa"
+                    print("  Using SDPA")
+            except (ImportError, importlib.metadata.PackageNotFoundError):
+                load_kwargs["attn_implementation"] = "sdpa"
+                print("  Using SDPA (flash_attn not available)")
+
+        if device == "cuda":
+            load_kwargs["device_map"] = {"": 0}
+            if quant_config:
+                load_kwargs["quantization_config"] = quant_config
+            else:
+                load_kwargs["torch_dtype"] = dtype or torch.float16
+
+        self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
+        self.model.eval()
+
+        # Enable KV cache for faster generation
+        if hasattr(self.model.config, 'use_cache'):
+            self.model.config.use_cache = True
+
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        self.processor = None  # Text models don't need a processor
+
+    def generate_text(
+        self,
+        prompt: str,
+        system_prompt: str = "",
+        max_tokens: int = 1024,
+        temperature: float = 0.7,
+    ) -> str:
+        """Generate text-only response (for prompt enhancement)."""
+        import torch
+
+        if self.model is None:
+            self._load_model()
+
+        # Check if this is a text model
+        if self.model_info.model_type == ModelType.VISION:
+            raise ValueError(
+                f"Model '{self.model_name}' is a vision-only model. "
+                "Please use a (Text) or (Both) model for text generation."
+            )
+
+        # Build chat messages
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        # Apply chat template
+        if hasattr(self.tokenizer, 'apply_chat_template'):
+            text = self.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True
+            )
+        else:
+            # Fallback for tokenizers without chat template
+            text = f"{system_prompt}\n\nUser: {prompt}\n\nAssistant:"
+
+        # Tokenize
+        inputs = self.tokenizer(text, return_tensors="pt")
+        device = next(self.model.parameters()).device
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+        input_len = inputs["input_ids"].shape[1]
+
+        # Generate
+        with InferenceProgressSpinner("Generating text"):
+            with torch.inference_mode():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                    top_p=self.top_p,
+                    repetition_penalty=self.repetition_penalty,
+                    pad_token_id=self.tokenizer.pad_token_id or self.tokenizer.eos_token_id,
+                    eos_token_id=self.tokenizer.eos_token_id,
+                )
+
+        # Decode only new tokens
+        generated = outputs[0][input_len:]
+        result = self.tokenizer.decode(generated, skip_special_tokens=True)
+
+        # Cleanup
+        self._cleanup_after_generation()
+
+        return result.strip()
 
     @property
     def chat(self):
@@ -1674,6 +1915,10 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
             # Local models output chain-of-thought mixed with results, breaking JSON parsing
             reasoning_enabled = False
 
+            # Determine model capabilities based on model_type
+            supports_vision_cap = model_info.model_type in [ModelType.VISION, ModelType.BOTH]
+            supports_text_cap = model_info.model_type in [ModelType.TEXT, ModelType.BOTH]
+
             config = LLMModelConfig(
                 provider=cls.PROVIDER_NAME,
                 model=model,
@@ -1681,7 +1926,7 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                 api_url="",
                 max_tokens=max_tokens,
                 temperature=temperature,
-                supports_vision=True,
+                supports_vision=supports_vision_cap,
                 supports_system_prompt=True,
                 supports_reasoning=reasoning_enabled,
                 extra_params={
@@ -1691,17 +1936,21 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     "keep_model_loaded": keep_model_loaded,
                     "repo_id": model_info.repo_id,
                     "family": model_info.family.value,
+                    "model_type": model_info.model_type.value,
                     "is_thinking": model_info.is_thinking,
                     "enable_reasoning": reasoning_enabled,
                     "repetition_penalty": repetition_penalty,
                     "top_p": top_p,
                     "use_torch_compile": use_torch_compile,
+                    "supports_text": supports_text_cap,
+                    "supports_vision": supports_vision_cap,
                 },
             )
 
             print(f"[SID_LLM_Local] Configured: {model}")
-            print(f"  Family: {model_info.family.value}, VRAM: {model_info.vram_4bit:.1f}-{model_info.vram_fp16:.1f}GB")
-            print(f"  Quantization: {quant}, Device: {device}, Max Tokens: {max_tokens}")
+            print(f"  Type: {model_info.model_type.value.upper()}, Family: {model_info.family.value}")
+            print(f"  VRAM: {model_info.vram_4bit:.1f}-{model_info.vram_fp16:.1f}GB, Quantization: {quant}")
+            print(f"  Device: {device}, Max Tokens: {max_tokens}")
 
             return comfy_io.NodeOutput(config)
 

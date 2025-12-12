@@ -13,6 +13,8 @@ Features:
 """
 
 import base64
+import gc
+import hashlib
 import io
 import json
 import re
@@ -27,6 +29,28 @@ import comfy.utils
 
 from .llm_providers.llm_model_type import LLMModelConfig
 from . import config_loader
+
+# In-memory cache for negative prompts (keyed by positive prompt hash + seed)
+_negative_prompt_cache: dict[str, str] = {}
+_MAX_CACHE_SIZE = 100
+_CACHE_CLEANUP_THRESHOLD = 80  # Trigger cleanup when cache reaches this size
+
+
+def clear_prompt_generator_cache():
+    """Clear the prompt generator cache and run garbage collection."""
+    global _negative_prompt_cache
+    _negative_prompt_cache.clear()
+    gc.collect()
+    print("[SID-Prompt] Cache cleared and garbage collected")
+
+
+def get_prompt_generator_cache_info() -> dict:
+    """Get information about the current cache state."""
+    return {
+        "size": len(_negative_prompt_cache),
+        "max_size": _MAX_CACHE_SIZE,
+        "memory_bytes": sum(len(k) + len(v) for k, v in _negative_prompt_cache.items())
+    }
 
 
 # =============================================================================
@@ -612,6 +636,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             ],
             outputs=[
                 comfy_io.String.Output("prompt", display_name="prompt"),
+                comfy_io.String.Output("negative_prompt", display_name="negative_prompt", tooltip="Auto-generated negative prompt based on the analysis"),
                 comfy_io.Int.Output("width", display_name="width"),
                 comfy_io.Int.Output("height", display_name="height"),
                 comfy_io.String.Output("metadata", display_name="metadata", tooltip="JSON metadata about the analysis (subject type, components, timing)"),
@@ -688,21 +713,31 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             else:
                 prompt = result
 
+            # Generate negative prompt (single-shot LLM call with caching)
+            log("-" * 60)
+            log("Generating negative prompt...")
+            negative_prompt = cls._generate_negative_prompt(
+                prompt, llm_model, analysis_mode, seed
+            )
+            neg_word_count = len(negative_prompt.split())
+            log(f"Negative prompt: {neg_word_count} words")
+
             # Stats
             total_time = time.time() - start_time
             word_count = len(prompt.split())
-            log(f"Generated: {word_count} words in {total_time:.1f}s")
+            log(f"Generated: {word_count} words (positive) + {neg_word_count} words (negative) in {total_time:.1f}s")
             log("=" * 60)
 
             # Finalize metadata
             metadata_dict["total_time_seconds"] = round(total_time, 2)
             metadata_dict["word_count"] = word_count
+            metadata_dict["negative_word_count"] = neg_word_count
 
             # Convert to JSON strings
             metadata_str = json.dumps(metadata_dict, indent=2)
             debug_str = "\n".join(debug_lines)
 
-            return comfy_io.NodeOutput(prompt, width, height, metadata_str, debug_str, ui={"text": (prompt,)})
+            return comfy_io.NodeOutput(prompt, negative_prompt, width, height, metadata_str, debug_str, ui={"text": (prompt,)})
 
         except Exception as e:
             error_msg = f"Error: {str(e)}"
@@ -710,6 +745,10 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             import traceback
             traceback.print_exc()
             raise RuntimeError(f"[SID_ZImagePromptGenerator] {error_msg}") from e
+
+        finally:
+            # Clean up any large temporary objects
+            gc.collect()
 
     # =========================================================================
     # SINGLE-SHOT PIPELINE
@@ -1583,3 +1622,185 @@ Apply the user's modification to the prompt. Output ONLY the modified prompt:"""
         else:
             # General case: prepend as a style/modification directive
             return f"{user_guidance.strip()}, {prompt}"
+
+    # =========================================================================
+    # NEGATIVE PROMPT GENERATION
+    # =========================================================================
+
+    @classmethod
+    def _generate_cache_key(cls, seed: int, prompt: str, analysis_mode: str, model: str) -> str:
+        """Generate a unique cache key for negative prompt caching."""
+        key_data = f"{seed}|{prompt[:500]}|{analysis_mode}|{model}"
+        return hashlib.sha256(key_data.encode()).hexdigest()[:32]
+
+    @classmethod
+    def _generate_negative_prompt(
+        cls,
+        positive_prompt: str,
+        llm_model: LLMModelConfig,
+        analysis_mode: str,
+        seed: int,
+    ) -> str:
+        """
+        Generate a negative prompt based on the positive prompt analysis.
+        Single-shot LLM call with caching based on seed.
+        """
+        global _negative_prompt_cache
+
+        # Generate cache key
+        cache_key = cls._generate_cache_key(seed, positive_prompt, analysis_mode, llm_model.model)
+
+        # Check cache
+        if cache_key in _negative_prompt_cache:
+            print(f"[SID-Prompt] Negative prompt cache HIT (seed: {seed})")
+            return _negative_prompt_cache[cache_key]
+
+        print(f"[SID-Prompt] Generating negative prompt (seed: {seed})...")
+
+        # Build system prompt based on analysis mode
+        if analysis_mode == "Quick":
+            system_prompt = """You are an expert at creating negative prompts for AI image generation.
+Generate a concise negative prompt that avoids common image quality issues.
+Output ONLY the negative prompt - no explanations, no markdown, no quotes."""
+
+        elif analysis_mode == "Standard":
+            system_prompt = """You are an expert at creating negative prompts for AI image generation.
+Based on the positive prompt, generate a negative prompt that:
+1. Avoids quality issues (blur, noise, artifacts, distortion)
+2. Excludes anatomical errors (extra limbs, deformed features)
+3. Prevents style conflicts with the intended aesthetic
+Output ONLY the negative prompt - no explanations, no markdown, no quotes."""
+
+        elif analysis_mode in ["Detailed", "Extreme"]:
+            system_prompt = """You are an expert at creating comprehensive negative prompts for AI image generation.
+
+Based on the positive prompt, generate a detailed negative prompt that addresses:
+
+## QUALITY ISSUES
+- Image artifacts, blur, noise, pixelation, compression artifacts
+- Low resolution, watermarks, text, signatures
+
+## ANATOMICAL ERRORS
+- Extra limbs, missing limbs, deformed hands, extra fingers
+- Mutated features, distorted faces, asymmetric eyes
+- Unnatural body proportions, floating limbs
+
+## STYLE CONFLICTS
+- Elements that would conflict with the intended aesthetic
+- Inappropriate lighting or color issues for the scene
+- Clashing artistic styles
+
+## COMPOSITION ISSUES
+- Bad cropping, cut off body parts, awkward framing
+- Cluttered backgrounds, distracting elements
+
+Output ONLY the negative prompt as a comma-separated list - no explanations, no markdown, no quotes."""
+
+        else:
+            system_prompt = """Generate a negative prompt for AI image generation. Output ONLY the negative prompt."""
+
+        user_prompt = f"""Based on this positive prompt, generate an appropriate negative prompt:
+
+POSITIVE PROMPT:
+{positive_prompt}
+
+Generate a negative prompt that will help avoid quality issues and errors while maintaining the intended style. Output ONLY the negative prompt:"""
+
+        try:
+            client = cls._get_client(llm_model)
+
+            # Make text-only LLM call (single-shot, no image needed)
+            if hasattr(client, 'messages'):
+                # Anthropic
+                response = client.messages.create(
+                    model=llm_model.model,
+                    max_tokens=500,
+                    temperature=0.3,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_prompt}]
+                )
+                negative_prompt = response.content[0].text.strip()
+            else:
+                # OpenAI-style
+                response = client.chat.completions.create(
+                    model=llm_model.model,
+                    max_tokens=500,
+                    temperature=0.3,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ]
+                )
+                negative_prompt = response.choices[0].message.content.strip()
+
+            # Clean up the response
+            negative_prompt = cls._clean_negative_prompt(negative_prompt)
+
+            # Cache the result (with size limit and cleanup)
+            if len(_negative_prompt_cache) >= _MAX_CACHE_SIZE:
+                # Remove 20% of oldest entries to prevent constant eviction
+                num_to_remove = max(1, _MAX_CACHE_SIZE // 5)
+                keys_to_remove = list(_negative_prompt_cache.keys())[:num_to_remove]
+                for key in keys_to_remove:
+                    del _negative_prompt_cache[key]
+                print(f"[SID-Prompt] Negative prompt cache cleanup: removed {num_to_remove} old entries")
+                gc.collect()
+            _negative_prompt_cache[cache_key] = negative_prompt
+            print(f"[SID-Prompt] Negative prompt generated and cached ({len(negative_prompt.split())} words)")
+
+            return negative_prompt
+
+        except Exception as e:
+            print(f"[SID-Prompt] Negative prompt generation failed: {e}")
+            # Return a sensible default negative prompt
+            return cls._get_default_negative_prompt(analysis_mode)
+
+    @classmethod
+    def _clean_negative_prompt(cls, text: str) -> str:
+        """Clean up the negative prompt response."""
+        if not text:
+            return ""
+
+        # Remove common prefixes
+        prefixes = [
+            r'^(?:Here\'?s?|This is|The|A) (?:the |a )?negative prompt[:\s]*\n*',
+            r'^Negative prompt[:\s]*\n*',
+            r'^(?:Sure|Certainly|Of course)[,!]?[^:]*[:\s]*\n*',
+        ]
+        for p in prefixes:
+            text = re.sub(p, '', text, flags=re.IGNORECASE)
+
+        # Remove markdown code blocks
+        match = re.search(r'```(?:\w+)?\s*([\s\S]*?)\s*```', text)
+        if match:
+            text = match.group(1)
+
+        # Remove surrounding quotes
+        if (text.startswith('"') and text.endswith('"')) or \
+           (text.startswith("'") and text.endswith("'")):
+            text = text[1:-1]
+
+        # Remove trailing explanations
+        explanations = [
+            r'\n\n(?:This|The|I\'ve|Note:|This negative)[\s\S]*$',
+            r'\n\n(?:Let me|Feel free|I hope)[\s\S]*$',
+        ]
+        for p in explanations:
+            text = re.sub(p, '', text, flags=re.IGNORECASE)
+
+        return text.strip()
+
+    @classmethod
+    def _get_default_negative_prompt(cls, analysis_mode: str) -> str:
+        """Return a sensible default negative prompt based on analysis mode."""
+        if analysis_mode == "Quick":
+            return "blur, low quality, distorted"
+
+        elif analysis_mode == "Standard":
+            return "blur, noise, artifacts, distortion, low quality, deformed, extra limbs, bad anatomy"
+
+        else:  # Detailed or Extreme
+            return ("blur, noise, artifacts, distortion, low quality, pixelated, watermark, text, signature, "
+                    "deformed, extra limbs, missing limbs, extra fingers, mutated hands, bad anatomy, "
+                    "asymmetric eyes, distorted face, unnatural proportions, floating limbs, "
+                    "bad cropping, cut off, cluttered background")

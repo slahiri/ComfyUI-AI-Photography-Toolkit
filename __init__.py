@@ -7,7 +7,7 @@ Author: Siddhartha Lahiri
 Version: 4.2.0
 """
 
-__version__ = "4.2.0"
+__version__ = "4.2.1"
 
 import sys
 import subprocess
@@ -87,6 +87,12 @@ from .llm_providers.sid_llm_local import SID_LLM_Local
 # Import Z-Image Prompt Generator (unified node)
 from .sid_zimage_prompt_generator import SID_ZImagePromptGenerator
 
+# Import Z-Image Prompt Enhancer (local LLM prompt enhancement)
+from .sid_zimage_prompt_enhancer import SID_ZImagePromptEnhancer
+
+# Import Z-Image Photography Prompts (camera, lens, lighting, effects)
+from .sid_zimage_photography_prompts import SID_ZImagePhotographyPrompts
+
 
 class SIDPhotographyToolkitExtension(ComfyExtension):
     """
@@ -103,6 +109,8 @@ class SIDPhotographyToolkitExtension(ComfyExtension):
             SID_LLM_API,              # Cloud LLM (Anthropic, OpenAI, Gemini, Grok, Ollama, LM Studio)
             SID_LLM_Local,            # Local models (Florence-2, Moondream2, SmolVLM, Phi-3.5, QwenVL)
             SID_ZImagePromptGenerator,  # Z-Image prompt generator (auto Single-Shot/Agentic)
+            SID_ZImagePromptEnhancer,   # Z-Image prompt enhancer (local LLM)
+            SID_ZImagePhotographyPrompts,  # Photography prompt builder (camera, lens, effects)
         ]
 
 
@@ -155,8 +163,10 @@ def print_welcome_message():
     print("    - SID_LLM_API   Cloud APIs (Anthropic, OpenAI, Gemini, Grok, Ollama, LM Studio)")
     print("    - SID_LLM_Local Local models (Florence-2, Moondream, SmolVLM, Phi-3.5, QwenVL)")
     print("")
-    print("  Prompt Generator:")
-    print("    - SID_ZImagePromptGenerator  Z-Image prompts (auto Single-Shot/Agentic)")
+    print("  Prompt Tools:")
+    print("    - SID_ZImagePromptGenerator    Z-Image prompts (auto Single-Shot/Agentic)")
+    print("    - SID_ZImagePromptEnhancer     Prompt enhancement (local LLM, all content types)")
+    print("    - SID_ZImagePhotographyPrompts Photography settings (camera, lens, lighting, effects)")
 
     print("")
     print("=" * 65)
