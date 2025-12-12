@@ -29,6 +29,8 @@ import comfy.utils
 
 from .llm_providers.llm_model_type import LLMModelConfig
 from . import config_loader
+from .zimage_prompt_translator import translate_prompt, get_translator
+from .negative_prompt_builder import generate_negative, build_negative_prompt
 
 # In-memory cache for negative prompts (keyed by positive prompt hash + seed)
 _negative_prompt_cache: dict[str, str] = {}
@@ -629,9 +631,17 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     "seed",
                     default=0,
                     min=0,
-                    max=2147483647,
+                    max=0xffffffffffffffff,
                     control_after_generate=True,
                     tooltip="Random seed for reproducibility"
+                ),
+
+                # Z-Image Vocabulary Optimization
+                comfy_io.Boolean.Input(
+                    "zimage_optimize",
+                    default=True,
+                    display_name="Z-Image Optimize",
+                    tooltip="Apply Z-Image vocabulary optimization (converts tag soup, removes anti-patterns, injects lighting/composition)"
                 ),
             ],
             outputs=[
@@ -655,6 +665,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         prompt_length: str,
         user_guidance: str,
         seed: int,
+        zimage_optimize: bool = True,
     ) -> comfy_io.NodeOutput:
         """Execute prompt generation with auto mode selection."""
 
@@ -713,14 +724,34 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             else:
                 prompt = result
 
-            # Generate negative prompt (single-shot LLM call with caching)
+            # Generate negative prompt
             log("-" * 60)
             log("Generating negative prompt...")
-            negative_prompt = cls._generate_negative_prompt(
-                prompt, llm_model, analysis_mode, seed
-            )
-            neg_word_count = len(negative_prompt.split())
-            log(f"Negative prompt: {neg_word_count} words")
+
+            # Quick/Standard: Use Python template-based generation (NO LLM)
+            if analysis_mode in ["Quick", "Standard"]:
+                log(f"Using Python negative builder ({analysis_mode} mode)...")
+                negative_prompt = generate_negative(prompt, analysis_mode)
+                neg_word_count = len(negative_prompt.split())
+                log(f"Python negative prompt: {neg_word_count} words")
+            else:
+                # Detailed/Extreme: Use LLM for more comprehensive negatives
+                negative_prompt = cls._generate_negative_prompt(
+                    prompt, llm_model, analysis_mode, seed
+                )
+                neg_word_count = len(negative_prompt.split())
+                log(f"LLM negative prompt: {neg_word_count} words")
+
+            # Apply Z-Image vocabulary optimization if enabled
+            if zimage_optimize:
+                log("Applying Z-Image vocabulary optimization...")
+                translator = get_translator()
+                result = translator.translate(prompt)
+                prompt = result.translated
+                if result.changes_made:
+                    log(f"Z-Image changes: {len(result.changes_made)}")
+                    for change in result.changes_made[:3]:
+                        log(f"  - {change}")
 
             # Stats
             total_time = time.time() - start_time

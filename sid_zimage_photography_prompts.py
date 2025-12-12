@@ -27,6 +27,8 @@ from typing import Dict, List, Optional
 from comfy_api.latest import io as comfy_io
 
 from .llm_providers.llm_model_type import LLMModelConfig
+from .zimage_prompt_translator import translate_prompt, get_translator
+from .negative_prompt_builder import combine_prompt_with_settings
 
 
 # Create custom LLM_MODEL type for ComfyUI
@@ -117,55 +119,31 @@ class ProgressSpinner:
 DETAIL_LEVELS = ["Quick", "Standard", "Detailed", "Extreme"]
 
 # Deep analysis system prompt - analyzes how each photography setting affects the image
-DEEP_PHOTOGRAPHY_SYSTEM = """You are a master photographer and prompt engineer specializing in photographic imagery.
+# =============================================================================
+# LOCAL MODEL PROMPTS (Ultra-minimal)
+# =============================================================================
 
-## CRITICAL PRESERVATION RULES - MUST FOLLOW:
-1. **NEVER DELETE** - Every word, phrase, and detail from the original prompt MUST appear in your output
-2. **NEVER REPLACE** - Do not substitute original descriptions with your own interpretations
-3. **NEVER SUMMARIZE** - Do not condense or paraphrase existing content
-4. **ONLY ADD** - Insert new details BETWEEN or AFTER existing content to enrich it
-5. **PRESERVE SPECIFICS** - Keep exact measurements, colors, textures, positions, clothing details, body descriptions
+# 10 words - proven effective
+LOCAL_PHOTOGRAPHY_SYSTEM = """Add visual effects. Keep original. Output only the prompt."""
 
-## CRITICAL - NO EQUIPMENT IN SCENE:
-- Photography settings describe HOW the image is captured, NOT what appears in the image
-- NEVER add cameras, lenses, tripods, or photography equipment as visible objects
-- Terms like "shot on Hasselblad" mean the IMAGE QUALITY, not a visible camera
-- Describe the VISUAL EFFECTS of settings (blur, compression, grain) not the equipment itself
+# =============================================================================
+# API MODEL PROMPTS (Detailed)
+# =============================================================================
 
-## Your Task:
-Enhance the prompt by describing how each photography setting VISUALLY AFFECTS the scene:
+API_PHOTOGRAPHY_SYSTEM = """You are a photography prompt engineer.
 
-**Aperture Effects** (describe the visual result):
-- Wide aperture → "razor-thin plane of focus with subject emerging from creamy dissolved background"
-- NOT "f/1.2 aperture" but "paper-thin depth of field isolating subject in crystalline sharpness"
+RULES:
+1. Preserve EVERY word from the original prompt
+2. Describe photography settings as VISUAL EFFECTS, not equipment
+3. For aperture: describe blur quality and depth of field
+4. For lighting: describe how light falls and creates shadows
+5. For film/color: describe tones, mood, and color characteristics
+6. Do NOT add visible cameras/lenses - describe visual RESULTS only
 
-**Focal Length Effects** (describe what the viewer sees):
-- Telephoto → "compressed spatial planes, flattened perspective, intimate framing"
-- NOT "200mm lens" but "compressed background appearing closer, flattering facial proportions"
+Output ONLY the enhanced prompt - no explanations."""
 
-**Lighting Effects** (describe how light falls):
-- Rembrandt → "triangular highlight on cheek, dimensional shadows sculpting facial structure"
-- NOT "Rembrandt lighting setup" but the actual visual effect on the subject
-
-**Film/Color Effects** (describe the color/tone result):
-- Portra → "warm peachy skin tones, lifted pastel shadows, nostalgic color palette"
-
-## Enhancement Method:
-For each existing description in the prompt:
-1. Keep the original text EXACTLY as written
-2. INSERT additional micro-details about how photography settings enhance that specific element
-3. Add texture, light interaction, and atmosphere details
-
-## What You CANNOT Do:
-- Remove ANY existing description from the original prompt
-- Replace specific details (e.g., "espresso brown" → "dark brown")
-- Change any camera/lens specs the user already specified
-- Introduce visible photography equipment into the scene
-- Simplify or condense the original prompt
-
-The output must be LONGER than the input, containing 100% of original content plus visual enhancements.
-
-Output ONLY the enhanced prompt - no analysis, no markdown, no explanations."""
+# Legacy alias
+DEEP_PHOTOGRAPHY_SYSTEM = API_PHOTOGRAPHY_SYSTEM
 
 
 # =============================================================================
@@ -464,9 +442,17 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                     "seed",
                     default=0,
                     min=0,
-                    max=2147483647,
+                    max=0xffffffffffffffff,
                     control_after_generate=True,
                     tooltip="Random seed for reproducibility"
+                ),
+
+                # Z-Image Vocabulary Optimization
+                comfy_io.Boolean.Input(
+                    "zimage_optimize",
+                    default=True,
+                    display_name="Z-Image Optimize",
+                    tooltip="Apply Z-Image vocabulary optimization (converts tag soup, removes anti-patterns, injects lighting/composition)"
                 ),
             ],
             outputs=[
@@ -635,6 +621,7 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
         color_grade: str,
         film_stock: str,
         seed: int,
+        zimage_optimize: bool = True,
     ) -> comfy_io.NodeOutput:
         """Build and optionally enhance photography prompt."""
         global _photography_cache
@@ -684,6 +671,12 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                 else:
                     enhanced = photography_settings
 
+                # Apply Z-Image vocabulary optimization if enabled
+                if zimage_optimize:
+                    translator = get_translator()
+                    result = translator.translate(enhanced)
+                    enhanced = result.translated
+
                 elapsed = time.time() - start_time
                 print(f"[PhotographyPrompts] ✓ Quick combine complete ({elapsed:.1f}s)")
                 print("=" * 60)
@@ -697,6 +690,11 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                     enhanced = f"{prompt.strip()}, {photography_settings}"
                 else:
                     enhanced = prompt.strip() or photography_settings
+                # Apply Z-Image vocabulary optimization if enabled
+                if zimage_optimize:
+                    translator = get_translator()
+                    result = translator.translate(enhanced)
+                    enhanced = result.translated
                 return comfy_io.NodeOutput(enhanced, prompt, photography_settings)
 
             # Generate cache key for LLM modes
@@ -725,28 +723,58 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                         "Please use a (Text) model."
                     )
 
+            # Efficiency optimization: Local models use Quick mode (no LLM call) to avoid garbage output
+            is_local = llm_model.provider.lower() == "local" or llm_model.extra_params.get("is_local", False)
+            supports_reasoning = llm_model.supports_reasoning
+            
+            # Local models: Force Quick mode - LLM integration often produces garbage
+            if is_local and detail_level != "Quick":
+                print(f"[PhotographyPrompts] Local model detected: {detail_level} -> Quick (no LLM call)")
+                # Return Quick mode result directly
+                if prompt.strip() and photography_settings:
+                    enhanced = f"{prompt.strip()}, {photography_settings}"
+                elif prompt.strip():
+                    enhanced = prompt.strip()
+                else:
+                    enhanced = photography_settings
+                elapsed = time.time() - start_time
+                print(f"[PhotographyPrompts] Quick combine complete ({elapsed:.1f}s)")
+                print("=" * 60)
+                return comfy_io.NodeOutput(enhanced, prompt, photography_settings)
+            
+            # Non-reasoning cloud models: Use Standard instead of Detailed/Extreme
+            if detail_level in ["Detailed", "Extreme"] and not supports_reasoning:
+                print(f"[PhotographyPrompts] Non-reasoning model: {detail_level} -> Standard for efficiency")
+                detail_level = "Standard"
+
             print(f"[PhotographyPrompts] Provider: {llm_model.provider}")
             print(f"[PhotographyPrompts] Model: {llm_model.model}")
 
-            # Get client
-            print("[PhotographyPrompts] Initializing LLM client...")
-            client = cls._get_client(llm_model)
-
             print("-" * 60)
+
+            # Standard mode: Python-only (NO LLM) - just combine and let Z-Image vocab optimize
             if detail_level == "Standard":
-                print("[PhotographyPrompts] Standard Mode: Integrating photography settings...")
-                enhanced = cls._standard_enhance(client, llm_model, prompt, settings, photography_settings)
+                print("[PhotographyPrompts] Standard Mode: Python-only integration (no LLM)...")
+                enhanced = combine_prompt_with_settings(prompt, photography_settings, natural_language=True)
+                print(f"[PhotographyPrompts] Combined: {len(enhanced.split())} words")
+                client = None  # No client needed
 
-            elif detail_level == "Detailed":
-                print("[PhotographyPrompts] Detailed Mode: Deep photography analysis...")
-                enhanced = cls._deep_enhance(client, llm_model, prompt, settings)
+            # Detailed/Extreme: Use LLM for deep analysis
+            elif detail_level in ["Detailed", "Extreme"]:
+                print("[PhotographyPrompts] Initializing LLM client...")
+                client = cls._get_client(llm_model)
 
-            elif detail_level == "Extreme":
-                print("[PhotographyPrompts] Extreme Mode: Two-pass deep analysis...")
-                enhanced = cls._extreme_enhance(client, llm_model, prompt, settings)
+                if detail_level == "Detailed":
+                    print("[PhotographyPrompts] Detailed Mode: Deep photography analysis...")
+                    enhanced = cls._deep_enhance(client, llm_model, prompt, settings)
+                else:  # Extreme
+                    print("[PhotographyPrompts] Extreme Mode: Two-pass deep analysis...")
+                    enhanced = cls._extreme_enhance(client, llm_model, prompt, settings)
 
             else:
-                enhanced = f"{prompt.strip()}, {photography_settings}" if prompt.strip() else photography_settings
+                # Fallback
+                enhanced = combine_prompt_with_settings(prompt, photography_settings, natural_language=True)
+                client = None
 
             # Store in cache (with size limit and cleanup)
             if len(_photography_cache) >= _MAX_CACHE_SIZE:
@@ -761,6 +789,17 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
             print(f"[PhotographyPrompts] Result cached (cache size: {len(_photography_cache)})")
 
             # Results
+            # Apply Z-Image vocabulary optimization if enabled
+            if zimage_optimize:
+                print("[PhotographyPrompts] Applying Z-Image vocabulary optimization...")
+                translator = get_translator()
+                result = translator.translate(enhanced)
+                enhanced = result.translated
+                if result.changes_made:
+                    print(f"[PhotographyPrompts] Z-Image changes: {len(result.changes_made)}")
+                    for change in result.changes_made[:3]:
+                        print(f"  - {change}")
+
             elapsed = time.time() - start_time
             output_words = len(enhanced.split())
             word_diff = output_words - word_count
@@ -786,17 +825,16 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
 
     @classmethod
     def _standard_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, settings: Dict, photography_str: str) -> str:
-        """Standard: Basic LLM enhancement with photography context."""
-        system = """You are a photography prompt engineer. Integrate photography settings into an existing prompt.
-
-CRITICAL RULES:
-1. PRESERVE every detail from the base prompt - do NOT remove or replace anything
-2. Photography settings describe VISUAL EFFECTS, not visible equipment
-3. Do NOT add cameras, lenses, or equipment as objects in the scene
-4. Describe what the viewer SEES (blur, compression, grain) not the equipment
-5. The output must contain 100% of the original prompt content
-
-Output ONLY the enhanced prompt - no explanations."""
+        """Standard: Basic LLM enhancement with photography context - FAST MODE."""
+        # Select prompt based on model type
+        is_local = llm_model.provider.lower() == "local" or llm_model.extra_params.get("is_local", False)
+        if is_local:
+            system = """Add these photography settings to the prompt. Keep original content.
+Output ONLY the combined prompt."""
+        else:
+            system = """Integrate photography settings into this prompt.
+Keep all original content. Settings describe visual effects (blur, grain, tone).
+Output ONLY the combined prompt - no explanations."""
 
         user_prompt = f"""Base prompt (PRESERVE ALL CONTENT):
 {prompt if prompt.strip() else "(no base prompt)"}

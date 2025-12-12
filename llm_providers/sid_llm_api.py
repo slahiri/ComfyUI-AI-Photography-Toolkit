@@ -69,6 +69,14 @@ def is_likely_vision_model(model_name: str) -> bool:
     return any(kw in model_lower for kw in vision_keywords)
 
 
+def get_model_type_indicator(model_name: str) -> str:
+    """
+    Get Text or Vision indicator for a model.
+    Returns "(Vision)" for vision-capable models, "(Text)" for text-only models.
+    """
+    return "(Vision)" if is_likely_vision_model(model_name) else "(Text)"
+
+
 # =============================================================================
 # Provider Configurations
 # =============================================================================
@@ -442,9 +450,10 @@ def get_all_models() -> List[str]:
             prefix_models.sort()
             provider_models.extend(prefix_models)
 
-        # Add provider prefix to all models
+        # Add provider prefix and Text/Vision indicator to all models
         for model in provider_models:
-            all_models.append(f"[{provider_name}] {model}")
+            indicator = get_model_type_indicator(model)
+            all_models.append(f"[{provider_name}] {model} {indicator}")
 
     return all_models
 
@@ -452,11 +461,13 @@ def get_all_models() -> List[str]:
 def parse_model_selection(model_str: str) -> Tuple[str, str]:
     """Parse model string to get provider and model name."""
     if model_str.startswith("["):
-        # Format: [Provider] model_name
+        # Format: [Provider] model_name (Text) or [Provider] model_name (Vision)
         end_bracket = model_str.find("]")
         if end_bracket > 0:
             provider = model_str[1:end_bracket]
-            model = model_str[end_bracket + 2:]  # Skip "] "
+            model_part = model_str[end_bracket + 2:]  # Skip "] "
+            # Remove the (Text) or (Vision) indicator from the model name
+            model = model_part.replace(" (Text)", "").replace(" (Vision)", "")
             return provider, model
     return "OpenAI", model_str
 
@@ -534,7 +545,7 @@ class SID_LLM_API(comfy_io.ComfyNode):
                 comfy_io.Combo.Input(
                     "model",
                     options=all_models,
-                    default="[Anthropic] claude-sonnet-4-5-20250929",
+                    default="[Anthropic] claude-sonnet-4-5-20250929 (Vision)",
                     tooltip="Select model (provider prefix shows which API will be used)"
                 ),
 
