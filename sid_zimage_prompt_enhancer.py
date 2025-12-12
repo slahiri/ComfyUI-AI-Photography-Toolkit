@@ -407,6 +407,14 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
                 print("[PromptEnhancer] Empty prompt, skipping")
                 return comfy_io.NodeOutput(prompt, "", prompt)
 
+            # If no instructions provided, passthrough without LLM call
+            if not enhance.strip() and not replace.strip() and not add.strip():
+                print("[PromptEnhancer] No instructions (enhance/replace/add), passthrough")
+                print("=" * 60)
+                print("")
+                # Pass through prompt and negative as-is
+                return comfy_io.NodeOutput(prompt, negative_prompt, prompt)
+
             # Generate cache key
             cache_key = cls._generate_cache_key(
                 seed, prompt, detail_level, enhance, replace, add, llm_model.model
