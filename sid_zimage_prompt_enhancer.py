@@ -276,9 +276,9 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
                     "seed",
                     default=0,
                     min=0,
-                    max=0xffffffffffffffff,
+                    max=2147483647,
                     control_after_generate=True,
-                    tooltip="Seed for reproducible results. Same seed = same output (cached)"
+                    tooltip="Random seed for reproducibility"
                 ),
             ],
             outputs=[
