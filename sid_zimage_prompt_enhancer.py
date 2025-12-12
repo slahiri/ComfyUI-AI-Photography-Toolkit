@@ -554,9 +554,6 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
             import traceback
             traceback.print_exc()
             return comfy_io.NodeOutput(prompt, "", prompt)
-        finally:
-            # Always run garbage collection after execution
-            gc.collect()
 
     @classmethod
     def _quick_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, instructions: str) -> str:

@@ -784,10 +784,6 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                 return comfy_io.NodeOutput(f"{prompt.strip()}, {photography_settings}", prompt, photography_settings)
             return comfy_io.NodeOutput(prompt or photography_settings, prompt, photography_settings)
 
-        finally:
-            # Clean up any large temporary objects
-            gc.collect()
-
     @classmethod
     def _standard_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, settings: Dict, photography_str: str) -> str:
         """Standard: Basic LLM enhancement with photography context."""

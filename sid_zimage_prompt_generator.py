@@ -746,10 +746,6 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             traceback.print_exc()
             raise RuntimeError(f"[SID_ZImagePromptGenerator] {error_msg}") from e
 
-        finally:
-            # Clean up any large temporary objects
-            gc.collect()
-
     # =========================================================================
     # SINGLE-SHOT PIPELINE
     # =========================================================================
