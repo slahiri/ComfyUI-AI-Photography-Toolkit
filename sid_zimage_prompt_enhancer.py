@@ -116,12 +116,21 @@ class ProgressSpinner:
 
 DETAIL_LEVELS = ["Quick", "Standard", "Detailed", "Extreme"]
 
+# Length increase limits per detail level (as percentage of original)
+LENGTH_LIMITS = {
+    "Quick": (0, 20),      # 0-20% increase (max 1.2x original)
+    "Standard": (10, 30),  # 10-30% increase (max 1.3x original)
+    "Detailed": (20, 40),  # 20-40% increase (max 1.4x original)
+    "Extreme": (30, 50),   # 30-50% increase (max 1.5x original)
+}
+
 # Quick: Just describe and cleanup
 QUICK_SYSTEM = """You are a prompt editor. Your task is to clean up and clarify the prompt.
 - Fix grammar and spelling
 - Remove redundant words
 - Ensure clarity
 CRITICAL: Keep ALL original details intact. Only fix language issues.
+LENGTH CONSTRAINT: Output must be approximately the same length as input (0-20% increase max).
 Output ONLY the cleaned prompt."""
 
 # Standard: Basic enhancement
@@ -132,6 +141,7 @@ CRITICAL RULES - YOU MUST FOLLOW:
 2. Keep all specific descriptions exactly as written (measurements, colors, textures, positions)
 3. Only ADD new complementary details between existing content
 4. Enhancement means ADDITION, never replacement or summarization
+5. LENGTH CONSTRAINT: Output must be 10-30% longer than input, NO MORE
 
 Output ONLY the enhanced prompt - no explanations."""
 
@@ -144,6 +154,7 @@ DEEP_SYSTEM = """You are an expert prompt engineer specializing in AI image gene
 3. **NEVER SUMMARIZE** - Do not condense or paraphrase existing content
 4. **ONLY ADD** - Insert new details BETWEEN or AFTER existing content to enrich it
 5. **PRESERVE SPECIFICS** - Keep exact measurements, colors, textures, positions, brand names, technical specs
+6. **LENGTH CONSTRAINT** - Output must be 20-40% longer than input, NO MORE
 
 ## Enhancement Method:
 For each section of the original prompt, you may INSERT additional details:
@@ -151,11 +162,10 @@ For each section of the original prompt, you may INSERT additional details:
 - After descriptions: Add texture, material, or lighting nuances
 - Around technical specs: Add how those specs affect the visual result
 
-## What You CAN Add:
-- Micro-details (skin texture, fabric weave, light reflections)
-- Atmospheric elements (dust motes, light rays, ambient effects)
-- Technical photography terms that complement existing specs
-- Sensory details (how light falls, how materials feel visually)
+## What You CAN Add (sparingly):
+- Key micro-details (skin texture, fabric weave, light reflections)
+- Brief atmospheric elements
+- Essential technical photography terms
 
 ## What You CANNOT Do:
 - Remove ANY existing description
@@ -163,27 +173,20 @@ For each section of the original prompt, you may INSERT additional details:
 - Change camera/lens specs the user specified
 - Simplify or condense detailed descriptions
 - Rewrite sections in your own words
-
-The output should be LONGER than the input, containing 100% of original content plus additions.
+- Exceed the length constraint
 
 Output ONLY the enhanced prompt - no analysis, no markdown, no explanations."""
 
 # Extreme: Maximum detail with synthesis pass
-EXTREME_SYNTHESIS = """You are a master prompt engineer. Your task is to add final polish while PRESERVING EVERYTHING.
+EXTREME_SYSTEM = """You are an expert prompt engineer. Enhance while respecting length limits.
 
-ABSOLUTE RULES:
-1. The prompt below contains carefully crafted details - preserve ALL of them
-2. Do NOT remove, replace, or summarize any existing content
-3. Only ADD micro-details, texture descriptions, and atmosphere
-4. The output must contain 100% of the input content
+RULES:
+1. PRESERVE all original content - every word and detail
+2. Only ADD brief, high-impact details
+3. LENGTH CONSTRAINT: Output must be 30-50% longer than input, NO MORE
+4. Focus on quality over quantity
 
-You may ADD:
-- Micro-texture details (pore visibility, fabric thread count, material reflections)
-- Light interaction details (how light catches surfaces, subsurface scattering)
-- Atmospheric micro-details (air quality, dust motes, light rays)
-- Quality modifiers if missing (8k, masterpiece, highly detailed)
-
-Current prompt to enhance (PRESERVE EVERYTHING):
+Current prompt to enhance:
 {prompt}
 
 Output ONLY the final prompt with additions:"""
@@ -556,90 +559,129 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
             return comfy_io.NodeOutput(prompt, "", prompt)
 
     @classmethod
+    def _enforce_length_limit(cls, enhanced: str, original: str, detail_level: str) -> str:
+        """Enforce length limits by truncating if necessary."""
+        original_words = len(original.split())
+        enhanced_words = len(enhanced.split())
+
+        # Get max allowed increase for this detail level
+        _, max_increase = LENGTH_LIMITS.get(detail_level, (0, 50))
+        max_words = int(original_words * (1 + max_increase / 100))
+
+        if enhanced_words <= max_words:
+            return enhanced
+
+        # Need to truncate - try to find a natural break point
+        words = enhanced.split()
+        truncated = words[:max_words]
+
+        # Try to end at a sentence boundary (., !, or ,)
+        result = ' '.join(truncated)
+        for i in range(len(result) - 1, max(0, len(result) - 100), -1):
+            if result[i] in '.!,':
+                result = result[:i+1]
+                break
+
+        print(f"[PromptEnhancer] Length enforced: {enhanced_words} -> {len(result.split())} words (max: {max_words})")
+        return result
+
+    @classmethod
     def _quick_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, instructions: str) -> str:
         """Quick: Describe and cleanup."""
-        user_prompt = f"""Clean up and clarify this prompt:
+        original_words = len(prompt.split())
+        max_words = int(original_words * 1.2)  # 0-20% increase
+
+        user_prompt = f"""Clean up and clarify this prompt (KEEP IT UNDER {max_words} WORDS):
 
 {prompt}"""
 
         if instructions:
             user_prompt += f"\n\nAdditional instructions:\n{instructions}"
 
-        user_prompt += "\n\nCleaned prompt:"
+        user_prompt += f"\n\nCleaned prompt (max {max_words} words):"
 
         result = cls._call_llm(client, llm_model, QUICK_SYSTEM, user_prompt, "Quick cleanup")
-        return cls._clean_response(result, prompt)
+        result = cls._clean_response(result, prompt)
+        return cls._enforce_length_limit(result, prompt, "Quick")
 
     @classmethod
     def _standard_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, instructions: str) -> str:
         """Standard: Basic LLM enhancement."""
-        user_prompt = f"""Enhance this prompt:
+        original_words = len(prompt.split())
+        max_words = int(original_words * 1.3)  # 10-30% increase
+
+        user_prompt = f"""Enhance this prompt (TARGET: {max_words} words max):
+
+Original word count: {original_words}
+Maximum output: {max_words} words
 
 {prompt}"""
 
         if instructions:
             user_prompt += f"\n\nUser instructions:\n{instructions}"
 
-        user_prompt += "\n\nEnhanced prompt:"
+        user_prompt += f"\n\nEnhanced prompt (max {max_words} words):"
 
         result = cls._call_llm(client, llm_model, STANDARD_SYSTEM, user_prompt, "Standard enhancement")
-        return cls._clean_response(result, prompt)
+        result = cls._clean_response(result, prompt)
+        return cls._enforce_length_limit(result, prompt, "Standard")
 
     @classmethod
     def _deep_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, instructions: str) -> str:
         """Detailed: Deep component-based enhancement."""
-        user_prompt = f"""CRITICAL: You MUST preserve EVERY word and detail from the original prompt below. Do NOT remove, replace, or summarize anything.
+        original_words = len(prompt.split())
+        max_words = int(original_words * 1.4)  # 20-40% increase
 
-=== ORIGINAL PROMPT (PRESERVE 100% OF THIS CONTENT) ===
+        user_prompt = f"""Enhance this prompt while respecting length limits.
+
+WORD LIMITS:
+- Original: {original_words} words
+- Maximum output: {max_words} words (20-40% increase)
+- Do NOT exceed {max_words} words
+
+=== ORIGINAL PROMPT ===
 {prompt}
 === END ORIGINAL PROMPT ===
 
-YOUR TASK:
-1. Copy the ENTIRE original prompt as your foundation - every single word
-2. INSERT additional details BETWEEN and AFTER existing descriptions
-3. Add micro-details: textures, lighting nuances, atmosphere, sensory details
-4. The output MUST be longer than the input, containing ALL original content"""
+Add only HIGH-IMPACT details. Quality over quantity."""
 
         if instructions:
-            user_prompt += f"\n\nUser instructions (apply while preserving all content):\n{instructions}"
+            user_prompt += f"\n\nUser instructions:\n{instructions}"
 
-        user_prompt += "\n\nOutput the enhanced prompt (must contain 100% of original):"
+        user_prompt += f"\n\nEnhanced prompt (max {max_words} words):"
 
-        result = cls._call_llm(client, llm_model, DEEP_SYSTEM, user_prompt, "Deep component analysis")
-        return cls._clean_response(result, prompt)
+        result = cls._call_llm(client, llm_model, DEEP_SYSTEM, user_prompt, "Deep enhancement")
+        result = cls._clean_response(result, prompt)
+        return cls._enforce_length_limit(result, prompt, "Detailed")
 
     @classmethod
     def _extreme_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, instructions: str) -> str:
-        """Extreme: Maximum detail with synthesis pass."""
-        # First pass: Deep enhancement
-        user_prompt = f"""CRITICAL: You MUST preserve EVERY word and detail from the original prompt below. Do NOT remove, replace, or summarize anything.
+        """Extreme: Single pass with strict length limit."""
+        original_words = len(prompt.split())
+        max_words = int(original_words * 1.5)  # 30-50% increase
 
-=== ORIGINAL PROMPT (PRESERVE 100% OF THIS CONTENT) ===
+        user_prompt = f"""Enhance this prompt with maximum detail while respecting length limits.
+
+STRICT WORD LIMITS:
+- Original: {original_words} words
+- Maximum output: {max_words} words (30-50% increase)
+- Do NOT exceed {max_words} words under any circumstances
+
+=== ORIGINAL PROMPT ===
 {prompt}
 === END ORIGINAL PROMPT ===
 
-YOUR TASK - PASS 1 (Deep Enhancement):
-1. Copy the ENTIRE original prompt as your foundation - every single word
-2. INSERT additional details BETWEEN and AFTER existing descriptions
-3. Add micro-details: textures, lighting nuances, atmosphere, material qualities
-4. The output MUST be longer than the input, containing ALL original content"""
+Add only the most impactful micro-details. Every word must count."""
 
         if instructions:
-            user_prompt += f"\n\nUser instructions (apply while preserving all content):\n{instructions}"
+            user_prompt += f"\n\nUser instructions:\n{instructions}"
 
-        user_prompt += "\n\nOutput the enhanced prompt (must contain 100% of original):"
+        user_prompt += f"\n\nEnhanced prompt (STRICT MAX {max_words} words):"
 
-        enhanced = cls._call_llm(client, llm_model, DEEP_SYSTEM, user_prompt, "Pass 1: Deep analysis")
-        enhanced = cls._clean_response(enhanced, prompt)
-
-        pass1_words = len(enhanced.split())
-        print(f"[PromptEnhancer] Pass 1 complete: {pass1_words} words")
-
-        # Second pass: Synthesis and refinement
-        synthesis_prompt = EXTREME_SYNTHESIS.format(prompt=enhanced)
-        final = cls._call_llm(client, llm_model, DEEP_SYSTEM, synthesis_prompt, "Pass 2: Synthesis")
-
-        return cls._clean_response(final, enhanced)
+        # Single pass only for Extreme (removed second pass to control length)
+        result = cls._call_llm(client, llm_model, EXTREME_SYSTEM.format(prompt=""), user_prompt, "Extreme enhancement")
+        result = cls._clean_response(result, prompt)
+        return cls._enforce_length_limit(result, prompt, "Extreme")
 
     @classmethod
     def _clean_response(cls, response: str, original: str) -> str:
