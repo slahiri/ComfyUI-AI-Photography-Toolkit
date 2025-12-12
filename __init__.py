@@ -50,6 +50,21 @@ def check_and_install_dependencies():
             "pip_spec": "typing_extensions>=4.0.0",
             "description": "Extended typing support",
         },
+        "transformers": {
+            "import_name": "transformers",
+            "pip_spec": "transformers>=4.57.0",
+            "description": "HuggingFace Transformers (for local models)",
+        },
+        "accelerate": {
+            "import_name": "accelerate",
+            "pip_spec": "accelerate>=0.33.0",
+            "description": "HuggingFace Accelerate (for model loading)",
+        },
+        "psutil": {
+            "import_name": "psutil",
+            "pip_spec": "psutil>=5.9.0",
+            "description": "System utilities (for memory detection)",
+        },
     }
 
     python_exe = sys.executable
@@ -143,13 +158,16 @@ def print_welcome_message():
     print("  Dependencies:")
 
     # Required dependencies
-    required_pkgs = ["anthropic", "openai", "pyyaml", "requests", "typing_extensions"]
+    required_pkgs = ["anthropic", "openai", "pyyaml", "requests", "typing_extensions", "transformers", "accelerate", "psutil"]
     pkg_descriptions = {
         "anthropic": "Anthropic Claude API",
         "openai": "OpenAI/Grok/LM Studio API",
         "pyyaml": "YAML config parser",
         "requests": "HTTP library (Ollama)",
         "typing_extensions": "Type hints",
+        "transformers": "HuggingFace Transformers",
+        "accelerate": "HuggingFace Accelerate",
+        "psutil": "System memory detection",
     }
 
     for pkg in required_pkgs:

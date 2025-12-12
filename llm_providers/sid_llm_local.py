@@ -21,6 +21,7 @@ Features:
 import os
 import gc
 import sys
+import json
 import hashlib
 import threading
 import time as time_module
@@ -173,6 +174,7 @@ class ModelFamily(Enum):
     PHI35_VISION = "phi35_vision"
     # Text-only models
     QWEN_TEXT = "qwen_text"
+    QWEN3_TEXT = "qwen3_text"  # Qwen3 text models (latest, optimized for prompts)
     LLAMA_TEXT = "llama_text"
     PHI_TEXT = "phi_text"
     MISTRAL_TEXT = "mistral_text"
@@ -292,6 +294,123 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Stable quality vision",
+        model_class="AutoModelForVision2Seq"
+    ),
+
+    # QwenVL FP8 Pre-quantized Models
+    "Qwen3-VL-2B-Instruct-FP8": LocalModelInfo(
+        name="Qwen3-VL 2B FP8 (Vision) | 4K | 2.5GB",
+        repo_id="Qwen/Qwen3-VL-2B-Instruct-FP8",
+        family=ModelFamily.QWENVL,
+        vram_fp16=2.5, vram_8bit=2.5, vram_4bit=2.5,
+        model_type=ModelType.VISION,
+        is_fp8=True,
+        max_output_tokens=4096,
+        description="Pre-quantized FP8",
+        model_class="AutoModelForVision2Seq"
+    ),
+    "Qwen3-VL-2B-Thinking-FP8": LocalModelInfo(
+        name="Qwen3-VL 2B Thinking FP8 (Vision) | 4K | 2.5GB",
+        repo_id="Qwen/Qwen3-VL-2B-Thinking-FP8",
+        family=ModelFamily.QWENVL,
+        vram_fp16=2.5, vram_8bit=2.5, vram_4bit=2.5,
+        model_type=ModelType.VISION,
+        is_fp8=True,
+        is_thinking=True,
+        max_output_tokens=4096,
+        description="Pre-quantized FP8 reasoning",
+        model_class="AutoModelForVision2Seq"
+    ),
+    "Qwen3-VL-4B-Instruct-FP8": LocalModelInfo(
+        name="Qwen3-VL 4B FP8 (Vision) | 4K | 2.5GB",
+        repo_id="Qwen/Qwen3-VL-4B-Instruct-FP8",
+        family=ModelFamily.QWENVL,
+        vram_fp16=2.5, vram_8bit=2.5, vram_4bit=2.5,
+        model_type=ModelType.VISION,
+        is_fp8=True,
+        max_output_tokens=4096,
+        description="Pre-quantized FP8",
+        model_class="AutoModelForVision2Seq"
+    ),
+    "Qwen3-VL-4B-Thinking-FP8": LocalModelInfo(
+        name="Qwen3-VL 4B Thinking FP8 (Vision) | 4K | 2.5GB",
+        repo_id="Qwen/Qwen3-VL-4B-Thinking-FP8",
+        family=ModelFamily.QWENVL,
+        vram_fp16=2.5, vram_8bit=2.5, vram_4bit=2.5,
+        model_type=ModelType.VISION,
+        is_fp8=True,
+        is_thinking=True,
+        max_output_tokens=4096,
+        description="Pre-quantized FP8 reasoning",
+        model_class="AutoModelForVision2Seq"
+    ),
+    "Qwen3-VL-8B-Instruct-FP8": LocalModelInfo(
+        name="Qwen3-VL 8B FP8 (Vision) | 4K | 7.5GB",
+        repo_id="Qwen/Qwen3-VL-8B-Instruct-FP8",
+        family=ModelFamily.QWENVL,
+        vram_fp16=7.5, vram_8bit=7.5, vram_4bit=7.5,
+        model_type=ModelType.VISION,
+        is_fp8=True,
+        max_output_tokens=4096,
+        description="Pre-quantized FP8",
+        model_class="AutoModelForVision2Seq"
+    ),
+    "Qwen3-VL-8B-Thinking-FP8": LocalModelInfo(
+        name="Qwen3-VL 8B Thinking FP8 (Vision) | 4K | 7.5GB",
+        repo_id="Qwen/Qwen3-VL-8B-Thinking-FP8",
+        family=ModelFamily.QWENVL,
+        vram_fp16=7.5, vram_8bit=7.5, vram_4bit=7.5,
+        model_type=ModelType.VISION,
+        is_fp8=True,
+        is_thinking=True,
+        max_output_tokens=4096,
+        description="Pre-quantized FP8 reasoning",
+        model_class="AutoModelForVision2Seq"
+    ),
+
+    # QwenVL 32B Models (Large)
+    "Qwen3-VL-32B-Instruct": LocalModelInfo(
+        name="Qwen3-VL 32B (Vision) | 4K | 8.5GB",
+        repo_id="Qwen/Qwen3-VL-32B-Instruct",
+        family=ModelFamily.QWENVL,
+        vram_fp16=28.0, vram_8bit=14.0, vram_4bit=8.5,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="Largest Qwen3-VL",
+        model_class="AutoModelForVision2Seq"
+    ),
+    "Qwen3-VL-32B-Thinking": LocalModelInfo(
+        name="Qwen3-VL 32B Thinking (Vision) | 4K | 8.5GB",
+        repo_id="Qwen/Qwen3-VL-32B-Thinking",
+        family=ModelFamily.QWENVL,
+        vram_fp16=28.0, vram_8bit=14.0, vram_4bit=8.5,
+        model_type=ModelType.VISION,
+        is_thinking=True,
+        max_output_tokens=4096,
+        description="Best reasoning vision",
+        model_class="AutoModelForVision2Seq"
+    ),
+    "Qwen3-VL-32B-Instruct-FP8": LocalModelInfo(
+        name="Qwen3-VL 32B FP8 (Vision) | 4K | 24GB",
+        repo_id="Qwen/Qwen3-VL-32B-Instruct-FP8",
+        family=ModelFamily.QWENVL,
+        vram_fp16=24.0, vram_8bit=24.0, vram_4bit=24.0,
+        model_type=ModelType.VISION,
+        is_fp8=True,
+        max_output_tokens=4096,
+        description="Pre-quantized FP8 large",
+        model_class="AutoModelForVision2Seq"
+    ),
+    "Qwen3-VL-32B-Thinking-FP8": LocalModelInfo(
+        name="Qwen3-VL 32B Thinking FP8 (Vision) | 4K | 24GB",
+        repo_id="Qwen/Qwen3-VL-32B-Thinking-FP8",
+        family=ModelFamily.QWENVL,
+        vram_fp16=24.0, vram_8bit=24.0, vram_4bit=24.0,
+        model_type=ModelType.VISION,
+        is_fp8=True,
+        is_thinking=True,
+        max_output_tokens=4096,
+        description="Pre-quantized FP8 reasoning large",
         model_class="AutoModelForVision2Seq"
     ),
 
@@ -437,6 +556,58 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_class="AutoModelForCausalLM"
     ),
 
+    # Qwen3 Text Models - Latest generation, optimized for prompt generation
+    "Qwen3-0.6B-Instruct": LocalModelInfo(
+        name="Qwen3 0.6B (Text) | 32K | 0.5GB [Ultra-Fast]",
+        repo_id="Qwen/Qwen3-0.6B-Instruct",
+        family=ModelFamily.QWEN3_TEXT,
+        vram_fp16=1.2, vram_8bit=0.8, vram_4bit=0.5,
+        model_type=ModelType.TEXT,
+        max_output_tokens=4096,
+        description="Ultra-fast prompt generation",
+        model_class="AutoModelForCausalLM"
+    ),
+    "Qwen3-1.7B-Instruct": LocalModelInfo(
+        name="Qwen3 1.7B (Text) | 32K | 1.4GB [Fast]",
+        repo_id="Qwen/Qwen3-1.7B-Instruct",
+        family=ModelFamily.QWEN3_TEXT,
+        vram_fp16=3.5, vram_8bit=2.2, vram_4bit=1.4,
+        model_type=ModelType.TEXT,
+        max_output_tokens=4096,
+        description="Fast prompt generation",
+        model_class="AutoModelForCausalLM"
+    ),
+    "Qwen3-4B-Instruct": LocalModelInfo(
+        name="Qwen3 4B (Text) | 32K | 3GB [Balanced]",
+        repo_id="Qwen/Qwen3-4B-Instruct",
+        family=ModelFamily.QWEN3_TEXT,
+        vram_fp16=8.0, vram_8bit=5.0, vram_4bit=3.0,
+        model_type=ModelType.TEXT,
+        max_output_tokens=4096,
+        description="Balanced prompt generation",
+        model_class="AutoModelForCausalLM"
+    ),
+    "Qwen3-8B-Instruct": LocalModelInfo(
+        name="Qwen3 8B (Text) | 32K | 6GB [Quality]",
+        repo_id="Qwen/Qwen3-8B-Instruct",
+        family=ModelFamily.QWEN3_TEXT,
+        vram_fp16=16.0, vram_8bit=10.0, vram_4bit=6.0,
+        model_type=ModelType.TEXT,
+        max_output_tokens=4096,
+        description="High quality prompts",
+        model_class="AutoModelForCausalLM"
+    ),
+    "Qwen3-4B-Instruct-2507": LocalModelInfo(
+        name="Qwen3 4B 2507 (Text) | 32K | 3GB [Latest]",
+        repo_id="Qwen/Qwen3-4B-Instruct-2507",
+        family=ModelFamily.QWEN3_TEXT,
+        vram_fp16=8.0, vram_8bit=5.0, vram_4bit=3.0,
+        model_type=ModelType.TEXT,
+        max_output_tokens=4096,
+        description="Latest Qwen3 (Aug 2025)",
+        model_class="AutoModelForCausalLM"
+    ),
+
     # Llama 3.2 Text Models
     "Llama-3.2-1B-Instruct": LocalModelInfo(
         name="Llama 3.2 1B (Text) | 128K | 0.8GB",
@@ -497,6 +668,98 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
 }
 
 
+# =============================================================================
+# Custom Models Loading
+# =============================================================================
+
+NODE_DIR = Path(__file__).parent.parent  # ComfyUI-AI-Photography-Toolkit directory
+CUSTOM_MODELS_PATH = NODE_DIR / "custom_models.json"
+
+
+def load_custom_models():
+    """
+    Load custom models from custom_models.json if it exists.
+    Users can define their own HuggingFace models by copying
+    custom_models_example.json to custom_models.json and modifying it.
+    """
+    global LOCAL_MODELS
+
+    if not CUSTOM_MODELS_PATH.exists():
+        return
+
+    try:
+        with open(CUSTOM_MODELS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        # Support both "hf_models" and "models" keys for flexibility
+        models = data.get("hf_models", {}) or data.get("models", {})
+
+        if not models:
+            return
+
+        count = 0
+        for model_name, model_info in models.items():
+            # Skip comments and metadata
+            if model_name.startswith("_"):
+                continue
+
+            # Parse family
+            family_str = model_info.get("family", "qwenvl").lower()
+            family_map = {
+                "qwenvl": ModelFamily.QWENVL,
+                "florence2": ModelFamily.FLORENCE2,
+                "moondream2": ModelFamily.MOONDREAM2,
+                "smolvlm": ModelFamily.SMOLVLM,
+                "phi35_vision": ModelFamily.PHI35_VISION,
+                "qwen_text": ModelFamily.QWEN_TEXT,
+                "qwen3_text": ModelFamily.QWEN3_TEXT,
+                "llama_text": ModelFamily.LLAMA_TEXT,
+                "phi_text": ModelFamily.PHI_TEXT,
+                "mistral_text": ModelFamily.MISTRAL_TEXT,
+                "gemma_text": ModelFamily.GEMMA_TEXT,
+            }
+            family = family_map.get(family_str, ModelFamily.QWENVL)
+
+            # Parse model type
+            model_type_str = model_info.get("model_type", "vision").lower()
+            model_type_map = {
+                "vision": ModelType.VISION,
+                "text": ModelType.TEXT,
+                "both": ModelType.BOTH,
+            }
+            model_type = model_type_map.get(model_type_str, ModelType.VISION)
+
+            # Parse VRAM requirements
+            vram = model_info.get("vram_requirement", {})
+
+            # Create LocalModelInfo
+            LOCAL_MODELS[model_name] = LocalModelInfo(
+                name=f"{model_name} (Custom)",
+                repo_id=model_info.get("repo_id", ""),
+                family=family,
+                vram_fp16=vram.get("full", 10.0),
+                vram_8bit=vram.get("8bit", 6.0),
+                vram_4bit=vram.get("4bit", 4.0),
+                model_type=model_type,
+                is_fp8=model_info.get("is_fp8", False),
+                is_thinking=model_info.get("is_thinking", False),
+                max_output_tokens=model_info.get("max_output_tokens", 4096),
+                description=model_info.get("description", "Custom model"),
+                model_class=model_info.get("model_class", "AutoModelForVision2Seq"),
+            )
+            count += 1
+
+        if count > 0:
+            print(f"[SID_LLM_Local] Loaded {count} custom model(s) from custom_models.json")
+
+    except Exception as e:
+        print(f"[SID_LLM_Local] Warning: Failed to load custom_models.json: {e}")
+
+
+# Load custom models on module import
+load_custom_models()
+
+
 def get_available_vram_gb() -> float:
     """Get available VRAM in GB."""
     try:
@@ -519,6 +782,91 @@ def get_total_vram_gb() -> float:
     except Exception:
         pass
     return 0.0
+
+
+def enforce_memory(model_info: "LocalModelInfo", quantization: str, device: str = "auto") -> str:
+    """
+    Enforce memory requirements and auto-downgrade quantization if needed.
+
+    Args:
+        model_info: LocalModelInfo with VRAM requirements
+        quantization: Requested quantization ("4-bit", "8-bit", "None (FP16)")
+        device: Target device ("auto", "cuda", "cpu", "mps")
+
+    Returns:
+        Potentially downgraded quantization string
+
+    Raises:
+        RuntimeError: If even 4-bit quantization won't fit in available memory
+    """
+    import torch
+
+    # FP8 pre-quantized models don't need further quantization
+    if model_info.is_fp8:
+        return quantization
+
+    # Determine actual device
+    if device == "auto":
+        if torch.cuda.is_available():
+            actual_device = "cuda"
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            actual_device = "mps"
+        else:
+            actual_device = "cpu"
+    else:
+        actual_device = device
+
+    # CPU doesn't have VRAM constraints (but is slow)
+    if actual_device == "cpu":
+        return quantization
+
+    # Get available memory
+    if actual_device == "cuda":
+        available = get_available_vram_gb()
+    elif actual_device == "mps":
+        # MPS uses system memory, estimate conservatively
+        try:
+            import psutil
+            available = psutil.virtual_memory().available / (1024**3)
+        except ImportError:
+            available = 16.0  # Conservative estimate
+    else:
+        available = 0
+
+    # Safety margin (require 20% extra)
+    safety_margin = 1.2
+
+    # Get VRAM requirements based on quantization
+    vram_map = {
+        "None (FP16)": model_info.vram_fp16,
+        "8-bit": model_info.vram_8bit,
+        "4-bit": model_info.vram_4bit,
+    }
+
+    current_quant = quantization
+    needed = vram_map.get(current_quant, model_info.vram_4bit) * safety_margin
+
+    # Auto-downgrade if needed
+    if needed > available:
+        if current_quant == "None (FP16)":
+            print(f"[SID_LLM_Local] FP16 needs {needed:.1f}GB, only {available:.1f}GB available, downgrading to 8-bit")
+            current_quant = "8-bit"
+            needed = model_info.vram_8bit * safety_margin
+
+    if needed > available:
+        if current_quant == "8-bit":
+            print(f"[SID_LLM_Local] 8-bit needs {needed:.1f}GB, only {available:.1f}GB available, downgrading to 4-bit")
+            current_quant = "4-bit"
+            needed = model_info.vram_4bit * safety_margin
+
+    if needed > available:
+        raise RuntimeError(
+            f"Insufficient memory for model '{model_info.name}'.\n"
+            f"Required: {needed:.1f}GB (4-bit), Available: {available:.1f}GB\n"
+            f"Try closing other applications or using a smaller model."
+        )
+
+    return current_quant
 
 
 # =============================================================================
@@ -712,9 +1060,9 @@ class LocalModelClient:
             self._load_phi35_vision(model_path, device)
         elif self.model_info.family == ModelFamily.QWENVL:
             self._load_qwenvl(model_path, device)
-        elif self.model_info.family in [ModelFamily.QWEN_TEXT, ModelFamily.LLAMA_TEXT,
-                                         ModelFamily.PHI_TEXT, ModelFamily.MISTRAL_TEXT,
-                                         ModelFamily.GEMMA_TEXT]:
+        elif self.model_info.family in [ModelFamily.QWEN_TEXT, ModelFamily.QWEN3_TEXT,
+                                         ModelFamily.LLAMA_TEXT, ModelFamily.PHI_TEXT,
+                                         ModelFamily.MISTRAL_TEXT, ModelFamily.GEMMA_TEXT]:
             self._load_text_model(model_path, device)
 
         # Cache for reuse
@@ -1830,6 +2178,13 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     display_mode=comfy_io.NumberDisplay.slider,
                     tooltip="Nucleus sampling (0.9=recommended, lower=more focused)"
                 ),
+                comfy_io.Int.Input(
+                    "num_beams",
+                    default=1,
+                    min=1,
+                    max=8,
+                    tooltip="Beam search width (1=sampling, >1=beam search for stable outputs, disables temperature/top_p)"
+                ),
                 comfy_io.Boolean.Input(
                     "use_torch_compile",
                     default=False,
@@ -1859,6 +2214,7 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
         attention_mode: str,
         repetition_penalty: float,
         top_p: float,
+        num_beams: int,
         use_torch_compile: bool,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
@@ -1894,6 +2250,9 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     "None (FP16)": "None (FP16)",
                 }
                 quant = quant_map.get(quantization, "4-bit")
+
+            # Enforce memory requirements (may downgrade or raise error)
+            quant = enforce_memory(model_info, quant, device)
 
             # Resolve max_tokens from preset
             model_max_tokens = model_info.max_output_tokens
@@ -1938,9 +2297,11 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     "family": model_info.family.value,
                     "model_type": model_info.model_type.value,
                     "is_thinking": model_info.is_thinking,
+                    "is_fp8": model_info.is_fp8,
                     "enable_reasoning": reasoning_enabled,
                     "repetition_penalty": repetition_penalty,
                     "top_p": top_p,
+                    "num_beams": num_beams,
                     "use_torch_compile": use_torch_compile,
                     "supports_text": supports_text_cap,
                     "supports_vision": supports_vision_cap,

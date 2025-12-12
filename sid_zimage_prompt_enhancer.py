@@ -21,6 +21,7 @@ import threading
 from typing import Optional
 
 from comfy_api.latest import io as comfy_io
+import comfy.utils
 
 from .llm_providers.llm_model_type import LLMModelConfig
 from .zimage_prompt_translator import translate_prompt, get_translator
@@ -422,6 +423,9 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
         global _enhancer_cache, _negative_cache
         start_time = time.time()
 
+        # Initialize progress bar (3 steps: enhance, negative, z-image optimize)
+        pbar = comfy.utils.ProgressBar(3)
+
         try:
             # Header
             print("")
@@ -541,12 +545,18 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
                 # Step 3: Z-Image vocabulary optimization is applied later
                 print(f"[PromptEnhancer] Quick cleanup: {len(prompt.split())} -> {len(enhanced.split())} words")
 
+                # Update progress: positive enhancement done
+                pbar.update(1)
+
                 # Generate negative prompt with Python (no LLM)
                 if negative_prompt.strip():
                     enhanced_negative = python_enhance_negative(negative_prompt, prompt, "Quick")
                 else:
                     enhanced_negative = generate_negative(enhanced, "Quick")
                 print(f"[PromptEnhancer] Python negative prompt: {len(enhanced_negative.split())} words")
+
+                # Update progress: negative prompt done
+                pbar.update(1)
 
                 # Skip LLM client initialization for Quick mode
                 client = None
@@ -583,6 +593,9 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
                 _enhancer_cache[cache_key] = enhanced
                 print(f"[PromptEnhancer] Positive cached (cache size: {len(_enhancer_cache)})")
 
+                # Update progress: positive enhancement done
+                pbar.update(1)
+
                 # Process negative prompt (LLM modes use Python for Standard, LLM for Detailed/Extreme)
                 print("-" * 60)
                 if detail_level == "Standard":
@@ -612,9 +625,14 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
             _negative_cache[negative_cache_key] = enhanced_negative
             print(f"[PromptEnhancer] Negative cached (cache size: {len(_negative_cache)})")
 
+            # Update progress: negative prompt done
+            pbar.update(1)
+
             # Clear references to potentially large objects
-            del client
-            del instructions_text
+            if client is not None:
+                del client
+            if 'instructions_text' in dir():
+                del instructions_text
 
             # Apply Z-Image vocabulary optimization if enabled
             if zimage_optimize:
@@ -626,6 +644,9 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
                     print(f"[PromptEnhancer] Z-Image changes: {len(result.changes_made)}")
                     for change in result.changes_made[:3]:  # Show first 3 changes
                         print(f"  - {change}")
+
+            # Update progress: Z-Image optimization done
+            pbar.update(1)
 
             # Results
             elapsed = time.time() - start_time

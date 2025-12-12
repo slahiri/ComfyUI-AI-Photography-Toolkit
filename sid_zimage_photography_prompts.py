@@ -25,6 +25,7 @@ import threading
 from typing import Dict, List, Optional
 
 from comfy_api.latest import io as comfy_io
+import comfy.utils
 
 from .llm_providers.llm_model_type import LLMModelConfig
 from .zimage_prompt_translator import translate_prompt, get_translator
@@ -627,6 +628,9 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
         global _photography_cache
         start_time = time.time()
 
+        # Initialize progress bar (3 steps: build settings, enhance, z-image optimize)
+        pbar = comfy.utils.ProgressBar(3)
+
         # Header
         print("")
         print("=" * 60)
@@ -659,6 +663,9 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
             if len(settings) > 5:
                 print(f"  ... and {len(settings) - 5} more settings")
 
+        # Update progress: settings built
+        pbar.update(1)
+
         try:
             # Quick mode - just combine (no LLM needed, no caching needed)
             if detail_level == "Quick":
@@ -671,11 +678,17 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                 else:
                     enhanced = photography_settings
 
+                # Update progress: enhancement done
+                pbar.update(1)
+
                 # Apply Z-Image vocabulary optimization if enabled
                 if zimage_optimize:
                     translator = get_translator()
                     result = translator.translate(enhanced)
                     enhanced = result.translated
+
+                # Update progress: Z-Image optimization done
+                pbar.update(1)
 
                 elapsed = time.time() - start_time
                 print(f"[PhotographyPrompts] ✓ Quick combine complete ({elapsed:.1f}s)")
@@ -690,11 +703,15 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                     enhanced = f"{prompt.strip()}, {photography_settings}"
                 else:
                     enhanced = prompt.strip() or photography_settings
+                # Update progress: enhancement done
+                pbar.update(1)
                 # Apply Z-Image vocabulary optimization if enabled
                 if zimage_optimize:
                     translator = get_translator()
                     result = translator.translate(enhanced)
                     enhanced = result.translated
+                # Update progress: Z-Image optimization done
+                pbar.update(1)
                 return comfy_io.NodeOutput(enhanced, prompt, photography_settings)
 
             # Generate cache key for LLM modes
@@ -711,6 +728,8 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                 print(f"[PhotographyPrompts] Total time: {elapsed:.3f}s")
                 print("=" * 60)
                 print("")
+                # Update progress: all steps done (cache hit)
+                pbar.update(2)
                 return comfy_io.NodeOutput(cached_result, prompt, photography_settings)
 
             print(f"[PhotographyPrompts] Cache MISS (seed: {seed})")
@@ -737,6 +756,8 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                     enhanced = prompt.strip()
                 else:
                     enhanced = photography_settings
+                # Update progress: all steps done
+                pbar.update(2)
                 elapsed = time.time() - start_time
                 print(f"[PhotographyPrompts] Quick combine complete ({elapsed:.1f}s)")
                 print("=" * 60)
@@ -788,7 +809,9 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
             _photography_cache[cache_key] = enhanced
             print(f"[PhotographyPrompts] Result cached (cache size: {len(_photography_cache)})")
 
-            # Results
+            # Update progress: enhancement done
+            pbar.update(1)
+
             # Apply Z-Image vocabulary optimization if enabled
             if zimage_optimize:
                 print("[PhotographyPrompts] Applying Z-Image vocabulary optimization...")
@@ -799,6 +822,9 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                     print(f"[PhotographyPrompts] Z-Image changes: {len(result.changes_made)}")
                     for change in result.changes_made[:3]:
                         print(f"  - {change}")
+
+            # Update progress: Z-Image optimization done
+            pbar.update(1)
 
             elapsed = time.time() - start_time
             output_words = len(enhanced.split())

@@ -1,0 +1,32 @@
+{
+  "_comment": "Copy this file to 'custom_models.json' and modify to add your own models",
+  "_documentation": "https://github.com/1038lab/ComfyUI-QwenVL/blob/main/docs/custom_models.md",
+  "hf_models": {
+    "MyCustomQwenVL": {
+      "repo_id": "username/my-qwenvl-finetune",
+      "family": "qwenvl",
+      "model_type": "vision",
+      "model_class": "AutoModelForVision2Seq",
+      "vram_requirement": {
+        "full": 10.0,
+        "8bit": 6.0,
+        "4bit": 4.0
+      },
+      "max_output_tokens": 4096,
+      "description": "My custom QwenVL finetune"
+    },
+    "MyCustomTextModel": {
+      "repo_id": "username/my-text-model",
+      "family": "qwen_text",
+      "model_type": "text",
+      "model_class": "AutoModelForCausalLM",
+      "vram_requirement": {
+        "full": 8.0,
+        "8bit": 5.0,
+        "4bit": 3.0
+      },
+      "max_output_tokens": 4096,
+      "description": "My custom text model for prompt generation"
+    }
+  }
+}
