@@ -121,8 +121,11 @@ LENGTH_LIMITS = {
     "Quick": (0, 20),      # 0-20% increase (max 1.2x original)
     "Standard": (10, 30),  # 10-30% increase (max 1.3x original)
     "Detailed": (20, 40),  # 20-40% increase (max 1.4x original)
-    "Extreme": (30, 50),   # 30-50% increase (max 1.5x original)
+    "Extreme": (30, 40),   # 30-40% increase (max 1.4x original)
 }
+
+# Repetition penalty for LLM calls (reduces repetitive text)
+REPETITION_PENALTY = 1.15
 
 # Quick: Just describe and cleanup
 QUICK_SYSTEM = """You are a prompt editor. Your task is to clean up and clarify the prompt.
@@ -183,7 +186,7 @@ EXTREME_SYSTEM = """You are an expert prompt engineer. Enhance while respecting 
 RULES:
 1. PRESERVE all original content - every word and detail
 2. Only ADD brief, high-impact details
-3. LENGTH CONSTRAINT: Output must be 30-50% longer than input, NO MORE
+3. LENGTH CONSTRAINT: Output must be 30-40% longer than input, NO MORE
 4. Focus on quality over quantity
 
 Current prompt to enhance:
@@ -327,12 +330,13 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
 
     @classmethod
     def _call_llm(cls, client, llm_model: LLMModelConfig, system_prompt: str, user_prompt: str, spinner_msg: str = "Calling LLM") -> str:
-        """Make LLM call with progress spinner."""
+        """Make LLM call with progress spinner and repetition penalty."""
         if llm_model.provider.lower() == "local":
             return cls._call_local_llm(llm_model, system_prompt, user_prompt, spinner_msg)
 
         with ProgressSpinner(spinner_msg, prefix="[PromptEnhancer]"):
             if hasattr(client, 'messages'):
+                # Anthropic API - doesn't support frequency_penalty directly
                 response = client.messages.create(
                     model=llm_model.model,
                     max_tokens=llm_model.max_tokens,
@@ -342,10 +346,16 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
                 )
                 return response.content[0].text
             else:
+                # OpenAI-compatible API - add frequency_penalty to reduce repetition
+                # Get repetition_penalty from config, fallback to default
+                rep_penalty = (llm_model.extra_params or {}).get("repetition_penalty", REPETITION_PENALTY)
+                freq_penalty = rep_penalty - 1.0  # OpenAI uses 0-2 range, convert from 1.0-2.0
                 response = client.chat.completions.create(
                     model=llm_model.model,
                     max_tokens=llm_model.max_tokens,
                     temperature=llm_model.temperature,
+                    frequency_penalty=freq_penalty,
+                    presence_penalty=0.1,  # Small penalty for reusing any token
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt}
@@ -658,13 +668,13 @@ Add only HIGH-IMPACT details. Quality over quantity."""
     def _extreme_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, instructions: str) -> str:
         """Extreme: Single pass with strict length limit."""
         original_words = len(prompt.split())
-        max_words = int(original_words * 1.5)  # 30-50% increase
+        max_words = int(original_words * 1.4)  # 30-40% increase
 
         user_prompt = f"""Enhance this prompt with maximum detail while respecting length limits.
 
 STRICT WORD LIMITS:
 - Original: {original_words} words
-- Maximum output: {max_words} words (30-50% increase)
+- Maximum output: {max_words} words (30-40% increase)
 - Do NOT exceed {max_words} words under any circumstances
 
 === ORIGINAL PROMPT ===

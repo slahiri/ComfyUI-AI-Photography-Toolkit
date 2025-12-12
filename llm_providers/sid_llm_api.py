@@ -590,6 +590,18 @@ class SID_LLM_API(comfy_io.ComfyNode):
                     display_name="Enable Reasoning",
                     tooltip="Enable extended thinking for supported models (Claude 4.5, o1, o3, DeepSeek R1, etc.)"
                 ),
+
+                # Repetition penalty
+                comfy_io.Float.Input(
+                    "repetition_penalty",
+                    default=1.15,
+                    min=1.0,
+                    max=2.0,
+                    step=0.05,
+                    round=0.05,
+                    display_mode=comfy_io.NumberDisplay.slider,
+                    tooltip="Reduce repetitive text (1.0=off, 1.15=default, 2.0=strong). Maps to frequency_penalty for OpenAI-compatible APIs."
+                ),
             ],
             outputs=[
                 LLM_MODEL_Type.Output(
@@ -612,6 +624,7 @@ class SID_LLM_API(comfy_io.ComfyNode):
         max_tokens_preset: str,
         custom_max_tokens: int,
         enable_reasoning: bool,
+        repetition_penalty: float,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
         try:
@@ -721,6 +734,7 @@ class SID_LLM_API(comfy_io.ComfyNode):
                     "is_local": is_local,
                     "requires_key": requires_key,
                     "reasoning_supported": model_supports_reasoning,
+                    "repetition_penalty": repetition_penalty,
                 },
             )
 
