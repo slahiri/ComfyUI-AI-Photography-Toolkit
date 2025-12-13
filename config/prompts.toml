@@ -3349,6 +3349,70 @@ terms = ["eye level", "high angle", "low angle", "bird's eye", "worm's eye", "du
 [vocabulary.shot_types]
 terms = ["ECU (extreme close-up)", "CU (close-up)", "MCU (medium close-up)", "MS (medium shot)", "MFS (medium full shot)", "FS (full shot)", "LS (long shot)"]
 
+# Landscape-specific vocabulary
+[vocabulary.mountain_shapes]
+terms = [
+    "jagged alpine peaks",        # Sharp, pointed mountain tops
+    "craggy limestone cliffs",    # Rough, angular rock formations
+    "rugged Dolomite spires",     # Distinctive Italian Alps style
+    "smooth rounded hills",       # Gentle, weathered formations
+    "volcanic cones",             # Symmetrical volcano shapes
+    "exposed rock faces",         # Visible bare rock areas
+    "snow-capped summits"         # Peaks with snow on top
+]
+
+[vocabulary.water_colors]
+terms = [
+    "turquoise glacial",          # Mineral-rich glacier-fed
+    "teal alpine",                # Blue-green mountain lake
+    "deep navy blue",             # Dark ocean/deep water
+    "emerald green",              # Algae-rich or mineral
+    "crystal clear",              # Transparent with visible bottom
+    "murky brown",                # Sediment-rich
+    "mirror-smooth"               # Calm reflective surface
+]
+
+[vocabulary.water_textures]
+terms = [
+    "rippled foreground",         # Small waves near viewer
+    "mirror-smooth center",       # Calm reflective middle
+    "gentle waves",               # Light wind-driven movement
+    "choppy surface",             # Rough wind conditions
+    "glassy calm",                # Perfectly still
+    "visible rocks beneath"       # Transparent with visible bottom
+]
+
+[vocabulary.vegetation_types]
+terms = [
+    "dark conifer forest",        # Pine, spruce, fir - dark green
+    "dense pine forest",          # Specific pine trees
+    "spruce and fir",             # Pointed evergreen trees
+    "deciduous forest",           # Leaves that fall
+    "bare winter branches",       # Leafless trees
+    "alpine meadow",              # High-altitude grassland
+    "treeline ending at rock"     # Where trees stop growing
+]
+
+[vocabulary.atmosphere_conditions]
+terms = [
+    "low clouds wrapping peaks",  # Clouds around mountain tops
+    "morning mist rising",        # Evaporating mist
+    "fog in valley",              # Low-lying fog
+    "atmospheric haze",           # Distance haze
+    "clear visibility",           # No atmospheric interference
+    "overcast diffused light"     # Soft cloudy lighting
+]
+
+[vocabulary.color_grades]
+terms = [
+    "cool blue-cyan tones",       # Blue color grading
+    "warm golden hour",           # Orange/yellow sunset tones
+    "muted overcast gray",        # Neutral gray tones
+    "high contrast",              # Strong lights and darks
+    "desaturated cool",           # Low saturation, blue cast
+    "vibrant saturated"           # Rich, punchy colors
+]
+
 
 # =============================================================================
 # PRESET STYLE ADDONS - Added to system prompt based on selected style
@@ -3633,84 +3697,134 @@ base = """You are an image captioning assistant for AI image generation.
 Describe the SCENE, LANDSCAPE, OBJECT, or VEHICLE in this image.
 There are NO people in this image - do not mention or describe any human subjects.
 
-Focus on:
-- Composition and framing
-- Main subject (landscape feature, vehicle, object, architecture)
-- Colors, textures, materials
-- Lighting conditions
-- Atmosphere and mood
-- Background elements
+USE SPECIFIC VISUAL VOCABULARY:
+
+FOR MOUNTAINS/TERRAIN:
+- Peak types: jagged alpine peaks, craggy limestone cliffs, smooth rounded hills, rugged Dolomite spires, exposed rock faces, snow-capped summits
+- NOT generic: "mountains rise gently" → BE SPECIFIC: "jagged limestone peaks with exposed gray rock faces"
+
+FOR WATER:
+- Colors: turquoise glacial lake, teal alpine water, deep navy blue, emerald green, crystal clear
+- Texture: rippled surface, mirror-smooth, gentle waves, choppy, glassy calm
+- NOT generic: "calm water" → BE SPECIFIC: "turquoise glacial lake with visible ripples in foreground"
+
+FOR VEGETATION:
+- Types: dark conifer forest, pine trees, spruce, evergreen, deciduous, alpine meadow
+- NOT generic: "lush green trees" → BE SPECIFIC: "dense dark pine forest covering mountainsides"
+
+FOR ATMOSPHERE:
+- Conditions: low-hanging clouds, morning mist, atmospheric haze, fog wisps around peaks
+- Color grade: cool blue-cyan tones, warm golden hour, muted overcast, high contrast
+
+FOR SKY:
+- Conditions: overcast gray, partly cloudy, clear blue, dramatic storm clouds
+- Light: soft diffused light, harsh direct sun, golden hour warmth, blue hour cool
 
 End with: "no text, no watermark"
 
 Output ONLY the description. Start directly - no introduction."""
 
 [user.scene_only.quick]
-prompt = """Describe this scene/landscape/object briefly (30-60 words).
+prompt = """Describe this scene briefly (30-60 words). NO people in this image.
 
-Cover: composition, main subject, key features, lighting, atmosphere.
+BE SPECIFIC - use exact terms:
+- Mountains: "jagged alpine peaks" not "gentle mountains"
+- Water: "turquoise glacial lake" not "calm water"
+- Trees: "dark conifer forest" not "green trees"
+- Include: snow, rock type, water color, vegetation type
 
-This image contains NO people - describe only the scene/object/landscape.
-
-End with "no text, no watermark". Start directly with "A...":"""
+End with "no text, no watermark". Start with "A...":"""
 
 [user.scene_only.standard]
-prompt = """Describe this scene for AI image generation (80-150 words).
+prompt = """Describe this scene for AI image generation (80-150 words). NO people.
 
-Cover these aspects:
-- COMPOSITION: Shot type (wide/medium/close), camera angle, framing
-- MAIN SUBJECT: What is the focus (landscape, vehicle, building, object)
-- DETAILS: Colors, textures, materials, distinctive features
-- ENVIRONMENT: Surroundings, background elements
-- LIGHTING: Time of day, light quality, shadows, highlights
-- ATMOSPHERE: Weather, mood, seasonal indicators
+USE SPECIFIC VOCABULARY - avoid generic descriptions:
 
-This image contains NO people - describe only the scene/object/landscape.
+FOR MOUNTAINS:
+- Peak shape: jagged/craggy/rounded/rugged/smooth
+- Rock type: limestone cliffs, granite faces, volcanic
+- Snow: snow-capped summits, glacial ice, bare rock
+- NOT: "mountains rise gently" → USE: "jagged Dolomite-style limestone peaks with exposed gray rock faces"
 
-Examples:
-- Landscape: "A wide panoramic shot of coastal cliffs at golden hour, dramatic waves crashing against weathered rocks, grass-covered cliff tops swaying in wind, warm orange sky with scattered clouds, soft golden light casting long shadows, no text, no watermark."
-- Vehicle: "A low angle shot of a vintage red sports car on empty desert highway, chrome details gleaming in harsh midday sun, heat haze rising from asphalt, distant mountains on horizon, clear blue sky, no text, no watermark."
+FOR WATER:
+- Exact color: turquoise, teal, emerald, deep blue, crystal clear (not just "blue")
+- Surface: rippled foreground, mirror-smooth, gentle waves, choppy
+- Type: glacial lake, alpine lake, river, ocean
 
-End with "no text, no watermark". Start directly:"""
+FOR VEGETATION:
+- Tree type: dark conifer forest, pine, spruce, evergreen, deciduous, bare
+- NOT: "lush green trees" → USE: "dense dark pine forest covering steep slopes"
+
+FOR ATMOSPHERE:
+- Color grade: cool blue-cyan tones, warm golden, muted overcast
+- Conditions: low clouds wrapping peaks, morning mist, haze in valley
+
+Example: "A wide shot of a turquoise glacial alpine lake surrounded by jagged Dolomite-style limestone peaks with snow-capped summits and exposed gray rock faces. Dense dark conifer forest covers the lower mountain slopes. Low clouds wrap around the peaks. Cool blue-cyan color grade, soft overcast lighting, rippled water surface in foreground reflecting the mountains, no text, no watermark."
+
+End with "no text, no watermark":"""
 
 [user.scene_only.detailed]
-prompt = """Write a comprehensive description of this scene for AI image generation.
+prompt = """Write a comprehensive description of this scene (150-200 words). NO people.
 
-This image contains NO people - describe only the scene, landscape, object, or vehicle.
+USE PRECISE VISUAL VOCABULARY - avoid generic terms:
 
-Cover in detail:
-- COMPOSITION: Shot type, camera angle, depth of field, framing choices
-- MAIN SUBJECT: Central focus - describe thoroughly (landscape feature, vehicle, building, object)
-- FOREGROUND: Elements closest to camera, textures, details
-- MIDGROUND: Middle distance elements, relationship to subject
-- BACKGROUND: Distant elements, horizon, sky
-- COLORS: Dominant palette, color temperature (warm/cool), saturation
-- LIGHTING: Direction, quality (soft/harsh), time of day, shadows
-- ATMOSPHERE: Weather conditions, mood, seasonal cues, environmental effects (fog, haze, dust)
-- TEXTURES: Surface qualities, materials visible
+TERRAIN/MOUNTAINS (be exact):
+- Shape: jagged alpine peaks, craggy limestone cliffs, rugged Dolomite spires, smooth rounded hills
+- Rock: exposed gray rock faces, granite, volcanic black, sandstone red
+- Snow/Ice: snow-capped summits, glacial patches, bare rock, dusted peaks
+- WRONG: "mountains rise gently" → RIGHT: "jagged limestone peaks with exposed rock faces and snow-dusted summits"
 
-End with "no text, no watermark". Write as one flowing paragraph starting with "A...":"""
+WATER (describe precisely):
+- Color: turquoise glacial, teal alpine, deep navy, emerald green, crystal clear (NOT just "blue water")
+- Surface texture: rippled in foreground, mirror-smooth center, gentle waves, visible rocks beneath
+- WRONG: "calm reflective water" → RIGHT: "turquoise glacial lake with rippled surface in foreground transitioning to mirror-smooth center"
+
+VEGETATION (specific types):
+- Trees: dark conifer forest, dense pine, spruce, evergreen, deciduous, bare branches
+- Coverage: forest covering slopes, treeline ending at rocks, sparse alpine
+- WRONG: "lush green trees" → RIGHT: "dense dark conifer forest of pine and spruce"
+
+ATMOSPHERE/LIGHT:
+- Color grade: cool blue-cyan tones, warm golden, muted gray
+- Conditions: low clouds wrapping peaks, mist in valley, fog wisps, clear
+
+FOREGROUND → MIDGROUND → BACKGROUND layers
+
+End with "no text, no watermark":"""
 
 [user.scene_only.extreme]
-prompt = """Write the most detailed description possible of this scene for AI image generation.
+prompt = """Write the most detailed description possible (200-300 words). NO people.
 
-This image contains NO people - describe ONLY the scene, landscape, vehicle, or object visible.
+CRITICAL: Use PRECISE visual vocabulary, NOT generic descriptions.
 
-Analyze exhaustively:
-- FRAMING: Exact shot type, camera height and angle, where frame edges cut
-- COMPOSITION: Rule of thirds placement, leading lines, symmetry, depth layers
-- PRIMARY SUBJECT: Every visible detail of the main focus
-- FOREGROUND LAYER: All elements, textures, colors, relative sizes
-- MIDGROUND LAYER: Features, distance relationship, connecting elements
-- BACKGROUND LAYER: Horizon line, sky condition, distant features
-- COLOR ANALYSIS: Primary colors, accent colors, overall temperature, saturation levels
-- LIGHT SOURCE: Direction, intensity, quality, color cast
-- SHADOW PATTERNS: Length, softness, areas of contrast
-- ATMOSPHERIC CONDITIONS: Weather, visibility, environmental particles
-- SURFACE TEXTURES: Materials, reflectivity, roughness, patterns
-- TEMPORAL CUES: Time of day, season, age/weathering of elements
+TERRAIN/MOUNTAINS - describe exactly:
+- Peak shape: jagged alpine, craggy limestone, rugged Dolomite spires, smooth rounded, volcanic cones
+- Rock type: exposed gray limestone faces, dark granite, red sandstone, volcanic black
+- Snow/ice: snow-capped summits, glacial ice patches, snow dusting, bare rock
+- AVOID: "gentle mountains" → USE: "jagged Dolomite-style peaks with exposed gray limestone and snow-capped summits"
 
-End with "no text, no watermark". Write as one detailed flowing paragraph:"""
+WATER - be precise:
+- Exact color: turquoise glacial, teal alpine, deep navy, emerald green, crystal clear with visible bottom
+- Surface texture by zone: rippled/choppy foreground, transitioning to mirror-smooth center, reflections
+- AVOID: "calm blue water" → USE: "turquoise glacial lake with rippled surface in foreground, mirror-smooth center reflecting peaks"
+
+VEGETATION - specific types:
+- Tree species: dark conifer forest (pine, spruce, fir), deciduous (birch, aspen), bare winter branches
+- Coverage pattern: dense forest on lower slopes, treeline ending at rock, sparse alpine meadow
+- Color: dark green conifers, bright deciduous, autumn colors, winter bare
+- AVOID: "lush green trees" → USE: "dense dark conifer forest of spruce and pine covering lower mountain slopes"
+
+ATMOSPHERE & COLOR GRADE:
+- Overall tone: cool blue-cyan grade, warm golden, neutral, muted overcast gray
+- Conditions: low clouds wrapping peaks, morning mist rising, fog in valley, haze layers
+- Light quality: soft diffused overcast, harsh direct sun, golden hour warmth
+
+LAYERS (describe each):
+- FOREGROUND: water texture, shoreline details, rocks, vegetation
+- MIDGROUND: lake surface, forest coverage, mountain bases
+- BACKGROUND: peaks, sky condition, distant features
+
+End with "no text, no watermark":"""
 
 
 # =============================================================================
