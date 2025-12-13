@@ -1492,20 +1492,29 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         check_interrupted()
 
         # Single detection prompt that returns both pieces of info
-        detection_prompt = """Analyze this image and answer TWO questions:
+        # Made more explicit to reduce false positives on landscapes
+        detection_prompt = """Look at this image carefully and answer TWO questions:
 
-1. Is there a human person visible? (YES or NO)
-2. What is the PRIMARY subject category?
+1. Is there a HUMAN PERSON clearly visible in this image?
+   - Answer YES ONLY if you can see a person's face, body, hands, or any human body part
+   - Answer NO if the image shows only nature, objects, animals, vehicles, or buildings without any humans
+   - When in doubt, answer NO
 
-Categories:
-- PORTRAIT (human face/body is main focus)
-- PET (animal - dog, cat, bird, etc.)
-- VEHICLE (car, motorcycle, plane, boat)
-- LANDSCAPE (nature, mountains, beach, forest)
-- ARCHITECTURE (building, interior, structure)
-- OBJECT (product, food, still life)
+2. What is the PRIMARY subject?
 
-Answer format (exactly):
+Categories (pick ONE):
+- PORTRAIT: Human face or body is the main subject
+- PET: Animal (dog, cat, bird, horse, etc.) - no humans
+- VEHICLE: Car, motorcycle, plane, boat - no humans
+- LANDSCAPE: Nature scene (mountains, lake, beach, forest, sky) - no humans
+- ARCHITECTURE: Building, interior, bridge, structure - no humans
+- OBJECT: Product, food, still life - no humans
+
+IMPORTANT: If the image is a nature/landscape scene with mountains, water, trees, or sky, answer:
+HUMAN: NO
+SUBJECT: LANDSCAPE
+
+Answer format (exactly two lines):
 HUMAN: YES or NO
 SUBJECT: <category>"""
 
@@ -1553,12 +1562,20 @@ SUBJECT: <category>"""
                     subject_type = subj
                     break
 
+            # SANITY CHECK: If subject is non-human category but has_human=True, be skeptical
+            # A pure LANDSCAPE/VEHICLE/OBJECT/ARCHITECTURE shouldn't have a human
+            # If LLM says LANDSCAPE but also HUMAN:YES, it's likely a false positive
+            if has_human and subject_type in ["LANDSCAPE", "VEHICLE", "OBJECT", "ARCHITECTURE"]:
+                print(f"[SID-Prompt] Warning: Contradictory detection (human=YES but subject={subject_type})")
+                print(f"[SID-Prompt] Overriding to has_human=False (likely false positive)")
+                has_human = False
+
             # Determine prompt mode based on combination
             if has_human:
                 if subject_type == "PORTRAIT":
                     prompt_mode = "portrait"  # Human-focused prompts
                 else:
-                    prompt_mode = "human_with_subject"  # Balanced prompts
+                    prompt_mode = "human_with_subject"  # Balanced prompts (PET with human)
             else:
                 prompt_mode = "scene_only"  # No human keywords at all
 
