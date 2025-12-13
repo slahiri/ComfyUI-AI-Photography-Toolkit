@@ -5,19 +5,35 @@ ComfyUI-AI-Photography-Toolkit - Local LLM Provider Node
 Unified local vision-language model provider for ComfyUI.
 Supports multiple model families with automatic VRAM management.
 
-Supported Model Families:
-- QwenVL: Qwen3-VL, Qwen2.5-VL (2B-32B)
+Supported Vision Model Families:
+- QwenVL: Qwen3-VL, Qwen2.5-VL (2B-32B) - Best overall quality
+- LLaVA: LLaVA 1.5/1.6 (7B-13B) - Popular VLM
+- InternVL2: InternVL2 (2B-8B) - OpenGVLab
+- MiniCPM-V: MiniCPM-V 2.6 - Efficient multi-modal
+- PaliGemma: Google PaliGemma (3B) - Google VLM
+- Llama-Vision: Llama 3.2 Vision (11B) - Meta VLM
+- Pixtral: Mistral Pixtral (12B) - Mistral VLM
+- Molmo: Allen AI Molmo (7B) - Allen AI VLM
+- Idefics2: HuggingFace Idefics2 (8B) - HuggingFace VLM
 - Florence-2: Microsoft Florence-2 (0.2B-0.7B) - Fast captioning
 - Moondream2: Lightweight VLM (1.8B) - Efficient
 - SmolVLM: HuggingFace SmolVLM (0.25B-2B) - Ultra-efficient
 - Phi-3.5-Vision: Microsoft Phi-3.5 (4.2B) - High quality
-- Qwen3 Text: Text-only models for prompt generation (0.6B-8B)
+
+Text-Only Models (for prompt generation):
+- Qwen3 Text: Qwen3 text models (0.6B-8B)
+- Qwen2.5 Text: Qwen2.5 text models (1.5B-7B)
+- Llama 3.2 Text: Llama 3.2 text (1B-3B)
+- Phi-3.5 Mini: Microsoft Phi-3.5-mini
+- Mistral 7B: Mistral text model
+- Gemma 2: Google Gemma 2 (2B)
 
 Features:
 - VRAM auto-downgrade with safety margin
-- Multiple quantization options
+- Multiple quantization options (FP16, 8-bit, 4-bit)
 - Model caching for faster inference
 - Image caching for repeated analyses
+- Anti-hallucination guardrails for scene detection
 
 Author: Siddhartha Lahiri
 Email: siddhartha.lahiri@gmail.com
@@ -187,6 +203,13 @@ class ModelFamily(Enum):
     SMOLVLM = "smolvlm"
     PHI35_VISION = "phi35_vision"
     LLAVA = "llava"  # LLaVA vision-language models
+    INTERNVL = "internvl"  # InternVL2 series
+    MINICPM = "minicpm"  # MiniCPM-V series
+    PALIGEMMA = "paligemma"  # Google PaliGemma
+    LLAMA_VISION = "llama_vision"  # Llama 3.2 Vision
+    PIXTRAL = "pixtral"  # Mistral Pixtral
+    MOLMO = "molmo"  # Allen AI Molmo
+    IDEFICS = "idefics"  # HuggingFace Idefics
     # Text-only models
     QWEN_TEXT = "qwen_text"
     QWEN3_TEXT = "qwen3_text"  # Qwen3 text models (latest, optimized for prompts)
@@ -542,6 +565,154 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
     ),
 
     # =========================================================================
+    # InternVL2 Series (OpenGVLab) - Vision Only
+    # =========================================================================
+    "InternVL2-2B": LocalModelInfo(
+        name="InternVL2 2B (Vision) | 4K | 2GB",
+        repo_id="OpenGVLab/InternVL2-2B",
+        family=ModelFamily.INTERNVL,
+        vram_fp16=4.5, vram_8bit=3.0, vram_4bit=2.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="Fast InternVL2",
+        model_class="AutoModel"
+    ),
+    "InternVL2-4B": LocalModelInfo(
+        name="InternVL2 4B (Vision) | 4K | 4GB",
+        repo_id="OpenGVLab/InternVL2-4B",
+        family=ModelFamily.INTERNVL,
+        vram_fp16=8.0, vram_8bit=5.0, vram_4bit=3.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="Balanced InternVL2",
+        model_class="AutoModel"
+    ),
+    "InternVL2-8B": LocalModelInfo(
+        name="InternVL2 8B (Vision) | 4K | 8GB",
+        repo_id="OpenGVLab/InternVL2-8B",
+        family=ModelFamily.INTERNVL,
+        vram_fp16=16.0, vram_8bit=10.0, vram_4bit=6.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="High quality InternVL2",
+        model_class="AutoModel"
+    ),
+
+    # =========================================================================
+    # MiniCPM-V Series (OpenBMB) - Vision Only
+    # =========================================================================
+    "MiniCPM-V-2.6": LocalModelInfo(
+        name="MiniCPM-V 2.6 (Vision) | 4K | 8GB",
+        repo_id="openbmb/MiniCPM-V-2_6",
+        family=ModelFamily.MINICPM,
+        vram_fp16=16.0, vram_8bit=10.0, vram_4bit=6.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="Efficient multi-modal model",
+        model_class="AutoModel"
+    ),
+
+    # =========================================================================
+    # PaliGemma Series (Google) - Vision Only
+    # =========================================================================
+    "PaliGemma-3B": LocalModelInfo(
+        name="PaliGemma 3B (Vision) | 4K | 3GB",
+        repo_id="google/paligemma-3b-mix-448",
+        family=ModelFamily.PALIGEMMA,
+        vram_fp16=7.0, vram_8bit=4.5, vram_4bit=3.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="Google PaliGemma 3B",
+        model_class="PaliGemmaForConditionalGeneration"
+    ),
+    "PaliGemma2-3B": LocalModelInfo(
+        name="PaliGemma2 3B (Vision) | 4K | 3GB",
+        repo_id="google/paligemma2-3b-pt-448",
+        family=ModelFamily.PALIGEMMA,
+        vram_fp16=7.0, vram_8bit=4.5, vram_4bit=3.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="Google PaliGemma2 3B",
+        model_class="PaliGemmaForConditionalGeneration"
+    ),
+
+    # =========================================================================
+    # Llama 3.2 Vision (Meta) - Vision Only
+    # =========================================================================
+    "Llama-3.2-11B-Vision": LocalModelInfo(
+        name="Llama 3.2 11B Vision (Vision) | 4K | 11GB",
+        repo_id="meta-llama/Llama-3.2-11B-Vision-Instruct",
+        family=ModelFamily.LLAMA_VISION,
+        vram_fp16=22.0, vram_8bit=13.0, vram_4bit=8.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="Meta Llama 3.2 Vision",
+        model_class="MllamaForConditionalGeneration"
+    ),
+
+    # =========================================================================
+    # Pixtral (Mistral AI) - Vision Only
+    # =========================================================================
+    "Pixtral-12B": LocalModelInfo(
+        name="Pixtral 12B (Vision) | 4K | 12GB",
+        repo_id="mistralai/Pixtral-12B-2409",
+        family=ModelFamily.PIXTRAL,
+        vram_fp16=24.0, vram_8bit=14.0, vram_4bit=9.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="Mistral Pixtral 12B",
+        model_class="LlavaForConditionalGeneration"
+    ),
+
+    # =========================================================================
+    # Molmo (Allen AI) - Vision Only
+    # =========================================================================
+    "Molmo-7B-D": LocalModelInfo(
+        name="Molmo 7B-D (Vision) | 4K | 7GB",
+        repo_id="allenai/Molmo-7B-D-0924",
+        family=ModelFamily.MOLMO,
+        vram_fp16=14.0, vram_8bit=8.0, vram_4bit=5.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="Allen AI Molmo 7B",
+        model_class="AutoModelForCausalLM"
+    ),
+    "Molmo-7B-O": LocalModelInfo(
+        name="Molmo 7B-O (Vision) | 4K | 7GB",
+        repo_id="allenai/Molmo-7B-O-0924",
+        family=ModelFamily.MOLMO,
+        vram_fp16=14.0, vram_8bit=8.0, vram_4bit=5.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="Allen AI Molmo 7B OpenAI-style",
+        model_class="AutoModelForCausalLM"
+    ),
+
+    # =========================================================================
+    # Idefics2 (HuggingFace) - Vision Only
+    # =========================================================================
+    "Idefics2-8B": LocalModelInfo(
+        name="Idefics2 8B (Vision) | 4K | 8GB",
+        repo_id="HuggingFaceM4/idefics2-8b",
+        family=ModelFamily.IDEFICS,
+        vram_fp16=16.0, vram_8bit=10.0, vram_4bit=6.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="HuggingFace Idefics2 8B",
+        model_class="Idefics2ForConditionalGeneration"
+    ),
+    "Idefics2-8B-Chatty": LocalModelInfo(
+        name="Idefics2 8B Chatty (Vision) | 4K | 8GB",
+        repo_id="HuggingFaceM4/idefics2-8b-chatty",
+        family=ModelFamily.IDEFICS,
+        vram_fp16=16.0, vram_8bit=10.0, vram_4bit=6.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="HuggingFace Idefics2 8B Chatty",
+        model_class="Idefics2ForConditionalGeneration"
+    ),
+
+    # =========================================================================
     # SmolVLM Series (HuggingFace) - Vision Only
     # =========================================================================
     "SmolVLM-256M": LocalModelInfo(
@@ -781,6 +952,13 @@ def load_custom_models():
                 "smolvlm": ModelFamily.SMOLVLM,
                 "phi35_vision": ModelFamily.PHI35_VISION,
                 "llava": ModelFamily.LLAVA,
+                "internvl": ModelFamily.INTERNVL,
+                "minicpm": ModelFamily.MINICPM,
+                "paligemma": ModelFamily.PALIGEMMA,
+                "llama_vision": ModelFamily.LLAMA_VISION,
+                "pixtral": ModelFamily.PIXTRAL,
+                "molmo": ModelFamily.MOLMO,
+                "idefics": ModelFamily.IDEFICS,
                 "qwen_text": ModelFamily.QWEN_TEXT,
                 "qwen3_text": ModelFamily.QWEN3_TEXT,
                 "llama_text": ModelFamily.LLAMA_TEXT,
@@ -1149,6 +1327,20 @@ class LocalModelClient:
             self._load_phi35_vision(model_path, device)
         elif self.model_info.family == ModelFamily.LLAVA:
             self._load_llava(model_path, device)
+        elif self.model_info.family == ModelFamily.INTERNVL:
+            self._load_internvl(model_path, device)
+        elif self.model_info.family == ModelFamily.MINICPM:
+            self._load_minicpm(model_path, device)
+        elif self.model_info.family == ModelFamily.PALIGEMMA:
+            self._load_paligemma(model_path, device)
+        elif self.model_info.family == ModelFamily.LLAMA_VISION:
+            self._load_llama_vision(model_path, device)
+        elif self.model_info.family == ModelFamily.PIXTRAL:
+            self._load_pixtral(model_path, device)
+        elif self.model_info.family == ModelFamily.MOLMO:
+            self._load_molmo(model_path, device)
+        elif self.model_info.family == ModelFamily.IDEFICS:
+            self._load_idefics(model_path, device)
         elif self.model_info.family == ModelFamily.QWENVL:
             self._load_qwenvl(model_path, device)
         elif self.model_info.family in [ModelFamily.QWEN_TEXT, ModelFamily.QWEN3_TEXT,
@@ -1351,6 +1543,209 @@ class LocalModelClient:
 
         self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
         self.tokenizer = self.processor.tokenizer
+
+    def _load_internvl(self, model_path: str, device: str):
+        """Load InternVL2 model with quantization support."""
+        import torch
+        from transformers import AutoProcessor, AutoModel, BitsAndBytesConfig
+
+        quant_config, dtype = self._get_quantization_config(device)
+
+        load_kwargs = {
+            "trust_remote_code": True,
+            "low_cpu_mem_usage": True,
+        }
+
+        if device == "cuda":
+            load_kwargs["device_map"] = "auto"
+            if quant_config:
+                load_kwargs["quantization_config"] = quant_config
+            else:
+                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+
+        print(f"[LocalModelClient] Loading InternVL2...")
+        self.model = AutoModel.from_pretrained(model_path, **load_kwargs)
+        self.model.eval()
+
+        if hasattr(self.model.config, 'use_cache'):
+            self.model.config.use_cache = True
+
+        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+        self.tokenizer = self.processor.tokenizer if hasattr(self.processor, 'tokenizer') else None
+
+    def _load_minicpm(self, model_path: str, device: str):
+        """Load MiniCPM-V model with quantization support."""
+        import torch
+        from transformers import AutoProcessor, AutoModel, BitsAndBytesConfig
+
+        quant_config, dtype = self._get_quantization_config(device)
+
+        load_kwargs = {
+            "trust_remote_code": True,
+            "low_cpu_mem_usage": True,
+        }
+
+        if device == "cuda":
+            load_kwargs["device_map"] = "auto"
+            if quant_config:
+                load_kwargs["quantization_config"] = quant_config
+            else:
+                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+
+        print(f"[LocalModelClient] Loading MiniCPM-V...")
+        self.model = AutoModel.from_pretrained(model_path, **load_kwargs)
+        self.model.eval()
+
+        if hasattr(self.model.config, 'use_cache'):
+            self.model.config.use_cache = True
+
+        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+        self.tokenizer = self.processor.tokenizer if hasattr(self.processor, 'tokenizer') else None
+
+    def _load_paligemma(self, model_path: str, device: str):
+        """Load PaliGemma model with quantization support."""
+        import torch
+        from transformers import AutoProcessor, PaliGemmaForConditionalGeneration, BitsAndBytesConfig
+
+        quant_config, dtype = self._get_quantization_config(device)
+
+        load_kwargs = {
+            "trust_remote_code": True,
+            "low_cpu_mem_usage": True,
+        }
+
+        if device == "cuda":
+            load_kwargs["device_map"] = "auto"
+            if quant_config:
+                load_kwargs["quantization_config"] = quant_config
+            else:
+                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+
+        print(f"[LocalModelClient] Loading PaliGemma...")
+        self.model = PaliGemmaForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
+        self.model.eval()
+
+        if hasattr(self.model.config, 'use_cache'):
+            self.model.config.use_cache = True
+
+        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+        self.tokenizer = self.processor.tokenizer if hasattr(self.processor, 'tokenizer') else None
+
+    def _load_llama_vision(self, model_path: str, device: str):
+        """Load Llama 3.2 Vision model with quantization support."""
+        import torch
+        from transformers import AutoProcessor, MllamaForConditionalGeneration, BitsAndBytesConfig
+
+        quant_config, dtype = self._get_quantization_config(device)
+
+        load_kwargs = {
+            "trust_remote_code": True,
+            "low_cpu_mem_usage": True,
+        }
+
+        if device == "cuda":
+            load_kwargs["device_map"] = "auto"
+            if quant_config:
+                load_kwargs["quantization_config"] = quant_config
+            else:
+                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+
+        print(f"[LocalModelClient] Loading Llama 3.2 Vision...")
+        self.model = MllamaForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
+        self.model.eval()
+
+        if hasattr(self.model.config, 'use_cache'):
+            self.model.config.use_cache = True
+
+        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+        self.tokenizer = self.processor.tokenizer if hasattr(self.processor, 'tokenizer') else None
+
+    def _load_pixtral(self, model_path: str, device: str):
+        """Load Pixtral model with quantization support."""
+        import torch
+        from transformers import AutoProcessor, LlavaForConditionalGeneration, BitsAndBytesConfig
+
+        quant_config, dtype = self._get_quantization_config(device)
+
+        load_kwargs = {
+            "trust_remote_code": True,
+            "low_cpu_mem_usage": True,
+        }
+
+        if device == "cuda":
+            load_kwargs["device_map"] = "auto"
+            if quant_config:
+                load_kwargs["quantization_config"] = quant_config
+            else:
+                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+
+        print(f"[LocalModelClient] Loading Pixtral...")
+        self.model = LlavaForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
+        self.model.eval()
+
+        if hasattr(self.model.config, 'use_cache'):
+            self.model.config.use_cache = True
+
+        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+        self.tokenizer = self.processor.tokenizer if hasattr(self.processor, 'tokenizer') else None
+
+    def _load_molmo(self, model_path: str, device: str):
+        """Load Molmo model with quantization support."""
+        import torch
+        from transformers import AutoProcessor, AutoModelForCausalLM, BitsAndBytesConfig
+
+        quant_config, dtype = self._get_quantization_config(device)
+
+        load_kwargs = {
+            "trust_remote_code": True,
+            "low_cpu_mem_usage": True,
+        }
+
+        if device == "cuda":
+            load_kwargs["device_map"] = "auto"
+            if quant_config:
+                load_kwargs["quantization_config"] = quant_config
+            else:
+                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+
+        print(f"[LocalModelClient] Loading Molmo...")
+        self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
+        self.model.eval()
+
+        if hasattr(self.model.config, 'use_cache'):
+            self.model.config.use_cache = True
+
+        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+        self.tokenizer = self.processor.tokenizer if hasattr(self.processor, 'tokenizer') else None
+
+    def _load_idefics(self, model_path: str, device: str):
+        """Load Idefics2 model with quantization support."""
+        import torch
+        from transformers import AutoProcessor, Idefics2ForConditionalGeneration, BitsAndBytesConfig
+
+        quant_config, dtype = self._get_quantization_config(device)
+
+        load_kwargs = {
+            "trust_remote_code": True,
+            "low_cpu_mem_usage": True,
+        }
+
+        if device == "cuda":
+            load_kwargs["device_map"] = "auto"
+            if quant_config:
+                load_kwargs["quantization_config"] = quant_config
+            else:
+                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+
+        print(f"[LocalModelClient] Loading Idefics2...")
+        self.model = Idefics2ForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
+        self.model.eval()
+
+        if hasattr(self.model.config, 'use_cache'):
+            self.model.config.use_cache = True
+
+        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+        self.tokenizer = self.processor.tokenizer if hasattr(self.processor, 'tokenizer') else None
 
     def _load_smolvlm(self, model_path: str, device: str):
         """Load SmolVLM model with speed optimizations."""
@@ -1697,6 +2092,20 @@ class LocalModelClient:
                 response_text = self._generate_phi35_vision(images, text_prompt, max_tokens, current_temp)
             elif self.model_info.family == ModelFamily.LLAVA:
                 response_text = self._generate_llava(images, text_prompt, max_tokens, current_temp)
+            elif self.model_info.family == ModelFamily.INTERNVL:
+                response_text = self._generate_internvl(images, text_prompt, max_tokens, current_temp)
+            elif self.model_info.family == ModelFamily.MINICPM:
+                response_text = self._generate_minicpm(images, text_prompt, max_tokens, current_temp)
+            elif self.model_info.family == ModelFamily.PALIGEMMA:
+                response_text = self._generate_paligemma(images, text_prompt, max_tokens, current_temp)
+            elif self.model_info.family == ModelFamily.LLAMA_VISION:
+                response_text = self._generate_llama_vision(images, text_prompt, max_tokens, current_temp)
+            elif self.model_info.family == ModelFamily.PIXTRAL:
+                response_text = self._generate_pixtral(images, text_prompt, max_tokens, current_temp)
+            elif self.model_info.family == ModelFamily.MOLMO:
+                response_text = self._generate_molmo(images, text_prompt, max_tokens, current_temp)
+            elif self.model_info.family == ModelFamily.IDEFICS:
+                response_text = self._generate_idefics(images, text_prompt, max_tokens, current_temp)
             elif self.model_info.family == ModelFamily.QWENVL:
                 response_text = self._generate_qwenvl(messages, images, max_tokens, current_temp)
             else:
@@ -1903,6 +2312,265 @@ class LocalModelClient:
                 )
 
         # Only decode the NEW tokens (exclude input prompt)
+        generated_tokens = outputs[0][input_len:]
+        return self.processor.decode(generated_tokens, skip_special_tokens=True)
+
+    def _generate_internvl(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Generate with InternVL2 models."""
+        check_interrupted()
+
+        import torch
+
+        # InternVL2 uses chat-style format
+        messages = [{"role": "user", "content": f"<image>\n{prompt.strip()}"}]
+
+        # Process inputs
+        inputs = self.processor(
+            text=prompt.strip(),
+            images=images[0] if images else None,
+            return_tensors="pt"
+        )
+
+        device = next(self.model.parameters()).device
+        inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in inputs.items()}
+
+        input_len = inputs["input_ids"].shape[1] if "input_ids" in inputs else 0
+
+        with InferenceProgressSpinner("Generating (InternVL2)"):
+            with torch.inference_mode():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                )
+
+        generated_tokens = outputs[0][input_len:] if input_len > 0 else outputs[0]
+        return self.processor.decode(generated_tokens, skip_special_tokens=True)
+
+    def _generate_minicpm(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Generate with MiniCPM-V models."""
+        check_interrupted()
+
+        import torch
+
+        # MiniCPM-V has its own chat method
+        if hasattr(self.model, 'chat'):
+            # Use the model's built-in chat method
+            msgs = [{"role": "user", "content": prompt.strip()}]
+            with InferenceProgressSpinner("Generating (MiniCPM-V)"):
+                response = self.model.chat(
+                    image=images[0] if images else None,
+                    msgs=msgs,
+                    tokenizer=self.tokenizer,
+                    max_new_tokens=max_tokens,
+                    sampling=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                )
+            return response
+        else:
+            # Fallback to standard generation
+            inputs = self.processor(
+                text=prompt.strip(),
+                images=images[0] if images else None,
+                return_tensors="pt"
+            )
+
+            device = next(self.model.parameters()).device
+            inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in inputs.items()}
+
+            input_len = inputs["input_ids"].shape[1] if "input_ids" in inputs else 0
+
+            with InferenceProgressSpinner("Generating (MiniCPM-V)"):
+                with torch.inference_mode():
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=max_tokens,
+                        do_sample=temperature > 0,
+                        temperature=temperature if temperature > 0 else None,
+                    )
+
+            generated_tokens = outputs[0][input_len:] if input_len > 0 else outputs[0]
+            return self.processor.decode(generated_tokens, skip_special_tokens=True)
+
+    def _generate_paligemma(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Generate with PaliGemma models."""
+        check_interrupted()
+
+        import torch
+
+        # PaliGemma format
+        inputs = self.processor(
+            text=prompt.strip(),
+            images=images[0] if images else None,
+            return_tensors="pt"
+        )
+
+        device = next(self.model.parameters()).device
+        inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in inputs.items()}
+
+        input_len = inputs["input_ids"].shape[1]
+
+        with InferenceProgressSpinner("Generating (PaliGemma)"):
+            with torch.inference_mode():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                )
+
+        generated_tokens = outputs[0][input_len:]
+        return self.processor.decode(generated_tokens, skip_special_tokens=True)
+
+    def _generate_llama_vision(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Generate with Llama 3.2 Vision models."""
+        check_interrupted()
+
+        import torch
+
+        # Llama 3.2 Vision uses chat template
+        messages = [
+            {"role": "user", "content": [
+                {"type": "image"},
+                {"type": "text", "text": prompt.strip()}
+            ]}
+        ]
+
+        input_text = self.processor.apply_chat_template(messages, add_generation_prompt=True)
+
+        inputs = self.processor(
+            text=input_text,
+            images=images[0] if images else None,
+            return_tensors="pt"
+        )
+
+        device = next(self.model.parameters()).device
+        inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in inputs.items()}
+
+        input_len = inputs["input_ids"].shape[1]
+
+        with InferenceProgressSpinner("Generating (Llama-Vision)"):
+            with torch.inference_mode():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                )
+
+        generated_tokens = outputs[0][input_len:]
+        return self.processor.decode(generated_tokens, skip_special_tokens=True)
+
+    def _generate_pixtral(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Generate with Pixtral models (uses LLaVA-style format)."""
+        check_interrupted()
+
+        import torch
+
+        # Pixtral uses LLaVA-style format
+        if images:
+            conversation = f"USER: <image>\n{prompt.strip()}\nASSISTANT:"
+        else:
+            conversation = f"USER: {prompt.strip()}\nASSISTANT:"
+
+        inputs = self.processor(
+            text=conversation,
+            images=images[0] if images else None,
+            return_tensors="pt"
+        )
+
+        device = next(self.model.parameters()).device
+        inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in inputs.items()}
+
+        input_len = inputs["input_ids"].shape[1]
+
+        with InferenceProgressSpinner("Generating (Pixtral)"):
+            with torch.inference_mode():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                    pad_token_id=self.processor.tokenizer.eos_token_id,
+                )
+
+        generated_tokens = outputs[0][input_len:]
+        return self.processor.decode(generated_tokens, skip_special_tokens=True)
+
+    def _generate_molmo(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Generate with Molmo models."""
+        check_interrupted()
+
+        import torch
+
+        # Molmo uses its processor for image+text
+        inputs = self.processor.process(
+            images=images[0] if images else None,
+            text=prompt.strip()
+        )
+
+        # Convert to tensors and move to device
+        device = next(self.model.parameters()).device
+        inputs = {k: v.to(device).unsqueeze(0) if torch.is_tensor(v) else v for k, v in inputs.items()}
+
+        input_len = inputs["input_ids"].shape[1] if "input_ids" in inputs else 0
+
+        with InferenceProgressSpinner("Generating (Molmo)"):
+            with torch.inference_mode():
+                outputs = self.model.generate_from_batch(
+                    inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                )
+
+        # Molmo returns the generated text directly
+        if isinstance(outputs, str):
+            return outputs
+
+        generated_tokens = outputs[0][input_len:] if input_len > 0 else outputs[0]
+        return self.processor.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+
+    def _generate_idefics(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Generate with Idefics2 models."""
+        check_interrupted()
+
+        import torch
+
+        # Idefics2 uses chat template
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image"},
+                    {"type": "text", "text": prompt.strip()},
+                ],
+            },
+        ]
+
+        text = self.processor.apply_chat_template(messages, add_generation_prompt=True)
+
+        inputs = self.processor(
+            text=text,
+            images=images if images else None,
+            return_tensors="pt"
+        )
+
+        device = next(self.model.parameters()).device
+        inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in inputs.items()}
+
+        input_len = inputs["input_ids"].shape[1]
+
+        with InferenceProgressSpinner("Generating (Idefics2)"):
+            with torch.inference_mode():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                )
+
         generated_tokens = outputs[0][input_len:]
         return self.processor.decode(generated_tokens, skip_special_tokens=True)
 

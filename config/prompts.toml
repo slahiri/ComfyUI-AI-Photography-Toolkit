@@ -4,13 +4,30 @@
 # Prompts are organized by tier (advanced/standard/basic) and mode (quick/standard/detailed/extreme)
 # Triple-quoted strings (""") allow multi-line prompts
 #
-# Z-IMAGE TURBO BEST PRACTICES:
-# - No negative prompts (guidance_scale=0) - all constraints go in positive prompt
-# - Structured format: Composition > Subject > Clothing > Environment > Lighting > Technical
-# - Use geometric face angles (front view, 45°, profile) not poetic descriptions
-# - Lighting keywords work exceptionally well
-# - Place cleanup constraints at the end (no text, no watermark)
-# - Natural language > tag soup
+# Z-IMAGE TURBO BEST PRACTICES (from Z-Image Prompting Guide):
+#
+# THE GOLDEN RULE: "Every word should describe something visible."
+# The model cannot interpret abstract concepts like "beautiful", "mysterious", "interesting".
+# It only understands colors, shapes, textures, materials, and compositions.
+#
+# CAMERA-FIRST APPROACH: Write like camera instructions, not creative writing
+# - Composition: Shot type, camera angle, rule of thirds
+# - Subject: Concrete visible details (skin tone, eye color, hair texture)
+# - Lighting: Specific patterns (Rembrandt, butterfly, split, rim)
+# - Technical: Lens focal length, depth of field
+#
+# VISUAL VOCABULARY THAT WORKS:
+# - Skin: warm ivory, cool beige, golden tan, deep brown, olive, porcelain
+# - Eyes: almond, round, hooded, deep-set; steel grey, warm brown, amber, hazel
+# - Hair: silky straight, wavy, tight curls, coily; bob, pixie, layers, braided
+# - Lighting: Rembrandt, butterfly, split, loop, rim, high key, low key
+#
+# FORMAT:
+# - Natural language narrative, NOT comma-separated tags
+# - No meta-tags (8K, masterpiece, best quality) - quality is baked in
+# - No negative prompts - embed constraints positively
+# - End with safety clauses: "no text, no watermark, no logos"
+# - Optimal length: 80-250 words (~100-333 tokens)
 
 
 # =============================================================================
@@ -3217,29 +3234,44 @@ free = { min_words = 0, max_words = 0, description = "No constraint - LLM decide
 # For Claude, GPT-4, Gemini - full capability
 base = """You are an expert visual analyst generating prompts for Z-Image Turbo text-to-image AI.
 
-Z-Image CRITICAL RULES:
-- Use STRUCTURED format: composition → subject → clothing → environment → lighting → technical
-- Use GEOMETRIC face angles: "front view", "45° angle", "profile", "left-side half-face"
-- Describe lighting with specific keywords: "soft diffused daylight", "cinematic warm key light", "rim lighting"
-- Keep clothing descriptions minimal (3-5 words per item)
-- End with cleanup constraints: "no text, no watermark, no logos"
-- Write natural flowing sentences, NOT comma-separated tags
-- Be precise and direct, avoid poetic flourishes
+THE GOLDEN RULE: Every word must describe something VISIBLE. No abstract concepts.
 
-Output ONLY the prompt text - no explanations, no formatting, no markdown."""
+CAMERA-FIRST APPROACH - Write like camera instructions, not creative writing:
+- COMPOSITION: Shot type (close-up, medium, full-body, wide), rule of thirds positioning
+- ANGLE: Geometric terms (front view, 45° angle, profile, eye level, low angle, high angle)
+- SUBJECT: Concrete visible details (skin tone, eye color, hair texture)
+- LIGHTING: Use specific patterns (Rembrandt, butterfly, split, loop, rim, soft diffused, hard key)
+- TECHNICAL: Lens focal length, depth of field, bokeh quality
+
+VISUAL VOCABULARY:
+- Skin: warm ivory, cool beige, golden tan, deep brown, olive, porcelain
+- Eyes: almond, round, hooded, deep-set; steel grey, warm brown, amber, hazel
+- Hair: silky straight, wavy, tight curls, coily; bob, pixie, long layers, braided
+- Lighting: Rembrandt (triangle on cheek), butterfly (under-nose shadow), split (half-face), loop (soft shadow), rim (edge glow)
+
+AVOID: Abstract words like "beautiful", "mysterious", "interesting", "nice" - describe the VISIBLE features instead.
+
+FORMAT: Natural flowing sentences, NOT comma-separated tags. Keep clothing to 3-5 words per item.
+END WITH: "no text, no watermark, no logos"
+
+Output ONLY the prompt - no explanations, no markdown."""
 
 [system.standard]
 # For mid-tier models - slightly simplified
 base = """You are an image analysis expert creating prompts for Z-Image AI image generation.
 
-Follow this structure:
-1. Composition and framing (shot type, angle)
-2. Subject appearance (ethnicity, age, features)
-3. Clothing (3-5 words per item: color, material, style)
-4. Environment and background
-5. Lighting (use specific keywords like "soft natural light", "studio lighting")
-6. Technical (lens, depth of field)
-7. Cleanup: "no text, no watermark"
+GOLDEN RULE: Every word describes something VISIBLE - no abstract adjectives.
+
+CAMERA-FIRST STRUCTURE:
+1. SHOT: Type (close-up/medium/full-body), camera angle (eye level/high/low)
+2. SUBJECT: Skin tone (warm ivory, olive, golden tan), face angle (front/45°/profile)
+3. FEATURES: Eye shape and color, hair style and texture
+4. CLOTHING: 3-5 words per item (type, color, material)
+5. LIGHTING: Specific keywords (Rembrandt, soft diffused, rim light, golden hour)
+6. BACKGROUND: Simple description
+7. END: "no text, no watermark"
+
+AVOID: "beautiful", "mysterious", "elegant" - describe what you SEE instead.
 
 Write flowing sentences, not tags. Output only the description."""
 
@@ -3248,21 +3280,74 @@ Write flowing sentences, not tags. Output only the description."""
 base = """You are an image captioning assistant creating prompts for AI image generation.
 
 CRITICAL RULES:
-- Describe ONLY what is actually visible in the image
-- Do NOT invent or hallucinate people, objects, or details that are not present
-- If there are no people in the image, do NOT add people to your description
-- If the image shows a landscape, vehicle, object, or scene without humans, describe THAT
+- Describe ONLY what is VISIBLE in the image - no abstract words
+- Do NOT invent or hallucinate people, objects, or details not present
+- If no people in image, do NOT add people to description
+- AVOID words like "beautiful", "elegant", "mysterious" - describe concrete features
 
-Write a flowing description covering:
-- Composition (shot type, camera angle)
-- Main subject (what is actually the focus - person, landscape, vehicle, object, etc.)
-- Details of the subject (only if applicable - clothing for people, features for objects)
-- Setting (background, environment)
-- Lighting (describe light quality and direction)
+FOR PEOPLE: Describe shot type, skin tone, face angle (front/45°/profile), hair style and color, eye details, clothing (type, color, material), lighting pattern
+
+FOR SCENES: Describe composition, main subject, colors, textures, lighting direction
+
+LIGHTING KEYWORDS to use:
+- Soft diffused daylight, golden hour, harsh midday
+- Studio soft box, Rembrandt lighting, rim light
+- High key (bright), low key (dark shadows)
 
 End with: "no text, no watermark"
 
-Output ONLY the description. Start directly - no "Here is" or "This image shows"."""
+Start directly with "A..." - no introduction."""
+
+
+# =============================================================================
+# VISUAL VOCABULARY REFERENCE - Z-Image responds well to these specific terms
+# =============================================================================
+# These lists can be used programmatically for prompt enhancement
+
+[vocabulary.skin_tones]
+terms = [
+    "warm ivory", "cool beige", "golden tan", "deep brown", "olive",
+    "porcelain", "sun-kissed", "freckled", "dewy", "matte"
+]
+
+[vocabulary.eye_shapes]
+terms = ["almond", "round", "hooded", "deep-set", "upturned", "downturned", "monolid"]
+
+[vocabulary.eye_colors]
+terms = ["steel grey", "warm brown", "pale blue", "amber", "hazel", "green", "dark brown"]
+
+[vocabulary.hair_styles]
+terms = ["bob", "pixie cut", "long layers", "braided", "ponytail", "loose waves", "updo", "tight curls"]
+
+[vocabulary.hair_textures]
+terms = ["silky straight", "wavy", "tight curls", "coily", "windswept", "sleek", "frizzy"]
+
+[vocabulary.lighting_patterns]
+terms = [
+    "Rembrandt lighting",      # Triangle shadow on cheek
+    "butterfly lighting",      # Shadow under nose
+    "split lighting",          # Half face illuminated
+    "loop lighting",           # Soft nose shadow
+    "rim lighting",            # Edge glow/backlight
+    "broad lighting",          # Lit side toward camera
+    "short lighting"           # Lit side away from camera
+]
+
+[vocabulary.lighting_quality]
+terms = [
+    "soft diffused daylight", "golden hour", "blue hour", "window light",
+    "harsh midday", "studio soft box", "hard key light",
+    "high key", "low key", "cinematic"
+]
+
+[vocabulary.face_angles]
+terms = ["front view", "45° angle", "three-quarter", "profile left", "profile right"]
+
+[vocabulary.camera_angles]
+terms = ["eye level", "high angle", "low angle", "bird's eye", "worm's eye", "dutch angle"]
+
+[vocabulary.shot_types]
+terms = ["ECU (extreme close-up)", "CU (close-up)", "MCU (medium close-up)", "MS (medium shot)", "MFS (medium full shot)", "FS (full shot)", "LS (long shot)"]
 
 
 # =============================================================================
@@ -3307,96 +3392,120 @@ free = ""  # No constraint
 # =============================================================================
 
 [user.advanced.quick]
-prompt = """Generate a brief Z-Image prompt (30-60 words) covering:
-- Shot type and face angle (geometric: front/45°/profile)
-- Subject basics (ethnicity, age, expression)
-- Clothing (one line)
-- Lighting keyword
-- End with "no text, no watermark"
+prompt = """Generate a brief Z-Image prompt (30-60 words).
 
-Write as flowing sentences, not tags."""
+DESCRIBE ONLY VISIBLE FEATURES:
+- Shot type + face angle (front view/45°/profile)
+- Skin tone (warm ivory, olive, golden tan, deep brown)
+- Hair (style first, then color)
+- Clothing (one line: type, color, material)
+- Lighting keyword (soft diffused/Rembrandt/rim light/golden hour)
+
+End with "no text, no watermark". Write as flowing sentences."""
 
 [user.advanced.standard]
-prompt = """Generate a Z-Image prompt covering:
-FRAMING: Shot type (close-up/medium/full), which body parts visible vs cropped out, where frame cuts body, subject position using rule of thirds (left/center/right, upper/center/lower)
-COMPOSITION: Camera angle (geometric: eye level/high/low), depth of field, distance from camera
-SUBJECT: Ethnicity, age, gender, skin tone, face angle (front view/45°/profile)
-HAIR: Style, color, length (describe arrangement first)
-CLOTHING: Each item in 3-5 words (type, color, material)
-POSE: Body position, posture
-LIGHTING: Use specific keywords (soft diffused daylight, studio portrait lighting, rim lighting, etc.)
-BACKGROUND: Simple description
+prompt = """Generate a Z-Image prompt (80-150 words). ONLY describe VISIBLE features.
 
-Write as flowing natural sentences. End with "no text, no watermark, no logos"."""
+FRAMING: Shot type (close-up/medium/full), where frame cuts body, rule of thirds position
+ANGLE: Geometric (eye level/high/low angle), face angle (front/45°/profile)
+SKIN: Specific tone (warm ivory, cool beige, golden tan, olive, deep brown, porcelain)
+EYES: Shape (almond, round, hooded) + color (steel grey, warm brown, amber, hazel)
+HAIR: Style FIRST (bob, ponytail, loose waves), then color, texture (silky, wavy, coily)
+CLOTHING: Each item 3-5 words (type, color, material)
+POSE: Body position, weight distribution
+
+LIGHTING - use specific patterns:
+- Natural: soft diffused daylight, golden hour, blue hour, window light
+- Studio: Rembrandt (triangle on cheek), butterfly (under-nose shadow), split (half-face lit)
+- Effects: rim light (edge glow), high key (bright), low key (deep shadows)
+
+BACKGROUND: Simple description
+END: "no text, no watermark, no logos"
+
+Write as flowing narrative sentences, NOT comma-separated tags."""
 
 [user.advanced.detailed]
-prompt = """Generate a COMPREHENSIVE Z-Image prompt:
+prompt = """Generate a COMPREHENSIVE Z-Image prompt (150-250 words). ONLY VISIBLE features.
 
-FRAMING & VISIBILITY:
+FRAMING:
 - Shot type (ECU/CU/MCU/MS/MFS/FS/LS)
-- Body parts visible top-to-bottom: head, shoulders, chest, waist, hips, thighs, knees, lower legs, feet
-- Where does frame CUT OFF the body? (e.g., "cropped at mid-thigh", "frame cuts at waist")
-- Subject distance: fills frame / medium / far
-- Rule of thirds: horizontal position (left/center/right third), vertical position (upper/center/lower third)
-COMPOSITION: Camera angle (geometric terms), depth of field
-SUBJECT: Specific ethnicity, skin tone with undertones, age, gender, face angle (front/45°/profile)
-HAIR: Arrangement FIRST (updo/ponytail/loose), then color, texture, length
-FACE: Shape, expression, eye color and shape, makeup details
-BODY POSITIONING:
-- Shoulders: left shoulder position, right shoulder position (raised/lowered/level)
-- Arms: left arm position and hand placement, right arm position and hand placement
-- Legs (if visible): left leg position, right leg position
-CLOTHING: Each garment in 3-5 words (type, color, material, fit)
-INTIMATE APPAREL: If visible - style, coverage, material
-TATTOOS/ACCESSORIES: Location and details
-LIGHT & SHADOW:
-- Face: where highlights fall (forehead, cheekbones), where shadows fall (under eyes, jawline)
-- Body: highlight and shadow areas on chest/torso, arms
-- Overall direction and quality
-BACKGROUND: Type, color, blur level
+- Body parts visible vs cropped
+- Frame cutoff point (e.g., "cropped at mid-thigh")
+- Rule of thirds positioning
 
-Write as flowing natural sentences. End with "correct human anatomy, no text, no watermark, no logos"."""
+SUBJECT - use specific visual vocabulary:
+- SKIN TONE: warm ivory, cool beige, golden tan, olive, deep brown, porcelain, sun-kissed, freckled
+- FACE ANGLE: front view, 45° angle, three-quarter, profile left/right
+- EYE SHAPE: almond, round, hooded, deep-set, upturned, downturned
+- EYE COLOR: steel grey, warm brown, pale blue, amber, hazel, green
+- HAIR STYLE: bob, pixie, long layers, braided, ponytail, loose waves, tight curls
+- HAIR TEXTURE: silky straight, wavy, coily, frizzy, windswept, slicked back
 
-[user.advanced.extreme]
-prompt = """Generate an EXTREMELY detailed Z-Image prompt with MAXIMUM precision.
+BODY POSITIONING: Describe each limb independently - shoulders, arms, hands, legs
 
-Analyze EVERY visible element:
+CLOTHING: Each item 3-5 words (type, color, material, fit)
 
-FRAMING & BODY VISIBILITY:
-- Shot type: ECU/BCU/CU/MCU/MS/MFS/FS/LS
-- Body parts visible (top to bottom): head, shoulders, chest, waist, hips, thighs, knees, lower legs, feet - which are FULLY visible, PARTIALLY cropped, or NOT visible?
-- EXACT frame cutoff: where does the frame cut the body? (e.g., "frame cuts at mid-thigh", "cropped just below waist")
-- Subject scale: does subject fill the frame, medium distance, or far?
-- Rule of thirds positioning:
-  * Horizontal: subject in left third, center, or right third?
-  * Vertical: subject in upper third, center, or lower third?
-  * Where do face/eyes fall relative to rule of thirds intersections?
+LIGHTING PATTERN - be specific:
+- NATURAL: soft diffused daylight, golden hour warmth, blue hour cool, window light
+- STUDIO SETUPS: Rembrandt (triangle shadow on cheek), butterfly (shadow under nose), split (half-face lit), loop (soft nose shadow)
+- EFFECTS: rim lighting (edge glow), high key (bright, minimal shadows), low key (dark, dramatic)
+- DESCRIBE: Where highlights fall (forehead, cheekbones), where shadows form (jawline, neck)
 
-COMPOSITION: Geometric camera angle, depth of field style
-SUBJECT: Specific ethnicity, skin tone with undertones, approximate age
-HAIR: Arrangement style first, then exact color, texture, length
-FACE: Shape, geometric angle (front/45°/profile/etc), expression details
-EYES: Color, shape, gaze direction, makeup style
-BODY POSITIONING (describe each independently):
-  * Left shoulder: position, angle
-  * Right shoulder: position, angle
-  * Left arm: position, bend, hand placement
-  * Right arm: position, bend, hand placement
-  * Left leg (if visible): position, bend
-  * Right leg (if visible): position, bend
-  * Weight distribution
-ALL clothing with type, color, material (3-5 words each)
-ALL intimate apparel if visible with coverage details
-ALL tattoos with locations and styles
-ALL accessories and jewelry
-LIGHT & SHADOW ON BODY:
-  * Face: highlight areas (forehead, cheekbones, nose bridge), shadow areas (under eyes, jawline, neck)
-  * Chest/torso: where light hits, where shadows form
-  * Arms/hands: light and shadow placement
-  * Overall: main light direction, key/fill ratio, rim lighting presence, shadow color (warm/cool)
 BACKGROUND: Type, color palette, blur level
 
-Write as a comprehensive flowing narrative. End with "correct human anatomy, natural hands, no text, no watermark, no logos, sharp focus"."""
+END: "correct human anatomy, no text, no watermark, no logos"
+
+Write as flowing narrative, NOT tags."""
+
+[user.advanced.extreme]
+prompt = """Generate an EXTREMELY detailed Z-Image prompt (200-300 words). MAXIMUM precision, ONLY VISIBLE features.
+
+GOLDEN RULE: Every word must describe something you can SEE. No abstract adjectives.
+
+FRAMING & VISIBILITY:
+- Shot type: ECU/BCU/CU/MCU/MS/MFS/FS/LS
+- Body parts: which FULLY visible, PARTIALLY cropped, NOT visible
+- EXACT frame cutoff (e.g., "frame cuts at mid-thigh")
+- Rule of thirds: face/eyes placement relative to intersection points
+
+VISUAL VOCABULARY - use these specific terms:
+
+SKIN:
+- Tone: warm ivory, cool beige, golden tan, deep brown, olive, porcelain
+- Texture: smooth, dewy, matte, freckled, sun-weathered, flawless
+
+EYES:
+- Shape: almond, round, hooded, deep-set, upturned, downturned, monolid
+- Color: steel grey, warm brown, pale blue, amber, hazel, green, dark brown
+- State: bright and alert, half-lidded, focused, soft gaze
+
+HAIR:
+- Style: bob, pixie cut, long layers, braided, ponytail, loose waves, updo
+- Texture: silky straight, wavy, tight curls, coily, windswept, sleek
+- Color: exact shade (honey blonde, chestnut brown, jet black, auburn)
+
+FACE ANGLE: front view (0°), 45° angle, three-quarter, profile left, profile right
+
+BODY POSITIONING: Describe EACH limb independently:
+- Left/right shoulder position
+- Left/right arm position and hand placement
+- Left/right leg position (if visible)
+- Weight distribution
+
+CLOTHING: 3-5 words each (type, color, material, fit)
+
+LIGHTING ANALYSIS - be SPECIFIC:
+- Pattern: Rembrandt, butterfly, split, loop, broad, short
+- Quality: soft diffused, hard dramatic, golden hour, blue hour
+- Direction: key light from upper left/right, fill level
+- Rim/edge: present or absent, intensity
+- Shadow mapping: WHERE highlights fall (forehead, cheekbones, nose bridge), WHERE shadows form (under eyes, jawline, neck, collar bones)
+
+BACKGROUND: Type, color temperature, blur/bokeh quality
+
+END: "correct human anatomy, natural hands and fingers, no text, no watermark, no logos, sharp focus"
+
+Write as comprehensive flowing narrative, NOT comma tags."""
 
 
 # =============================================================================
