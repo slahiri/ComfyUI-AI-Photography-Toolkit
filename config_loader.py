@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 """
-TOML Configuration Loader for SID Photography Toolkit
+ComfyUI-AI-Photography-Toolkit - Configuration Loader
 
+TOML configuration loader for provider settings, prompts, and filters.
 Loads and caches configuration from TOML files for:
 - Provider settings (tiers, stop strings, capabilities)
 - Prompts (system/user prompts by tier and mode)
@@ -8,6 +10,10 @@ Loads and caches configuration from TOML files for:
 - Filters (example text patterns to remove)
 
 Uses Python 3.11+ tomllib or falls back to tomli package.
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 import os
@@ -148,21 +154,20 @@ def get_agentic_prompt(tier: str, prompt_type: str = "intro") -> str:
     return tier_config.get(prompt_type, "")
 
 
-def get_length_constraint(prompt_length: str) -> str:
+def get_length_constraint(prompt_length: int) -> str:
     """
     Get the length constraint instruction for a prompt_length setting.
 
     Args:
-        prompt_length: "Short", "Medium", "Long", or "Free"
+        prompt_length: Target word count (0 = no limit, optimal Z-Image range is 80-250)
 
     Returns:
-        Length constraint instruction string (empty for "Free")
+        Length constraint instruction string (empty for 0/unlimited)
     """
-    config = _load_toml("prompts.toml")
-    constraints = config.get("length_constraints", {})
-    # Normalize to lowercase for key lookup
-    key = prompt_length.lower()
-    return constraints.get(key, "")
+    if prompt_length <= 0:
+        return ""  # No constraint
+
+    return f"OUTPUT LENGTH: Write a prompt of approximately {prompt_length} words. Adjust detail level to match this target."
 
 
 # =============================================================================
@@ -301,7 +306,7 @@ def clean_output(text: str, provider: str = "default") -> str:
 # Convenience Functions
 # =============================================================================
 
-def build_system_prompt(provider: str, preset_style: str, user_guidance: str = "", prompt_length: str = "Free") -> str:
+def build_system_prompt(provider: str, preset_style: str, user_guidance: str = "", prompt_length: int = 150) -> str:
     """
     Build complete system prompt based on provider tier and style.
 
@@ -309,7 +314,7 @@ def build_system_prompt(provider: str, preset_style: str, user_guidance: str = "
         provider: LLM provider name
         preset_style: Selected style preset
         user_guidance: Optional user guidance text
-        prompt_length: Output length setting (Short/Medium/Long/Free)
+        prompt_length: Target word count (0 = no limit, default 150 for optimal Z-Image)
 
     Returns:
         Complete system prompt string
@@ -342,7 +347,7 @@ This is a MODIFICATION directive. You MUST:
     return base
 
 
-def build_user_prompt(provider: str, analysis_mode: str, preset_style: str, prompt_length: str = "Free") -> str:
+def build_user_prompt(provider: str, analysis_mode: str, preset_style: str, prompt_length: int = 150) -> str:
     """
     Build user prompt based on provider tier and analysis mode.
 
@@ -350,7 +355,7 @@ def build_user_prompt(provider: str, analysis_mode: str, preset_style: str, prom
         provider: LLM provider name
         analysis_mode: Analysis mode (Quick/Standard/Detailed/Extreme)
         preset_style: Selected style preset
-        prompt_length: Output length setting (Short/Medium/Long/Free)
+        prompt_length: Target word count (0 = no limit, default 150 for optimal Z-Image)
 
     Returns:
         Complete user prompt string

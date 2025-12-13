@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-SID_ZImagePromptGenerator Node (Unified)
+ComfyUI-AI-Photography-Toolkit - Prompt Generator Node
 
 Single Z-Image prompt generator with automatic mode selection.
 Auto-switches between Single-Shot and Agentic modes based on LLM capabilities.
@@ -10,6 +11,10 @@ Features:
 - Component analysis based on analysis_mode
 - Preset styles for common use cases
 - Image resize options for optimal model performance
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 import base64
@@ -64,69 +69,72 @@ def get_prompt_generator_cache_info() -> dict:
 # Pixels = width * height
 
 MODEL_RESOLUTION_LIMITS = {
-    # API providers - generally handle larger images well
+    # API providers - optimized based on official docs
+    # Claude: 1.15MP optimal, 1568px max per side
     "anthropic": {
-        "min_pixels": 256 * 256,      # ~65K pixels
-        "optimal_pixels": 1024 * 1024, # ~1M pixels (good balance)
-        "max_pixels": 2048 * 2048,    # ~4M pixels
+        "min_pixels": 512 * 512,       # ~262K pixels (fast)
+        "optimal_pixels": 1024 * 1024, # ~1M pixels (recommended)
+        "max_pixels": 1568 * 1568,     # ~2.5M pixels (Claude max)
     },
+    # GPT-4V: 512×512 low detail, 1024 high detail
     "openai": {
-        "min_pixels": 256 * 256,
-        "optimal_pixels": 1024 * 1024,
-        "max_pixels": 2048 * 2048,
+        "min_pixels": 512 * 512,       # Low detail mode
+        "optimal_pixels": 1024 * 1024, # High detail mode
+        "max_pixels": 1536 * 1536,     # Beyond this no benefit
     },
     "gemini": {
-        "min_pixels": 256 * 256,
-        "optimal_pixels": 1024 * 1024,
-        "max_pixels": 3072 * 3072,
-    },
-    "grok": {
-        "min_pixels": 256 * 256,
+        "min_pixels": 512 * 512,
         "optimal_pixels": 1024 * 1024,
         "max_pixels": 2048 * 2048,
     },
-    # Free/budget providers - smaller is faster
+    "grok": {
+        "min_pixels": 512 * 512,
+        "optimal_pixels": 1024 * 1024,
+        "max_pixels": 1536 * 1536,
+    },
+    # Free/budget providers - smaller for speed
     "groq": {
         "min_pixels": 384 * 384,
         "optimal_pixels": 768 * 768,
         "max_pixels": 1024 * 1024,
     },
     "openrouter": {
-        "min_pixels": 256 * 256,
+        "min_pixels": 512 * 512,
         "optimal_pixels": 1024 * 1024,
-        "max_pixels": 2048 * 2048,
+        "max_pixels": 1536 * 1536,
     },
     "together": {
         "min_pixels": 384 * 384,
         "optimal_pixels": 768 * 768,
-        "max_pixels": 1536 * 1536,
+        "max_pixels": 1024 * 1024,
     },
     "fireworks": {
         "min_pixels": 384 * 384,
         "optimal_pixels": 768 * 768,
-        "max_pixels": 1536 * 1536,
+        "max_pixels": 1024 * 1024,
     },
-    # Local providers - optimized for VRAM efficiency
+    # Local providers - optimized for VRAM and speed
+    # Florence-2: 224×224 native, Qwen2-VL: 672-896 optimal, Moondream: 384-512
     "local": {
-        "min_pixels": 256 * 256,       # Fast processing
-        "optimal_pixels": 672 * 672,   # Good balance for 4-8GB VRAM
-        "max_pixels": 1280 * 1280,     # Maximum detail
+        "min_pixels": 224 * 224,       # Florence-2 native (fastest)
+        "optimal_pixels": 512 * 512,   # Fast processing (~262K pixels)
+        "max_pixels": 768 * 768,       # Good detail without VRAM issues
     },
     "ollama": {
-        "min_pixels": 256 * 256,
-        "optimal_pixels": 672 * 672,
-        "max_pixels": 1280 * 1280,
+        "min_pixels": 384 * 384,
+        "optimal_pixels": 512 * 512,
+        "max_pixels": 768 * 768,
     },
     "lmstudio": {
-        "min_pixels": 256 * 256,
-        "optimal_pixels": 672 * 672,
-        "max_pixels": 1280 * 1280,
+        "min_pixels": 384 * 384,
+        "optimal_pixels": 512 * 512,
+        "max_pixels": 768 * 768,
     },
     # Default for unknown providers
     "default": {
         "min_pixels": 384 * 384,
         "optimal_pixels": 768 * 768,
-        "max_pixels": 1536 * 1536,
+        "max_pixels": 1024 * 1024,
     },
 }
 
@@ -384,18 +392,27 @@ Output JSON:
 
     "clothing": {
         "name": "Clothing Analysis",
-        "prompt": """Analyze ONLY VISIBLE clothing:
-For each garment:
-1. TYPE: Dress/top/pants/etc.
-2. NECKLINE: If visible
-3. COLOR: Specific
-4. MATERIAL: Silk/satin/cotton/etc.
-5. FIT: Fitted/loose
+        "prompt": """Analyze ONLY VISIBLE clothing with ACCURATE COLORS:
+
+CRITICAL: COLOR ACCURACY IS ESSENTIAL - identify exact colors (red, blue, cream, gold, etc.)
+
+For EACH visible garment piece:
+1. PRIMARY COLOR: Be SPECIFIC (red, not "warm tone"; cream, not "light"; gold, not "yellow")
+2. SECONDARY COLORS: Borders, trim, patterns, accents
+3. TYPE: Dress/top/blouse/pants/saree/bikini/etc.
+4. NECKLINE: V-neck/halter/strapless/round/plunging/etc.
+5. MATERIAL: Silk/satin/cotton/lace/etc.
+6. FIT & STYLE: Fitted/loose/backless/cropped/etc.
+
+FOR MULTI-PART GARMENTS (saree, bikini sets, suits):
+- Describe EACH piece separately with its OWN color
+- Example saree: "red halter blouse" + "cream saree with red border"
+- Example bikini: "black bikini top" + "black bikini bottom"
 
 ONLY describe what you can SEE - do not invent details.
 
 Output JSON:
-{"garments": [{"type": "<type>", "color": "<color>", "material": "<material>"}], "overall_style": "<style>", "prompt_description": "<clothing description>"}"""
+{"garments": [{"type": "<type>", "primary_color": "<exact color>", "secondary_colors": ["<colors>"], "neckline": "<style>", "material": "<material>", "style": "<fitted/backless/etc>"}], "overall_style": "<style>", "prompt_description": "<DETAILED clothing description with ACCURATE colors for each piece>"}"""
     },
 
     "intimate_apparel": {
@@ -615,11 +632,12 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     default="auto",
                     tooltip="auto=optimal for model, max=highest detail, min=fastest, original=no resize"
                 ),
-                comfy_io.Combo.Input(
+                comfy_io.Int.Input(
                     "prompt_length",
-                    options=["Short", "Medium", "Long", "Free"],
-                    default="Free",
-                    tooltip="Short=30-60 words, Medium=80-150 words, Long=150-250 words, Free=no constraint"
+                    default=150,
+                    min=0,
+                    max=500,
+                    tooltip="Target word count (0=unlimited, 80-250 optimal for Z-Image). Wire to other nodes for consistency."
                 ),
                 comfy_io.String.Input(
                     "user_guidance",
@@ -643,12 +661,23 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     display_name="Z-Image Optimize",
                     tooltip="Apply Z-Image vocabulary optimization (converts tag soup, removes anti-patterns, injects lighting/composition)"
                 ),
+
+                # Negative Prompt Generation
+                comfy_io.Boolean.Input(
+                    "generate_negative",
+                    default=False,
+                    display_name="Generate Negative",
+                    tooltip="Generate negative prompt (disabled by default to save time)"
+                ),
             ],
             outputs=[
                 comfy_io.String.Output("prompt", display_name="prompt"),
                 comfy_io.String.Output("negative_prompt", display_name="negative_prompt", tooltip="Auto-generated negative prompt based on the analysis"),
                 comfy_io.Int.Output("width", display_name="width"),
                 comfy_io.Int.Output("height", display_name="height"),
+                comfy_io.Int.Output("out_prompt_length", display_name="prompt_length", tooltip="Target word count - wire to Enhancer/Photography for consistency"),
+                comfy_io.String.Output("out_analysis_mode", display_name="analysis_mode", tooltip="Analysis mode used - wire to Enhancer/Photography for consistency"),
+                comfy_io.Image.Output("compressed_image", display_name="compressed_image", tooltip="Preview of the compressed image sent to the LLM"),
                 comfy_io.String.Output("metadata", display_name="metadata", tooltip="JSON metadata about the analysis (subject type, components, timing)"),
                 comfy_io.String.Output("debug", display_name="debug", tooltip="Debug information and raw component outputs"),
             ],
@@ -662,12 +691,28 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         analysis_mode: str,
         preset_style: str,
         image_resize: str,
-        prompt_length: str,
+        prompt_length: int,
         user_guidance: str,
         seed: int,
         zimage_optimize: bool = True,
+        generate_negative: bool = False,
     ) -> comfy_io.NodeOutput:
         """Execute prompt generation with auto mode selection."""
+
+        # Clear VRAM and run garbage collection before starting
+        # This helps prevent memory issues from other modules
+        import gc
+        gc.collect()
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+                # Log VRAM status
+                free_vram = torch.cuda.get_device_properties(0).total_memory - torch.cuda.memory_allocated(0)
+                print(f"[SID-Prompt] VRAM cleared. Available: {free_vram / 1024**3:.1f}GB")
+        except Exception:
+            pass
 
         start_time = time.time()
         debug_lines = []
@@ -689,7 +734,8 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         log("=" * 60)
         log(f"Image: {width}x{height}")
         log(f"Provider: {llm_model.provider} | Model: {llm_model.model}")
-        log(f"Analysis: {analysis_mode} | Style: {preset_style} | Length: {prompt_length}")
+        length_info = f"{prompt_length} words" if prompt_length > 0 else "unlimited"
+        log(f"Analysis: {analysis_mode} | Style: {preset_style} | Length: {length_info}")
         log(f"Resize: {image_resize} | Pipeline: {pipeline_type}")
 
         # Initialize metadata dict
@@ -716,31 +762,39 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     image, llm_model, analysis_mode, preset_style, user_guidance, image_resize, prompt_length
                 )
 
-            # Handle result (can be tuple with metadata or just prompt string)
+            # Handle result (tuple with metadata, debug, and compressed image)
             if isinstance(result, tuple):
-                prompt, extra_metadata, extra_debug = result
+                prompt, extra_metadata, extra_debug, compressed_pil = result
                 metadata_dict.update(extra_metadata)
                 debug_lines.extend(extra_debug)
             else:
                 prompt = result
+                compressed_pil = None
 
             # Generate negative prompt
-            log("-" * 60)
-            log("Generating negative prompt...")
+            # Generate negative prompt if enabled
+            if generate_negative:
+                log("-" * 60)
+                log("Generating negative prompt...")
 
-            # Quick/Standard: Use Python template-based generation (NO LLM)
-            if analysis_mode in ["Quick", "Standard"]:
-                log(f"Using Python negative builder ({analysis_mode} mode)...")
-                negative_prompt = generate_negative(prompt, analysis_mode)
-                neg_word_count = len(negative_prompt.split())
-                log(f"Python negative prompt: {neg_word_count} words")
+                # Quick/Standard: Use Python template-based generation (NO LLM)
+                if analysis_mode in ["Quick", "Standard"]:
+                    log(f"Using Python negative builder ({analysis_mode} mode)...")
+                    negative_prompt = generate_negative(prompt, analysis_mode)
+                    neg_word_count = len(negative_prompt.split())
+                    log(f"Python negative prompt: {neg_word_count} words")
+                else:
+                    # Detailed/Extreme: Use LLM for more comprehensive negatives
+                    negative_prompt = cls._generate_negative_prompt(
+                        prompt, llm_model, analysis_mode, seed
+                    )
+                    neg_word_count = len(negative_prompt.split())
+                    log(f"LLM negative prompt: {neg_word_count} words")
             else:
-                # Detailed/Extreme: Use LLM for more comprehensive negatives
-                negative_prompt = cls._generate_negative_prompt(
-                    prompt, llm_model, analysis_mode, seed
-                )
-                neg_word_count = len(negative_prompt.split())
-                log(f"LLM negative prompt: {neg_word_count} words")
+                log("-" * 60)
+                log("Negative prompt generation: SKIPPED (disabled)")
+                negative_prompt = ""
+                neg_word_count = 0
 
             # Apply Z-Image vocabulary optimization if enabled
             if zimage_optimize:
@@ -768,7 +822,24 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             metadata_str = json.dumps(metadata_dict, indent=2)
             debug_str = "\n".join(debug_lines)
 
-            return comfy_io.NodeOutput(prompt, negative_prompt, width, height, metadata_str, debug_str, ui={"text": (prompt,)})
+            # Convert compressed PIL image to tensor for preview output
+            if compressed_pil is not None:
+                import torch
+                compressed_np = np.array(compressed_pil).astype(np.float32) / 255.0
+                compressed_tensor = torch.from_numpy(compressed_np).unsqueeze(0)
+            else:
+                # Fallback to original image if no compression happened
+                compressed_tensor = image
+
+            # Unload local model to free VRAM for subsequent nodes (SAM, Depth, etc.)
+            if llm_model.provider.lower() == "local":
+                try:
+                    from .llm_providers.sid_llm_local import LocalModelClient
+                    LocalModelClient.unload_model()
+                except Exception:
+                    pass  # Ignore if unload fails
+
+            return comfy_io.NodeOutput(prompt, negative_prompt, width, height, prompt_length, analysis_mode, compressed_tensor, metadata_str, debug_str, ui={"text": (prompt,)})
 
         except Exception as e:
             error_msg = f"Error: {str(e)}"
@@ -790,7 +861,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         preset_style: str,
         user_guidance: str,
         image_resize: str = "auto",
-        prompt_length: str = "Free",
+        prompt_length: int = 150,
     ) -> tuple:
         """Fast single-call prompt generation. Returns (prompt, metadata, debug_lines)."""
 
@@ -798,9 +869,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         debug_lines.append("Single-shot mode...")
         print(f"[SID-Prompt] Single-shot mode...")
 
-        # Convert image with resize
+        # Convert image with resize and compression
         img_tensor = image[0]
-        base64_image, resize_info = cls._image_to_base64(img_tensor, llm_model, image_resize)
+        base64_image, resize_info, compressed_pil = cls._image_to_base64(img_tensor, llm_model, image_resize)
         if resize_info:
             debug_lines.append(resize_info)
             print(f"[SID-Prompt] {resize_info}")
@@ -839,7 +910,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             "component_count": 0,
         }
 
-        return prompt, metadata, debug_lines
+        return prompt, metadata, debug_lines, compressed_pil
 
     # =========================================================================
     # AGENTIC PIPELINE
@@ -854,7 +925,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         preset_style: str,
         user_guidance: str,
         image_resize: str = "auto",
-        prompt_length: str = "Free",
+        prompt_length: int = 150,
     ) -> tuple:
         """Reasoning-enabled comprehensive analysis. Returns (prompt, metadata, debug_lines)."""
 
@@ -862,9 +933,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         debug_lines.append("Agentic mode (reasoning enabled)...")
         print(f"[SID-Prompt] Agentic mode (reasoning enabled)...")
 
-        # Convert image with resize
+        # Convert image with resize and compression
         img_tensor = image[0]
-        base64_image, resize_info = cls._image_to_base64(img_tensor, llm_model, image_resize)
+        base64_image, resize_info, compressed_pil = cls._image_to_base64(img_tensor, llm_model, image_resize)
         if resize_info:
             debug_lines.append(resize_info)
             print(f"[SID-Prompt] {resize_info}")
@@ -944,7 +1015,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 "fallback_mode": True,
                 "component_results": component_results,  # Contains _raw_fallback_text
             }
-            return prompt, metadata, debug_lines
+            return prompt, metadata, debug_lines, compressed_pil
 
         # Step 6: Assemble prompt from components
         prompt = cls._assemble_prompt(component_results, mode_config, user_guidance)
@@ -980,7 +1051,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             "component_results": component_results,  # Raw data from LLM for each component
         }
 
-        return prompt, metadata, debug_lines
+        return prompt, metadata, debug_lines, compressed_pil
 
     # =========================================================================
     # HELPER METHODS
@@ -992,9 +1063,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         img_tensor,
         llm_model: LLMModelConfig,
         resize_mode: str = "auto"
-    ) -> Tuple[str, Optional[str]]:
+    ) -> Tuple[str, Optional[str], "Image.Image"]:
         """
-        Convert image tensor to base64 with optional resizing.
+        Convert image tensor to base64 with smart compression.
 
         Args:
             img_tensor: Image tensor from ComfyUI
@@ -1002,7 +1073,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             resize_mode: "auto", "max", "min", or "original"
 
         Returns:
-            Tuple of (base64_string, resize_info_string or None)
+            Tuple of (base64_string, resize_info_string or None, compressed_pil_image)
         """
         img_np = (img_tensor.cpu().numpy() * 255).astype(np.uint8)
         pil_image = Image.fromarray(img_np)
@@ -1010,38 +1081,97 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         # Get original dimensions
         height, width = img_tensor.shape[0], img_tensor.shape[1]
         original_pixels = width * height
-        resize_info = None
+        info_parts = []
 
         # Get provider resolution limits
         provider = llm_model.provider.lower()
         limits = MODEL_RESOLUTION_LIMITS.get(provider, MODEL_RESOLUTION_LIMITS["default"])
 
         # Determine target pixels based on resize mode
+        is_local = provider in ["local", "ollama", "lmstudio"]
+
+        # File size limits: 500KB for local, 1MB for API
+        max_file_kb = 500 if is_local else 1000
+
         if resize_mode == "original":
-            # No resizing
             target_pixels = original_pixels
         elif resize_mode == "min":
-            # Use minimum pixels for fastest processing
             target_pixels = limits["min_pixels"]
         elif resize_mode == "max":
-            # Use maximum pixels for best detail
             target_pixels = limits["max_pixels"]
-        else:  # "auto" (default)
-            # Use optimal pixels for balance of quality and speed
-            target_pixels = limits["optimal_pixels"]
+        else:  # "auto"
+            if is_local:
+                target_pixels = limits["min_pixels"]
+            else:
+                target_pixels = limits["optimal_pixels"]
 
-        # Calculate new dimensions if resizing is needed
+        # Step 1: Resize if needed
+        current_w, current_h = width, height
         if resize_mode != "original" and original_pixels > target_pixels:
             new_width, new_height = calculate_resize_dimensions(width, height, target_pixels)
-
-            # Only resize if there's a meaningful difference (at least 10% reduction)
             if (new_width * new_height) < (original_pixels * 0.9):
                 pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-                resize_info = f"Image resized: {width}x{height} -> {new_width}x{new_height} ({resize_mode} mode, {original_pixels//1000}K -> {(new_width*new_height)//1000}K pixels)"
+                current_w, current_h = new_width, new_height
+                mode_info = f"auto:{'local' if is_local else 'api'}" if resize_mode == "auto" else resize_mode
+                info_parts.append(f"Resized: {width}x{height} -> {new_width}x{new_height} ({mode_info})")
 
+        # Step 2: Progressive quality reduction to meet file size target
+        quality_levels = [85, 75, 65, 55, 45]
+        final_quality = 85
         buffer = io.BytesIO()
-        pil_image.save(buffer, format="JPEG", quality=95)
-        return base64.standard_b64encode(buffer.getvalue()).decode("utf-8"), resize_info
+
+        for quality in quality_levels:
+            buffer = io.BytesIO()
+            pil_image.save(buffer, format="JPEG", quality=quality, optimize=True, subsampling='4:2:0')
+            file_size_kb = len(buffer.getvalue()) / 1024
+
+            if file_size_kb <= max_file_kb:
+                final_quality = quality
+                break
+            final_quality = quality
+
+        file_size_kb = len(buffer.getvalue()) / 1024
+
+        # Step 3: If still too large, reduce dimensions further
+        dimension_reductions = 0
+        while file_size_kb > max_file_kb and dimension_reductions < 3:
+            # Reduce by 25% each iteration
+            current_w = int(current_w * 0.75)
+            current_h = int(current_h * 0.75)
+            pil_image = pil_image.resize((current_w, current_h), Image.Resampling.LANCZOS)
+
+            buffer = io.BytesIO()
+            pil_image.save(buffer, format="JPEG", quality=final_quality, optimize=True, subsampling='4:2:0')
+            file_size_kb = len(buffer.getvalue()) / 1024
+            dimension_reductions += 1
+
+        if dimension_reductions > 0:
+            info_parts.append(f"Extra resize for size: -> {current_w}x{current_h}")
+
+        # Build info string
+        info_parts.append(f"Quality: {final_quality}%, Size: {file_size_kb:.0f}KB")
+        resize_info = " | ".join(info_parts) if info_parts else None
+
+        # Calculate compression stats
+        original_size_est = (width * height * 3) / 1024  # Rough uncompressed size in KB
+        compression_ratio = original_size_est / file_size_kb if file_size_kb > 0 else 0
+        pixels_original = width * height
+        pixels_final = current_w * current_h
+        pixel_reduction = ((pixels_original - pixels_final) / pixels_original * 100) if pixels_original > 0 else 0
+
+        # Detailed logging
+        print(f"[SID-Prompt] " + "=" * 50)
+        print(f"[SID-Prompt] IMAGE COMPRESSION SUMMARY")
+        print(f"[SID-Prompt] " + "-" * 50)
+        print(f"[SID-Prompt] Original:    {width}x{height} ({pixels_original/1000:.0f}K pixels)")
+        print(f"[SID-Prompt] Compressed:  {current_w}x{current_h} ({pixels_final/1000:.0f}K pixels, -{pixel_reduction:.0f}%)")
+        print(f"[SID-Prompt] Quality:     JPEG {final_quality}%")
+        print(f"[SID-Prompt] File size:   {file_size_kb:.0f}KB (target: {max_file_kb}KB)")
+        print(f"[SID-Prompt] Compression: {compression_ratio:.1f}x ratio")
+        print(f"[SID-Prompt] Mode:        {'Local' if is_local else 'API'} ({resize_mode})")
+        print(f"[SID-Prompt] " + "=" * 50)
+
+        return base64.standard_b64encode(buffer.getvalue()).decode("utf-8"), resize_info, pil_image
 
     @classmethod
     def _get_client(cls, llm_model: LLMModelConfig):
@@ -1079,12 +1209,12 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             raise ValueError(f"Unsupported provider: {provider}")
 
     @classmethod
-    def _build_system_prompt(cls, provider: str, preset_style: str, user_guidance: str, prompt_length: str = "Free") -> str:
+    def _build_system_prompt(cls, provider: str, preset_style: str, user_guidance: str, prompt_length: int = 150) -> str:
         """Build system prompt using TOML config based on provider tier."""
         return config_loader.build_system_prompt(provider, preset_style, user_guidance, prompt_length)
 
     @classmethod
-    def _build_user_prompt(cls, provider: str, analysis_mode: str, preset_style: str, prompt_length: str = "Free") -> str:
+    def _build_user_prompt(cls, provider: str, analysis_mode: str, preset_style: str, prompt_length: int = 150) -> str:
         """Build user prompt using TOML config based on provider tier and mode."""
         return config_loader.build_user_prompt(provider, analysis_mode, preset_style, prompt_length)
 
@@ -1199,7 +1329,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             return {}
 
     @classmethod
-    def _build_agentic_prompt(cls, components: List[str], preset_style: str, user_guidance: str, prompt_length: str = "Free") -> str:
+    def _build_agentic_prompt(cls, components: List[str], preset_style: str, user_guidance: str, prompt_length: int = 150) -> str:
         """Build comprehensive agentic prompt."""
         comp_specs = []
         for key in components:
@@ -1262,15 +1392,38 @@ Return a single JSON object:
 }}
 ```"""
 
+    # System prompt for agentic reasoning mode - comprehensive analysis
+    AGENTIC_SYSTEM_PROMPT = """You are an expert visual analyst specializing in comprehensive image description for AI image generation.
+
+Your task is to analyze images with MAXIMUM DETAIL and return structured JSON data.
+
+CRITICAL REQUIREMENTS:
+1. COLOR ACCURACY IS PARAMOUNT - identify EXACT colors (red, blue, cream, gold - not "warm tone" or "light colored")
+2. For CLOTHING: describe each piece separately with its specific color (e.g., "red blouse" + "cream saree with red border")
+3. For each component, provide EXTENSIVE detail in the prompt_description field
+4. Use rich, specific vocabulary - not generic terms
+5. Include precise measurements, exact colors, textures, and materials
+6. Describe spatial relationships accurately
+7. Note lighting direction, quality, and color temperature
+8. Be THOROUGH - every visible detail matters for accurate reproduction
+
+COLOR EXAMPLES:
+- "red halter blouse" NOT "warm-toned top"
+- "cream saree with red border" NOT "light fabric"
+- "gold jewelry" NOT "metallic accessories"
+
+OUTPUT: Return valid JSON with detailed prompt_description for each component analyzed."""
+
     @classmethod
     def _call_reasoning_llm(cls, client, llm_model: LLMModelConfig, base64_image: str, prompt: str) -> dict:
-        """Call LLM with reasoning enabled and stop strings."""
+        """Call LLM with reasoning enabled and system prompt for deep analysis."""
         try:
             if llm_model.provider.lower() == "anthropic" and hasattr(client, 'messages'):
                 response = client.messages.create(
                     model=llm_model.model,
                     max_tokens=16000,
                     thinking={"type": "enabled", "budget_tokens": 10000},
+                    system=[{"type": "text", "text": cls.AGENTIC_SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
                     messages=[{"role": "user", "content": [
                         {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_image}},
                         {"type": "text", "text": prompt}
@@ -1288,10 +1441,13 @@ Return a single JSON object:
                 request_params = {
                     "model": llm_model.model,
                     "max_completion_tokens": 16000,
-                    "messages": [{"role": "user", "content": [
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
-                        {"type": "text", "text": prompt}
-                    ]}]
+                    "messages": [
+                        {"role": "system", "content": cls.AGENTIC_SYSTEM_PROMPT},
+                        {"role": "user", "content": [
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
+                            {"type": "text", "text": prompt}
+                        ]}
+                    ]
                 }
 
                 if stop_strings:

@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-SID_ZImagePhotographyPrompts Node
+ComfyUI-AI-Photography-Toolkit - Photography Prompts Node
 
 Photography-specific prompt builder with detailed camera, lens, lighting,
 and effect settings. Uses LLM for deep enhancement in Detailed/Extreme modes.
@@ -14,6 +15,10 @@ Features:
 
 Quick/Standard: Deterministic prompt building
 Detailed/Extreme: LLM-powered deep analysis of how each setting affects the image
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 import gc
@@ -30,6 +35,7 @@ import comfy.utils
 from .llm_providers.llm_model_type import LLMModelConfig
 from .zimage_prompt_translator import translate_prompt, get_translator
 from .negative_prompt_builder import combine_prompt_with_settings
+from . import config_loader
 
 
 # Create custom LLM_MODEL type for ComfyUI
@@ -119,7 +125,6 @@ class ProgressSpinner:
 
 DETAIL_LEVELS = ["Quick", "Standard", "Detailed", "Extreme"]
 
-# Deep analysis system prompt - analyzes how each photography setting affects the image
 # =============================================================================
 # LOCAL MODEL PROMPTS (Ultra-minimal)
 # =============================================================================
@@ -128,20 +133,64 @@ DETAIL_LEVELS = ["Quick", "Standard", "Detailed", "Extreme"]
 LOCAL_PHOTOGRAPHY_SYSTEM = """Add visual effects. Keep original. Output only the prompt."""
 
 # =============================================================================
-# API MODEL PROMPTS (Detailed)
+# API MODEL PROMPTS - Standard (Append only)
 # =============================================================================
 
-API_PHOTOGRAPHY_SYSTEM = """You are a photography prompt engineer.
+API_PHOTOGRAPHY_SYSTEM = """You are a Z-Image photography prompt engineer.
+
+Z-IMAGE VOCABULARY - Use natural language:
+- "soft creamy bokeh" not "bokeh"
+- "Rembrandt lighting with triangle shadow on cheek" not "rembrandt"
+- "shallow depth of field with buttery blur" not "shallow DOF"
+- "warm Kodak Portra skin tones" not "warm tones"
 
 RULES:
-1. Preserve EVERY word from the original prompt
-2. Describe photography settings as VISUAL EFFECTS, not equipment
-3. For aperture: describe blur quality and depth of field
-4. For lighting: describe how light falls and creates shadows
-5. For film/color: describe tones, mood, and color characteristics
-6. Do NOT add visible cameras/lenses - describe visual RESULTS only
+1. Preserve EVERY word from the original prompt exactly as-is
+2. APPEND photography settings using natural language descriptions
+3. Do NOT modify the original prompt content
+4. Describe VISUAL EFFECTS not equipment names
 
 Output ONLY the enhanced prompt - no explanations."""
+
+# =============================================================================
+# AGENTIC PHOTOGRAPHY SYSTEM - Deep Transformation (Detailed/Extreme)
+# =============================================================================
+
+AGENTIC_PHOTOGRAPHY_SYSTEM = """You are an expert cinematographer specializing in Z-Image prompt optimization.
+
+YOUR MISSION: Transform every visual element to reflect how photography settings CHANGE what the viewer sees.
+Use Z-IMAGE VOCABULARY - natural language descriptions, NOT tag soup.
+
+Z-IMAGE VOCABULARY REQUIREMENTS:
+- Use natural flowing sentences, NOT comma-separated tags
+- Describe effects as visual experiences: "soft creamy bokeh dissolving the background" not "bokeh, blur"
+- Preferred lighting terms: "soft diffused daylight", "golden hour sunlight", "Rembrandt lighting with triangle shadow on cheek"
+- Preferred lens descriptions: "85mm portrait lens with shallow depth of field", "creamy background blur"
+- Preferred aperture descriptions: "f/1.4 wide open aperture creating paper-thin focus plane"
+- Preferred color terms: "Kodak Portra warm skin tones", "muted pastel color palette"
+
+TRANSFORMATION RULES:
+1. Aperture/Bokeh → Transform backgrounds into "soft creamy bokeh", "luminous bokeh orbs", "painterly blur"
+
+2. Lighting → Transform surfaces:
+   - "Rembrandt lighting creating triangle of light on the shadowed cheek"
+   - "rim light creating luminous halo around hair"
+   - "soft wraparound light gently modeling facial contours"
+
+3. Focal Length → Transform spatial relationships:
+   - Wide angle: "exaggerated perspective", "expanded sense of space"
+   - Telephoto: "compressed background planes", "strong subject isolation"
+
+4. Film/Color → Transform palette:
+   - "Kodak Portra 400 rendering with warm skin tones and soft pastel colors"
+   - "fine film grain texture adding organic quality"
+
+5. Effects → Describe visible results:
+   - "subtle lens flare streaking across highlights"
+   - "natural vignette darkening frame edges"
+
+WEAVE settings into descriptions - DO NOT append as a list.
+Output ONLY the transformed prompt using natural language."""
 
 # Legacy alias
 DEEP_PHOTOGRAPHY_SYSTEM = API_PHOTOGRAPHY_SYSTEM
@@ -400,12 +449,20 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                     tooltip="The base prompt to enhance with photography settings"
                 ),
 
-                # Detail Level
-                comfy_io.Combo.Input(
-                    "detail_level",
-                    options=DETAIL_LEVELS,
+                # Analysis Mode (wire from Generator or type manually)
+                comfy_io.String.Input(
+                    "analysis_mode",
                     default="Standard",
-                    tooltip="Quick: combine only, Standard: LLM enhance, Detailed/Extreme: deep analysis"
+                    tooltip="Quick/Standard/Detailed/Extreme - wire from Generator's analysis_mode output"
+                ),
+
+                # Prompt Length
+                comfy_io.Int.Input(
+                    "prompt_length",
+                    default=150,
+                    min=0,
+                    max=500,
+                    tooltip="Target word count (0=unlimited, 80-250 optimal for Z-Image). Wire from Generator for consistency."
                 ),
 
                 # Camera & Lens
@@ -592,9 +649,9 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
         return settings
 
     @classmethod
-    def _generate_cache_key(cls, seed: int, prompt: str, detail_level: str, settings_str: str, model: str) -> str:
+    def _generate_cache_key(cls, seed: int, prompt: str, analysis_mode: str, settings_str: str, model: str) -> str:
         """Generate a unique cache key based on inputs and seed."""
-        key_data = f"{seed}|{prompt}|{detail_level}|{settings_str}|{model}"
+        key_data = f"{seed}|{prompt}|{analysis_mode}|{settings_str}|{model}"
         return hashlib.sha256(key_data.encode()).hexdigest()[:32]
 
     @classmethod
@@ -602,7 +659,8 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
         cls,
         llm_model: LLMModelConfig,
         prompt: str,
-        detail_level: str,
+        analysis_mode: str,
+        prompt_length: int,
         camera_type: str,
         lens_type: str,
         focal_length: str,
@@ -627,6 +685,23 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
         """Build and optionally enhance photography prompt."""
         global _photography_cache
         start_time = time.time()
+
+        # Clear VRAM and run garbage collection before starting
+        gc.collect()
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+                free_vram = torch.cuda.get_device_properties(0).total_memory - torch.cuda.memory_allocated(0)
+                print(f"[PhotographyPrompts] VRAM cleared. Available: {free_vram / 1024**3:.1f}GB")
+        except Exception:
+            pass
+
+        # Validate analysis_mode, default to Standard if invalid
+        if analysis_mode not in DETAIL_LEVELS:
+            print(f"[PhotographyPrompts] Invalid analysis_mode '{analysis_mode}', using Standard")
+            analysis_mode = "Standard"
 
         # Initialize progress bar (3 steps: build settings, enhance, z-image optimize)
         pbar = comfy.utils.ProgressBar(3)
@@ -654,7 +729,8 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
         word_count = len(prompt.split()) if prompt.strip() else 0
         settings_count = len(settings)
         print(f"[PhotographyPrompts] Input: {word_count} words")
-        print(f"[PhotographyPrompts] Mode: {detail_level}")
+        length_info = f"{prompt_length} words" if prompt_length > 0 else "unlimited"
+        print(f"[PhotographyPrompts] Mode: {analysis_mode} | Length: {length_info}")
         print(f"[PhotographyPrompts] Active settings: {settings_count}")
         print(f"[PhotographyPrompts] Seed: {seed}")
         if settings:
@@ -668,7 +744,7 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
 
         try:
             # Quick mode - just combine (no LLM needed, no caching needed)
-            if detail_level == "Quick":
+            if analysis_mode == "Quick":
                 print("-" * 60)
                 print("[PhotographyPrompts] Quick Mode: Combining prompt with settings...")
                 if prompt.strip() and photography_settings:
@@ -716,7 +792,7 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
 
             # Generate cache key for LLM modes
             cache_key = cls._generate_cache_key(
-                seed, prompt, detail_level, photography_settings, llm_model.model
+                seed, prompt, analysis_mode, photography_settings, llm_model.model
             )
 
             # Check cache
@@ -747,8 +823,8 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
             supports_reasoning = llm_model.supports_reasoning
             
             # Local models: Force Quick mode - LLM integration often produces garbage
-            if is_local and detail_level != "Quick":
-                print(f"[PhotographyPrompts] Local model detected: {detail_level} -> Quick (no LLM call)")
+            if is_local and analysis_mode != "Quick":
+                print(f"[PhotographyPrompts] Local model detected: {analysis_mode} -> Quick (no LLM call)")
                 # Return Quick mode result directly
                 if prompt.strip() and photography_settings:
                     enhanced = f"{prompt.strip()}, {photography_settings}"
@@ -763,34 +839,41 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
                 print("=" * 60)
                 return comfy_io.NodeOutput(enhanced, prompt, photography_settings)
             
-            # Non-reasoning cloud models: Use Standard instead of Detailed/Extreme
-            if detail_level in ["Detailed", "Extreme"] and not supports_reasoning:
-                print(f"[PhotographyPrompts] Non-reasoning model: {detail_level} -> Standard for efficiency")
-                detail_level = "Standard"
-
             print(f"[PhotographyPrompts] Provider: {llm_model.provider}")
             print(f"[PhotographyPrompts] Model: {llm_model.model}")
+
+            # Check if model supports reasoning for agentic mode
+            supports_reasoning = llm_model.supports_reasoning
+            print(f"[PhotographyPrompts] Reasoning: {'enabled' if supports_reasoning else 'disabled'}")
 
             print("-" * 60)
 
             # Standard mode: Python-only (NO LLM) - just combine and let Z-Image vocab optimize
-            if detail_level == "Standard":
+            if analysis_mode == "Standard":
                 print("[PhotographyPrompts] Standard Mode: Python-only integration (no LLM)...")
                 enhanced = combine_prompt_with_settings(prompt, photography_settings, natural_language=True)
                 print(f"[PhotographyPrompts] Combined: {len(enhanced.split())} words")
                 client = None  # No client needed
 
-            # Detailed/Extreme: Use LLM for deep analysis
-            elif detail_level in ["Detailed", "Extreme"]:
+            # Detailed/Extreme: Use LLM - AGENTIC transformation only with API + Reasoning
+            elif analysis_mode in ["Detailed", "Extreme"]:
                 print("[PhotographyPrompts] Initializing LLM client...")
                 client = cls._get_client(llm_model)
 
-                if detail_level == "Detailed":
-                    print("[PhotographyPrompts] Detailed Mode: Deep photography analysis...")
-                    enhanced = cls._deep_enhance(client, llm_model, prompt, settings)
-                else:  # Extreme
-                    print("[PhotographyPrompts] Extreme Mode: Two-pass deep analysis...")
-                    enhanced = cls._extreme_enhance(client, llm_model, prompt, settings)
+                if supports_reasoning and not is_local:
+                    # AGENTIC MODE: Deep transformation (API + Reasoning only)
+                    if analysis_mode == "Detailed":
+                        print("[PhotographyPrompts] Detailed Mode (Agentic): Deep photography TRANSFORMATION...")
+                        enhanced = cls._deep_enhance(client, llm_model, prompt, settings, prompt_length)
+                    else:  # Extreme
+                        print("[PhotographyPrompts] Extreme Mode (Agentic): Two-pass deep TRANSFORMATION...")
+                        enhanced = cls._extreme_enhance(client, llm_model, prompt, settings, prompt_length)
+                else:
+                    # SINGLE-SHOT MODE: LLM integrates settings while preserving original (non-reasoning or local)
+                    mode_reason = "local model" if is_local else "non-reasoning model"
+                    print(f"[PhotographyPrompts] {analysis_mode} Mode (Single-shot): {mode_reason} - integrating settings...")
+                    enhanced = cls._singleshot_enhance(client, llm_model, prompt, settings, photography_settings, prompt_length)
+                    print(f"[PhotographyPrompts] Note: For deep transformation, use API model with reasoning enabled")
 
             else:
                 # Fallback
@@ -838,6 +921,14 @@ class SID_ZImagePhotographyPrompts(comfy_io.ComfyNode):
             print("=" * 60)
             print("")
 
+            # Unload local model to free VRAM for subsequent nodes
+            if llm_model and llm_model.provider.lower() == "local":
+                try:
+                    from .llm_providers.sid_llm_local import LocalModelClient
+                    LocalModelClient.unload_model()
+                except Exception:
+                    pass
+
             return comfy_io.NodeOutput(enhanced, prompt, photography_settings)
 
         except Exception as e:
@@ -874,95 +965,196 @@ Create an enhanced prompt that keeps ALL original details and adds photography v
         return cls._clean_response(result, f"{prompt}, {photography_str}" if prompt else photography_str)
 
     @classmethod
-    def _deep_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, settings: Dict) -> str:
-        """Detailed: Deep analysis of how each setting affects the image."""
-        # Build detailed settings breakdown
+    def _singleshot_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, settings: Dict, photography_str: str, prompt_length: int = 150) -> str:
+        """Single-shot: LLM integrates settings while preserving original (for non-reasoning/local models)."""
+        # Build settings breakdown
         settings_breakdown = "\n".join([f"- {k}: {v}" for k, v in settings.items()])
 
-        user_prompt = f"""CRITICAL: You MUST preserve EVERY word and detail from the base prompt below. Do NOT remove, replace, or summarize anything.
+        # Get length constraint
+        length_constraint = config_loader.get_length_constraint(prompt_length)
+        length_section = f"\n\nOUTPUT LENGTH:\n{length_constraint}" if length_constraint else ""
 
-=== BASE PROMPT (PRESERVE 100% OF THIS CONTENT) ===
+        # Select prompt based on model type
+        is_local = llm_model.provider.lower() == "local" or llm_model.extra_params.get("is_local", False)
+
+        if is_local:
+            system = """Add photography visual effects to the prompt using natural language.
+Keep original content intact. Use descriptive phrases not tags.
+Output ONLY the enhanced prompt."""
+        else:
+            system = """You are a Z-Image prompt engineer. Add photography settings using NATURAL LANGUAGE.
+
+Z-IMAGE VOCABULARY RULES:
+- Use flowing sentences, NOT comma-separated tags
+- Describe visual effects: "soft creamy bokeh" not just "bokeh"
+- Preferred terms: "shallow depth of field with buttery background blur"
+- Lighting as visual: "Rembrandt lighting with triangle shadow on cheek"
+- Color as experience: "warm Kodak Portra skin tones"
+
+RULES:
+1. KEEP the original prompt content exactly as-is
+2. ADD photography settings as natural language visual descriptions
+3. Describe visual EFFECTS not equipment names
+4. Append naturally at appropriate points or end
+
+Output ONLY the enhanced prompt - no explanations."""
+
+        user_prompt = f"""ORIGINAL PROMPT (preserve completely):
 {prompt if prompt.strip() else "(general photography shot)"}
-=== END BASE PROMPT ===
 
-Photography settings to describe as VISUAL EFFECTS (NOT visible equipment in scene):
+PHOTOGRAPHY SETTINGS TO ADD AS VISUAL EFFECTS:
 {settings_breakdown}
+{length_section}
 
-YOUR TASK:
-1. Copy the ENTIRE base prompt as your foundation
-2. INSERT photography visual effects BETWEEN and AFTER existing descriptions
-3. Describe what the VIEWER SEES (blur quality, light behavior, color shifts) - NOT cameras or equipment
-4. The output MUST be longer than the input, containing ALL original content
+Add these settings as natural language visual effect descriptions.
+Use Z-Image vocabulary: "soft diffused lighting", "creamy bokeh blur", "warm film tones"
+Keep the original prompt intact.
 
-For each setting, ADD descriptions of its VISUAL effect:
-- Aperture → describe the blur quality, focus falloff, bokeh character
-- Focal length → describe compression, perspective, spatial relationships
-- Lighting → describe how light falls on surfaces, shadow shapes, highlight behavior
-- Film/color → describe the color palette, tonal quality, mood
+Enhanced prompt:"""
 
-Output the enhanced prompt (must contain 100% of original):"""
+        result = cls._call_llm(client, llm_model, system, user_prompt, "Single-shot enhancement")
+        return cls._clean_response(result, f"{prompt}, {photography_str}" if prompt else photography_str)
 
-        result = cls._call_llm(client, llm_model, DEEP_PHOTOGRAPHY_SYSTEM, user_prompt, "Deep photography analysis")
+    @classmethod
+    def _deep_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, settings: Dict, prompt_length: int = 150) -> str:
+        """Detailed: Deep transformation of how each setting affects every visual element."""
+        # Build detailed settings breakdown with transformation hints
+        settings_breakdown = "\n".join([f"- {k}: {v}" for k, v in settings.items()])
+
+        # Get length constraint
+        length_constraint = config_loader.get_length_constraint(prompt_length)
+        length_section = f"\n\nOUTPUT LENGTH:\n{length_constraint}" if length_constraint else ""
+
+        user_prompt = f"""TRANSFORM this prompt using Z-IMAGE VOCABULARY, applying photography settings to EVERY visual element.
+
+=== ORIGINAL PROMPT ===
+{prompt if prompt.strip() else "(general photography shot)"}
+=== END ORIGINAL PROMPT ===
+
+=== PHOTOGRAPHY SETTINGS TO APPLY ===
+{settings_breakdown}
+=== END SETTINGS ===
+{length_section}
+
+Z-IMAGE VOCABULARY - USE THESE NATURAL LANGUAGE PATTERNS:
+- Aperture: "f/1.4 wide open aperture creating paper-thin depth of field with soft creamy bokeh"
+- Lighting: "Rembrandt lighting creating signature triangle of light on the shadowed cheek"
+- Background: "background dissolving into luminous bokeh orbs with painterly blur"
+- Film: "Kodak Portra 400 rendering with warm peachy skin tones and muted pastel colors"
+- Lens: "85mm portrait lens compressing background planes with flattering perspective"
+
+TRANSFORMATION REQUIREMENTS:
+
+1. **Backgrounds**: Transform to "soft creamy bokeh", "luminous out-of-focus orbs", "painterly blur dissolving details"
+
+2. **Subject Lighting**: Apply as visual descriptions:
+   - "Rembrandt lighting with triangle shadow on cheek"
+   - "soft wraparound light gently modeling facial contours"
+   - "rim light creating luminous halo around hair edges"
+
+3. **Colors/Film**: Transform entire palette:
+   - "warm Kodak Portra skin tones with peachy undertones"
+   - "fine organic film grain adding tactile texture"
+
+4. **Atmosphere**: Describe visual effects:
+   - "subtle lens flare streaking across highlights"
+   - "natural vignette drawing focus to center"
+
+WEAVE settings naturally throughout - DO NOT append as a list.
+
+Example Z-Image style:
+"close-up portrait of woman with golden blonde hair catching warm rim light creating luminous halo effect, Rembrandt lighting sculpting her features with signature triangle of light on the shadowed cheek, soft diffused background dissolving into creamy bokeh orbs, shot with 85mm portrait lens at f/1.4 wide open aperture, Kodak Portra 400 film rendering warm peachy skin tones with fine organic grain texture"
+
+Output the TRANSFORMED prompt:"""
+
+        result = cls._call_llm(client, llm_model, AGENTIC_PHOTOGRAPHY_SYSTEM, user_prompt, "Deep photography transformation")
         return cls._clean_response(result, prompt)
 
     @classmethod
-    def _extreme_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, settings: Dict) -> str:
-        """Extreme: Two-pass deep analysis with synthesis."""
-        # First pass: Deep analysis
+    def _extreme_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, settings: Dict, prompt_length: int = 150) -> str:
+        """Extreme: Two-pass deep transformation with micro-detail synthesis."""
+        # First pass: Deep transformation
         settings_breakdown = "\n".join([f"- {k}: {v}" for k, v in settings.items()])
 
-        user_prompt = f"""CRITICAL: You MUST preserve EVERY word and detail from the base prompt below. Do NOT remove, replace, or summarize anything.
+        # Get length constraint
+        length_constraint = config_loader.get_length_constraint(prompt_length)
+        length_section = f"\n\nOUTPUT LENGTH:\n{length_constraint}" if length_constraint else ""
 
-=== BASE PROMPT (PRESERVE 100% OF THIS CONTENT) ===
+        user_prompt = f"""PASS 1: DEEP TRANSFORMATION using Z-IMAGE VOCABULARY
+Transform EVERY visual element using natural language photography descriptions.
+
+=== ORIGINAL PROMPT ===
 {prompt if prompt.strip() else "(general photography shot)"}
-=== END BASE PROMPT ===
+=== END ORIGINAL PROMPT ===
 
-Photography settings to describe as VISUAL EFFECTS (NOT visible equipment):
+=== PHOTOGRAPHY SETTINGS TO APPLY ===
 {settings_breakdown}
+=== END SETTINGS ===
+{length_section}
 
-YOUR TASK - PASS 1 (Deep Enhancement):
-1. Copy the ENTIRE base prompt as your foundation - every single word
-2. INSERT rich visual descriptions of how each setting affects the scene
-3. Describe VISUAL RESULTS only - never mention cameras/lenses as visible objects
-4. Add micro-details: how light interacts with skin, fabric texture under specific lighting, bokeh character
+Z-IMAGE VOCABULARY PATTERNS TO USE:
+- Bokeh: "soft creamy bokeh", "luminous bokeh orbs", "painterly background blur"
+- DOF: "paper-thin depth of field", "razor-sharp focus with rapid falloff"
+- Lighting: "Rembrandt lighting with triangle shadow", "soft wraparound light modeling contours"
+- Film: "Kodak Portra warm skin tones", "fine organic film grain texture"
+- Lens: "85mm portrait lens with flattering compression", "shallow depth of field with buttery blur"
 
-For each existing description in the base prompt:
-- Keep it EXACTLY as written
-- ADD details about how photography settings enhance that specific element
-- Describe the interplay between settings (e.g., wide aperture + rim light = luminous edge separation)
+TRANSFORMATION CHECKLIST:
 
-The output MUST contain 100% of original content plus visual enhancements.
+□ BACKGROUNDS → "dissolving into soft creamy bokeh orbs", "painterly blur"
+□ LIGHTING → "Rembrandt triangle of light on shadowed cheek", "luminous rim light halo"
+□ SKIN → "warm Portra skin tones with peachy undertones", "soft light modeling facial contours"
+□ HAIR → "rim light creating luminous edge glow", "individual strands catching warm highlights"
+□ COLORS → "shifted to warm film stock palette", "muted pastel tones"
+□ ATMOSPHERE → "fine organic film grain", "subtle natural vignette"
 
-Output the enhanced prompt:"""
+Example Z-Image transformation:
+Original: "woman in red dress in garden"
+→ "woman bathed in soft golden hour light wrapping around her form, the red dress rendered in deep coral-orange by the warm sunset and Kodak Portra's signature color science, background garden dissolving into soft creamy bokeh pools of green and gold, Rembrandt lighting creating gentle triangle shadow on her cheek, rim light adding luminous halo to her hair edges, fine organic film grain adding tactile texture, shot at f/1.4 with paper-thin depth of field"
 
-        enhanced = cls._call_llm(client, llm_model, DEEP_PHOTOGRAPHY_SYSTEM, user_prompt, "Pass 1: Deep analysis")
+Output the TRANSFORMED prompt using natural language:"""
+
+        enhanced = cls._call_llm(client, llm_model, AGENTIC_PHOTOGRAPHY_SYSTEM, user_prompt, "Pass 1: Deep transformation")
         enhanced = cls._clean_response(enhanced, prompt)
 
         pass1_words = len(enhanced.split())
         print(f"[PhotographyPrompts] Pass 1 complete: {pass1_words} words")
 
-        # Second pass: Synthesis
-        synthesis_prompt = f"""CRITICAL: The prompt below has been carefully enhanced. You MUST preserve EVERY detail - do NOT remove or summarize anything.
+        # Second pass: Micro-detail synthesis
+        synthesis_prompt = f"""PASS 2: Z-IMAGE MICRO-DETAIL SYNTHESIS
+Add the finest photographic micro-details using natural language descriptions.
 
-=== ENHANCED PROMPT (PRESERVE 100% OF THIS CONTENT) ===
+=== TRANSFORMED PROMPT ===
 {enhanced}
-=== END ENHANCED PROMPT ===
+=== END TRANSFORMED PROMPT ===
+{length_section}
 
-YOUR TASK - PASS 2 (Final Polish):
-1. Keep ALL existing content exactly as written
-2. ADD only micro-level refinements:
-   - How light creates subtle subsurface scattering on skin
-   - Micro-texture details (individual fabric threads, pore-level skin detail)
-   - Atmospheric micro-particles (dust motes in light beams)
-   - Edge definition and focus transitions
-3. Do NOT summarize, condense, or rewrite existing descriptions
-4. Do NOT add any visible photography equipment to the scene
+ADD Z-IMAGE STYLE MICRO-DETAILS:
 
-The output must be AT LEAST as long as the input, containing 100% of original content.
+1. **Light Interaction** (natural language):
+   - "soft subsurface scattering creating warm glow through ear edges"
+   - "specular catchlights dancing in the eyes"
+   - "light wrapping gently around facial contours"
 
-Output the final refined prompt:"""
+2. **Texture Details** (descriptive):
+   - "individual fabric threads catching directional light"
+   - "skin texture rendered with pore-level detail in focus plane"
+   - "hair strands separated by rim light with visible light transmission"
 
-        final = cls._call_llm(client, llm_model, DEEP_PHOTOGRAPHY_SYSTEM, synthesis_prompt, "Pass 2: Synthesis")
+3. **Photographic Artifacts** (as visual effects):
+   - "fine organic film grain distributed across midtones"
+   - "subtle focus breathing in transition zones"
+   - "natural optical vignette darkening frame corners"
+
+4. **Depth Transitions**:
+   - "razor-sharp focus transitioning to buttery soft blur"
+   - "luminous bokeh orbs with subtle highlight clipping"
+
+Maintain natural language flow - NO tag soup. ENRICH existing content.
+
+Output the final Z-IMAGE OPTIMIZED prompt:"""
+
+        final = cls._call_llm(client, llm_model, AGENTIC_PHOTOGRAPHY_SYSTEM, synthesis_prompt, "Pass 2: Micro-detail synthesis")
         return cls._clean_response(final, enhanced)
 
     @classmethod

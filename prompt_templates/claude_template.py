@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-Claude Prompt Template - High Resolution
+ComfyUI-AI-Photography-Toolkit - Claude Prompt Template
 
 Optimized prompts for Anthropic Claude models.
 Designed for NEAR-ACCURATE reproduction of source images.
@@ -10,6 +11,10 @@ Key principles:
 - Capture spatial relationships accurately
 - Document lighting with technical precision
 - Include camera/lens characteristics
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 import json

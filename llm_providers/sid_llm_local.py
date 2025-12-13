@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-SID_LLM_Local Node
+ComfyUI-AI-Photography-Toolkit - Local LLM Provider Node
 
 Unified local vision-language model provider for ComfyUI.
 Supports multiple model families with automatic VRAM management.
@@ -10,12 +11,17 @@ Supported Model Families:
 - Moondream2: Lightweight VLM (1.8B) - Efficient
 - SmolVLM: HuggingFace SmolVLM (0.25B-2B) - Ultra-efficient
 - Phi-3.5-Vision: Microsoft Phi-3.5 (4.2B) - High quality
+- Qwen3 Text: Text-only models for prompt generation (0.6B-8B)
 
 Features:
 - VRAM auto-downgrade with safety margin
 - Multiple quantization options
 - Model caching for faster inference
 - Image caching for repeated analyses
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 import os
@@ -896,6 +902,25 @@ class LocalModelClient:
     _image_cache = {}
     _image_cache_max_size = 5
     _compiled_generate = None  # For torch.compile caching
+
+    @classmethod
+    def unload_model(cls):
+        """Force unload the cached model to free VRAM for other nodes."""
+        if cls._cached_model is not None:
+            print(f"[LocalModelClient] Force unloading model to free VRAM...")
+            # Delete model references
+            del cls._cached_model
+            cls._cached_model = None
+            cls._cached_processor = None
+            cls._cached_tokenizer = None
+            cls._cached_signature = None
+            cls._compiled_generate = None
+            cls._image_cache.clear()
+            # Aggressively clear memory
+            clear_memory()
+            print(f"[LocalModelClient] Model unloaded, VRAM freed")
+            return True
+        return False
 
     def __init__(
         self,

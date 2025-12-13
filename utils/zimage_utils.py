@@ -1,6 +1,12 @@
+# -*- coding: utf-8 -*-
 """
-Z-Image utility functions for ComfyUI-AI-Photography-Toolkit.
-Provides config loading, caching, and output cleaning utilities.
+ComfyUI-AI-Photography-Toolkit - Z-Image Utilities
+
+Utility functions for config loading, caching, and output cleaning.
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 import os

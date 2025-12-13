@@ -1,7 +1,13 @@
+# -*- coding: utf-8 -*-
 """
-Standalone Prompt Components
+ComfyUI-AI-Photography-Toolkit - Prompt Components
 
-Extracted from sid_zimage_prompt_generator_advanced_v2.py for testing without ComfyUI.
+Standalone prompt components for agentic image analysis.
+Extracted for testing without ComfyUI environment.
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 # Component definitions for analysis

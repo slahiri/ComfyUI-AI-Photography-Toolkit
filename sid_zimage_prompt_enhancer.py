@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 """
-SID_ZImagePromptEnhancer Node
+ComfyUI-AI-Photography-Toolkit - Prompt Enhancer Node
 
 Universal prompt enhancement using cloud APIs or local LLMs.
-Simple 3-instruction system: Enhance, Replace, Add.
+Simple single-instruction interface for prompt modifications.
 Detail levels: Quick, Standard, Detailed, Extreme.
 
 - Quick: Describe and update the prompt (basic cleanup)
@@ -10,6 +11,10 @@ Detail levels: Quick, Standard, Detailed, Extreme.
 - Detailed/Extreme: Deep enhancement using prompt generator logic
 
 Connect SID_LLM_API or SID_LLM_Local (text models) to provide the LLM.
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 import gc
@@ -25,6 +30,7 @@ import comfy.utils
 
 from .llm_providers.llm_model_type import LLMModelConfig
 from .zimage_prompt_translator import translate_prompt, get_translator
+from . import config_loader
 from .negative_prompt_builder import (
     generate_negative,
     enhance_negative_prompt as python_enhance_negative,
@@ -157,21 +163,20 @@ Output ONLY the cleaned prompt - no commentary."""
 
 API_STANDARD_SYSTEM = """You are a prompt engineer. Enhance this image generation prompt.
 
-RULES:
-1. Preserve every detail from the original - do NOT remove anything
-2. Keep all specific descriptions exactly (measurements, colors, specs)
-3. Only ADD complementary details between existing content
+PRIORITY RULES:
+1. FIRST: Apply any user instructions (ENHANCE/REPLACE/ADD) - these override defaults
+2. Preserve details from the original unless user requests changes
+3. ADD complementary details between existing content
 4. Keep output 10-30% longer than input
 
 Output ONLY the enhanced prompt - no explanations."""
 
 API_DETAILED_SYSTEM = """You are an expert prompt engineer for AI image generation.
 
-PRESERVATION RULES:
-1. Every word from the original MUST appear in output
-2. No synonyms - "espresso brown" stays "espresso brown"
-3. No paraphrasing - keep original phrasing
-4. Only INSERT new details between existing content
+PRIORITY RULES:
+1. FIRST: Apply any user instructions (ENHANCE/REPLACE/ADD) - these override all other rules
+2. Preserve original details UNLESS user requests specific changes
+3. INSERT new details between existing content
 
 ENHANCEMENT:
 - Add texture details after materials
@@ -182,14 +187,14 @@ Output ONLY the enhanced prompt - no markdown, no explanations."""
 
 API_EXTREME_SYSTEM = """You are an expert prompt engineer with extended reasoning.
 
-ABSOLUTE RULES:
-1. Copy original word-for-word as base
-2. Do not change any existing word or phrase
-3. Insert additions only - never replace
-4. Add only highest-impact micro-details:
+PRIORITY RULES:
+1. FIRST: Apply any user instructions (ENHANCE/REPLACE/ADD) - these override defaults
+2. Use original prompt as base
+3. Add highest-impact micro-details where appropriate:
    - Precise textures ("fine grain", "subtle sheen")
    - Light interactions ("catching rim light")
    - Depth cues ("soft background separation")
+4. If user requests changes (hair color, clothing, etc.), make those changes
 
 Output ONLY the final prompt - no analysis, no commentary."""
 
@@ -208,10 +213,9 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
     """
     Universal Prompt Enhancer for Z-Image workflows.
 
-    Simple 3-instruction system:
-    - Enhance: Instructions to improve/enhance the prompt
-    - Replace: Elements to find and replace
-    - Add: Elements to add to the prompt
+    Simple single-instruction interface:
+    - Write natural language instructions to modify the prompt
+    - Examples: "change hair to blonde", "add bokeh effect", "make it more cinematic"
 
     Detail levels:
     - Quick: Describe and cleanup (basic)
@@ -228,7 +232,7 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
             node_id="SID_ZImagePromptEnhancer",
             display_name="SID Z-Image Prompt Enhancer",
             category="SID Photography Toolkit/Prompt",
-            description="Prompt enhancement with Enhance/Replace/Add instructions",
+            description="Prompt enhancement with natural language instructions",
             inputs=[
                 # LLM Model Input
                 LLM_MODEL_Type.Input(
@@ -251,35 +255,29 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
                     tooltip="Optional: Negative prompt to enhance. If empty, one will be generated from the positive prompt."
                 ),
 
-                # Detail Level
-                comfy_io.Combo.Input(
-                    "detail_level",
-                    options=DETAIL_LEVELS,
+                # Analysis Mode (wire from Generator or type manually)
+                comfy_io.String.Input(
+                    "analysis_mode",
                     default="Standard",
-                    tooltip="Quick: cleanup, Standard: enhance, Detailed: deep analysis, Extreme: maximum detail"
+                    tooltip="Quick/Standard/Detailed/Extreme - wire from Generator's analysis_mode output"
                 ),
 
-                # Three instruction boxes
-                comfy_io.String.Input(
-                    "enhance",
-                    multiline=True,
-                    default="",
-                    display_name="Enhance",
-                    tooltip="Instructions to improve the prompt"
+                # Prompt Length
+                comfy_io.Int.Input(
+                    "prompt_length",
+                    default=150,
+                    min=0,
+                    max=500,
+                    tooltip="Target word count (0=unlimited, 80-250 optimal for Z-Image). Wire from Generator for consistency."
                 ),
+
+                # Single instruction box
                 comfy_io.String.Input(
-                    "replace",
+                    "instructions",
                     multiline=True,
                     default="",
-                    display_name="Replace",
-                    tooltip="Elements to replace (e.g., 'change background to forest')"
-                ),
-                comfy_io.String.Input(
-                    "add",
-                    multiline=True,
-                    default="",
-                    display_name="Add",
-                    tooltip="Elements to add (e.g., 'add bokeh effect')"
+                    display_name="Instructions",
+                    tooltip="Instructions to modify the prompt (e.g., 'change hair to blonde', 'add bokeh effect', 'make it more cinematic')"
                 ),
 
                 # Seed Control
@@ -401,9 +399,9 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
         )
 
     @classmethod
-    def _generate_cache_key(cls, seed: int, prompt: str, detail_level: str, enhance: str, replace: str, add: str, model: str) -> str:
+    def _generate_cache_key(cls, seed: int, prompt: str, analysis_mode: str, instructions: str, model: str) -> str:
         """Generate a unique cache key based on inputs and seed."""
-        key_data = f"{seed}|{prompt}|{detail_level}|{enhance}|{replace}|{add}|{model}"
+        key_data = f"{seed}|{prompt}|{analysis_mode}|{instructions}|{model}"
         return hashlib.sha256(key_data.encode()).hexdigest()[:32]
 
     @classmethod
@@ -412,16 +410,32 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
         llm_model: LLMModelConfig,
         prompt: str,
         negative_prompt: str,
-        detail_level: str,
-        enhance: str,
-        replace: str,
-        add: str,
+        analysis_mode: str,
+        prompt_length: int,
+        instructions: str,
         seed: int,
         zimage_optimize: bool = True,
     ) -> comfy_io.NodeOutput:
         """Execute prompt enhancement."""
         global _enhancer_cache, _negative_cache
+
+        # Clear VRAM and run garbage collection before starting
+        import gc
+        gc.collect()
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+        except Exception:
+            pass
+
         start_time = time.time()
+
+        # Validate analysis_mode, default to Standard if invalid
+        if analysis_mode not in DETAIL_LEVELS:
+            print(f"[PromptEnhancer] Invalid analysis_mode '{analysis_mode}', using Standard")
+            analysis_mode = "Standard"
 
         # Initialize progress bar (3 steps: enhance, negative, z-image optimize)
         pbar = comfy.utils.ProgressBar(3)
@@ -439,12 +453,10 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
 
             # If no instructions provided, passthrough without LLM call
             # Also treat very short instructions (< 3 chars) as empty
-            enhance_text = enhance.strip() if len(enhance.strip()) >= 3 else ""
-            replace_text = replace.strip() if len(replace.strip()) >= 3 else ""
-            add_text = add.strip() if len(add.strip()) >= 3 else ""
-            
-            if not enhance_text and not replace_text and not add_text:
-                print("[PromptEnhancer] No instructions (enhance/replace/add), passthrough")
+            instructions_text = instructions.strip() if len(instructions.strip()) >= 3 else ""
+
+            if not instructions_text:
+                print("[PromptEnhancer] No instructions provided, passthrough")
                 print("=" * 60)
                 print("")
                 # Pass through prompt and negative as-is - NO modification
@@ -452,12 +464,12 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
 
             # Generate cache key
             cache_key = cls._generate_cache_key(
-                seed, prompt, detail_level, enhance, replace, add, llm_model.model
+                seed, prompt, analysis_mode, instructions, llm_model.model
             )
 
             # Generate negative cache key (includes the input negative prompt to differentiate)
             negative_cache_key = cls._generate_cache_key(
-                seed, prompt + negative_prompt, detail_level, enhance, replace, add, llm_model.model + "_neg"
+                seed, prompt + negative_prompt, analysis_mode, instructions, llm_model.model + "_neg"
             )
 
             # Check cache for both positive and negative
@@ -477,7 +489,8 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
             # Show input stats
             word_count = len(prompt.split())
             print(f"[PromptEnhancer] Input: {word_count} words")
-            print(f"[PromptEnhancer] Mode: {detail_level}")
+            length_info = f"{prompt_length} words" if prompt_length > 0 else "unlimited"
+            print(f"[PromptEnhancer] Mode: {analysis_mode} | Length: {length_info}")
             print(f"[PromptEnhancer] Provider: {llm_model.provider}")
             print(f"[PromptEnhancer] Model: {llm_model.model}")
             print(f"[PromptEnhancer] Seed: {seed}")
@@ -495,52 +508,48 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
             supports_reasoning = llm_model.supports_reasoning
             
             # Local models: Use Quick mode for all levels except Quick itself
-            if is_local and detail_level in ["Standard", "Detailed", "Extreme"]:
-                print(f"[PromptEnhancer] Local model detected: {detail_level} -> Quick for reliability")
-                detail_level = "Quick"
+            if is_local and analysis_mode in ["Standard", "Detailed", "Extreme"]:
+                print(f"[PromptEnhancer] Local model detected: {analysis_mode} -> Quick for reliability")
+                analysis_mode = "Quick"
             # Non-reasoning cloud models: Detailed/Extreme -> Standard
-            elif detail_level in ["Detailed", "Extreme"] and not supports_reasoning:
-                print(f"[PromptEnhancer] Non-reasoning model: {detail_level} -> Standard for efficiency")
-                detail_level = "Standard"
+            elif analysis_mode in ["Detailed", "Extreme"] and not supports_reasoning:
+                print(f"[PromptEnhancer] Non-reasoning model: {analysis_mode} -> Standard for efficiency")
+                analysis_mode = "Standard"
 
-            # Build user instructions from cleaned texts
-            user_instructions = []
-            if enhance_text:
-                user_instructions.append(f"ENHANCE: {enhance_text}")
-                print(f"[PromptEnhancer] Enhance instruction: {enhance_text[:50]}...")
-            if replace_text:
-                user_instructions.append(f"REPLACE: {replace_text}")
-                print(f"[PromptEnhancer] Replace instruction: {replace_text[:50]}...")
-            if add_text:
-                user_instructions.append(f"ADD: {add_text}")
-                print(f"[PromptEnhancer] Add instruction: {add_text[:50]}...")
-
-            instructions_text = "\n".join(user_instructions) if user_instructions else ""
+            # Log instructions
+            if instructions_text:
+                preview = instructions_text[:80] + "..." if len(instructions_text) > 80 else instructions_text
+                print(f"[PromptEnhancer] Instructions: {preview}")
 
             # Process based on detail level
             print("-" * 60)
 
             # Quick mode: 100% Python - NO LLM NEEDED
-            if detail_level == "Quick":
+            if analysis_mode == "Quick":
                 print("[PromptEnhancer] Quick Mode: Python-only processing (no LLM)...")
 
                 # Step 1: Clean up the prompt
                 enhanced = quick_clean_prompt(prompt)
 
                 # Step 2: Apply any simple instructions via string manipulation
-                if add_text:
-                    enhanced = f"{enhanced.rstrip('.')}, {add_text}"
-                if replace_text:
-                    # Simple keyword replacement (format: "old -> new" or "old to new")
-                    for line in replace_text.split('\n'):
-                        line = line.strip()
-                        if ' -> ' in line:
-                            old, new = line.split(' -> ', 1)
-                            enhanced = enhanced.replace(old.strip(), new.strip())
-                        elif ' to ' in line.lower():
-                            parts = re.split(r'\s+to\s+', line, maxsplit=1, flags=re.IGNORECASE)
-                            if len(parts) == 2:
-                                enhanced = enhanced.replace(parts[0].strip(), parts[1].strip())
+                # Parse instructions for simple replacements (format: "old -> new" or "change old to new")
+                for line in instructions_text.split('\n'):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if ' -> ' in line:
+                        old, new = line.split(' -> ', 1)
+                        enhanced = enhanced.replace(old.strip(), new.strip())
+                    elif ' to ' in line.lower():
+                        # Handle "change X to Y" or "X to Y" patterns
+                        parts = re.split(r'\s+to\s+', line, maxsplit=1, flags=re.IGNORECASE)
+                        if len(parts) == 2:
+                            old_part = re.sub(r'^(?:change|replace|make)\s+', '', parts[0].strip(), flags=re.IGNORECASE)
+                            enhanced = enhanced.replace(old_part.strip(), parts[1].strip())
+                    else:
+                        # If instruction doesn't match replacement patterns, append it
+                        if not any(kw in line.lower() for kw in ['change', 'replace', 'remove']):
+                            enhanced = f"{enhanced.rstrip('.')}, {line}"
 
                 # Step 3: Z-Image vocabulary optimization is applied later
                 print(f"[PromptEnhancer] Quick cleanup: {len(prompt.split())} -> {len(enhanced.split())} words")
@@ -548,12 +557,13 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
                 # Update progress: positive enhancement done
                 pbar.update(1)
 
-                # Generate negative prompt with Python (no LLM)
+                # Process negative prompt only if provided
                 if negative_prompt.strip():
                     enhanced_negative = python_enhance_negative(negative_prompt, prompt, "Quick")
+                    print(f"[PromptEnhancer] Python negative prompt: {len(enhanced_negative.split())} words")
                 else:
-                    enhanced_negative = generate_negative(enhanced, "Quick")
-                print(f"[PromptEnhancer] Python negative prompt: {len(enhanced_negative.split())} words")
+                    enhanced_negative = ""
+                    print("[PromptEnhancer] Negative prompt: SKIPPED (no input)")
 
                 # Update progress: negative prompt done
                 pbar.update(1)
@@ -567,20 +577,20 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
                 print("[PromptEnhancer] Initializing LLM client...")
                 client = cls._get_client(llm_model)
 
-                if detail_level == "Standard":
+                if analysis_mode == "Standard":
                     print("[PromptEnhancer] Standard Mode: Enhancing prompt...")
-                    enhanced = cls._standard_enhance(client, llm_model, prompt, instructions_text, is_local)
+                    enhanced = cls._standard_enhance(client, llm_model, prompt, instructions_text, is_local, prompt_length)
 
-                elif detail_level == "Detailed":
+                elif analysis_mode == "Detailed":
                     print("[PromptEnhancer] Detailed Mode: Deep component analysis...")
-                    enhanced = cls._deep_enhance(client, llm_model, prompt, instructions_text)
+                    enhanced = cls._deep_enhance(client, llm_model, prompt, instructions_text, prompt_length)
 
-                elif detail_level == "Extreme":
+                elif analysis_mode == "Extreme":
                     print("[PromptEnhancer] Extreme Mode: Two-pass deep enhancement...")
-                    enhanced = cls._extreme_enhance(client, llm_model, prompt, instructions_text)
+                    enhanced = cls._extreme_enhance(client, llm_model, prompt, instructions_text, prompt_length)
 
                 else:
-                    enhanced = cls._standard_enhance(client, llm_model, prompt, instructions_text, is_local)
+                    enhanced = cls._standard_enhance(client, llm_model, prompt, instructions_text, is_local, prompt_length)
 
                 # Store positive in cache (with size limit and cleanup)
                 if len(_enhancer_cache) >= _MAX_CACHE_SIZE:
@@ -596,23 +606,20 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
                 # Update progress: positive enhancement done
                 pbar.update(1)
 
-                # Process negative prompt (LLM modes use Python for Standard, LLM for Detailed/Extreme)
+                # Process negative prompt only if provided
                 print("-" * 60)
-                if detail_level == "Standard":
-                    # Standard mode: Use Python for negative prompts too
-                    if negative_prompt.strip():
+                if negative_prompt.strip():
+                    if analysis_mode == "Standard":
+                        # Standard mode: Use Python for negative prompts
                         enhanced_negative = python_enhance_negative(negative_prompt, enhanced, "Standard")
+                        print(f"[PromptEnhancer] Python negative prompt: {len(enhanced_negative.split())} words")
                     else:
-                        enhanced_negative = generate_negative(enhanced, "Standard")
-                    print(f"[PromptEnhancer] Python negative prompt: {len(enhanced_negative.split())} words")
-                elif negative_prompt.strip():
-                    # Detailed/Extreme: Use LLM for negative enhancement
-                    print(f"[PromptEnhancer] Enhancing provided negative prompt ({len(negative_prompt.split())} words)...")
-                    enhanced_negative = cls._enhance_negative_prompt(client, llm_model, negative_prompt, enhanced, detail_level)
+                        # Detailed/Extreme: Use LLM for negative enhancement
+                        print(f"[PromptEnhancer] Enhancing provided negative prompt ({len(negative_prompt.split())} words)...")
+                        enhanced_negative = cls._enhance_negative_prompt(client, llm_model, negative_prompt, enhanced, analysis_mode)
                 else:
-                    # Generate negative prompt from the enhanced positive prompt
-                    print("[PromptEnhancer] Generating negative prompt from positive...")
-                    enhanced_negative = cls._generate_negative_prompt(client, llm_model, enhanced, detail_level)
+                    enhanced_negative = ""
+                    print("[PromptEnhancer] Negative prompt: SKIPPED (no input)")
 
             # Store negative in cache (with size limit and cleanup)
             if len(_negative_cache) >= _MAX_CACHE_SIZE:
@@ -663,6 +670,14 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
             print("=" * 60)
             print("")
 
+            # Unload local model to free VRAM for subsequent nodes
+            if llm_model.provider.lower() == "local":
+                try:
+                    from .llm_providers.sid_llm_local import LocalModelClient
+                    LocalModelClient.unload_model()
+                except Exception:
+                    pass
+
             return comfy_io.NodeOutput(enhanced, enhanced_negative, prompt)
 
         except Exception as e:
@@ -672,13 +687,13 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
             return comfy_io.NodeOutput(prompt, "", prompt)
 
     @classmethod
-    def _enforce_length_limit(cls, enhanced: str, original: str, detail_level: str) -> str:
+    def _enforce_length_limit(cls, enhanced: str, original: str, analysis_mode: str) -> str:
         """Enforce length limits by truncating if necessary."""
         original_words = len(original.split())
         enhanced_words = len(enhanced.split())
 
         # Get max allowed increase for this detail level
-        _, max_increase = LENGTH_LIMITS.get(detail_level, (0, 50))
+        _, max_increase = LENGTH_LIMITS.get(analysis_mode, (0, 50))
         max_words = int(original_words * (1 + max_increase / 100))
 
         if enhanced_words <= max_words:
@@ -718,10 +733,18 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
         return cls._enforce_length_limit(result, prompt, "Quick")
 
     @classmethod
-    def _standard_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, instructions: str) -> str:
+    def _standard_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, instructions: str, is_local: bool = False, prompt_length: int = 150) -> str:
         """Standard: Basic LLM enhancement."""
         original_words = len(prompt.split())
-        max_words = int(original_words * 1.3)  # 10-30% increase
+
+        # Determine target word count based on prompt_length setting
+        if prompt_length > 0:
+            max_words = prompt_length
+        else:
+            max_words = int(original_words * 1.3)  # 10-30% increase if unlimited
+
+        # Get length constraint instruction
+        length_constraint = config_loader.get_length_constraint(prompt_length)
 
         user_prompt = f"""Enhance this prompt (TARGET: {max_words} words max):
 
@@ -729,6 +752,9 @@ Original word count: {original_words}
 Maximum output: {max_words} words
 
 {prompt}"""
+
+        if length_constraint:
+            user_prompt += f"\n\n{length_constraint}"
 
         if instructions:
             user_prompt += f"\n\nUser instructions:\n{instructions}"
@@ -740,16 +766,24 @@ Maximum output: {max_words} words
         return cls._enforce_length_limit(result, prompt, "Standard")
 
     @classmethod
-    def _deep_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, instructions: str) -> str:
+    def _deep_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, instructions: str, prompt_length: int = 150) -> str:
         """Detailed: Deep component-based enhancement."""
         original_words = len(prompt.split())
-        max_words = int(original_words * 1.4)  # 20-40% increase
+
+        # Determine target word count based on prompt_length setting
+        if prompt_length > 0:
+            max_words = prompt_length
+        else:
+            max_words = int(original_words * 1.4)  # 20-40% increase if unlimited
+
+        # Get length constraint instruction
+        length_constraint = config_loader.get_length_constraint(prompt_length)
 
         user_prompt = f"""Enhance this prompt while respecting length limits.
 
 WORD LIMITS:
 - Original: {original_words} words
-- Maximum output: {max_words} words (20-40% increase)
+- Maximum output: {max_words} words
 - Do NOT exceed {max_words} words
 
 === ORIGINAL PROMPT ===
@@ -757,6 +791,9 @@ WORD LIMITS:
 === END ORIGINAL PROMPT ===
 
 Add only HIGH-IMPACT details. Quality over quantity."""
+
+        if length_constraint:
+            user_prompt += f"\n\n{length_constraint}"
 
         if instructions:
             user_prompt += f"\n\nUser instructions:\n{instructions}"
@@ -768,16 +805,24 @@ Add only HIGH-IMPACT details. Quality over quantity."""
         return cls._enforce_length_limit(result, prompt, "Detailed")
 
     @classmethod
-    def _extreme_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, instructions: str) -> str:
+    def _extreme_enhance(cls, client, llm_model: LLMModelConfig, prompt: str, instructions: str, prompt_length: int = 150) -> str:
         """Extreme: Single pass with strict length limit."""
         original_words = len(prompt.split())
-        max_words = int(original_words * 1.4)  # 30-40% increase
+
+        # Determine target word count based on prompt_length setting
+        if prompt_length > 0:
+            max_words = prompt_length
+        else:
+            max_words = int(original_words * 1.4)  # 30-40% increase if unlimited
+
+        # Get length constraint instruction
+        length_constraint = config_loader.get_length_constraint(prompt_length)
 
         user_prompt = f"""Enhance this prompt with maximum detail while respecting length limits.
 
 STRICT WORD LIMITS:
 - Original: {original_words} words
-- Maximum output: {max_words} words (30-40% increase)
+- Maximum output: {max_words} words
 - Do NOT exceed {max_words} words under any circumstances
 
 === ORIGINAL PROMPT ===
@@ -785,6 +830,9 @@ STRICT WORD LIMITS:
 === END ORIGINAL PROMPT ===
 
 Add only the most impactful micro-details. Every word must count."""
+
+        if length_constraint:
+            user_prompt += f"\n\n{length_constraint}"
 
         if instructions:
             user_prompt += f"\n\nUser instructions:\n{instructions}"
@@ -832,15 +880,15 @@ Add only the most impactful micro-details. Every word must count."""
         return response.strip() or original
 
     @classmethod
-    def _generate_negative_prompt(cls, client, llm_model: LLMModelConfig, positive_prompt: str, detail_level: str) -> str:
+    def _generate_negative_prompt(cls, client, llm_model: LLMModelConfig, positive_prompt: str, analysis_mode: str) -> str:
         """Generate a negative prompt based on the enhanced positive prompt."""
         # Build system prompt based on detail level
-        if detail_level == "Quick":
+        if analysis_mode == "Quick":
             system_prompt = """You are an expert at creating negative prompts for AI image generation.
 Generate a concise negative prompt that avoids common image quality issues.
 Output ONLY the negative prompt - no explanations, no markdown, no quotes."""
 
-        elif detail_level == "Standard":
+        elif analysis_mode == "Standard":
             system_prompt = """You are an expert at creating negative prompts for AI image generation.
 Based on the positive prompt, generate a negative prompt that:
 1. Avoids quality issues (blur, noise, artifacts, distortion)
@@ -885,12 +933,12 @@ Generate a negative prompt that will help avoid quality issues and errors while 
             return cls._clean_negative_response(result)
         except Exception as e:
             print(f"[PromptEnhancer] Error generating negative prompt: {e}")
-            return cls._get_default_negative_prompt(detail_level)
+            return cls._get_default_negative_prompt(analysis_mode)
 
     @classmethod
-    def _enhance_negative_prompt(cls, client, llm_model: LLMModelConfig, negative_prompt: str, positive_prompt: str, detail_level: str) -> str:
+    def _enhance_negative_prompt(cls, client, llm_model: LLMModelConfig, negative_prompt: str, positive_prompt: str, analysis_mode: str) -> str:
         """Enhance a provided negative prompt based on the positive prompt context."""
-        if detail_level == "Quick":
+        if analysis_mode == "Quick":
             system_prompt = """You are a prompt editor. Clean up and clarify the negative prompt.
 - Fix grammar and spelling
 - Remove redundant terms
@@ -898,7 +946,7 @@ Generate a negative prompt that will help avoid quality issues and errors while 
 CRITICAL: Keep ALL original terms intact. Only fix language issues.
 Output ONLY the cleaned negative prompt."""
 
-        elif detail_level == "Standard":
+        elif analysis_mode == "Standard":
             system_prompt = """You are a prompt engineer specializing in negative prompts for AI image generation.
 Enhance the negative prompt while preserving all original terms.
 You may add complementary negative terms that align with avoiding issues in the positive prompt context.
@@ -973,12 +1021,12 @@ Enhanced negative prompt:"""
         return response.strip()
 
     @classmethod
-    def _get_default_negative_prompt(cls, detail_level: str) -> str:
+    def _get_default_negative_prompt(cls, analysis_mode: str) -> str:
         """Return a sensible default negative prompt based on detail level."""
-        if detail_level == "Quick":
+        if analysis_mode == "Quick":
             return "blur, low quality, distorted"
 
-        elif detail_level == "Standard":
+        elif analysis_mode == "Standard":
             return "blur, noise, artifacts, distortion, low quality, deformed, extra limbs, bad anatomy"
 
         else:  # Detailed or Extreme

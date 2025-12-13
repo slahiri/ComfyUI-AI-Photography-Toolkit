@@ -1,5 +1,12 @@
+# -*- coding: utf-8 -*-
 """
-Utility modules for ComfyUI-AI-Photography-Toolkit.
+ComfyUI-AI-Photography-Toolkit - Utilities
+
+Utility modules for configuration, caching, and output processing.
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 from .zimage_utils import (

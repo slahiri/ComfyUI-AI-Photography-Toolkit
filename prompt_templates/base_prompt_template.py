@@ -1,8 +1,13 @@
+# -*- coding: utf-8 -*-
 """
-Base Prompt Template
+ComfyUI-AI-Photography-Toolkit - Base Prompt Template
 
 Abstract base class defining the interface for all prompt templates.
 Follows Interface Segregation Principle - minimal required methods.
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 from abc import ABC, abstractmethod

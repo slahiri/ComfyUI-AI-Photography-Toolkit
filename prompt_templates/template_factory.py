@@ -1,8 +1,13 @@
+# -*- coding: utf-8 -*-
 """
-Prompt Template Factory
+ComfyUI-AI-Photography-Toolkit - Template Factory
 
 Factory for getting the appropriate prompt template based on provider.
 Follows Open/Closed and Dependency Inversion principles.
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 from enum import Enum

@@ -1,10 +1,14 @@
+# -*- coding: utf-8 -*-
 """
 ComfyUI-AI-Photography-Toolkit
+
 LLM Provider nodes for ComfyUI - Cloud and Local model support.
 All nodes are prefixed with SID_ for easy identification.
 
 Author: Siddhartha Lahiri
-Version: 4.2.0
+Email: siddhartha.lahiri@gmail.com
+License: MIT
+Version: 4.2.1
 """
 
 __version__ = "4.2.1"
@@ -108,13 +112,6 @@ from .sid_zimage_prompt_enhancer import SID_ZImagePromptEnhancer
 # Import Z-Image Photography Prompts (camera, lens, lighting, effects)
 from .sid_zimage_photography_prompts import SID_ZImagePhotographyPrompts
 
-# Import Z-Image Optimizer nodes (vocabulary-based prompt optimization)
-from .sid_zimage_optimizer import (
-    SID_ZImageOptimizer,
-    SID_ZImagePortraitBuilder,
-    SID_ZImageVocabLookup,
-)
-
 
 class SIDPhotographyToolkitExtension(ComfyExtension):
     """
@@ -133,9 +130,6 @@ class SIDPhotographyToolkitExtension(ComfyExtension):
             SID_ZImagePromptGenerator,  # Z-Image prompt generator (auto Single-Shot/Agentic)
             SID_ZImagePromptEnhancer,   # Z-Image prompt enhancer (local LLM)
             SID_ZImagePhotographyPrompts,  # Photography prompt builder (camera, lens, effects)
-            SID_ZImageOptimizer,        # Z-Image vocabulary-based prompt optimizer
-            SID_ZImagePortraitBuilder,  # Z-Image portrait prompt builder
-            SID_ZImageVocabLookup,      # Z-Image vocabulary lookup
         ]
 
 
@@ -195,12 +189,6 @@ def print_welcome_message():
     print("    - SID_ZImagePromptGenerator    Z-Image prompts (auto Single-Shot/Agentic)")
     print("    - SID_ZImagePromptEnhancer     Prompt enhancement (local LLM, all content types)")
     print("    - SID_ZImagePhotographyPrompts Photography settings (camera, lens, lighting, effects)")
-    print("")
-    print("  Z-Image Vocabulary Optimizer:")
-    print("    - SID_ZImageOptimizer          Optimize prompts for Z-Image (no LLM required)")
-    print("    - SID_ZImagePortraitBuilder    Build portraits with Z-Image vocabulary")
-    print("    - SID_ZImageVocabLookup        Browse Z-Image vocabulary by category")
-
     print("")
     print("=" * 65)
     print("")

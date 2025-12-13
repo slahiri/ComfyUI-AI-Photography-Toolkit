@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
 """
-Z-Image Vocabulary Registry
+ComfyUI-AI-Photography-Toolkit - Z-Image Vocabulary Registry
 
 Comprehensive vocabulary system optimized for Z-Image/Z-Image-Turbo model.
 Based on official documentation, community research, and best practices.
+Includes vocabularies merged from PromptForge for expanded creative options.
 
 Key Principles:
 - Z-Image uses natural language, NOT tag soup
@@ -14,7 +16,11 @@ Key Principles:
 References:
 - https://github.com/Tongyi-MAI/Z-Image
 - https://huggingface.co/spaces/Tongyi-MAI/Z-Image-Turbo
-- https://gist.github.com/illuminatianon/c42f8e57f1e3ebf037dd58043da9de32
+- https://github.com/intelligencedev/PromptForge
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 from dataclasses import dataclass

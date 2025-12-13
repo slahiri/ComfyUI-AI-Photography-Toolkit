@@ -1,8 +1,13 @@
+# -*- coding: utf-8 -*-
 """
-LLM_Model Type Definition
+ComfyUI-AI-Photography-Toolkit - LLM Model Type
 
 Custom type for passing LLM configuration between nodes.
 This enables modular provider selection in ComfyUI workflows.
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 from dataclasses import dataclass, field

@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-Negative Prompt Builder
+ComfyUI-AI-Photography-Toolkit - Negative Prompt Builder
 
 Template-based negative prompt generation - NO LLM REQUIRED.
 Generates high-quality negative prompts using categorized templates
@@ -7,6 +8,10 @@ based on the positive prompt content and detected style.
 
 This replaces LLM calls for negative prompt generation, saving
 ~2-4 seconds per generation.
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 import re

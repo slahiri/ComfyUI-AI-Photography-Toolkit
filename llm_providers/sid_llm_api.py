@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-SID_LLM_API Node - Unified Cloud LLM Provider
+ComfyUI-AI-Photography-Toolkit - Cloud LLM Provider Node
 
 Single node for all cloud-based and local LLM providers.
 Only vision-capable models are listed (required for image analysis).
@@ -17,6 +18,10 @@ Free/Freemium Cloud Providers:
 - OpenRouter (aggregator - free vision models)
 - Fireworks AI (Llama 4, Llama 3.2 vision, Qwen VL)
 - HuggingFace Inference (Llama 3.2 vision, Qwen VL)
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 
 Local Providers (no API key):
 - Ollama (dynamic detection)

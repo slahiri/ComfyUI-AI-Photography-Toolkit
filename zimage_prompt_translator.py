@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-Z-Image Prompt Translator
+ComfyUI-AI-Photography-Toolkit - Z-Image Prompt Translator
 
 Converts generic prompts to Z-Image optimized format.
 Handles:
@@ -13,6 +14,10 @@ Key Principles:
 - Z-Image uses natural language, NOT tag soup
 - Optimal prompt length: 80-250 words
 - Structure: [Shot] + [Subject] + [Environment] + [Lighting] + [Mood] + [Technical]
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 import re

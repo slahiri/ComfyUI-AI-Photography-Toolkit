@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 """
-LLM Provider Models for ComfyUI-AI-Photography-Toolkit.
+ComfyUI-AI-Photography-Toolkit - LLM Providers
 
 This module contains modular LLM provider nodes that can be connected
 to SID_ZImagePromptGenerator for flexible provider selection.
@@ -7,6 +8,10 @@ to SID_ZImagePromptGenerator for flexible provider selection.
 Nodes:
 - SID_LLM_API: Unified cloud LLM provider (Anthropic, OpenAI, Gemini, Grok, etc.)
 - SID_LLM_Local: Local vision models (Florence-2, Moondream2, SmolVLM, Phi-3.5, QwenVL)
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 from .llm_model_type import LLMModelConfig, LLM_MODEL

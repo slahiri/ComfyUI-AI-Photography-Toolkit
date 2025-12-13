@@ -1,11 +1,16 @@
+# -*- coding: utf-8 -*-
 """
-Base LLM Provider Class
+ComfyUI-AI-Photography-Toolkit - Base LLM Provider
 
 Base class for all LLM provider nodes.
 Provides common functionality and interface for provider implementations.
 
 Note: We don't use ABC (Abstract Base Class) because it conflicts with
 ComfyUI's internal class locking mechanism for V3 API nodes.
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 from typing import List, Dict, Any, Optional, Tuple

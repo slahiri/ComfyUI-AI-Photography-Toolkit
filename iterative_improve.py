@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 """
-Iterative Prompt Improvement Workflow
+ComfyUI-AI-Photography-Toolkit - Iterative Improvement
 
-Run batches of 5 images, analyze results, improve prompts, repeat until diminishing returns.
+Iterative prompt improvement workflow for batch testing.
+Run batches of 5 images, analyze results, improve prompts, repeat.
 
 Usage:
     # Interactive mode (requires terminal input)
@@ -12,6 +14,10 @@ Usage:
 
     # Resume from previous session
     python iterative_improve.py --folder ./test_images/ --provider anthropic --api-key KEY --resume ./improvement_sessions/session_WOMAN_20251210_101551
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 
     # With subject filter
     python iterative_improve.py --folder ./test_images/ --subject WOMAN --provider anthropic --api-key KEY

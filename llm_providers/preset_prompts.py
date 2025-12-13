@@ -1,8 +1,13 @@
+# -*- coding: utf-8 -*-
 """
-Preset Prompts for Local Vision Language Models
+ComfyUI-AI-Photography-Toolkit - Preset Prompts
 
-This module provides predefined prompts for common image analysis tasks,
+Predefined prompts for common image analysis tasks with local vision models,
 following the style established by ComfyUI-QwenVL.
+
+Author: Siddhartha Lahiri
+Email: siddhartha.lahiri@gmail.com
+License: MIT
 """
 
 from typing import Dict, List
