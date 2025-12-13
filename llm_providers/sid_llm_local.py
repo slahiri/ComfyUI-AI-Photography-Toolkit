@@ -186,6 +186,7 @@ class ModelFamily(Enum):
     MOONDREAM2 = "moondream2"
     SMOLVLM = "smolvlm"
     PHI35_VISION = "phi35_vision"
+    LLAVA = "llava"  # LLaVA vision-language models
     # Text-only models
     QWEN_TEXT = "qwen_text"
     QWEN3_TEXT = "qwen3_text"  # Qwen3 text models (latest, optimized for prompts)
@@ -487,6 +488,60 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
     ),
 
     # =========================================================================
+    # LLaVA Series (HuggingFace) - Vision Only
+    # =========================================================================
+    "LLaVA-1.5-7B": LocalModelInfo(
+        name="LLaVA 1.5 7B (Vision) | 4K | 7GB",
+        repo_id="llava-hf/llava-1.5-7b-hf",
+        family=ModelFamily.LLAVA,
+        vram_fp16=14.0, vram_8bit=8.0, vram_4bit=5.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="LLaVA 1.5 - Good quality",
+        model_class="LlavaForConditionalGeneration"
+    ),
+    "LLaVA-1.5-13B": LocalModelInfo(
+        name="LLaVA 1.5 13B (Vision) | 4K | 13GB",
+        repo_id="llava-hf/llava-1.5-13b-hf",
+        family=ModelFamily.LLAVA,
+        vram_fp16=26.0, vram_8bit=14.0, vram_4bit=8.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="LLaVA 1.5 - Best quality",
+        model_class="LlavaForConditionalGeneration"
+    ),
+    "LLaVA-1.6-Mistral-7B": LocalModelInfo(
+        name="LLaVA 1.6 Mistral 7B (Vision) | 4K | 7GB",
+        repo_id="llava-hf/llava-v1.6-mistral-7b-hf",
+        family=ModelFamily.LLAVA,
+        vram_fp16=14.0, vram_8bit=8.0, vram_4bit=5.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="LLaVA 1.6 with Mistral backbone",
+        model_class="LlavaNextForConditionalGeneration"
+    ),
+    "LLaVA-1.6-Vicuna-7B": LocalModelInfo(
+        name="LLaVA 1.6 Vicuna 7B (Vision) | 4K | 7GB",
+        repo_id="llava-hf/llava-v1.6-vicuna-7b-hf",
+        family=ModelFamily.LLAVA,
+        vram_fp16=14.0, vram_8bit=8.0, vram_4bit=5.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="LLaVA 1.6 with Vicuna backbone",
+        model_class="LlavaNextForConditionalGeneration"
+    ),
+    "LLaVA-1.6-Vicuna-13B": LocalModelInfo(
+        name="LLaVA 1.6 Vicuna 13B (Vision) | 4K | 13GB",
+        repo_id="llava-hf/llava-v1.6-vicuna-13b-hf",
+        family=ModelFamily.LLAVA,
+        vram_fp16=26.0, vram_8bit=14.0, vram_4bit=8.0,
+        model_type=ModelType.VISION,
+        max_output_tokens=4096,
+        description="LLaVA 1.6 Vicuna - Best quality",
+        model_class="LlavaNextForConditionalGeneration"
+    ),
+
+    # =========================================================================
     # SmolVLM Series (HuggingFace) - Vision Only
     # =========================================================================
     "SmolVLM-256M": LocalModelInfo(
@@ -725,6 +780,7 @@ def load_custom_models():
                 "moondream2": ModelFamily.MOONDREAM2,
                 "smolvlm": ModelFamily.SMOLVLM,
                 "phi35_vision": ModelFamily.PHI35_VISION,
+                "llava": ModelFamily.LLAVA,
                 "qwen_text": ModelFamily.QWEN_TEXT,
                 "qwen3_text": ModelFamily.QWEN3_TEXT,
                 "llama_text": ModelFamily.LLAMA_TEXT,
@@ -1091,6 +1147,8 @@ class LocalModelClient:
             self._load_smolvlm(model_path, device)
         elif self.model_info.family == ModelFamily.PHI35_VISION:
             self._load_phi35_vision(model_path, device)
+        elif self.model_info.family == ModelFamily.LLAVA:
+            self._load_llava(model_path, device)
         elif self.model_info.family == ModelFamily.QWENVL:
             self._load_qwenvl(model_path, device)
         elif self.model_info.family in [ModelFamily.QWEN_TEXT, ModelFamily.QWEN3_TEXT,
@@ -1253,6 +1311,46 @@ class LocalModelClient:
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.processor = self.model  # Moondream has built-in image processing
+
+    def _load_llava(self, model_path: str, device: str):
+        """Load LLaVA model with quantization support."""
+        import torch
+        from transformers import AutoProcessor, BitsAndBytesConfig
+
+        # Get quantization config
+        quant_config, dtype = self._get_quantization_config(device)
+
+        load_kwargs = {
+            "trust_remote_code": True,
+            "low_cpu_mem_usage": True,
+        }
+
+        if device == "cuda":
+            load_kwargs["device_map"] = "auto"
+            if quant_config:
+                load_kwargs["quantization_config"] = quant_config
+            else:
+                load_kwargs["torch_dtype"] = dtype
+
+        # Determine model class based on version (1.5 vs 1.6)
+        model_class_name = self.model_info.model_class
+        if model_class_name == "LlavaNextForConditionalGeneration":
+            from transformers import LlavaNextForConditionalGeneration
+            ModelClass = LlavaNextForConditionalGeneration
+        else:
+            from transformers import LlavaForConditionalGeneration
+            ModelClass = LlavaForConditionalGeneration
+
+        print(f"[LocalModelClient] Loading LLaVA with {model_class_name}...")
+        self.model = ModelClass.from_pretrained(model_path, **load_kwargs)
+        self.model.eval()
+
+        # Enable KV cache
+        if hasattr(self.model.config, 'use_cache'):
+            self.model.config.use_cache = True
+
+        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+        self.tokenizer = self.processor.tokenizer
 
     def _load_smolvlm(self, model_path: str, device: str):
         """Load SmolVLM model with speed optimizations."""
@@ -1597,6 +1695,8 @@ class LocalModelClient:
                 response_text = self._generate_smolvlm(images, text_prompt, max_tokens, current_temp)
             elif self.model_info.family == ModelFamily.PHI35_VISION:
                 response_text = self._generate_phi35_vision(images, text_prompt, max_tokens, current_temp)
+            elif self.model_info.family == ModelFamily.LLAVA:
+                response_text = self._generate_llava(images, text_prompt, max_tokens, current_temp)
             elif self.model_info.family == ModelFamily.QWENVL:
                 response_text = self._generate_qwenvl(messages, images, max_tokens, current_temp)
             else:
@@ -1762,6 +1862,47 @@ class LocalModelClient:
                 )
 
         # Only decode the NEW tokens (exclude the input prompt)
+        generated_tokens = outputs[0][input_len:]
+        return self.processor.decode(generated_tokens, skip_special_tokens=True)
+
+    def _generate_llava(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
+        """Generate with LLaVA models (1.5 and 1.6/Next)."""
+        # Check for interrupt before LLaVA generation
+        check_interrupted()
+
+        import torch
+
+        # Build conversation format for LLaVA
+        # LLaVA expects: "USER: <image>\n{prompt}\nASSISTANT:"
+        if images:
+            conversation = f"USER: <image>\n{prompt.strip()}\nASSISTANT:"
+        else:
+            conversation = f"USER: {prompt.strip()}\nASSISTANT:"
+
+        # Process inputs
+        inputs = self.processor(
+            text=conversation,
+            images=images[0] if images else None,  # LLaVA takes single image
+            return_tensors="pt"
+        )
+
+        device = next(self.model.parameters()).device
+        inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in inputs.items()}
+
+        # Get input length to extract only generated tokens
+        input_len = inputs["input_ids"].shape[1]
+
+        with InferenceProgressSpinner("Generating (LLaVA)"):
+            with torch.inference_mode():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_tokens,
+                    do_sample=temperature > 0,
+                    temperature=temperature if temperature > 0 else None,
+                    pad_token_id=self.processor.tokenizer.eos_token_id,
+                )
+
+        # Only decode the NEW tokens (exclude input prompt)
         generated_tokens = outputs[0][input_len:]
         return self.processor.decode(generated_tokens, skip_special_tokens=True)
 
