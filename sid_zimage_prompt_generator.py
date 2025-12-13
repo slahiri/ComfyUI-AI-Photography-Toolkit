@@ -771,9 +771,16 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         check_interrupted()
 
         # Get ORIGINAL image dimensions (before any resize/compression)
-        img_tensor = image[0]
-        height, width = img_tensor.shape[0], img_tensor.shape[1]
+        # Handle both 4D (batch, height, width, channels) and 3D tensors
+        if len(image.shape) == 4:
+            height, width = image.shape[1], image.shape[2]
+        else:
+            height, width = image.shape[0], image.shape[1]
         print(f"[SID-Prompt] Original image dimensions: {width}x{height}")
+
+        # Store as integers to ensure they're not modified later
+        original_width = int(width)
+        original_height = int(height)
 
         # Compute image hash for caching
         image_hash = _compute_image_hash(image)
@@ -800,8 +807,8 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             return comfy_io.NodeOutput(
                 cached_positive,
                 cached_negative,
-                width,
-                height,
+                original_width,
+                original_height,
                 prompt_length,
                 analysis_mode,
                 empty_img,
@@ -821,7 +828,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         log("=" * 60)
         log("SID Z-Image Prompt Generator")
         log("=" * 60)
-        log(f"Image: {width}x{height} | Hash: {image_hash}")
+        log(f"Image: {original_width}x{original_height} | Hash: {image_hash}")
         log(f"Provider: {llm_model.provider} | Model: {llm_model.model}")
         length_info = f"{prompt_length} words" if prompt_length > 0 else "unlimited"
         log(f"Analysis: {analysis_mode} | Style: {preset_style} | Length: {length_info}")
@@ -830,8 +837,8 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
 
         # Initialize metadata dict
         metadata_dict = {
-            "image_width": width,
-            "image_height": height,
+            "image_width": original_width,
+            "image_height": original_height,
             "image_hash": image_hash,
             "cache_key": cache_key[:16],
             "provider": llm_model.provider,
@@ -974,9 +981,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 "social_captions": social_captions
             }
             log(f"Prompt cached with key: {cache_key[:16]}...")
-            log(f"Returning dimensions: {width}x{height} (original image size)")
+            log(f"Returning dimensions: {original_width}x{original_height} (original image size)")
 
-            return comfy_io.NodeOutput(prompt, negative_prompt, width, height, prompt_length, analysis_mode, compressed_tensor, social_captions, metadata_str, debug_str, ui={"text": (prompt,)})
+            return comfy_io.NodeOutput(prompt, negative_prompt, original_width, original_height, prompt_length, analysis_mode, compressed_tensor, social_captions, metadata_str, debug_str, ui={"text": (prompt,)})
 
         except Exception as e:
             error_msg = f"Error: {str(e)}"
