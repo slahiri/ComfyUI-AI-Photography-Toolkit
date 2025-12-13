@@ -5,6 +5,41 @@ All notable changes to ComfyUI-AI-Photography-Toolkit will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.1] - 2024-12-13
+
+### Added
+- **VRAM Management** - All prompt nodes now clear VRAM and run garbage collection before execution
+  - Prevents memory issues when other nodes leave VRAM allocated
+  - Displays available VRAM in console output
+- **Smart Image Compression** in Prompt Generator:
+  - File size targets: 500KB for local models, 1MB for API models
+  - Progressive quality reduction (85→75→65→55→45)
+  - Dimension reduction as fallback
+  - Detailed compression logging (original/compressed size, quality, ratio)
+- **Compressed Image Output** - Preview compressed image sent to LLM in Generator node
+- **Negative Prompt Toggle** - Option to disable negative prompt generation (default OFF)
+- **Model Unloading** - `unload_model()` method in LocalModelClient to free VRAM after use
+- **Z-Image Vocabulary System** - Converts tag soup to natural language descriptions
+- **QwenVL and Qwen3 models** support in local provider
+
+### Changed
+- **Simplified Enhancer UI** - Consolidated 3 text boxes (Enhance/Replace/Add) into single Instructions field
+  - Natural language instructions: "change hair to blonde", "add bokeh effect"
+  - Supports replacement syntax: "old -> new" or "change X to Y"
+- **Analysis Mode Wire Compatibility** - Replaced `detail_level` Combo with `analysis_mode` String input
+  - Generator's analysis_mode output can now link to Enhancer and Photography nodes
+- **Output ID Uniqueness** - Renamed outputs to `out_prompt_length` and `out_analysis_mode` to avoid conflicts
+- **Image Resize Auto Mode** - Local models use min_pixels, API models use optimal_pixels
+- **Strengthened Clothing Prompts** - Improved color accuracy in clothing component analysis
+
+### Fixed
+- Memory leak where local LLM models weren't being unloaded from VRAM
+- Import error "Ids must be unique between inputs and outputs"
+- Generator analysis_mode not linking to Enhancer (type mismatch)
+
+### Removed
+- `sid_zimage_optimizer.py` - Deprecated optimizer node removed
+
 ## [4.2.0] - 2024-12-11
 
 ### Added
