@@ -38,9 +38,17 @@ from enum import Enum
 
 from comfy_api.latest import io as comfy_io
 import folder_paths
+import comfy.model_management
 
 from .llm_model_type import LLMModelConfig
+
+
 from .base_llm_provider import BaseLLMProvider
+
+
+def check_interrupted():
+    """Check if processing was interrupted by user and raise exception if so."""
+    comfy.model_management.throw_exception_if_processing_interrupted()
 
 # Create custom LLM_MODEL type for ComfyUI
 LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
@@ -1459,6 +1467,9 @@ class LocalModelClient:
         temperature: float = 0.7,
     ) -> str:
         """Generate text-only response (for prompt enhancement)."""
+        # Check for interrupt before text generation
+        check_interrupted()
+
         import torch
 
         if self.model is None:
@@ -1656,6 +1667,9 @@ class LocalModelClient:
 
     def _generate_florence2(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with Florence-2."""
+        # Check for interrupt before Florence-2 generation
+        check_interrupted()
+
         import torch
 
         # DynamicCache compatibility fix for transformers 4.49+
@@ -1691,6 +1705,9 @@ class LocalModelClient:
 
     def _generate_moondream2(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with Moondream2."""
+        # Check for interrupt before Moondream2 generation
+        check_interrupted()
+
         import torch
 
         # DynamicCache compatibility fix for transformers 4.49+
@@ -1708,6 +1725,9 @@ class LocalModelClient:
 
     def _generate_smolvlm(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with SmolVLM."""
+        # Check for interrupt before SmolVLM generation
+        check_interrupted()
+
         import torch
 
         # DynamicCache compatibility fix for transformers 4.49+
@@ -1836,6 +1856,9 @@ class LocalModelClient:
 
     def _generate_phi35_vision(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with Phi-3.5-Vision."""
+        # Check for interrupt before Phi-3.5-Vision generation
+        check_interrupted()
+
         import torch
 
         # Holistic compatibility fix for newer transformers versions (4.49+)
@@ -1877,6 +1900,9 @@ class LocalModelClient:
 
     def _generate_qwenvl(self, messages: List, images: List, max_tokens: int, temperature: float) -> str:
         """Generate with QwenVL."""
+        # Check for interrupt before QwenVL generation
+        check_interrupted()
+
         import torch
 
         # Build QwenVL conversation format

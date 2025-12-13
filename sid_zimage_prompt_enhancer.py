@@ -27,6 +27,7 @@ from typing import Optional
 
 from comfy_api.latest import io as comfy_io
 import comfy.utils
+import comfy.model_management
 
 from .llm_providers.llm_model_type import LLMModelConfig
 from .zimage_prompt_translator import translate_prompt, get_translator
@@ -37,6 +38,11 @@ from .negative_prompt_builder import (
     quick_clean_prompt,
     build_negative_prompt,
 )
+
+
+def check_interrupted():
+    """Check if processing was interrupted by user and raise exception if so."""
+    comfy.model_management.throw_exception_if_processing_interrupted()
 
 
 # Create custom LLM_MODEL type for ComfyUI
@@ -342,6 +348,9 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
     @classmethod
     def _call_llm(cls, client, llm_model: LLMModelConfig, system_prompt: str, user_prompt: str, spinner_msg: str = "Calling LLM") -> str:
         """Make LLM call with progress spinner and repetition penalty."""
+        # Check for interrupt before LLM call
+        check_interrupted()
+
         if llm_model.provider.lower() == "local":
             return cls._call_local_llm(llm_model, system_prompt, user_prompt, spinner_msg)
 
@@ -377,6 +386,9 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
     @classmethod
     def _call_local_llm(cls, llm_model: LLMModelConfig, system_prompt: str, user_prompt: str, spinner_msg: str = "Generating") -> str:
         """Call local text model (spinner handled by LocalModelClient)."""
+        # Check for interrupt before local LLM call
+        check_interrupted()
+
         from .llm_providers.sid_llm_local import LocalModelClient
 
         print(f"[PromptEnhancer] {spinner_msg} (local model)...")
@@ -418,6 +430,9 @@ class SID_ZImagePromptEnhancer(comfy_io.ComfyNode):
     ) -> comfy_io.NodeOutput:
         """Execute prompt enhancement."""
         global _enhancer_cache, _negative_cache
+
+        # Check for user interrupt at start
+        check_interrupted()
 
         # Clear VRAM and run garbage collection before starting
         import gc

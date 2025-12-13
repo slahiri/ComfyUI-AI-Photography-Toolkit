@@ -134,7 +134,7 @@ scene = ["landscape", "cityscape", "interior", "architecture"]
 object = ["vehicle", "object", "food"]
 abstract = ["abstract"]
 
-default_subject = "single_woman"
+default_subject = "unknown"
 
 
 # =============================================================================
@@ -3247,10 +3247,16 @@ Write flowing sentences, not tags. Output only the description."""
 # For local models like LLaVA, Moondream, Ollama - direct single-shot prompts
 base = """You are an image captioning assistant creating prompts for AI image generation.
 
+CRITICAL RULES:
+- Describe ONLY what is actually visible in the image
+- Do NOT invent or hallucinate people, objects, or details that are not present
+- If there are no people in the image, do NOT add people to your description
+- If the image shows a landscape, vehicle, object, or scene without humans, describe THAT
+
 Write a flowing description covering:
 - Composition (shot type, camera angle)
-- Subject (appearance, expression)
-- Clothing (color, material, style - keep brief)
+- Main subject (what is actually the focus - person, landscape, vehicle, object, etc.)
+- Details of the subject (only if applicable - clothing for people, features for objects)
 - Setting (background, environment)
 - Lighting (describe light quality and direction)
 
@@ -3450,34 +3456,60 @@ Write the most detailed description possible. End with "correct human anatomy, n
 [user.basic.quick]
 prompt = """Write a brief 30-50 word description of this image for AI generation.
 
-Example: "A medium shot of an adult Asian woman, front view, dark hair in ponytail, wearing white blouse and black pants, soft natural lighting, plain gray background, no text, no watermark."
+IMPORTANT: Describe ONLY what you actually see. Do NOT invent people or details that are not present.
+
+Examples:
+- Person: "A medium shot of an adult Asian woman, front view, dark hair in ponytail, wearing white blouse, soft natural lighting, plain gray background, no text, no watermark."
+- Landscape: "A wide shot of misty mountains at sunrise, layers of blue ridges fading into distance, orange sky gradient, pine trees in foreground silhouette, no text, no watermark."
+- Vehicle: "A low angle shot of a red sports car on wet asphalt, dramatic lighting, city lights reflected, motion blur background, no text, no watermark."
 
 Describe this image in similar format:"""
 
 [user.basic.standard]
 prompt = """Write a description of this image for Z-Image AI generation.
 
-Include: shot type, subject appearance (ethnicity, age), face angle (front/side/45 degrees), hair style and color, clothing with colors and materials, pose, lighting style, background.
+IMPORTANT: Describe ONLY what is actually visible. Do NOT add people or details that are not in the image.
 
-Example: "A close-up portrait of an adult European woman, 45 degree angle view, shoulder-length blonde wavy hair, wearing a fitted navy blue blazer over white shirt, confident smile, soft diffused daylight from left, blurred office background, no text, no watermark."
+For PEOPLE: Include shot type, ethnicity, age, face angle, hair, clothing, pose, lighting, background.
+For LANDSCAPES: Include composition, terrain features, weather/atmosphere, colors, lighting conditions.
+For VEHICLES: Include angle, vehicle type/model, color, condition, setting, lighting.
+For OBJECTS: Include framing, object details, materials, textures, background, lighting.
+
+Examples:
+- Person: "A close-up portrait of an adult European woman, 45 degree angle view, shoulder-length blonde wavy hair, wearing a fitted navy blue blazer, confident smile, soft diffused daylight from left, blurred office background, no text, no watermark."
+- Landscape: "A panoramic view of a coastal cliff at golden hour, dramatic waves crashing against rocks below, grass-covered cliff top, warm orange and purple sky with scattered clouds, no text, no watermark."
 
 Describe this image:"""
 
 [user.basic.detailed]
 prompt = """Write a comprehensive description of this image for Z-Image AI generation.
 
-Cover: framing (shot type, body parts visible from top to bottom - head/shoulders/chest/waist/hips/thighs/knees/legs/feet, where frame cuts body, subject distance - fills frame/medium/far, rule of thirds position - left/center/right third, upper/center/lower third), camera angle, subject's appearance (ethnicity, skin tone, age), face angle (front view/profile/45 degrees), hair (style first, then color and length), facial expression and features, all visible clothing (type, color, material for each item), body positioning (describe left shoulder, right shoulder, left arm with hand, right arm with hand, legs if visible - each separately), light and shadow (where highlights fall on face, shadows under eyes/jawline, light on chest and arms), lighting style (describe quality and direction), background.
+CRITICAL: Describe ONLY what is actually in the image. Do NOT invent people, objects, or details that are not present.
 
-Example: "A medium shot at eye level of an adult South Asian woman in her late twenties, visible from head to mid-thigh with frame cutting at upper thigh, subject fills center of frame positioned in center third horizontally and center third vertically, front view, warm olive skin tone, long black hair loose over shoulders, gentle smile with brown eyes, left shoulder slightly raised, right shoulder relaxed and lowered, left arm bent with hand on hip, right arm hanging naturally at side, wearing fitted emerald green silk dress with thin straps, soft highlights on forehead and cheekbones with gentle shadows under eyes and along jawline, warm light on chest and upper arms, soft diffused daylight from large window creating warm glow, shallow depth of field, cream-colored wall background, no text, no watermark."
+FOR IMAGES WITH PEOPLE: Cover framing, camera angle, subject appearance (ethnicity, skin tone, age), face angle, hair, facial features, all visible clothing, body positioning, light and shadow, lighting style, background.
+
+FOR LANDSCAPES/SCENES: Cover composition, foreground elements, mid-ground features, background elements, sky/atmosphere, color palette, lighting conditions (time of day, weather), mood/atmosphere.
+
+FOR VEHICLES/OBJECTS: Cover angle, main subject details (type, color, condition, features), surrounding environment, reflections, lighting style, background.
+
+Examples:
+- Person: "A medium shot of an adult South Asian woman, front view, warm olive skin, long black hair loose over shoulders, gentle smile, wearing emerald green silk dress, soft diffused daylight from window, cream wall background, no text, no watermark."
+- Landscape: "A wide panoramic shot of a valley at sunset, rolling green hills in foreground with scattered wildflowers, dense pine forest in midground, snow-capped mountains in distance, dramatic orange and pink sky with scattered clouds, golden hour lighting casting long shadows, atmospheric haze in valley, no text, no watermark."
 
 Describe this image in similar detail:"""
 
 [user.basic.extreme]
 prompt = """Write the most detailed description possible of this image for Z-Image AI generation.
 
-Describe everything: FRAMING (shot type, body parts visible top-to-bottom - head/shoulders/chest/waist/hips/thighs/knees/lower legs/feet - which are fully visible, partially cropped, or not visible, where exactly frame cuts the body, subject scale - fills frame/medium distance/far, rule of thirds - horizontal position left/center/right third, vertical position upper/center/lower third), precise camera angle, subject's complete appearance (specific ethnicity, skin tone, approximate age), face angle in geometric terms (front view/45 degree left/profile), hair (arrangement first - updo/ponytail/loose, then color, texture, length), facial features (shape, expression, eye color and details, makeup), ALL clothing items (type, color, material, fit for each), BODY POSITIONING for each limb separately (left shoulder position, right shoulder position, left arm position and hand placement, right arm position and hand placement, left leg position, right leg position), LIGHT AND SHADOW on body (highlight areas on face like forehead and cheekbones, shadow areas like under eyes and jawline, light on chest, light on arms), any tattoos or accessories with locations, lighting keywords (like "soft diffused daylight" or "studio portrait lighting"), background details.
+CRITICAL: Describe ONLY what is actually visible. Do NOT add people, objects, or details that are not in the image. If the image is a landscape, describe the landscape. If it's a vehicle, describe the vehicle. Do NOT invent human subjects.
 
-Start directly with "A..." - write one flowing paragraph. End with "correct human anatomy, no text, no watermark":"""
+FOR IMAGES WITH PEOPLE: Describe framing, camera angle, appearance (ethnicity, skin tone, age), face angle, hair, facial features, ALL clothing items, body positioning, light and shadow on body, any tattoos or accessories, lighting keywords, background details.
+
+FOR LANDSCAPES/NATURE: Describe composition and framing, all foreground elements in detail, mid-ground features, distant background elements, sky condition and colors, atmospheric effects (fog, haze, mist), color palette (warm/cool tones), lighting direction and quality (golden hour, overcast, harsh midday), textures visible, seasonal indicators, weather conditions.
+
+FOR VEHICLES/OBJECTS: Describe angle and framing, subject details (make, model if identifiable, color, condition, distinctive features), surface textures and reflections, surrounding environment, lighting and shadows, background elements.
+
+Start directly with "A..." - write one flowing paragraph. End with "no text, no watermark":"""
 
 
 # =============================================================================

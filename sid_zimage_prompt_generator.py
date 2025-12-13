@@ -31,32 +31,71 @@ import numpy as np
 from PIL import Image
 from comfy_api.latest import io as comfy_io
 import comfy.utils
+import comfy.model_management
 
 from .llm_providers.llm_model_type import LLMModelConfig
 from . import config_loader
 from .zimage_prompt_translator import translate_prompt, get_translator
 from .negative_prompt_builder import generate_negative, build_negative_prompt
 
-# In-memory cache for negative prompts (keyed by positive prompt hash + seed)
+def check_interrupted():
+    """Check if processing was interrupted by user and raise exception if so."""
+    comfy.model_management.throw_exception_if_processing_interrupted()
+
+
+# In-memory cache for prompts (keyed by image hash + settings)
+_prompt_cache: dict[str, tuple[str, str, dict]] = {}  # key -> (positive, negative, metadata)
 _negative_prompt_cache: dict[str, str] = {}
 _MAX_CACHE_SIZE = 100
 _CACHE_CLEANUP_THRESHOLD = 80  # Trigger cleanup when cache reaches this size
 
 
+def _compute_image_hash(image_tensor) -> str:
+    """Compute a stable hash of image content for caching."""
+    import hashlib
+    # Use a sample of pixels for fast hashing (corners + center)
+    img = image_tensor[0] if len(image_tensor.shape) == 4 else image_tensor
+    h, w = img.shape[0], img.shape[1]
+    # Sample key pixels: corners and center
+    samples = [
+        img[0, 0].cpu().numpy().tobytes(),
+        img[0, w-1].cpu().numpy().tobytes(),
+        img[h-1, 0].cpu().numpy().tobytes(),
+        img[h-1, w-1].cpu().numpy().tobytes(),
+        img[h//2, w//2].cpu().numpy().tobytes(),
+    ]
+    # Include dimensions in hash
+    content = f"{h}x{w}".encode() + b"".join(samples)
+    return hashlib.sha256(content).hexdigest()[:16]
+
+
+def _generate_prompt_cache_key(
+    image_hash: str, seed: int, analysis_mode: str, preset_style: str,
+    prompt_length: int, user_guidance: str, model: str, image_resize: str
+) -> str:
+    """Generate a unique cache key for main prompt caching."""
+    import hashlib
+    key_data = f"{image_hash}|{seed}|{analysis_mode}|{preset_style}|{prompt_length}|{user_guidance}|{model}|{image_resize}"
+    return hashlib.sha256(key_data.encode()).hexdigest()[:32]
+
+
 def clear_prompt_generator_cache():
     """Clear the prompt generator cache and run garbage collection."""
-    global _negative_prompt_cache
+    global _negative_prompt_cache, _prompt_cache
     _negative_prompt_cache.clear()
+    _prompt_cache.clear()
     gc.collect()
-    print("[SID-Prompt] Cache cleared and garbage collected")
+    print("[SID-Prompt] All caches cleared and garbage collected")
 
 
 def get_prompt_generator_cache_info() -> dict:
     """Get information about the current cache state."""
     return {
-        "size": len(_negative_prompt_cache),
+        "prompt_cache_size": len(_prompt_cache),
+        "negative_cache_size": len(_negative_prompt_cache),
         "max_size": _MAX_CACHE_SIZE,
-        "memory_bytes": sum(len(k) + len(v) for k, v in _negative_prompt_cache.items())
+        "prompt_memory_bytes": sum(len(k) + len(v[0]) + len(v[1]) for k, v in _prompt_cache.items()),
+        "negative_memory_bytes": sum(len(k) + len(v) for k, v in _negative_prompt_cache.items())
     }
 
 
@@ -669,6 +708,14 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     display_name="Generate Negative",
                     tooltip="Generate negative prompt (disabled by default to save time)"
                 ),
+
+                # Social Media Captions
+                comfy_io.Boolean.Input(
+                    "generate_captions",
+                    default=True,
+                    display_name="Generate Captions",
+                    tooltip="Generate social media captions for Instagram, 500px, YouPic, Reddit"
+                ),
             ],
             outputs=[
                 comfy_io.String.Output("prompt", display_name="prompt"),
@@ -678,6 +725,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 comfy_io.Int.Output("out_prompt_length", display_name="prompt_length", tooltip="Target word count - wire to Enhancer/Photography for consistency"),
                 comfy_io.String.Output("out_analysis_mode", display_name="analysis_mode", tooltip="Analysis mode used - wire to Enhancer/Photography for consistency"),
                 comfy_io.Image.Output("compressed_image", display_name="compressed_image", tooltip="Preview of the compressed image sent to the LLM"),
+                comfy_io.String.Output("social_captions", display_name="social_captions", tooltip="Markdown formatted social media captions for Instagram, 500px, YouPic, Reddit"),
                 comfy_io.String.Output("metadata", display_name="metadata", tooltip="JSON metadata about the analysis (subject type, components, timing)"),
                 comfy_io.String.Output("debug", display_name="debug", tooltip="Debug information and raw component outputs"),
             ],
@@ -696,6 +744,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         seed: int,
         zimage_optimize: bool = True,
         generate_negative: bool = False,
+        generate_captions: bool = True,
     ) -> comfy_io.NodeOutput:
         """Execute prompt generation with auto mode selection."""
 
@@ -716,10 +765,50 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
 
         start_time = time.time()
         debug_lines = []
+        global _prompt_cache
 
-        # Get image dimensions
+        # Check for user interrupt at start
+        check_interrupted()
+
+        # Get ORIGINAL image dimensions (before any resize/compression)
         img_tensor = image[0]
         height, width = img_tensor.shape[0], img_tensor.shape[1]
+        print(f"[SID-Prompt] Original image dimensions: {width}x{height}")
+
+        # Compute image hash for caching
+        image_hash = _compute_image_hash(image)
+        cache_key = _generate_prompt_cache_key(
+            image_hash, seed, analysis_mode, preset_style,
+            prompt_length, user_guidance, llm_model.model, image_resize
+        )
+
+        # Check cache FIRST - if hit, return immediately
+        if cache_key in _prompt_cache:
+            cached_data = _prompt_cache[cache_key]
+            cached_positive = cached_data["positive"]
+            cached_negative = cached_data["negative"]
+            cached_metadata = cached_data["metadata"]
+            cached_captions = cached_data.get("social_captions", "")
+            elapsed = time.time() - start_time
+            print(f"[SID-Prompt] *** CACHE HIT *** (seed: {seed}, key: {cache_key[:8]}...)")
+            print(f"[SID-Prompt] Returning cached prompt in {elapsed:.3f}s")
+            print(f"[SID-Prompt] Prompt: {cached_positive[:100]}...")
+
+            # Create placeholder compressed image tensor for cache hit
+            empty_img = torch.zeros((1, 64, 64, 3), dtype=torch.float32)
+
+            return comfy_io.NodeOutput(
+                cached_positive,
+                cached_negative,
+                width,
+                height,
+                prompt_length,
+                analysis_mode,
+                empty_img,
+                cached_captions,
+                json.dumps(cached_metadata),
+                "CACHE HIT - using previously generated prompt"
+            )
 
         # Auto-detect pipeline based on LLM capabilities
         supports_reasoning = llm_model.supports_reasoning
@@ -732,16 +821,19 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         log("=" * 60)
         log("SID Z-Image Prompt Generator")
         log("=" * 60)
-        log(f"Image: {width}x{height}")
+        log(f"Image: {width}x{height} | Hash: {image_hash}")
         log(f"Provider: {llm_model.provider} | Model: {llm_model.model}")
         length_info = f"{prompt_length} words" if prompt_length > 0 else "unlimited"
         log(f"Analysis: {analysis_mode} | Style: {preset_style} | Length: {length_info}")
         log(f"Resize: {image_resize} | Pipeline: {pipeline_type}")
+        log(f"Cache key: {cache_key[:16]}... (MISS - generating new prompt)")
 
         # Initialize metadata dict
         metadata_dict = {
             "image_width": width,
             "image_height": height,
+            "image_hash": image_hash,
+            "cache_key": cache_key[:16],
             "provider": llm_model.provider,
             "model": llm_model.model,
             "analysis_mode": analysis_mode,
@@ -770,6 +862,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             else:
                 prompt = result
                 compressed_pil = None
+
+            # Check for interrupt after main prompt generation
+            check_interrupted()
 
             # Generate negative prompt
             # Generate negative prompt if enabled
@@ -807,6 +902,19 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                     for change in result.changes_made[:3]:
                         log(f"  - {change}")
 
+            # Check for interrupt before social captions
+            check_interrupted()
+
+            # Generate social media captions (single-shot call)
+            if generate_captions:
+                log("-" * 60)
+                log("Generating social media captions...")
+                social_captions = cls._generate_social_captions(prompt, llm_model, metadata_dict)
+            else:
+                log("-" * 60)
+                log("Social caption generation: SKIPPED (disabled)")
+                social_captions = ""
+
             # Stats
             total_time = time.time() - start_time
             word_count = len(prompt.split())
@@ -839,7 +947,36 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 except Exception:
                     pass  # Ignore if unload fails
 
-            return comfy_io.NodeOutput(prompt, negative_prompt, width, height, prompt_length, analysis_mode, compressed_tensor, metadata_str, debug_str, ui={"text": (prompt,)})
+            # Force VRAM cleanup for all providers before returning
+            try:
+                import torch
+                import gc
+                gc.collect()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                    torch.cuda.synchronize()
+            except Exception:
+                pass
+
+            # Store in cache for future runs with same inputs
+            # Cache cleanup if needed
+            if len(_prompt_cache) >= _MAX_CACHE_SIZE:
+                num_to_remove = len(_prompt_cache) - _CACHE_CLEANUP_THRESHOLD
+                keys_to_remove = list(_prompt_cache.keys())[:num_to_remove]
+                for key in keys_to_remove:
+                    del _prompt_cache[key]
+                log(f"Prompt cache cleanup: removed {num_to_remove} old entries")
+
+            _prompt_cache[cache_key] = {
+                "positive": prompt,
+                "negative": negative_prompt,
+                "metadata": metadata_dict,
+                "social_captions": social_captions
+            }
+            log(f"Prompt cached with key: {cache_key[:16]}...")
+            log(f"Returning dimensions: {width}x{height} (original image size)")
+
+            return comfy_io.NodeOutput(prompt, negative_prompt, width, height, prompt_length, analysis_mode, compressed_tensor, social_captions, metadata_str, debug_str, ui={"text": (prompt,)})
 
         except Exception as e:
             error_msg = f"Error: {str(e)}"
@@ -946,13 +1083,13 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         pbar = comfy.utils.ProgressBar(3)
 
         # Step 1: Subject detection (if Auto-Detect)
-        subject_type = "WOMAN"  # Default
+        subject_type = "OTHER"  # Default - don't assume human subject
         subject_result = {}
         if preset_style == "Auto-Detect":
             debug_lines.append("Detecting subject...")
             print(f"[SID-Prompt] Detecting subject...")
             subject_result = cls._analyze_component(client, llm_model, base64_image, "subject_detection")
-            subject_type = subject_result.get("subject_type", "WOMAN").upper()
+            subject_type = subject_result.get("subject_type", "OTHER").upper()
             debug_lines.append(f"Subject detection result: {json.dumps(subject_result)}")
             print(f"[SID-Prompt] Subject: {subject_type}")
         pbar.update(1)
@@ -1226,6 +1363,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
     @classmethod
     def _call_llm(cls, client, llm_model: LLMModelConfig, base64_image: str, system_prompt: str, user_prompt: str) -> str:
         """Make LLM call with provider-specific stop strings."""
+        # Check for interrupt before making LLM call
+        check_interrupted()
+
         if hasattr(client, 'messages'):
             # Anthropic - doesn't need stop strings, handles well
             response = client.messages.create(
@@ -1280,6 +1420,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
     @classmethod
     def _analyze_component(cls, client, llm_model: LLMModelConfig, base64_image: str, component_key: str) -> dict:
         """Analyze single component with stop strings."""
+        # Check for interrupt before component analysis
+        check_interrupted()
+
         comp = COMPONENTS.get(component_key, {})
         system = "You are an expert visual analyst. Analyze ONLY the specific aspect requested. Output valid JSON only."
 
@@ -1417,6 +1560,9 @@ OUTPUT: Return valid JSON with detailed prompt_description for each component an
     @classmethod
     def _call_reasoning_llm(cls, client, llm_model: LLMModelConfig, base64_image: str, prompt: str) -> dict:
         """Call LLM with reasoning enabled and system prompt for deep analysis."""
+        # Check for interrupt before making reasoning LLM call
+        check_interrupted()
+
         try:
             if llm_model.provider.lower() == "anthropic" and hasattr(client, 'messages'):
                 response = client.messages.create(
@@ -1660,6 +1806,9 @@ OUTPUT: Return valid JSON with detailed prompt_description for each component an
         if not prompt or not user_guidance or not user_guidance.strip():
             return prompt, False
 
+        # Check for interrupt before enhancement
+        check_interrupted()
+
         print(f"[SID-Prompt] Enhancing prompt with instructions: {user_guidance[:50]}...")
 
         # For local vision models, use string-based enhancement
@@ -1807,6 +1956,155 @@ Apply the user's modification to the prompt. Output ONLY the modified prompt:"""
             return f"{user_guidance.strip()}, {prompt}"
 
     # =========================================================================
+    # SOCIAL MEDIA CAPTION GENERATION
+    # =========================================================================
+
+    @classmethod
+    def _generate_social_captions(
+        cls,
+        prompt: str,
+        llm_model: LLMModelConfig,
+        metadata: dict,
+    ) -> str:
+        """
+        Generate social media captions based on the image analysis.
+        Single-shot LLM call that returns markdown formatted captions.
+
+        Returns markdown with:
+        - 3-5 short captions (for Instagram, Twitter)
+        - 1-2 longer descriptions (for 500px, YouPic, Reddit)
+        - Relevant hashtags
+        """
+        # Check for interrupt before generating captions
+        check_interrupted()
+
+        print(f"[SID-Prompt] Generating social media captions...")
+
+        system_prompt = """You are an expert social media content creator specializing in photography.
+Generate engaging captions and descriptions for sharing photos on social media platforms.
+
+OUTPUT FORMAT (use exact markdown structure):
+## Captions
+Short, punchy captions for Instagram/Twitter (1-2 sentences each):
+1. [caption 1]
+2. [caption 2]
+3. [caption 3]
+4. [caption 4 - optional]
+5. [caption 5 - optional]
+
+## Descriptions
+Longer descriptions for photography communities (500px, YouPic, Reddit):
+
+### Description 1
+[2-3 sentence description focusing on the artistic/technical aspects]
+
+### Description 2
+[2-3 sentence description focusing on the mood/story]
+
+## Hashtags
+[10-15 relevant hashtags separated by spaces]
+
+RULES:
+- Captions should be engaging, not generic
+- Avoid clichés like "captured this moment" or "beautiful shot"
+- Include emotion, story, or artistic intent
+- Descriptions should mention photography techniques when relevant
+- Hashtags should be a mix of popular and niche tags
+- Output ONLY the markdown - no explanations before or after"""
+
+        subject_type = metadata.get("subject_type", "photo")
+        user_prompt = f"""Based on this image description, generate social media captions:
+
+IMAGE DESCRIPTION:
+{prompt[:1500]}
+
+SUBJECT TYPE: {subject_type}
+
+Generate engaging captions and descriptions following the exact markdown format specified."""
+
+        try:
+            client = cls._get_client(llm_model)
+
+            if hasattr(client, 'messages'):
+                # Anthropic
+                response = client.messages.create(
+                    model=llm_model.model,
+                    max_tokens=1000,
+                    temperature=0.7,  # Slightly creative
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_prompt}]
+                )
+                captions = response.content[0].text.strip()
+            else:
+                # OpenAI-style
+                response = client.chat.completions.create(
+                    model=llm_model.model,
+                    max_tokens=1000,
+                    temperature=0.7,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ]
+                )
+                captions = response.choices[0].message.content.strip()
+
+            # Clean up any preamble
+            captions = cls._clean_social_captions(captions)
+
+            print(f"[SID-Prompt] Social captions generated ({len(captions)} chars)")
+            return captions
+
+        except Exception as e:
+            print(f"[SID-Prompt] Social caption generation failed: {e}")
+            return cls._get_default_social_captions(prompt, metadata)
+
+    @classmethod
+    def _clean_social_captions(cls, text: str) -> str:
+        """Clean up social caption response."""
+        if not text:
+            return ""
+
+        # Remove common preambles
+        prefixes = [
+            r'^(?:Here\'?s?|Sure|Certainly)[^#]*\n+',
+            r'^(?:I\'ve created|Based on)[^#]*\n+',
+        ]
+        for p in prefixes:
+            text = re.sub(p, '', text, flags=re.IGNORECASE)
+
+        # Ensure it starts with ## if markdown
+        if not text.startswith('#'):
+            # Try to find the start of markdown
+            match = re.search(r'(##\s*Captions)', text, re.IGNORECASE)
+            if match:
+                text = text[match.start():]
+
+        return text.strip()
+
+    @classmethod
+    def _get_default_social_captions(cls, prompt: str, metadata: dict) -> str:
+        """Return default captions if generation fails."""
+        subject = metadata.get("subject_type", "moment")
+
+        return f"""## Captions
+1. Every frame tells a story ✨
+2. Light, shadow, and everything in between
+3. Finding beauty in the details
+4. This is what dreams look like
+5. Art imitates life
+
+## Descriptions
+
+### Description 1
+A carefully composed {subject.lower()} photograph showcasing the interplay of light and shadow. The attention to detail creates a compelling visual narrative.
+
+### Description 2
+Sometimes the best shots are the ones that find you. This image captures a fleeting moment of natural beauty.
+
+## Hashtags
+#photography #photooftheday #visualart #composition #lightandshadow #artphotography #photographylovers #capturedmoment #visualstorytelling #creativephotography"""
+
+    # =========================================================================
     # NEGATIVE PROMPT GENERATION
     # =========================================================================
 
@@ -1828,6 +2126,9 @@ Apply the user's modification to the prompt. Output ONLY the modified prompt:"""
         Generate a negative prompt based on the positive prompt analysis.
         Single-shot LLM call with caching based on seed.
         """
+        # Check for interrupt before generating negative prompt
+        check_interrupted()
+
         global _negative_prompt_cache
 
         # Generate cache key
