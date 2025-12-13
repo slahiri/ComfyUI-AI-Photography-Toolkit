@@ -3513,6 +3513,229 @@ Start directly with "A..." - write one flowing paragraph. End with "no text, no 
 
 
 # =============================================================================
+# SCENE-ONLY PROMPTS - No human/person keywords (prevents hallucination)
+# =============================================================================
+# These prompts are used when human detection returns NO
+# They contain ZERO references to people, faces, clothing, bodies, etc.
+
+[system.scene_only]
+base = """You are an image captioning assistant for AI image generation.
+
+Describe the SCENE, LANDSCAPE, OBJECT, or VEHICLE in this image.
+There are NO people in this image - do not mention or describe any human subjects.
+
+Focus on:
+- Composition and framing
+- Main subject (landscape feature, vehicle, object, architecture)
+- Colors, textures, materials
+- Lighting conditions
+- Atmosphere and mood
+- Background elements
+
+End with: "no text, no watermark"
+
+Output ONLY the description. Start directly - no introduction."""
+
+[user.scene_only.quick]
+prompt = """Describe this scene/landscape/object briefly (30-60 words).
+
+Cover: composition, main subject, key features, lighting, atmosphere.
+
+This image contains NO people - describe only the scene/object/landscape.
+
+End with "no text, no watermark". Start directly with "A...":"""
+
+[user.scene_only.standard]
+prompt = """Describe this scene for AI image generation (80-150 words).
+
+Cover these aspects:
+- COMPOSITION: Shot type (wide/medium/close), camera angle, framing
+- MAIN SUBJECT: What is the focus (landscape, vehicle, building, object)
+- DETAILS: Colors, textures, materials, distinctive features
+- ENVIRONMENT: Surroundings, background elements
+- LIGHTING: Time of day, light quality, shadows, highlights
+- ATMOSPHERE: Weather, mood, seasonal indicators
+
+This image contains NO people - describe only the scene/object/landscape.
+
+Examples:
+- Landscape: "A wide panoramic shot of coastal cliffs at golden hour, dramatic waves crashing against weathered rocks, grass-covered cliff tops swaying in wind, warm orange sky with scattered clouds, soft golden light casting long shadows, no text, no watermark."
+- Vehicle: "A low angle shot of a vintage red sports car on empty desert highway, chrome details gleaming in harsh midday sun, heat haze rising from asphalt, distant mountains on horizon, clear blue sky, no text, no watermark."
+
+End with "no text, no watermark". Start directly:"""
+
+[user.scene_only.detailed]
+prompt = """Write a comprehensive description of this scene for AI image generation.
+
+This image contains NO people - describe only the scene, landscape, object, or vehicle.
+
+Cover in detail:
+- COMPOSITION: Shot type, camera angle, depth of field, framing choices
+- MAIN SUBJECT: Central focus - describe thoroughly (landscape feature, vehicle, building, object)
+- FOREGROUND: Elements closest to camera, textures, details
+- MIDGROUND: Middle distance elements, relationship to subject
+- BACKGROUND: Distant elements, horizon, sky
+- COLORS: Dominant palette, color temperature (warm/cool), saturation
+- LIGHTING: Direction, quality (soft/harsh), time of day, shadows
+- ATMOSPHERE: Weather conditions, mood, seasonal cues, environmental effects (fog, haze, dust)
+- TEXTURES: Surface qualities, materials visible
+
+End with "no text, no watermark". Write as one flowing paragraph starting with "A...":"""
+
+[user.scene_only.extreme]
+prompt = """Write the most detailed description possible of this scene for AI image generation.
+
+This image contains NO people - describe ONLY the scene, landscape, vehicle, or object visible.
+
+Analyze exhaustively:
+- FRAMING: Exact shot type, camera height and angle, where frame edges cut
+- COMPOSITION: Rule of thirds placement, leading lines, symmetry, depth layers
+- PRIMARY SUBJECT: Every visible detail of the main focus
+- FOREGROUND LAYER: All elements, textures, colors, relative sizes
+- MIDGROUND LAYER: Features, distance relationship, connecting elements
+- BACKGROUND LAYER: Horizon line, sky condition, distant features
+- COLOR ANALYSIS: Primary colors, accent colors, overall temperature, saturation levels
+- LIGHT SOURCE: Direction, intensity, quality, color cast
+- SHADOW PATTERNS: Length, softness, areas of contrast
+- ATMOSPHERIC CONDITIONS: Weather, visibility, environmental particles
+- SURFACE TEXTURES: Materials, reflectivity, roughness, patterns
+- TEMPORAL CUES: Time of day, season, age/weathering of elements
+
+End with "no text, no watermark". Write as one detailed flowing paragraph:"""
+
+
+# =============================================================================
+# HUMAN WITH SUBJECT PROMPTS - Balanced description of human AND subject
+# =============================================================================
+# Used when image contains both a human AND another subject (pet, vehicle, landscape)
+# Both elements should be described with EQUAL detail
+
+[system.human_with_subject]
+base = """You are an image captioning assistant for AI image generation.
+
+This image contains BOTH a human AND another subject (pet, vehicle, landscape, object).
+Describe BOTH elements with EQUAL importance and detail.
+
+Structure your description:
+1. Overall composition and how subjects relate
+2. Human details (appearance, clothing, pose, expression)
+3. Other subject details (pet breed/features, vehicle type/color, landscape elements)
+4. How they interact or are positioned together
+5. Lighting and atmosphere
+6. Background
+
+End with: "no text, no watermark"
+
+Output ONLY the description. Start directly - no introduction."""
+
+[user.human_with_subject.quick]
+prompt = """Describe this image showing a human with another subject (30-60 words).
+
+Give EQUAL attention to:
+- The human (appearance, clothing, pose)
+- The other subject (pet/vehicle/landscape/object details)
+- Their interaction or positioning
+
+End with "no text, no watermark". Start directly:"""
+
+[user.human_with_subject.standard]
+prompt = """Describe this image for AI generation (80-150 words).
+
+This image has BOTH a human AND another subject - describe BOTH equally:
+
+FOR THE HUMAN:
+- Framing and position in frame
+- Appearance (ethnicity, age, gender)
+- Clothing and accessories
+- Pose and expression
+
+FOR THE OTHER SUBJECT:
+- Type and specific details (breed, model, terrain type)
+- Colors, textures, distinctive features
+- Size and positioning relative to human
+
+TOGETHER:
+- How they interact or relate spatially
+- Lighting on both subjects
+- Overall mood and atmosphere
+
+Examples:
+- Human + Pet: "A medium shot of a young woman with long auburn hair, wearing a cream sweater, sitting cross-legged on grass, holding a golden retriever puppy in her lap. The puppy has fluffy golden fur, floppy ears, and is looking up at her face. Soft afternoon sunlight, park setting with blurred trees, no text, no watermark."
+- Human + Vehicle: "A full body shot of a man in his 30s wearing a leather jacket and jeans, leaning against a vintage red Mustang convertible. The car shows chrome details, whitewall tires, and gleaming paint. Desert highway background, golden hour lighting casting long shadows, no text, no watermark."
+
+End with "no text, no watermark". Start directly:"""
+
+[user.human_with_subject.detailed]
+prompt = """Write a comprehensive description of this image for AI generation.
+
+This image contains BOTH a human AND another subject - give EQUAL detail to both:
+
+HUMAN DESCRIPTION:
+- Framing, position in frame, camera angle
+- Demographics (ethnicity, approximate age, gender)
+- Face details (if visible): expression, face angle, features
+- Hair: style, color, length
+- Clothing: each item with color, material, fit
+- Pose and body positioning
+
+OTHER SUBJECT DESCRIPTION:
+- Exact type and identifying details
+- Colors, patterns, textures
+- Size, shape, distinctive features
+- Condition/state (for vehicles/objects)
+- Breed/species details (for animals)
+
+INTERACTION/RELATIONSHIP:
+- Spatial positioning of both subjects
+- Physical interaction (touching, holding, near)
+- Eye contact or attention direction
+- Emotional connection conveyed
+
+ENVIRONMENT:
+- Setting and background
+- Lighting on both subjects
+- Atmosphere and mood
+
+End with "no text, no watermark". Write as one flowing paragraph:"""
+
+[user.human_with_subject.extreme]
+prompt = """Write the most detailed description possible of this image.
+
+This image contains BOTH a human AND another subject - describe BOTH with maximum detail:
+
+HUMAN (50% of description):
+- Exact framing and position
+- Full demographic details
+- Complete facial analysis (if visible)
+- Hair description
+- Every clothing item
+- Pose, gesture, expression
+- Skin tone, visible features
+
+OTHER SUBJECT (50% of description):
+- Complete identification (breed, make/model, terrain type)
+- All colors and color variations
+- Textures and materials
+- Distinctive features and details
+- Size and proportions
+- Condition or state
+
+COMPOSITION AND RELATIONSHIP:
+- How subjects are arranged in frame
+- Physical and emotional connection
+- Direction of attention/gaze
+- Scale relationship
+
+TECHNICAL:
+- Lighting direction, quality, color
+- Shadows and highlights on both subjects
+- Background elements
+- Atmosphere and mood
+
+End with "no text, no watermark". Write as one detailed flowing paragraph:"""
+
+
+# =============================================================================
 # AGENTIC PROMPTS - For reasoning-enabled multi-step analysis
 # =============================================================================
 

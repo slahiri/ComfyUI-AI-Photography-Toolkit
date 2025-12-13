@@ -1020,14 +1020,55 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             debug_lines.append(resize_info)
             print(f"[SID-Prompt] {resize_info}")
 
-        # Build prompts (tier-aware based on provider, with length constraints)
-        system_prompt = cls._build_system_prompt(llm_model.provider, preset_style, user_guidance, prompt_length)
-        user_prompt = cls._build_user_prompt(llm_model.provider, analysis_mode, preset_style, prompt_length)
+        # Get client
+        client = cls._get_client(llm_model)
+
+        # GUARDRAIL: Subject detection for local models to prevent hallucination
+        # Local models (Ollama, LM Studio, Local) tend to hallucinate people in landscapes
+        provider = llm_model.provider.lower()
+        is_local_model = provider in ["local", "ollama", "lmstudio"]
+
+        # Default for non-local models (use standard person-aware prompts)
+        prompt_mode = "portrait"
+        detected_subject = "unknown"
+        has_human = True
+
+        if is_local_model:
+            debug_lines.append("Running subject detection guardrail for local model...")
+            print(f"[SID-Prompt] Running subject detection guardrail...")
+
+            detection = cls._detect_subject_type(client, llm_model, base64_image)
+            has_human = detection["has_human"]
+            detected_subject = detection["subject_type"]
+            prompt_mode = detection["prompt_mode"]
+
+            debug_lines.append(f"Detection: has_human={has_human}, subject={detected_subject}, mode={prompt_mode}")
+            print(f"[SID-Prompt] Detection: has_human={has_human}, subject={detected_subject}, mode={prompt_mode}")
+
+        # Build prompts based on detection result (3 modes)
+        if prompt_mode == "portrait":
+            # Human is main subject - use standard person-focused prompts
+            system_prompt = cls._build_system_prompt(llm_model.provider, preset_style, user_guidance, prompt_length)
+            user_prompt = cls._build_user_prompt(llm_model.provider, analysis_mode, preset_style, prompt_length)
+            debug_lines.append("Using PORTRAIT prompts (human is main subject)")
+            print(f"[SID-Prompt] Using PORTRAIT prompts")
+
+        elif prompt_mode == "human_with_subject":
+            # Human + other subject - use balanced prompts that describe BOTH equally
+            system_prompt = config_loader.build_human_with_subject_system_prompt(prompt_length)
+            user_prompt = config_loader.build_human_with_subject_user_prompt(analysis_mode, prompt_length)
+            debug_lines.append(f"Using HUMAN_WITH_SUBJECT prompts (human + {detected_subject} - balanced)")
+            print(f"[SID-Prompt] Using HUMAN_WITH_SUBJECT prompts (human + {detected_subject})")
+
+        else:  # scene_only
+            # No human - use scene-only prompts (prevents hallucination)
+            system_prompt = config_loader.build_scene_only_system_prompt(prompt_length)
+            user_prompt = config_loader.build_scene_only_user_prompt(analysis_mode, prompt_length)
+            debug_lines.append(f"Using SCENE_ONLY prompts ({detected_subject} - no human keywords)")
+            print(f"[SID-Prompt] Using SCENE_ONLY prompts for {detected_subject}")
+
         debug_lines.append(f"System prompt length: {len(system_prompt)} chars")
         debug_lines.append(f"User prompt length: {len(user_prompt)} chars")
-
-        # Get client and call
-        client = cls._get_client(llm_model)
 
         pbar = comfy.utils.ProgressBar(2)
         pbar.update(1)
@@ -1045,11 +1086,17 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             else:
                 debug_lines.append(f"Enhancement call did not modify prompt")
 
+        # POST-GENERATION VALIDATION: Check if model still hallucinated people (only for scene_only mode)
+        if prompt_mode == "scene_only" and is_local_model:
+            prompt = cls._validate_no_human_hallucination(prompt, debug_lines)
+
         pbar.update(1)
 
         # Build metadata
         metadata = {
-            "subject_type": "unknown",  # Single-shot doesn't do subject detection
+            "subject_type": detected_subject,
+            "has_human": has_human,
+            "prompt_mode": prompt_mode,  # portrait, human_with_subject, or scene_only
             "components_analyzed": [],
             "component_count": 0,
         }
@@ -1423,6 +1470,170 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 raise ValueError("LLM returned empty message content - model may have failed to generate")
 
             return response.choices[0].message.content
+
+    @classmethod
+    def _detect_subject_type(cls, client, llm_model: LLMModelConfig, base64_image: str) -> dict:
+        """
+        Detect subject type and human presence in a single call.
+        Returns dict with 'has_human' and 'subject_type' for smarter prompt selection.
+
+        Subject types:
+        - PORTRAIT: Human is the main/only subject
+        - HUMAN_WITH_PET: Human and pet together
+        - HUMAN_WITH_VEHICLE: Human with car/bike/etc
+        - HUMAN_WITH_LANDSCAPE: Human in a scenic setting
+        - HUMAN_WITH_OBJECT: Human with product/object
+        - PET: Animal only (no human)
+        - VEHICLE: Car/bike/plane etc only
+        - LANDSCAPE: Nature/scenery only
+        - ARCHITECTURE: Building/interior only
+        - OBJECT: Product/still life only
+        """
+        check_interrupted()
+
+        # Single detection prompt that returns both pieces of info
+        detection_prompt = """Analyze this image and answer TWO questions:
+
+1. Is there a human person visible? (YES or NO)
+2. What is the PRIMARY subject category?
+
+Categories:
+- PORTRAIT (human face/body is main focus)
+- PET (animal - dog, cat, bird, etc.)
+- VEHICLE (car, motorcycle, plane, boat)
+- LANDSCAPE (nature, mountains, beach, forest)
+- ARCHITECTURE (building, interior, structure)
+- OBJECT (product, food, still life)
+
+Answer format (exactly):
+HUMAN: YES or NO
+SUBJECT: <category>"""
+
+        default_result = {"has_human": False, "subject_type": "LANDSCAPE", "prompt_mode": "scene_only"}
+
+        try:
+            if hasattr(client, 'messages'):
+                # Anthropic
+                response = client.messages.create(
+                    model=llm_model.model,
+                    max_tokens=50,
+                    temperature=0,
+                    messages=[{
+                        "role": "user",
+                        "content": [
+                            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_image}},
+                            {"type": "text", "text": detection_prompt}
+                        ]
+                    }]
+                )
+                answer = response.content[0].text.strip().upper()
+            else:
+                # OpenAI-style (Ollama, LM Studio, etc.)
+                response = client.chat.completions.create(
+                    model=llm_model.model,
+                    max_tokens=50,
+                    temperature=0,
+                    messages=[{
+                        "role": "user",
+                        "content": [
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
+                            {"type": "text", "text": detection_prompt}
+                        ]
+                    }]
+                )
+                answer = response.choices[0].message.content.strip().upper() if response.choices[0].message.content else ""
+
+            # Parse the response
+            has_human = "HUMAN: YES" in answer or "HUMAN:YES" in answer
+
+            # Extract subject type
+            subject_type = "LANDSCAPE"  # Default
+            for subj in ["PORTRAIT", "PET", "VEHICLE", "LANDSCAPE", "ARCHITECTURE", "OBJECT"]:
+                if f"SUBJECT: {subj}" in answer or f"SUBJECT:{subj}" in answer:
+                    subject_type = subj
+                    break
+
+            # Determine prompt mode based on combination
+            if has_human:
+                if subject_type == "PORTRAIT":
+                    prompt_mode = "portrait"  # Human-focused prompts
+                else:
+                    prompt_mode = "human_with_subject"  # Balanced prompts
+            else:
+                prompt_mode = "scene_only"  # No human keywords at all
+
+            result = {
+                "has_human": has_human,
+                "subject_type": subject_type,
+                "prompt_mode": prompt_mode
+            }
+
+            print(f"[SID-Prompt] Subject detection: has_human={has_human}, subject={subject_type}, mode={prompt_mode}")
+            return result
+
+        except Exception as e:
+            print(f"[SID-Prompt] Subject detection failed: {e}, defaulting to scene_only")
+            return default_result
+
+    @classmethod
+    def _validate_no_human_hallucination(cls, prompt: str, debug_lines: List[str]) -> str:
+        """
+        Post-generation validation to detect and remove hallucinated human references.
+        Called when human detection said NO but we want to verify the output.
+
+        Args:
+            prompt: Generated prompt text
+            debug_lines: Debug log list to append messages
+
+        Returns:
+            Cleaned prompt with hallucinated human references removed/flagged
+        """
+        import re
+
+        # Keywords that indicate hallucinated humans (when no human was detected)
+        # These are STRONG indicators - must be human-specific to avoid false positives
+        human_indicators = [
+            # Direct human references (very strong)
+            r'\b(?:woman|man|person|people|human|individual|lady|gentleman|girl|boy)\b',
+            # Pronouns with human actions
+            r'\b(?:she|her|his|he|him)\s+(?:is|are|has|have|wearing|stands|sits|looks)\b',
+            # Human-specific body parts (not shared with animals)
+            r'\b(?:face|hands|fingers|lips|mouth|arms|legs|feet|skin tone)\b',
+            # Clothing (very strong indicator - animals don't wear clothes)
+            r'\b(?:wearing|dressed|outfit|clothes|clothing|shirt|dress|pants|skirt|jacket|coat|shoes|boots|bikini|swimsuit)\b',
+            # Age/demographics (human-specific)
+            r'\b(?:young woman|young man|old woman|old man|elderly|teenager|adult|asian|european|african|caucasian)\b',
+            # Human-specific poses (not "lying" alone as animals lie too)
+            r'\b(?:standing\s+(?:by|near|next)|posing|smiling|gazing|looking at camera)\b',
+        ]
+
+        prompt_lower = prompt.lower()
+        hallucination_detected = False
+        detected_keywords = []
+
+        for pattern in human_indicators:
+            matches = re.findall(pattern, prompt_lower, re.IGNORECASE)
+            if matches:
+                hallucination_detected = True
+                detected_keywords.extend(matches)
+
+        if hallucination_detected:
+            unique_keywords = list(set(detected_keywords))[:10]  # Limit to first 10
+            warning_msg = f"WARNING: Possible hallucination detected - human keywords found despite no human in image: {unique_keywords}"
+            debug_lines.append(warning_msg)
+            print(f"[SID-Prompt] {warning_msg}")
+
+            # Option 1: Just warn (current behavior)
+            # Option 2: Attempt to remove human references (more aggressive)
+            # For now, we just warn - removing could break the prompt structure
+
+            # Add a note to the debug that this might need manual review
+            debug_lines.append("NOTE: Generated prompt may contain hallucinated human subjects. Consider regenerating or manual editing.")
+
+        else:
+            debug_lines.append("Validation passed: No hallucinated human references detected")
+
+        return prompt
 
     @classmethod
     def _analyze_component(cls, client, llm_model: LLMModelConfig, base64_image: str, component_key: str) -> dict:

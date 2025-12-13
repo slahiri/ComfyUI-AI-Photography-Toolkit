@@ -376,6 +376,134 @@ def build_user_prompt(provider: str, analysis_mode: str, preset_style: str, prom
 
 
 # =============================================================================
+# Scene-Only Prompts (No Human Keywords - Prevents Hallucination)
+# =============================================================================
+
+def get_scene_only_system_prompt() -> str:
+    """Get the scene-only system prompt (no human/person keywords)."""
+    config = _load_toml("prompts.toml")
+    system = config.get("system", {})
+    scene_config = system.get("scene_only", {})
+    return scene_config.get("base", "Describe this scene for AI image generation. There are no people in this image.")
+
+
+def get_scene_only_user_prompt(mode: str) -> str:
+    """Get the scene-only user prompt for a mode (no human/person keywords)."""
+    config = _load_toml("prompts.toml")
+    user = config.get("user", {})
+    scene_config = user.get("scene_only", {})
+    mode_config = scene_config.get(mode.lower(), {})
+    return mode_config.get("prompt", "Describe this scene/landscape/object.")
+
+
+def build_scene_only_system_prompt(prompt_length: int = 150) -> str:
+    """
+    Build complete scene-only system prompt (no human/person keywords).
+    Used when human detection returns NO to prevent hallucinating people.
+
+    Args:
+        prompt_length: Target word count (0 = no limit)
+
+    Returns:
+        Complete scene-only system prompt string
+    """
+    base = get_scene_only_system_prompt()
+
+    # Add length constraint
+    length_constraint = get_length_constraint(prompt_length)
+    if length_constraint:
+        base += f"\n\n{length_constraint}"
+
+    return base
+
+
+def build_scene_only_user_prompt(analysis_mode: str, prompt_length: int = 150) -> str:
+    """
+    Build complete scene-only user prompt (no human/person keywords).
+    Used when human detection returns NO to prevent hallucinating people.
+
+    Args:
+        analysis_mode: Analysis mode (Quick/Standard/Detailed/Extreme)
+        prompt_length: Target word count (0 = no limit)
+
+    Returns:
+        Complete scene-only user prompt string
+    """
+    prompt = get_scene_only_user_prompt(analysis_mode)
+
+    # Reinforce length constraint
+    length_constraint = get_length_constraint(prompt_length)
+    if length_constraint:
+        prompt += f"\n\nREMEMBER: {length_constraint}"
+
+    return prompt
+
+
+# =============================================================================
+# Human With Subject Prompts (Balanced - Human AND Pet/Vehicle/Landscape)
+# =============================================================================
+
+def get_human_with_subject_system_prompt() -> str:
+    """Get the human_with_subject system prompt (balanced human + subject)."""
+    config = _load_toml("prompts.toml")
+    system = config.get("system", {})
+    hws_config = system.get("human_with_subject", {})
+    return hws_config.get("base", "Describe both the human and the other subject in this image with equal detail.")
+
+
+def get_human_with_subject_user_prompt(mode: str) -> str:
+    """Get the human_with_subject user prompt for a mode."""
+    config = _load_toml("prompts.toml")
+    user = config.get("user", {})
+    hws_config = user.get("human_with_subject", {})
+    mode_config = hws_config.get(mode.lower(), {})
+    return mode_config.get("prompt", "Describe both the human and the other subject equally.")
+
+
+def build_human_with_subject_system_prompt(prompt_length: int = 150) -> str:
+    """
+    Build complete human_with_subject system prompt.
+    Used when image has both a human AND another subject (pet, vehicle, landscape).
+
+    Args:
+        prompt_length: Target word count (0 = no limit)
+
+    Returns:
+        Complete human_with_subject system prompt string
+    """
+    base = get_human_with_subject_system_prompt()
+
+    # Add length constraint
+    length_constraint = get_length_constraint(prompt_length)
+    if length_constraint:
+        base += f"\n\n{length_constraint}"
+
+    return base
+
+
+def build_human_with_subject_user_prompt(analysis_mode: str, prompt_length: int = 150) -> str:
+    """
+    Build complete human_with_subject user prompt.
+    Used when image has both a human AND another subject.
+
+    Args:
+        analysis_mode: Analysis mode (Quick/Standard/Detailed/Extreme)
+        prompt_length: Target word count (0 = no limit)
+
+    Returns:
+        Complete human_with_subject user prompt string
+    """
+    prompt = get_human_with_subject_user_prompt(analysis_mode)
+
+    # Reinforce length constraint
+    length_constraint = get_length_constraint(prompt_length)
+    if length_constraint:
+        prompt += f"\n\nREMEMBER: {length_constraint}"
+
+    return prompt
+
+
+# =============================================================================
 # Initialization Check
 # =============================================================================
 
