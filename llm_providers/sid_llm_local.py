@@ -3141,6 +3141,79 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
         return model_info.is_thinking if model_info else False
 
     @classmethod
+    def _clear_all_local_cache(cls, model_name: str):
+        """Clear all cached files for a model and force re-download."""
+        import shutil
+
+        model_info = LOCAL_MODELS.get(model_name)
+        if not model_info:
+            print(f"[SID_LLM_Local] Unknown model: {model_name}")
+            return
+
+        repo_id = model_info.repo_id
+        # Convert repo_id to cache folder name (e.g., "microsoft/Florence-2-base" -> "models--microsoft--Florence-2-base")
+        cache_folder_name = f"models--{repo_id.replace('/', '--')}"
+
+        # HuggingFace cache locations
+        hf_cache = os.path.expanduser("~/.cache/huggingface")
+        hub_cache = os.path.join(hf_cache, "hub", cache_folder_name)
+
+        # Local LLM cache
+        llm_cache = os.path.join(folder_paths.models_dir, "LLM", model_name)
+
+        # Transformers modules cache (for models with trust_remote_code)
+        modules_cache = os.path.join(hf_cache, "modules", "transformers_modules")
+
+        cleared = []
+
+        # Clear HuggingFace hub cache
+        if os.path.exists(hub_cache):
+            try:
+                shutil.rmtree(hub_cache)
+                cleared.append(f"HuggingFace hub: {cache_folder_name}")
+            except Exception as e:
+                print(f"[SID_LLM_Local] Warning: Could not clear {hub_cache}: {e}")
+
+        # Clear local LLM cache
+        if os.path.exists(llm_cache):
+            try:
+                shutil.rmtree(llm_cache)
+                cleared.append(f"Local LLM: {model_name}")
+            except Exception as e:
+                print(f"[SID_LLM_Local] Warning: Could not clear {llm_cache}: {e}")
+
+        # Clear transformers modules cache for this model
+        if os.path.exists(modules_cache):
+            # Get model name variants to match folder names
+            model_variants = [
+                model_name,
+                model_name.lower(),
+                repo_id.split("/")[-1],  # e.g., "Florence-2-base"
+                repo_id.split("/")[-1].replace("-", "_"),
+                repo_id.split("/")[-1].replace("-", "_hyphen_"),
+            ]
+            for folder in os.listdir(modules_cache):
+                folder_lower = folder.lower()
+                if any(variant.lower() in folder_lower for variant in model_variants):
+                    folder_path = os.path.join(modules_cache, folder)
+                    try:
+                        shutil.rmtree(folder_path)
+                        cleared.append(f"Transformers modules: {folder}")
+                    except Exception as e:
+                        print(f"[SID_LLM_Local] Warning: Could not clear {folder_path}: {e}")
+
+        # Also unload from memory
+        LocalModelClient.unload_model()
+
+        if cleared:
+            print(f"[SID_LLM_Local] Cleared cache for {model_name}:")
+            for item in cleared:
+                print(f"  ✓ {item}")
+            print(f"[SID_LLM_Local] Model will be re-downloaded on next use.")
+        else:
+            print(f"[SID_LLM_Local] No cache found for {model_name}")
+
+    @classmethod
     def define_schema(cls) -> comfy_io.Schema:
         """Define the node schema."""
 
@@ -3277,6 +3350,12 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     display_name="Torch Compile",
                     tooltip="Enable torch.compile for faster inference (CUDA + Torch 2.1+ only)"
                 ),
+                comfy_io.Boolean.Input(
+                    "clear_local_cache",
+                    default=False,
+                    display_name="Clear Local Cache",
+                    tooltip="Clear all cached model files and re-download from HuggingFace. Use if model is corrupted or outdated."
+                ),
                 # Analysis mode - Local supports Quick/Standard only (no Deep)
                 comfy_io.Combo.Input(
                     "analysis_mode",
@@ -3309,10 +3388,15 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
         top_p: float,
         num_beams: int,
         use_torch_compile: bool,
+        clear_local_cache: bool,
         analysis_mode: str,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
         try:
+            # Clear cache if requested
+            if clear_local_cache:
+                cls._clear_all_local_cache(vision_model)
+
             # Use vision_model (primary use case)
             model = vision_model
 
