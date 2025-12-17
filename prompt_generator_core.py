@@ -291,8 +291,25 @@ ZIMAGE_SCENE_RULES = """
 IMPORTANT: There are NO people in this image. Do NOT describe any humans, persons,
 faces, bodies, or human-related elements.
 
-CRITICAL - SHOT TYPE AND FRAMING (MUST specify first):
-- EXTREME CLOSE-UP: Only face/head visible, fills most of frame, no neck/body
+FIRST: Identify if this is an ANIMAL subject or LANDSCAPE/SCENE.
+
+═══════════════════════════════════════════════════════════════════════════════
+ANIMAL/WILDLIFE SUBJECTS - If an animal is the main subject:
+═══════════════════════════════════════════════════════════════════════════════
+- SPECIES: Be specific (reticulated giraffe, African elephant, Bengal tiger, red fox, bald eagle)
+- AGE: adult, juvenile, calf, fawn, cub, chick
+- VIEW: front-facing, profile view, three-quarter view, from behind
+- EYE CONTACT: looking directly at camera, looking away, eyes closed
+- FEATURES: distinctive markings, patterns, horns, tusks, mane, spots, stripes, feathers
+- POSE: standing, sitting, lying, running, grazing, alert posture
+- EXPRESSION: calm, alert, curious, aggressive
+- TEXTURE: fur texture (sleek, fluffy, coarse), feather details, skin texture
+- Example: "adult reticulated giraffe in three-quarter view, distinctive orange-brown patches with cream borders, long neck extended, large dark eyes with long eyelashes looking at camera"
+
+═══════════════════════════════════════════════════════════════════════════════
+SHOT TYPE AND FRAMING (specify for all subjects):
+═══════════════════════════════════════════════════════════════════════════════
+- EXTREME CLOSE-UP: Only face/head visible, fills most of frame
 - CLOSE-UP: Head and partial neck visible
 - MEDIUM CLOSE-UP: Head and full neck, partial body
 - MEDIUM SHOT: Upper body visible
@@ -300,19 +317,14 @@ CRITICAL - SHOT TYPE AND FRAMING (MUST specify first):
 - WIDE SHOT: Subject small in frame, environment dominant
 - DETAIL SHOT: Specific body part (eye, paw, feather, etc.)
 
-FOR WILDLIFE/ANIMALS:
-- Species identification (specific type, e.g., "reticulated giraffe", "African elephant")
-- Age (adult, juvenile, calf, etc.)
-- Pose (front-facing, profile, three-quarter view)
-- Eye contact (looking at camera, looking away)
-- Distinctive features (patterns, markings, horns, tusks, mane)
-- Expression/mood if applicable
-
+═══════════════════════════════════════════════════════════════════════════════
+LANDSCAPE/SCENE SUBJECTS:
+═══════════════════════════════════════════════════════════════════════════════
 Focus on:
-- Landscape, environment, architecture
-- Objects, vehicles, animals
+- Terrain type (mountains, water, desert, forest, coastal)
+- Specific colors and textures
 - Lighting, atmosphere, mood
-- Colors, textures, composition
+- Composition (foreground, midground, background)
 
 DO NOT:
 - Write philosophical/spiritual commentary
