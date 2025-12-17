@@ -2214,6 +2214,10 @@ class LocalModelClient:
             # and VAE/other nodes may need them enabled
             torch.set_grad_enabled(True)
 
+            # If not keeping model loaded, unload it to free VRAM
+            if not self.keep_model_loaded:
+                self._unload_model_instance()
+
             if torch.cuda.is_available():
                 # Synchronize to ensure all CUDA operations are complete
                 torch.cuda.synchronize()
@@ -2226,6 +2230,41 @@ class LocalModelClient:
 
         except Exception:
             pass
+
+    def _unload_model_instance(self):
+        """Unload model from this instance to free VRAM."""
+        import torch
+
+        try:
+            # Delete model references
+            if hasattr(self, 'model') and self.model is not None:
+                del self.model
+                self.model = None
+
+            if hasattr(self, 'processor') and self.processor is not None:
+                del self.processor
+                self.processor = None
+
+            if hasattr(self, 'tokenizer') and self.tokenizer is not None:
+                del self.tokenizer
+                self.tokenizer = None
+
+            # Clear class-level cache as well
+            LocalModelClient._cached_model = None
+            LocalModelClient._cached_processor = None
+            LocalModelClient._cached_tokenizer = None
+            LocalModelClient._cached_signature = None
+
+            # Force garbage collection
+            gc.collect()
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+            print("[LocalModel] Model unloaded from VRAM")
+
+        except Exception as e:
+            print(f"[LocalModel] Warning: Error during model unload: {e}")
 
     def _generate_florence2(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with Florence-2."""
@@ -3072,9 +3111,9 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                 ),
                 comfy_io.Boolean.Input(
                     "keep_model_loaded",
-                    default=True,
+                    default=False,
                     display_name="Keep Model Loaded",
-                    tooltip="Keep model in VRAM between runs (faster repeat inference)"
+                    tooltip="Keep model in VRAM between runs (faster repeat inference). Disabled by default to free VRAM after execution."
                 ),
                 comfy_io.Combo.Input(
                     "attention_mode",
