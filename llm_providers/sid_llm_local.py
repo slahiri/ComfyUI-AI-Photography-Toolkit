@@ -2336,18 +2336,24 @@ class LocalModelClient:
 
         import torch
 
-        # DynamicCache compatibility fix for transformers 4.49+
-        self._patch_dynamic_cache_compat()
+        if not images:
+            return "No image provided"
 
-        if images:
+        try:
             # Moondream has built-in image encoding
             enc_image = self.model.encode_image(images[0])
             with InferenceProgressSpinner("Generating (Moondream2)"):
                 with torch.inference_mode():
                     response = self.model.answer_question(enc_image, prompt.strip(), self.tokenizer)
             return response
-        else:
-            return "No image provided"
+        except RuntimeError as e:
+            error_str = str(e)
+            if "index out of bounds" in error_str or "CUDA" in error_str:
+                print(f"\n[Moondream2] CUDA error detected. This model may be incompatible with your PyTorch version.")
+                print(f"[Moondream2] Suggested fix: Delete the cache folder and try a different model.")
+                print(f"[Moondream2] Cache location: ~/.cache/huggingface/hub/models--vikhyatk--moondream2")
+                raise ValueError(f"Moondream2 CUDA incompatibility: {e}")
+            raise
 
     def _generate_smolvlm(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with SmolVLM."""
