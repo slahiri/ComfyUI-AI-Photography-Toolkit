@@ -799,6 +799,19 @@ def get_debug_viewer_html():
             font-size: 12px;
         }
         .btn-refresh:hover { background: #1177bb; }
+        .btn-download {
+            padding: 4px 10px;
+            background: #16825d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        .btn-download:hover { background: #1a9e6e; }
+        .btn-download:disabled { background: #3c3c3c; color: #888; cursor: not-allowed; }
+        .toolbar-buttons { display: flex; gap: 8px; }
         .session-list {
             flex: 1;
             overflow-y: auto;
@@ -837,6 +850,9 @@ def get_debug_viewer_html():
             background: #333;
             border-bottom: 1px solid #3c3c3c;
             font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .content-area {
             flex: 1;
@@ -990,7 +1006,12 @@ def get_debug_viewer_html():
             </div>
         </div>
         <div class="main-content">
-            <div class="toolbar" id="toolbar">Select a session to view results</div>
+            <div class="toolbar">
+                <span id="toolbar">Select a session to view results</span>
+                <div class="toolbar-buttons">
+                    <button class="btn-download" id="downloadBtn" disabled onclick="downloadPDF()">Download PDF</button>
+                </div>
+            </div>
             <div class="content-area" id="contentArea">
                 <div class="empty-state">
                     <div style="font-size: 48px;">📊</div>
@@ -1000,8 +1021,10 @@ def get_debug_viewer_html():
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         let currentSession = null;
+        let currentSessionId = null;
 
         // Load sessions on page load
         loadSessions();
@@ -1053,8 +1076,10 @@ def get_debug_viewer_html():
                 el.classList.toggle('active', el.dataset.id === sessionId);
             });
 
+            currentSessionId = sessionId;
             document.getElementById('toolbar').textContent = `Session: ${sessionId}`;
             document.getElementById('contentArea').innerHTML = '<div class="loading">Loading...</div>';
+            document.getElementById('downloadBtn').disabled = true;
 
             try {
                 const res = await fetch(`/sid/debug-results/api/session/${sessionId}`);
@@ -1068,9 +1093,11 @@ def get_debug_viewer_html():
 
                 currentSession = data;
                 renderSession(data);
+                document.getElementById('downloadBtn').disabled = false;
             } catch (e) {
                 document.getElementById('contentArea').innerHTML =
                     '<div class="empty-state">Error loading session</div>';
+                document.getElementById('downloadBtn').disabled = true;
             }
         }
 
@@ -1224,6 +1251,42 @@ def get_debug_viewer_html():
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        async function downloadPDF() {
+            if (!currentSession || !currentSessionId) return;
+
+            const btn = document.getElementById('downloadBtn');
+            btn.textContent = 'Generating...';
+            btn.disabled = true;
+
+            try {
+                const content = document.getElementById('contentArea');
+
+                // Configure PDF options
+                const opt = {
+                    margin: 10,
+                    filename: `debug_${currentSessionId}.pdf`,
+                    image: { type: 'jpeg', quality: 0.95 },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: '#1e1e1e'
+                    },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                // Generate and download PDF
+                await html2pdf().set(opt).from(content).save();
+
+                btn.textContent = 'Download PDF';
+                btn.disabled = false;
+            } catch (e) {
+                console.error('PDF generation failed:', e);
+                alert('Failed to generate PDF: ' + e.message);
+                btn.textContent = 'Download PDF';
+                btn.disabled = false;
+            }
         }
     </script>
 </body>
