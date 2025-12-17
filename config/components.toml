@@ -598,6 +598,191 @@ prompt = "What is the main subject: a woman, man, or something else?"
 
 
 # =============================================================================
+# SELFIE DETECTION
+# =============================================================================
+
+[selfie_check]
+name = "Selfie Detection"
+
+[selfie_check.advanced]
+prompt = """
+Determine if this is a SELFIE photo:
+Look for: arm extended holding phone/camera, front-facing camera angle, slightly above eye level, direct eye contact.
+
+Output JSON:
+{"is_selfie": true/false, "camera_angle": "<angle>", "eye_contact": "<direct/away>", "prompt_description": "<selfie description or 'not a selfie'>"}
+"""
+
+[selfie_check.standard]
+prompt = """
+Is this a SELFIE? Look for:
+- Arm extended holding phone/camera
+- Front-facing camera angle
+- Above eye level angle
+- Direct eye contact with camera
+"""
+
+[selfie_check.basic]
+prompt = "Is this a selfie? Look for extended arm, phone angle, direct eye contact. If SELFIE: say 'selfie-style photo with eyes looking directly at camera'. If NOT: say 'not a selfie'."
+
+
+# =============================================================================
+# SKIN TEXTURE
+# =============================================================================
+
+[skin_texture]
+name = "Skin Texture Analysis"
+
+[skin_texture.advanced]
+prompt = """
+Analyze skin in detail:
+TONE: fair/light/medium/olive/tan/brown/dark brown/deep
+TEXTURE: freckles (location, density), dimples (cheeks, chin), wrinkles/fine lines (forehead, crow's feet, smile lines, nasolabial folds), visible pores, moles, blemishes, smoothness or roughness
+
+Output JSON:
+{"tone": "<tone>", "texture_features": ["<features>"], "freckles": {"present": true/false, "location": "<location>"}, "wrinkles": {"present": true/false, "areas": ["<areas>"]}, "prompt_description": "<skin description>"}
+"""
+
+[skin_texture.standard]
+prompt = """
+Describe skin:
+- Skin tone (fair/light/medium/olive/tan/brown/dark brown/deep)
+- Texture details: freckles, dimples, wrinkles, pores, moles
+- Overall smoothness or roughness
+"""
+
+[skin_texture.basic]
+prompt = "Describe skin: TONE (fair/light/medium/olive/tan/brown/dark brown/deep). TEXTURE: freckles (location, density), dimples, wrinkles/fine lines, visible pores, moles, skin smoothness or roughness."
+
+
+# =============================================================================
+# MAKEUP & LIPS
+# =============================================================================
+
+[makeup_lips]
+name = "Makeup & Lips Analysis"
+
+[makeup_lips.advanced]
+prompt = """
+Analyze makeup and lips:
+MAKEUP: eyeshadow color/style, eyeliner, blush, foundation, contouring
+LIPS: exact shade (nude/pink/red/burgundy/coral/mauve), finish (matte/glossy/satin), texture (smooth/chapped/dry lines/natural creases), shape and fullness
+
+Output JSON:
+{"has_makeup": true/false, "eyeshadow": "<color/style>", "eyeliner": "<style>", "blush": "<color>", "lip_color": "<shade>", "lip_finish": "<finish>", "lip_texture": "<texture>", "prompt_description": "<makeup and lips description>"}
+"""
+
+[makeup_lips.standard]
+prompt = """
+Describe makeup and lips:
+- Eyeshadow color/style
+- Eyeliner style
+- Blush color
+- Lip color/shade
+- Lip finish (matte/glossy)
+- Lip texture
+"""
+
+[makeup_lips.basic]
+prompt = "Describe ONLY makeup and lips: eyeshadow color/style, eyeliner, blush, foundation, contouring. LIPS: exact shade (nude/pink/red/burgundy/coral/mauve), finish (matte/glossy/satin), lip texture (smooth/chapped/dry lines/natural creases), shape and fullness. If no makeup, say 'natural'."
+
+
+# =============================================================================
+# ATMOSPHERE & EFFECTS
+# =============================================================================
+
+[atmosphere]
+name = "Atmospheric Effects"
+
+[atmosphere.advanced]
+prompt = """
+Analyze atmospheric effects:
+Look for: steam rising from cups/beverages, smoke, vapor, mist, fog, haze, dust particles visible in light beams, breath vapor in cold air
+
+Output JSON:
+{"has_effects": true/false, "effects": ["<list>"], "steam_source": "<source if any>", "prompt_description": "<atmospheric description or 'no atmospheric effects'>"}
+"""
+
+[atmosphere.standard]
+prompt = """
+Describe atmospheric effects if present:
+- Steam rising from cups/beverages
+- Smoke or vapor
+- Mist, fog, or haze
+- Dust particles in light
+- Breath vapor
+"""
+
+[atmosphere.basic]
+prompt = "Describe ONLY atmospheric effects if present: steam rising from cups/beverages, smoke, vapor, mist, fog, haze, dust particles visible in light beams. If none visible, say 'no atmospheric effects'."
+
+
+# =============================================================================
+# ENVIRONMENT & BACKGROUND
+# =============================================================================
+
+[environment]
+name = "Environment & Background"
+
+[environment.advanced]
+prompt = """
+Analyze environment and objects:
+BACKGROUND: Setting, colors, blur level
+OBJECTS: Items held or nearby
+BEVERAGES: If visible, exact liquid color - red wine (deep burgundy), white wine (pale gold), beer (amber), coffee (dark brown), water (clear)
+
+Output JSON:
+{"setting": "<setting>", "background_blur": "<blur level>", "objects": ["<items>"], "beverages": {"present": true/false, "type": "<type>", "color": "<color>"}, "prompt_description": "<environment description>"}
+"""
+
+[environment.standard]
+prompt = """
+Describe background and objects:
+- Setting/location type
+- Background colors and blur
+- Objects or props held
+- Any beverages with their exact colors
+"""
+
+[environment.basic]
+prompt = "Describe background and objects/props held (cups, glasses, drinks). For ANY BEVERAGES: describe exact liquid color - red wine (deep burgundy), white wine (pale gold), beer (amber), coffee (dark brown), water (clear), cocktails (specific color)."
+
+
+# =============================================================================
+# SCENE SUBJECT (Animals/Objects/Landscape)
+# =============================================================================
+
+[scene_subject]
+name = "Scene Subject Analysis"
+
+[scene_subject.advanced]
+prompt = """
+Analyze the main subject (NO humans):
+IF ANIMAL: species (be specific: 'reticulated giraffe', 'African elephant', 'Bengal tiger'), age (adult/juvenile/calf), eye contact (looking at camera or away), distinctive features (pattern, markings, horns, tusks, mane, eyelashes)
+IF OBJECT/VEHICLE: type, color, condition
+IF LANDSCAPE: terrain type, key features
+
+Output JSON:
+{"subject_type": "<animal/object/landscape>", "species": "<if animal>", "age": "<if animal>", "eye_contact": "<if animal>", "features": ["<features>"], "prompt_description": "<subject description>"}
+"""
+
+[scene_subject.standard]
+prompt = """
+Describe the main subject (NO humans):
+IF ANIMAL:
+- Species (be specific)
+- Age (adult, juvenile, calf)
+- Eye contact (looking at camera or away)
+- Distinctive features (patterns, markings, horns, tusks, mane)
+IF OBJECT: type, color, details
+IF LANDSCAPE: terrain, key features
+"""
+
+[scene_subject.basic]
+prompt = "Describe the main subject. IF ANIMAL: species (be specific: 'reticulated giraffe', 'African elephant', 'Bengal tiger'), age (adult/juvenile/calf), eye contact (looking at camera or away), distinctive features (pattern, markings, horns, tusks, mane, eyelashes). For BEVERAGES/LIQUIDS: exact color. NO humans."
+
+
+# =============================================================================
 # ANALYSIS MODE CONFIGURATIONS
 # =============================================================================
 # Which components to analyze for each mode

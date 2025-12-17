@@ -244,6 +244,14 @@ def get_scene_user_prompt(mode: str) -> str:
     return "Describe this scene in detail. NO humans."
 
 
+def get_component_prompt(component: str, tier: str) -> str:
+    """Get agentic component prompt from config. TOML is the single source of truth."""
+    if _CONFIG_AVAILABLE and _config_loader:
+        return _config_loader.get_component_prompt(component, tier)
+    # Minimal fallback - return empty string, caller should handle
+    return ""
+
+
 def get_length_constraint(prompt_length: int) -> str:
     """Get length constraint instruction from config or default."""
     if _CONFIG_AVAILABLE and _config_loader:
@@ -1560,144 +1568,102 @@ Example output: masterpiece, best quality, highres, 1girl, solo, long_hair, blon
 
     def _agentic_generate(self, base64_image: str, has_human: bool,
                           cv_analysis: Dict, user_guidance: str) -> str:
-        """Agentic multi-step generation."""
+        """Agentic multi-step generation using component prompts from TOML."""
         components = {}
         component_times = {}  # Track timing for each component
+        tier = get_provider_tier(self.config.provider)
 
-        def timed_vision_call(name: str, *args, **kwargs):
-            """Wrapper to time individual vision calls."""
+        def timed_vision_call(name: str, component_key: str, user_instruction: str, max_tokens: int):
+            """Call vision API with prompt from TOML config."""
             start = time.time()
-            result = self.llm_client.call_vision(*args, **kwargs)
+            # Get system prompt from TOML components.toml
+            system_prompt = get_component_prompt(component_key, tier)
+            if not system_prompt:
+                self._log(f"[Agentic] Warning: No prompt found for {component_key}.{tier}")
+                return ""
+            result = self.llm_client.call_vision(base64_image, system_prompt, user_instruction, max_tokens)
             elapsed = time.time() - start
             component_times[name] = elapsed
             self._log(f"[Agentic] {name}: {elapsed:.2f}s")
             return result
 
         if has_human:
-            # ALWAYS identify ethnicity FIRST
+            # Core components (always run)
             components["ethnicity"] = timed_vision_call(
-                "ethnicity",
-                base64_image,
-                "Identify the person's ETHNICITY/ANCESTRY. Be SPECIFIC: East Asian (Chinese/Japanese/Korean/Vietnamese), South Asian (Indian/Pakistani/Bengali), Southeast Asian (Thai/Filipino/Indonesian), Middle Eastern, African, African American, Caribbean, Latino/Hispanic, Caucasian/European (Northern/Southern/Eastern European), or Mixed heritage. Note facial features that indicate ethnicity.",
+                "ethnicity", "ethnicity",
                 "Identify ethnicity specifically in 1-2 sentences.", 80
             )
-
-            # Detect shot type/framing FIRST - critical for reproduction
             components["shot_framing"] = timed_vision_call(
-                "shot_framing",
-                base64_image,
-                "What is the SHOT TYPE/FRAMING? State exactly where the frame cuts off: EXTREME CLOSE-UP (face only, cropped at chin), CLOSE-UP/HEADSHOT (cropped at shoulders), MEDIUM CLOSE-UP (cropped at chest/bust), MEDIUM SHOT (cropped at waist), COWBOY SHOT (cropped at mid-thigh), FULL BODY (head to feet, feet visible). State: 'cropped at [body part]' or 'full body with feet visible'. Also note if feet/shoes are visible.",
+                "shot_framing", "framing",
                 "State exact shot type and where frame cuts off in 1 sentence.", 60
             )
-
-            # Detect selfie style
             components["selfie_check"] = timed_vision_call(
-                "selfie_check",
-                base64_image,
-                "Is this a SELFIE? Look for: arm extended holding phone/camera, front-facing camera angle, slightly above eye level, direct eye contact. If SELFIE: say 'selfie-style photo with eyes looking directly at camera'. If NOT a selfie, say 'not a selfie' and where eyes are looking.",
+                "selfie_check", "selfie_check",
                 "Identify if selfie in 1 sentence.", 40
             )
 
             if self.analysis_mode == "detailed":
+                # Detailed mode: separate components for each aspect
                 components["face"] = timed_vision_call(
-                    "face",
-                    base64_image,
-                    "Describe only the face in EXTREME detail: eye color, iris pattern, eye shape (almond/round/hooded/monolid/double-lid), gaze direction, catchlights. EYELASHES: color (black/brown/blonde), style (natural/long/thick/curled). EYEBROWS: shape, thickness, color. Facial structure, expression, age.",
+                    "face", "face",
                     "Describe the face with extreme eye, eyelash, and eyebrow detail in 3-4 sentences.", 250
                 )
                 components["skin_texture"] = timed_vision_call(
-                    "skin_texture",
-                    base64_image,
-                    "Describe skin: TONE (fair/light/medium/olive/tan/brown/dark brown/deep). TEXTURE: freckles (location, density), dimples (cheeks, chin), wrinkles/fine lines (forehead, crow's feet, smile lines, nasolabial folds), visible pores, moles, blemishes, skin smoothness or roughness.",
+                    "skin_texture", "skin_texture",
                     "Describe skin tone and texture details in 2-3 sentences.", 150
                 )
                 components["makeup_lips"] = timed_vision_call(
-                    "makeup_lips",
-                    base64_image,
-                    "Describe ONLY makeup and lips: eyeshadow color/style, eyeliner, blush, foundation, contouring. LIPS: exact shade (nude/pink/red/burgundy/coral/mauve), finish (matte/glossy/satin), lip texture (smooth/chapped/dry lines/natural creases), shape and fullness. If no makeup, say 'natural'.",
+                    "makeup_lips", "makeup_lips",
                     "Describe makeup and lip details in 2-3 sentences.", 180
                 )
                 components["hair"] = timed_vision_call(
-                    "hair",
-                    base64_image,
-                    "Describe ONLY the hair: exact style (length, layers, texture, volume, parting), color with highlights/lowlights, how it frames the face and falls.",
+                    "hair", "hair",
                     "Describe the hairstyle in detail in 2-3 sentences.", 150
                 )
                 components["body"] = timed_vision_call(
-                    "body",
-                    base64_image,
-                    "Describe the body: pose, build, posture. MUSCLE DEFINITION if visible: abs/midriff cuts (six-pack, four-pack, toned, flat), chest definition, arm muscles (biceps, triceps), shoulder definition. NAVEL if visible: shape (round/vertical/horizontal), innie/outie, depth.",
+                    "body", "body_pose",
                     "Describe the body, muscle definition, and navel in 2-3 sentences.", 180
                 )
                 components["clothing"] = timed_vision_call(
-                    "clothing",
-                    base64_image,
-                    """FIRST: Is this a recognizable UNIFORM or COSTUME? Be SPECIFIC: Roman Catholic nun habit, stylized/sexy nun (crop top variant). Traditional/modern/sexy nurse. French/Victorian/sexy maid. US/UK Police, SWAT. Japanese sailor fuku/British/Catholic schoolgirl. Playboy bunny, kimono, etc.
-THEN DESCRIBE EACH GARMENT (CRITICAL):
-- COLOR: EXACT color of EACH piece (jet black, charcoal gray, cream white, ivory, navy blue, burgundy - be SPECIFIC)
-- FABRIC: cotton, silk, satin, velvet, leather, latex, lace, mesh, sheer, denim, wool, knit/ribbed, jersey
-- TEXTURE: matte, shiny/glossy, smooth, ribbed, quilted, pleated
-- PATTERN: solid, striped, plaid, floral, polka dot, animal print
-- GARMENT TYPE: Is it FITTED/form-fitting or LOOSE/OPEN? (fitted crop top vs open robe - VERY DIFFERENT)
-- LAYERING: What's UNDER what WITH COLORS? (e.g., "cream white ribbed turtleneck UNDER fitted jet black matte crop top")
-- NECKLINE: crew/scoop/v-neck/turtleneck/off-shoulder/halter
-- HEM/LENGTH: cropped at midriff, waist-length, hip-length, full-length
-- SLEEVES: sleeveless/cap/short/long, tight-fitted or loose
-- FIT: skin-tight, fitted, semi-fitted, loose, oversized""",
+                    "clothing", "clothing",
                     "Name the specific uniform type, then describe EACH garment with exact color, fabric, texture, and construction in 4-5 sentences.", 300
                 )
             else:
+                # Standard mode: combined subject description
                 components["subject"] = timed_vision_call(
-                    "subject",
-                    base64_image,
-                    """Describe the person: face (eye color, iris, eye shape, eyelash color/style, eyebrow shape), skin tone and texture (freckles, dimples, wrinkles), makeup/lip color and texture if visible, hair style and color, expression, body (pose, build, muscle definition if visible, navel shape if visible).
-CLOTHING: First NAME specific uniform/costume type (Roman Catholic/Dominican nun, stylized/sexy nun with crop top, traditional/sexy nurse, French/Victorian/sexy maid, US/UK police, Japanese sailor fuku/Catholic schoolgirl, Playboy bunny, kimono, etc.) with variant (traditional/modern/stylized/sexy).
-THEN FOR EACH GARMENT: EXACT COLOR (jet black, charcoal, cream white, ivory, navy - be specific). FABRIC (cotton, silk, satin, velvet, leather, knit/ribbed, jersey). TEXTURE (matte, shiny, ribbed, smooth). PATTERN (solid, striped, plaid). Is it FITTED or OPEN? LAYERING with colors (what's under what). NECKLINE. HEM (cropped at midriff, waist-length, full). SLEEVES. FIT (skin-tight, fitted, loose).""",
+                    "subject", "subject_detection",
                     "Describe the person in 5-6 sentences with specific uniform type, exact garment colors, fabrics, and construction.", 550
                 )
 
+            # Common components for all human images
             components["lighting"] = timed_vision_call(
-                "lighting",
-                base64_image,
-                "Describe ONLY the lighting: WHERE does it come from (window/lamp/sun/overhead), direction (left/right/front/back), quality (soft/hard/diffused), shadows, mood.",
+                "lighting", "lighting",
                 "Describe the lighting source and quality in 2-3 sentences.", 150
             )
             components["atmosphere"] = timed_vision_call(
-                "atmosphere",
-                base64_image,
-                "Describe ONLY atmospheric effects if present: steam rising from cups/beverages, smoke, vapor, mist, fog, haze, dust particles visible in light beams, breath vapor in cold air. If none visible, say 'no atmospheric effects'.",
+                "atmosphere", "atmosphere",
                 "Describe any steam, smoke, or vapor effects in 1-2 sentences.", 100
             )
             components["environment"] = timed_vision_call(
-                "environment",
-                base64_image,
-                "Describe background and objects/props held (cups, glasses, drinks). For ANY BEVERAGES: describe exact liquid color - red wine (deep burgundy), white wine (pale gold), beer (amber), coffee (dark brown), water (clear), cocktails (specific color).",
+                "environment", "environment",
                 "Describe the background and any beverages with their colors in 2-3 sentences.", 150
             )
         else:
-            # Scene-only: ALWAYS identify shot type/framing FIRST
+            # Scene-only components (no human)
             components["shot_framing"] = timed_vision_call(
-                "shot_framing",
-                base64_image,
-                "What is the SHOT TYPE/FRAMING? Be specific: EXTREME CLOSE-UP (only face/head fills frame, no neck/body), CLOSE-UP (head and partial neck), MEDIUM CLOSE-UP (head and full neck, partial body), MEDIUM SHOT (upper body), FULL BODY (entire subject), WIDE SHOT (subject small, environment dominant). Also state: front-facing, profile, or three-quarter view.",
+                "shot_framing", "framing",
                 "State the exact shot type and angle in 1 sentence.", 50
             )
             components["subject"] = timed_vision_call(
-                "subject",
-                base64_image,
-                "Describe the main subject. IF ANIMAL: species (be specific: 'reticulated giraffe', 'African elephant', 'Bengal tiger'), age (adult/juvenile/calf), eye contact (looking at camera or away), distinctive features (pattern, markings, horns, tusks, mane, eyelashes). For BEVERAGES/LIQUIDS: exact color. NO humans.",
+                "subject", "scene_subject",
                 "Describe the main subject with species and features in 2-3 sentences.", 180
             )
             components["atmosphere"] = timed_vision_call(
-                "atmosphere",
-                base64_image,
-                "Describe ONLY atmospheric effects: steam rising from cups/beverages, smoke, vapor, mist, fog, haze, dust particles in light beams. If none visible, say 'no atmospheric effects'. NO humans.",
+                "atmosphere", "atmosphere",
                 "Describe any steam, smoke, or vapor effects in 1-2 sentences.", 100
             )
             components["environment"] = timed_vision_call(
-                "environment",
-                base64_image,
-                "Describe the environment: background (blurred/sharp, colors), lighting (golden hour, midday, overcast), depth of field. NO humans.",
+                "environment", "environment",
                 "Describe the environment and lighting in 2-3 sentences.", 150
             )
 
