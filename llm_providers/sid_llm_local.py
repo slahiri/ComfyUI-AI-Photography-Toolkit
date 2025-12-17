@@ -2302,7 +2302,31 @@ class LocalModelClient:
                     temperature=temperature if temperature > 0 else None,
                 )
 
-        return self.processor.batch_decode(outputs, skip_special_tokens=True)[0]
+        # Decode output
+        raw_output = self.processor.batch_decode(outputs, skip_special_tokens=False)[0]
+
+        # Florence-2 output format: "<task_prompt>caption text</s>"
+        # Parse to extract just the caption
+        result = raw_output
+
+        # Remove task prompts from output
+        task_prompts = ["<MORE_DETAILED_CAPTION>", "<DETAILED_CAPTION>", "<CAPTION>", "<OD>"]
+        for tp in task_prompts:
+            if tp in result:
+                result = result.split(tp)[-1]  # Get text after task prompt
+
+        # Remove end tokens and clean up
+        result = result.replace("</s>", "").replace("<s>", "").replace("<pad>", "").strip()
+
+        # If still empty, try with skip_special_tokens
+        if not result:
+            result = self.processor.batch_decode(outputs, skip_special_tokens=True)[0].strip()
+
+        # Debug logging for empty results
+        if not result:
+            print(f"[Florence-2] Warning: Empty output. Raw: {raw_output[:200] if raw_output else 'None'}")
+
+        return result
 
     def _generate_moondream2(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with Moondream2."""
