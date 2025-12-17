@@ -709,7 +709,20 @@ def get_debug_viewer_html():
             border-bottom: 1px solid #3c3c3c;
             font-weight: 600;
             font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
+        .btn-refresh {
+            padding: 4px 10px;
+            background: #0e639c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-refresh:hover { background: #1177bb; }
         .session-list {
             flex: 1;
             overflow-y: auto;
@@ -891,7 +904,10 @@ def get_debug_viewer_html():
 <body>
     <div class="container">
         <div class="sidebar">
-            <div class="sidebar-header">Debug Sessions</div>
+            <div class="sidebar-header">
+                <span>Debug Sessions</span>
+                <button class="btn-refresh" onclick="loadSessions()">Refresh</button>
+            </div>
             <div class="session-list" id="sessionList">
                 <div class="loading">Loading...</div>
             </div>
