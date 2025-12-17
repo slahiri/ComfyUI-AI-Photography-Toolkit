@@ -106,6 +106,12 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                     display_name="Generate Caption",
                     tooltip="Generate image caption"
                 ),
+                io.Boolean.Input(
+                    "nsfw_mode",
+                    default=False,
+                    display_name="NSFW Mode",
+                    tooltip="Enable detailed NSFW feature description (sideboob, underboob, cleavage, exposed skin, etc.)"
+                ),
                 io.Int.Input(
                     "seed",
                     default=0,
@@ -137,6 +143,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         prompt_length: int,
         generate_negative: bool,
         generate_caption: bool,
+        nsfw_mode: bool,
         seed: int,
         prompt_override: str = "",
     ):
@@ -187,6 +194,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
             prompt_length=prompt_length,
             generate_negative=generate_negative,
             generate_caption=generate_caption,
+            nsfw_mode=nsfw_mode,
             verbose=True,
             extra_params=llm_model.extra_params
         )
@@ -196,7 +204,8 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
 
         # Print metadata and debug log to console
         reasoning_str = "ON" if supports_reasoning else "OFF"
-        print(f"\n[Seed: {seed}, Temperature: {temperature}, Mode: {analysis_mode}, Style: {prompt_style}, Reasoning: {reasoning_str}]")
+        nsfw_str = "ON" if nsfw_mode else "OFF"
+        print(f"\n[Seed: {seed}, Temperature: {temperature}, Mode: {analysis_mode}, Style: {prompt_style}, Reasoning: {reasoning_str}, NSFW: {nsfw_str}]")
         print(result.get_metadata_str())
 
         return io.NodeOutput(result.prompt, result.negative, result.caption)

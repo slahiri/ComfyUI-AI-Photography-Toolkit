@@ -1280,6 +1280,7 @@ class PromptGenerator:
         prompt_length: int = 150,
         generate_negative: bool = False,
         generate_caption: bool = False,
+        nsfw_mode: bool = False,
         verbose: bool = True,
         extra_params: Dict[str, Any] = None
     ):
@@ -1299,6 +1300,7 @@ class PromptGenerator:
         self.prompt_length = prompt_length
         self.generate_negative = generate_negative
         self.generate_caption = generate_caption
+        self.nsfw_mode = nsfw_mode
         self.verbose = verbose
 
         # Get image sizes based on provider
@@ -1564,6 +1566,20 @@ Example output: masterpiece, best quality, highres, 1girl, solo, long_hair, blon
             system_prompt += tag_instruction
             user_prompt += "\n\nRemember: Output ONLY comma-separated tags, not sentences."
 
+        # Add NSFW description instructions if enabled (humans only)
+        if self.nsfw_mode and has_human:
+            nsfw_instruction = """
+
+NSFW DETAILS - Describe any revealing/suggestive elements with specific terms:
+- EXPOSURE: sideboob, underboob, cleavage, deep_cleavage, bare_shoulders, bare_back, backless, midriff, exposed_navel, thigh_gap, inner_thigh, hip_bones, bare_legs
+- CLOTHING: see-through, sheer_fabric, transparent, low-cut, plunging_neckline, high_slit, micro_bikini, string_bikini, lingerie_visible, braless, wet_clothing, tight/form-fitting, crop_top
+- POSES: arched_back, bent_forward, reclining, suggestive_pose, hand_on_hip, hand_on_thigh
+- SKIN: glistening_skin, wet_skin, oiled_skin, flushed_cheeks
+- EXPRESSION: bedroom_eyes, half-lidded_gaze, parted_lips, lip_bite, seductive_expression
+Be specific about exactly which NSFW features are visible. Do NOT add features that are not in the image."""
+            system_prompt += nsfw_instruction
+            user_prompt += "\n\nInclude specific NSFW details for any revealing elements visible in the image."
+
         return system_prompt, user_prompt
 
     def _agentic_generate(self, base64_image: str, has_human: bool,
@@ -1648,6 +1664,13 @@ Example output: masterpiece, best quality, highres, 1girl, solo, long_hair, blon
                 "environment", "environment",
                 "Describe the background and any beverages with their colors in 2-3 sentences.", 150
             )
+
+            # NSFW details component (only when enabled)
+            if self.nsfw_mode:
+                components["nsfw_details"] = timed_vision_call(
+                    "nsfw_details", "nsfw_details",
+                    "Describe any revealing/suggestive elements: exposed skin areas, clothing sheerness, pose suggestiveness in 2-4 sentences. Use specific terms like sideboob, underboob, cleavage, bare_shoulders, see-through, etc.", 200
+                )
         else:
             # Scene-only components (no human)
             components["shot_framing"] = timed_vision_call(

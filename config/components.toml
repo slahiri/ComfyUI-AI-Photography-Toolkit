@@ -783,6 +783,102 @@ prompt = "Describe the main subject. IF ANIMAL: species (be specific: 'reticulat
 
 
 # =============================================================================
+# NSFW DETAILS (optional, only when NSFW mode enabled)
+# =============================================================================
+
+[nsfw_details]
+name = "NSFW Details"
+
+[nsfw_details.advanced]
+prompt = """
+Analyze any revealing, suggestive, or NSFW elements visible in the image.
+
+EXPOSED SKIN AREAS - Be specific:
+- Sideboob (side of breast visible)
+- Underboob (underside of breast visible)
+- Cleavage depth (subtle/moderate/deep/extreme)
+- Bare shoulders (one/both)
+- Bare back (upper/lower/full)
+- Midriff/exposed stomach
+- Exposed navel
+- Hip bones visible
+- Thigh exposure (inner thigh, thigh gap)
+- Bare legs
+
+CLOTHING CHARACTERISTICS:
+- See-through/sheer fabric (what's visible through it)
+- Transparent materials
+- Low-cut/plunging neckline (how deep)
+- High slit (thigh-high/hip-high)
+- Tight/form-fitting (where)
+- Wet clothing (clinging to body)
+- Lingerie visible (bra straps, panty lines, etc.)
+- Braless appearance
+
+POSE SUGGESTIVENESS:
+- Arched back
+- Bent forward
+- Reclining position
+- Spread legs (subtle/moderate)
+- Hand placement (on thigh, chest, hip)
+- Hip thrust
+- Provocative angle
+
+SKIN APPEARANCE:
+- Glistening/wet skin
+- Oiled skin
+- Flushed cheeks
+- Visible body contours
+
+EXPRESSION:
+- Bedroom eyes/half-lidded gaze
+- Parted lips
+- Lip bite
+- Seductive expression/gaze
+
+Output JSON:
+{
+  "exposed_areas": ["<list specific areas>"],
+  "clothing_revealing": ["<list revealing clothing aspects>"],
+  "pose_suggestive": ["<list suggestive pose elements>"],
+  "skin_appearance": ["<list skin characteristics>"],
+  "expression": ["<list seductive expression elements>"],
+  "prompt_description": "<concise description of all NSFW elements for image generation>"
+}
+
+ONLY describe what is actually visible. Do NOT invent or hallucinate elements.
+"""
+
+[nsfw_details.standard]
+prompt = """
+Describe any revealing or suggestive elements visible:
+
+SKIN EXPOSURE:
+- Which skin areas are exposed? (sideboob, underboob, cleavage, bare shoulders, back, midriff, thighs)
+- How much cleavage? (subtle, moderate, deep)
+
+CLOTHING:
+- Is fabric see-through or sheer?
+- Is neckline low-cut or plunging?
+- Is there a high slit?
+- Is clothing tight/form-fitting?
+- Is any underwear visible?
+
+POSE:
+- Is the pose suggestive? (arched back, bent forward, reclining)
+- Where are hands placed?
+
+EXPRESSION:
+- Is expression seductive? (bedroom eyes, parted lips, lip bite)
+
+Be specific and factual. Only describe what's visible.
+"""
+
+[nsfw_details.basic]
+prompt = "Describe revealing elements: exposed skin (sideboob, underboob, cleavage, bare shoulders, midriff, thighs), see-through clothing, low neckline, high slit, tight fit, suggestive pose (arched back, reclining), seductive expression (bedroom eyes, parted lips). Only describe what you can see."
+
+
+# =============================================================================
 # ANALYSIS MODE CONFIGURATIONS
 # =============================================================================
 # Which components to analyze for each mode
