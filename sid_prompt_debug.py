@@ -307,12 +307,22 @@ Look at the SOURCE image and write a complete, improved prompt that addresses al
         """Route to appropriate LLM provider."""
         if provider == "anthropic":
             return cls._call_anthropic(api_key, model, system, user, img1_b64, img2_b64)
-        elif provider in ["openai", "groq", "together", "fireworks", "openrouter"]:
+        elif provider in ["openai", "groq", "together", "fireworks", "openrouter", "gemini", "mistral", "deepseek", "cerebras", "xai"]:
             return cls._call_openai_compatible(api_key, api_url, model, system, user, img1_b64, img2_b64)
         elif provider in ["ollama", "lmstudio"]:
             return cls._call_local_api(api_url, model, system, user, img1_b64, img2_b64)
+        elif provider == "local":
+            # Local transformers models - try to use API URL if available, otherwise error
+            if api_url:
+                return cls._call_local_api(api_url, model, system, user, img1_b64, img2_b64)
+            else:
+                raise ValueError(
+                    f"Debug evaluation requires an API-based model. "
+                    f"Local transformers model '{model}' doesn't support multi-image comparison. "
+                    f"Please use Ollama, LM Studio, or a cloud provider (Anthropic, OpenAI, etc.) for debug evaluation."
+                )
         else:
-            raise ValueError(f"Unsupported provider for debug: {provider}")
+            raise ValueError(f"Unsupported provider for debug: {provider}. Supported: anthropic, openai, groq, together, fireworks, openrouter, ollama, lmstudio")
 
     @classmethod
     def _call_anthropic(cls, api_key: str, model: str, system: str, user: str, img1_b64: str, img2_b64: str) -> str:
