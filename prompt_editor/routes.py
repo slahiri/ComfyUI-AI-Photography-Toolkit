@@ -10,11 +10,15 @@ from pathlib import Path
 from datetime import datetime
 from aiohttp import web
 
-# Get the config/prompts directory
+# Get the config directories
 TOOLKIT_DIR = Path(__file__).parent.parent
-PROMPTS_DIR = TOOLKIT_DIR / "config" / "prompts"
-BACKUP_DIR = TOOLKIT_DIR / "config" / "prompts_backup"
+CONFIG_DIR = TOOLKIT_DIR / "config"
+PROMPTS_DIR = CONFIG_DIR / "prompts"
+BACKUP_DIR = CONFIG_DIR / "prompts_backup"
 DEBUG_RESULTS_DIR = TOOLKIT_DIR / "debug_results"
+
+# TOML files to show in editor (from config/ root)
+CONFIG_TOML_FILES = ["components.toml", "providers.toml", "filters.toml"]
 
 
 def setup_routes(routes):
@@ -27,29 +31,65 @@ def setup_routes(routes):
 
     @routes.get("/sid/prompt-editor/api/files")
     async def list_files(request):
-        """List all TOML files in the prompts directory."""
+        """List all TOML files (config/ root + config/prompts/)."""
         files = []
+
+        # First: config/*.toml (components, providers, filters)
+        if CONFIG_DIR.exists():
+            for name in CONFIG_TOML_FILES:
+                f = CONFIG_DIR / name
+                if f.exists():
+                    files.append({
+                        "name": f"[config] {f.name}",
+                        "filename": f.name,
+                        "dir": "config",
+                        "path": str(f.relative_to(TOOLKIT_DIR)),
+                        "size": f.stat().st_size,
+                        "modified": datetime.fromtimestamp(f.stat().st_mtime).isoformat()
+                    })
+
+        # Then: config/prompts/*.toml
         if PROMPTS_DIR.exists():
             for f in sorted(PROMPTS_DIR.glob("*.toml")):
                 files.append({
                     "name": f.name,
+                    "filename": f.name,
+                    "dir": "prompts",
                     "path": str(f.relative_to(TOOLKIT_DIR)),
                     "size": f.stat().st_size,
                     "modified": datetime.fromtimestamp(f.stat().st_mtime).isoformat()
                 })
+
         return web.json_response({"files": files})
+
+    def _resolve_filepath(filename: str, directory: str = None):
+        """Resolve filepath based on directory hint or search both."""
+        if not filename.endswith(".toml"):
+            return None
+
+        # If directory specified, use it
+        if directory == "config":
+            return CONFIG_DIR / filename
+        elif directory == "prompts":
+            return PROMPTS_DIR / filename
+
+        # Search in both directories
+        if filename in CONFIG_TOML_FILES:
+            return CONFIG_DIR / filename
+        return PROMPTS_DIR / filename
 
     @routes.get("/sid/prompt-editor/api/file/{filename}")
     async def get_file(request):
         """Get contents of a specific TOML file."""
         filename = request.match_info["filename"]
+        directory = request.query.get("dir", None)
 
-        # Security: only allow .toml files in prompts directory
+        # Security: only allow .toml files
         if not filename.endswith(".toml"):
             return web.json_response({"error": "Only .toml files allowed"}, status=400)
 
-        filepath = PROMPTS_DIR / filename
-        if not filepath.exists():
+        filepath = _resolve_filepath(filename, directory)
+        if not filepath or not filepath.exists():
             return web.json_response({"error": "File not found"}, status=404)
 
         try:
@@ -71,11 +111,14 @@ def setup_routes(routes):
         if not filename.endswith(".toml"):
             return web.json_response({"error": "Only .toml files allowed"}, status=400)
 
-        filepath = PROMPTS_DIR / filename
-
         try:
             data = await request.json()
             content = data.get("content", "")
+            directory = data.get("dir", None)
+
+            filepath = _resolve_filepath(filename, directory)
+            if not filepath:
+                return web.json_response({"error": "Invalid file"}, status=400)
 
             # Validate TOML syntax using tomlkit (preserves comments)
             try:
@@ -112,11 +155,20 @@ def setup_routes(routes):
         import subprocess
 
         filename = request.match_info["filename"]
+        directory = request.query.get("dir", None)
 
         if not filename.endswith(".toml"):
             return web.json_response({"error": "Only .toml files allowed"}, status=400)
 
-        relative_path = f"config/prompts/{filename}"
+        filepath = _resolve_filepath(filename, directory)
+        if not filepath:
+            return web.json_response({"error": "Invalid file"}, status=400)
+
+        # Determine relative path for git
+        if filename in CONFIG_TOML_FILES:
+            relative_path = f"config/{filename}"
+        else:
+            relative_path = f"config/prompts/{filename}"
 
         try:
             # Get content from git HEAD
@@ -136,7 +188,6 @@ def setup_routes(routes):
             original_content = result.stdout
 
             # Backup current version
-            filepath = PROMPTS_DIR / filename
             if filepath.exists():
                 BACKUP_DIR.mkdir(exist_ok=True)
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -412,6 +463,7 @@ def get_editor_html():
     <script>
         let editor = null;
         let currentFile = null;
+        let currentDir = null;
         let originalContent = '';
         let isModified = false;
 
@@ -482,7 +534,7 @@ def get_editor_html():
                 }
 
                 list.innerHTML = data.files.map(f => `
-                    <div class="file-item" data-file="${f.name}" onclick="loadFile('${f.name}')">
+                    <div class="file-item" data-file="${f.filename}" data-dir="${f.dir}" onclick="loadFile('${f.filename}', '${f.dir}')">
                         <span class="file-icon">📄</span>
                         <span>${f.name}</span>
                     </div>
@@ -493,7 +545,7 @@ def get_editor_html():
             }
         }
 
-        async function loadFile(filename) {
+        async function loadFile(filename, dir) {
             if (isModified && !confirm('You have unsaved changes. Discard them?')) {
                 return;
             }
@@ -501,7 +553,7 @@ def get_editor_html():
             setStatus('Loading...', '');
 
             try {
-                const res = await fetch(`/sid/prompt-editor/api/file/${filename}`);
+                const res = await fetch(`/sid/prompt-editor/api/file/${filename}?dir=${dir}`);
                 const data = await res.json();
 
                 if (data.error) {
@@ -510,19 +562,21 @@ def get_editor_html():
                 }
 
                 currentFile = filename;
+                currentDir = dir;
                 originalContent = data.content;
                 editor.setValue(data.content);
                 setModified(false);
 
                 // Update UI
+                const displayName = dir === 'config' ? `[config] ${filename}` : filename;
                 document.getElementById('toolbarTitle').innerHTML =
-                    `Editing: <strong>${filename}</strong>`;
+                    `Editing: <strong>${displayName}</strong>`;
                 document.getElementById('saveBtn').disabled = true;
                 document.getElementById('resetBtn').disabled = false;
 
                 // Highlight active file
                 document.querySelectorAll('.file-item').forEach(el => {
-                    el.classList.toggle('active', el.dataset.file === filename);
+                    el.classList.toggle('active', el.dataset.file === filename && el.dataset.dir === dir);
                 });
 
                 setStatus(`Loaded ${filename}`, 'success');
@@ -541,7 +595,7 @@ def get_editor_html():
                 const res = await fetch(`/sid/prompt-editor/api/file/${currentFile}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: editor.getValue() })
+                    body: JSON.stringify({ content: editor.getValue(), dir: currentDir })
                 });
                 const data = await res.json();
 
@@ -569,7 +623,7 @@ def get_editor_html():
             setStatus('Resetting...', '');
 
             try {
-                const res = await fetch(`/sid/prompt-editor/api/reset/${currentFile}`, {
+                const res = await fetch(`/sid/prompt-editor/api/reset/${currentFile}?dir=${currentDir}`, {
                     method: 'POST'
                 });
                 const data = await res.json();
