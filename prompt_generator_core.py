@@ -1115,7 +1115,9 @@ class LLMClient:
                 return result.strip()
 
         except Exception as e:
+            import traceback
             print(f"[LLM] Vision call failed: {e}")
+            traceback.print_exc()
             return ""
 
     def call_text(self, system_prompt: str, user_prompt: str, max_tokens: int = 500) -> str:
