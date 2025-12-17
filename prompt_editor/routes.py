@@ -881,6 +881,7 @@ def get_debug_viewer_html():
         .tag-missing { color: #f44336; }
         .tag-hallucinated { color: #ff9800; }
         .tag-detected { color: #4caf50; }
+        .tag-issue { color: #2196f3; }
         /* Recommendations */
         .recommendations-list {
             list-style: decimal;
@@ -987,10 +988,14 @@ def get_debug_viewer_html():
 
         function renderSession(data) {
             const scores = data.scores || {};
-            const analysis = data.analysis || {};
             const images = data.images || {};
             const prompt = data.inputs?.prompt?.content || '';
             const improvedPrompt = data.improved_prompt || '';
+            // Fields can be at top level or under analysis (handle both)
+            const issues = data.issues || data.analysis?.issues || [];
+            const missingElements = data.missing_elements || data.analysis?.missing_elements || [];
+            const hallucinatedElements = data.hallucinated_elements || data.analysis?.hallucinated_elements || [];
+            const recommendations = data.recommendations || data.analysis?.recommendations || [];
 
             let html = '';
 
@@ -1049,28 +1054,42 @@ def get_debug_viewer_html():
                 `;
             }
 
-            // Analysis - Missing Elements
-            if (analysis.missing_elements && analysis.missing_elements.length > 0) {
+            // Issues
+            if (issues.length > 0) {
                 html += `
                     <div class="analysis-section">
-                        <h3>Missing Elements</h3>
+                        <h3>Issues Found</h3>
                         <div class="analysis-content">
                             <ul class="analysis-list">
-                                ${analysis.missing_elements.map(e => `<li class="tag-missing">❌ ${escapeHtml(e)}</li>`).join('')}
+                                ${issues.map(e => `<li class="tag-issue">⚡ ${escapeHtml(e)}</li>`).join('')}
                             </ul>
                         </div>
                     </div>
                 `;
             }
 
-            // Analysis - Hallucinated Elements
-            if (analysis.hallucinated_elements && analysis.hallucinated_elements.length > 0) {
+            // Missing Elements
+            if (missingElements.length > 0) {
+                html += `
+                    <div class="analysis-section">
+                        <h3>Missing Elements</h3>
+                        <div class="analysis-content">
+                            <ul class="analysis-list">
+                                ${missingElements.map(e => `<li class="tag-missing">❌ ${escapeHtml(e)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Hallucinated Elements
+            if (hallucinatedElements.length > 0) {
                 html += `
                     <div class="analysis-section">
                         <h3>Hallucinated Elements</h3>
                         <div class="analysis-content">
                             <ul class="analysis-list">
-                                ${analysis.hallucinated_elements.map(e => `<li class="tag-hallucinated">⚠️ ${escapeHtml(e)}</li>`).join('')}
+                                ${hallucinatedElements.map(e => `<li class="tag-hallucinated">⚠️ ${escapeHtml(e)}</li>`).join('')}
                             </ul>
                         </div>
                     </div>
@@ -1078,14 +1097,32 @@ def get_debug_viewer_html():
             }
 
             // Recommendations
-            if (data.recommendations && data.recommendations.length > 0) {
+            if (recommendations.length > 0) {
                 html += `
                     <div class="analysis-section">
                         <h3>Recommendations</h3>
                         <div class="analysis-content">
                             <ol class="recommendations-list">
-                                ${data.recommendations.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
+                                ${recommendations.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
                             </ol>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Metadata (evaluator, timing, api_calls)
+            const evaluator = data.evaluator || {};
+            const timing = data.timing || {};
+            const apiCalls = data.api_calls;
+            if (evaluator.model || timing.total_seconds || apiCalls) {
+                html += `
+                    <div class="analysis-section">
+                        <h3>Evaluation Metadata</h3>
+                        <div class="analysis-content" style="font-size: 12px; color: #888;">
+                            ${evaluator.provider ? `<div>Provider: ${escapeHtml(evaluator.provider)}</div>` : ''}
+                            ${evaluator.model ? `<div>Model: ${escapeHtml(evaluator.model)}</div>` : ''}
+                            ${apiCalls ? `<div>API Calls: ${apiCalls}</div>` : ''}
+                            ${timing.total_seconds ? `<div>Time: ${timing.total_seconds.toFixed(2)}s</div>` : ''}
                         </div>
                     </div>
                 `;
