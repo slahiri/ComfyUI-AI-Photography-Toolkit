@@ -474,6 +474,22 @@ Look at the SOURCE image and write a complete, improved prompt that addresses al
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(model_config, f, indent=2)
 
+        # Save source image
+        try:
+            source_pil = cls._tensor_to_pil(source_image)
+            source_path = session_dir / "source.jpg"
+            source_pil.save(source_path, "JPEG", quality=90)
+        except Exception as e:
+            print(f"[SID-Debug] Warning: Could not save source image: {e}")
+
+        # Save output image
+        try:
+            output_pil = cls._tensor_to_pil(output_image)
+            output_path = session_dir / "output.jpg"
+            output_pil.save(output_path, "JPEG", quality=90)
+        except Exception as e:
+            print(f"[SID-Debug] Warning: Could not save output image: {e}")
+
         print(f"[SID-Debug] Results saved to: {session_dir}")
 
     @classmethod
@@ -508,6 +524,24 @@ Look at the SOURCE image and write a complete, improved prompt that addresses al
             config["metadata"] = llm_model.metadata
 
         return config
+
+    @classmethod
+    def _tensor_to_pil(cls, tensor):
+        """Convert ComfyUI tensor to PIL Image."""
+        from PIL import Image
+        import numpy as np
+
+        if tensor is None:
+            return None
+
+        # Handle batched tensor (B, H, W, C)
+        if len(tensor.shape) == 4:
+            tensor = tensor[0]
+
+        # Convert to numpy and scale to 0-255
+        np_image = (tensor.cpu().numpy() * 255).astype(np.uint8)
+
+        return Image.fromarray(np_image)
 
     @classmethod
     def _extract_score(cls, evaluation: Dict[str, Any]) -> float:
