@@ -194,154 +194,10 @@ ALWAYS SPECIFY:
 """
 
 # =============================================================================
-# Prompt Templates
+# Config Wrapper Functions - TOML is the single source of truth
 # =============================================================================
-
-ZIMAGE_SYSTEM_RULES = """
-OUTPUT FORMAT: Write as flowing natural language, NOT keyword lists.
-
-STRUCTURE YOUR DESCRIPTION:
-1. Frame style and shot type (e.g., "A selfie-style close-up...", "A professional portrait...", "A candid medium shot...")
-2. Subject details (face, body, clothing, pose if human; or main subject if scene)
-3. Lighting quality, direction, and SOURCE (e.g., "natural window light from the left", "soft diffused daylight")
-4. Background and environment
-5. Technical notes (depth of field, etc.)
-
-CRITICAL DETAILS FOR PORTRAITS:
-- ETHNICITY/ANCESTRY: ALWAYS identify first - be specific: East Asian (Chinese, Japanese, Korean, Vietnamese), South Asian (Indian, Pakistani, Bengali), Southeast Asian (Thai, Filipino, Indonesian), Middle Eastern, African, African American, Caribbean, Latino/Hispanic, Caucasian/European (Northern, Southern, Eastern European), Mixed heritage. Describe facial features that indicate ethnicity.
-- SHOT TYPE/FRAMING (MUST specify exactly where body is cropped):
-  * EXTREME CLOSE-UP: Face only, cropped at forehead and chin
-  * CLOSE-UP/HEADSHOT: Head and neck, cropped at shoulders
-  * MEDIUM CLOSE-UP: Head to chest, cropped at chest/bust level
-  * MEDIUM SHOT: Head to waist, cropped at waist
-  * COWBOY SHOT: Head to mid-thigh, cropped at mid-thigh
-  * FULL BODY: Head to feet, entire body visible including feet
-  * WIDE SHOT: Full body with significant environment visible
-  IMPORTANT: State exactly where the frame cuts off (e.g., "cropped at mid-thigh", "full body with feet visible")
-- SELFIE DETECTION: If selfie - arm extended, phone/camera angle, front-facing camera, above eye level. State "selfie-style" and "eyes looking directly at camera"
-- EYES: Describe eye color, iris detail/pattern, shape (almond, round, hooded, monolid, double-lid), expression, catchlights, gaze direction
-- EYELASHES: Color (black, brown, blonde), style (natural, long, thick, curled, sparse), any mascara effect
-- EYEBROWS: Shape (arched, straight, rounded, angular), thickness, color, groomed/natural, any gaps or asymmetry
-- SKIN TEXTURE: Skin tone (fair, light, medium, olive, tan, brown, dark brown, deep), visible details - freckles (location, density), dimples (cheeks, chin), wrinkles/fine lines (forehead, crow's feet, smile lines), pores, moles, blemishes, skin smoothness or roughness
-- BODY DEFINITION: If visible, describe muscle definition - abs/midriff cuts (six-pack, four-pack, toned), chest definition, arm muscle tone (biceps, triceps), shoulder definition, back muscles. NAVEL: shape (round, vertical, horizontal, outie/innie), depth, surrounding area
-- HAIR: Describe hairstyle (length, texture, layers, parting), hair color with highlights/lowlights, how it frames the face
-- MAKEUP: If visible, describe in detail - eyeshadow color, eyeliner style, mascara, blush placement, foundation coverage, contouring
-- LIPS: Exact color/shade (nude, pink, red, burgundy, coral, mauve), finish (matte, glossy, satin), lip texture (smooth, chapped, dry lines, natural creases), lip shape and fullness
-- LIGHTING SOURCE: Always identify WHERE the light comes from (window, overhead, artificial), direction (left/right/front/back), quality (soft/hard/diffused)
-- COSTUME/UNIFORM: ALWAYS identify recognizable uniforms or costumes FIRST with SPECIFIC TYPE:
-  * Religious: Roman Catholic nun habit (black/white), Dominican nun (white habit), Carmelite nun (brown), stylized/sexy nun (crop top variant)
-  * Medical: traditional white nurse, modern scrubs nurse (blue/green/pink), vintage pin-up nurse, sexy nurse, white lab coat, surgical scrubs
-  * Service: French maid (black/white apron), Victorian housemaid, Japanese maid cafe, sexy maid, vintage stewardess, modern flight attendant
-  * Military/Law: US Police (dark blue), UK Police (black, helmet), SWAT (tactical black), sexy cop, US Army camo, US Navy (white dress/blue working), dress uniform vs combat
-  * School: Japanese sailor fuku, Japanese blazer style, British school uniform, Catholic school (plaid), Korean school, sexy schoolgirl, cheerleader
-  * Sports: gym attire, yoga outfit, tennis whites, one-piece swimsuit, bikini, volleyball uniform
-  * Fantasy: Playboy bunny (ears, leotard), catsuit/latex, angel (white, wings), devil (red, horns), cat girl
-  * Cultural: kimono/yukata, cheongsam/qipao, saree/lehenga, hanbok, dirndl, belly dancer
-  * Professional: business suit (black/navy), secretary (pencil skirt), chef whites, pilot uniform
-  ALWAYS specify: exact type, color scheme, traditional/modern/stylized/sexy variant, any modifications (crop top, exposed midriff).
-- CLOTHING CONSTRUCTION & LAYERS (CRITICAL for accurate recreation):
-  * COLOR: EXACT color of EACH garment piece - be specific (jet black, charcoal gray, cream white, ivory, navy blue, burgundy, forest green, etc.) Include color variations within same garment (ombre, two-tone, color blocking)
-  * FABRIC/MATERIAL: cotton, silk, satin, velvet, leather, latex, lace, mesh, sheer, denim, wool, knit/ribbed, jersey, chiffon, sequined, metallic
-  * TEXTURE/FINISH: matte, shiny/glossy, textured, smooth, ribbed, quilted, pleated, ruched
-  * GARMENT TYPE: fitted/form-fitting vs loose/open/flowy, structured vs unstructured
-  * LAYERING ORDER: describe from innermost to outermost WITH COLORS (e.g., "cream white ribbed turtleneck undershirt UNDER fitted jet black crop top")
-  * NECKLINE: crew neck, scoop neck, v-neck, deep v, turtleneck/mock neck, off-shoulder, sweetheart, square, halter, strapless
-  * HEM/LENGTH: cropped at midriff (crop top), cropped below bust, waist-length, hip-length, full-length, asymmetrical hem
-  * SLEEVES: sleeveless, cap sleeve, short sleeve, 3/4 sleeve, long sleeve, bell sleeve, tight-fitted vs loose sleeves
-  * FIT: body-hugging/skin-tight, fitted, semi-fitted, relaxed, loose, oversized
-  * CLOSURE: pullover (no opening), front-zip, back-zip, buttons down front, wrap style, open front (cardigan/robe style)
-  * CONSTRUCTION: is it ONE PIECE (dress, jumpsuit, bodysuit) or SEPARATE PIECES (top + bottom, layered tops)?
-  * PATTERNS: solid, striped (width, direction), plaid/tartan, floral, polka dot, animal print, geometric, abstract
-- CLOTHING STATE: buttons open/closed, collar up/down, sleeves rolled/unrolled, shirt tucked/untucked, zippers open/closed, ties loosened, exposed midriff, visible undershirt/layer
-- BEVERAGES/LIQUIDS: If visible, describe liquid color accurately - red wine (deep burgundy), white wine (pale gold), beer (amber), coffee (dark brown), water (clear), cocktails (specific colors)
-- ATMOSPHERIC EFFECTS: If present, describe any smoke, steam, vapor, mist, fog, dust particles, or haze - especially rising steam from cups/beverages, cigarette smoke, breath vapor, etc.
-
-DO:
-- Write complete, flowing sentences
-- ALWAYS start with ethnicity/ancestry - be specific, not vague
-- Use specific visual vocabulary (colors, textures, materials)
-- Describe lighting direction, quality, AND source explicitly
-- Include camera/lens references when relevant
-- Be extremely specific about ethnicity, eyes, eyelashes, eyebrows, skin tone/texture, hair, makeup, and lips
-- Identify selfie vs professional vs candid photo style
-- Note any freckles, dimples, wrinkles, or unique skin features
-
-DO NOT:
-- Use comma-separated keyword lists
-- Include quality tags: "8K", "masterpiece", "best quality", "ultra detailed"
-- Use vague adjectives: "beautiful", "stunning", "amazing", "perfect"
-- Add negative prompts (except "no text, no watermark" at end)
-- Reference AI generation or model names
-- Write philosophical/spiritual/narrative commentary
-- Include metaphors about life, death, eternity, or cosmic themes
-- Add business/corporate jargon
-- Repeat the same information multiple times
-- Write one extremely long run-on sentence
-
-SENTENCE STRUCTURE:
-- Write 3-6 clear, distinct sentences
-- Each sentence should describe ONE aspect (subject, clothing, lighting, background)
-- Keep sentences focused and factual
-- STOP when you have described all visible elements - do not add commentary
-
-END WITH: "no text, no watermark"
-"""
-
-ZIMAGE_SCENE_RULES = """
-IMPORTANT: There are NO people in this image. Do NOT describe any humans, persons,
-faces, bodies, or human-related elements.
-
-FIRST: Identify if this is an ANIMAL subject or LANDSCAPE/SCENE.
-
-═══════════════════════════════════════════════════════════════════════════════
-ANIMAL/WILDLIFE SUBJECTS - If an animal is the main subject:
-═══════════════════════════════════════════════════════════════════════════════
-- SPECIES: Be specific (reticulated giraffe, African elephant, Bengal tiger, red fox, bald eagle)
-- AGE: adult, juvenile, calf, fawn, cub, chick
-- VIEW: front-facing, profile view, three-quarter view, from behind
-- EYE CONTACT: looking directly at camera, looking away, eyes closed
-- FEATURES: distinctive markings, patterns, horns, tusks, mane, spots, stripes, feathers
-- POSE: standing, sitting, lying, running, grazing, alert posture
-- EXPRESSION: calm, alert, curious, aggressive
-- TEXTURE: fur texture (sleek, fluffy, coarse), feather details, skin texture
-- Example: "adult reticulated giraffe in three-quarter view, distinctive orange-brown patches with cream borders, long neck extended, large dark eyes with long eyelashes looking at camera"
-
-═══════════════════════════════════════════════════════════════════════════════
-SHOT TYPE AND FRAMING (specify for all subjects):
-═══════════════════════════════════════════════════════════════════════════════
-- EXTREME CLOSE-UP: Only face/head visible, fills most of frame
-- CLOSE-UP: Head and partial neck visible
-- MEDIUM CLOSE-UP: Head and full neck, partial body
-- MEDIUM SHOT: Upper body visible
-- FULL BODY: Entire animal/subject visible
-- WIDE SHOT: Subject small in frame, environment dominant
-- DETAIL SHOT: Specific body part (eye, paw, feather, etc.)
-
-═══════════════════════════════════════════════════════════════════════════════
-LANDSCAPE/SCENE SUBJECTS:
-═══════════════════════════════════════════════════════════════════════════════
-Focus on:
-- Terrain type (mountains, water, desert, forest, coastal)
-- Specific colors and textures
-- Lighting, atmosphere, mood
-- Composition (foreground, midground, background)
-
-DO NOT:
-- Write philosophical/spiritual commentary
-- Add metaphors or symbolic interpretations
-- Include narrative storytelling
-- Repeat information multiple times
-
-SENTENCE STRUCTURE:
-- Write 3-5 clear, factual sentences
-- Each sentence describes ONE aspect
-- STOP when all visible elements are described
-"""
-
-
-# =============================================================================
-# Config Wrapper Functions (use TOML if available, else defaults)
-# =============================================================================
+# All prompts are loaded from config/prompts/*.toml files via config_loader.
+# Minimal inline fallbacks are provided only if config_loader fails to import.
 
 def get_provider_tier(provider: str) -> str:
     """Get provider tier from config or default."""
@@ -357,33 +213,35 @@ def get_provider_tier(provider: str) -> str:
 
 
 def get_system_prompt(tier: str) -> str:
-    """Get system prompt from config or default."""
+    """Get system prompt from config. TOML is the single source of truth."""
     if _CONFIG_AVAILABLE and _config_loader:
         return _config_loader.get_system_prompt(tier)
-    # Fallback defaults
-    return ZIMAGE_SYSTEM_RULES
+    # Minimal fallback if config_loader unavailable
+    return "Describe this image for AI image generation. Write flowing natural language, not keyword lists."
 
 
 def get_user_prompt(tier: str, mode: str) -> str:
-    """Get user prompt from config or default."""
+    """Get user prompt from config. TOML is the single source of truth."""
     if _CONFIG_AVAILABLE and _config_loader:
         return _config_loader.get_user_prompt(tier, mode)
-    # Fallback - return empty (will use built-in)
-    return ""
+    # Minimal fallback
+    return "Describe this image in detail for AI recreation."
 
 
 def get_scene_system_prompt() -> str:
-    """Get scene-only system prompt from config or default."""
+    """Get scene-only system prompt from config. TOML is the single source of truth."""
     if _CONFIG_AVAILABLE and _config_loader:
         return _config_loader.get_scene_only_system_prompt()
-    return ZIMAGE_SCENE_RULES
+    # Minimal fallback
+    return "Describe this scene for AI image generation. There are NO people in this image."
 
 
 def get_scene_user_prompt(mode: str) -> str:
-    """Get scene-only user prompt from config or default."""
+    """Get scene-only user prompt from config. TOML is the single source of truth."""
     if _CONFIG_AVAILABLE and _config_loader:
         return _config_loader.get_scene_only_user_prompt(mode)
-    return ""
+    # Minimal fallback
+    return "Describe this scene in detail. NO humans."
 
 
 def get_length_constraint(prompt_length: int) -> str:
@@ -1643,7 +1501,7 @@ OUTPUT the enhanced prompt only:"""
         return result
 
     def _build_prompts(self, has_human: bool, cv_analysis: Dict, user_guidance: str) -> Tuple[str, str]:
-        """Build system and user prompts from TOML config or fallback defaults."""
+        """Build system and user prompts from TOML config (single source of truth)."""
         tier = get_provider_tier(self.config.provider)
         length_constraint = get_length_constraint(self.prompt_length)
 
@@ -1660,140 +1518,21 @@ CV ANALYSIS (use as guidance):
 """
 
         if has_human:
-            # Try to get from TOML config
-            system_base = get_system_prompt(tier)
-            user_base = get_user_prompt(tier, self.analysis_mode)
-
-            # Build system prompt
-            if system_base and system_base != ZIMAGE_SYSTEM_RULES:
-                # Use TOML config
-                system_prompt = system_base
-                if length_constraint:
-                    system_prompt += f"\n\n{length_constraint}"
-            else:
-                # Fallback to built-in
-                system_prompt = f"""You are an expert at writing prompts for AI image generation.
-Describe this image of a person for AI image recreation.
-
-{ZIMAGE_SYSTEM_RULES}
-
-{length_constraint}"""
-
-            # Build user prompt
-            if user_base:
-                # Use TOML config
-                user_prompt = user_base
-                if cv_hints:
-                    user_prompt = f"{cv_hints}\n\n{user_prompt}"
-            else:
-                # Fallback to built-in
-                user_prompt = f"""Describe this image in detail for AI image recreation.
-{cv_hints}
-
-CRITICAL - Describe these in DETAIL (in order):
-1. ETHNICITY/ANCESTRY: MUST identify FIRST - be SPECIFIC: East Asian (Chinese/Japanese/Korean/Vietnamese), South Asian (Indian/Pakistani/Bengali), Southeast Asian (Thai/Filipino/Indonesian), Middle Eastern, African, African American, Latino/Hispanic, Caucasian/European (specify region if possible), Mixed heritage. Note facial features that indicate ethnicity.
-2. SHOT TYPE/FRAMING (CRITICAL - state exactly what body parts are visible and where frame cuts off):
-   - EXTREME CLOSE-UP: Face only (cropped at forehead/chin)
-   - CLOSE-UP/HEADSHOT: Head and neck (cropped at shoulders)
-   - MEDIUM CLOSE-UP: Head to chest (cropped at chest/bust)
-   - MEDIUM SHOT: Head to waist (cropped at waist)
-   - COWBOY SHOT: Head to mid-thigh (cropped at mid-thigh)
-   - FULL BODY: Head to feet (entire body visible, feet visible)
-   State: "cropped at [body part]" or "full body with feet visible"
-3. SELFIE: Is this a selfie? Look for: arm extended, phone/camera angle, above eye level. If yes: state "selfie-style photo" and "eyes looking directly at camera".
-4. EYES: exact color, iris pattern, shape (almond/round/hooded/monolid/double-lid), expression, where they're looking, catchlights
-5. EYELASHES: color (black/brown/blonde), style (natural/long/thick/curled/sparse), mascara effect if visible
-6. EYEBROWS: shape (arched/straight/rounded/angular), thickness, color, groomed or natural
-7. SKIN: tone (fair/light/medium/olive/tan/brown/dark brown/deep), texture - freckles, dimples, wrinkles/fine lines, pores, moles
-8. HAIR: exact style (length, layers, texture, parting, how it falls), color with any highlights/lowlights
-9. MAKEUP: eyeshadow color/style, eyeliner, blush, foundation, contouring - if visible
-10. LIPS: exact shade (nude/pink/red/burgundy/coral/mauve), finish (matte/glossy/satin), lip texture (smooth/chapped/dry lines), shape and fullness
-11. LIGHTING SOURCE: WHERE does light come from (window/lamp/overhead/natural), direction, quality (soft/hard/diffused), shadows
-12. COSTUME/UNIFORM: If wearing a recognizable uniform or costume, NAME IT FIRST (nun habit, nurse uniform, doctor coat, maid outfit, police uniform, schoolgirl uniform, etc.). Then note if traditional/modern/stylized/sexy variant. Don't over-describe - just identify it clearly.
-13. CLOTHING CONSTRUCTION & LAYERS (CRITICAL):
-    - COLOR: EXACT color of EACH piece (jet black, charcoal, cream white, ivory, navy, burgundy - be specific)
-    - FABRIC: cotton, silk, satin, velvet, leather, latex, lace, mesh, sheer, denim, wool, knit/ribbed, jersey
-    - TEXTURE: matte, shiny/glossy, smooth, ribbed, quilted, pleated
-    - PATTERN: solid, striped, plaid, floral, polka dot, animal print
-    - GARMENT TYPE: Is it fitted/form-fitting or loose/open? (e.g., "fitted crop top" NOT "open robe")
-    - LAYERING: Describe what's under what WITH COLORS (e.g., "cream ribbed turtleneck UNDER fitted jet black crop top")
-    - NECKLINE: crew/scoop/v-neck/turtleneck/off-shoulder/sweetheart/halter
-    - HEM/LENGTH: cropped at midriff, waist-length, hip-length, full-length
-    - SLEEVES: sleeveless/cap/short/3-4/long, tight or loose
-    - FIT: skin-tight, fitted, semi-fitted, loose, oversized
-    - CLOSURE: pullover (no opening) vs open-front (cardigan/robe style) vs buttoned vs zipped
-14. CLOTHING STATE: buttons open/closed, collar position, sleeves rolled/unrolled, tucked/untucked
-15. BEVERAGES/LIQUIDS: if visible, exact color - red wine (burgundy), white wine (pale gold), beer (amber), coffee (brown), water (clear)
-16. ATMOSPHERIC EFFECTS: steam rising from cups/beverages, smoke, vapor, mist, fog, dust particles
-
-Also describe:
-17. Face: structure, expression, age estimate
-18. BODY DEFINITION: if visible - muscle cuts (abs/midriff definition, chest, arms, shoulders), navel shape (round/vertical/horizontal, innie/outie), body fat percentage appearance
-19. Body: pose, build, posture, visible body parts
-20. FEET/LEGS: If visible, describe shoes/footwear, leg position. If full body, confirm feet are visible.
-21. Clothing details: colors, style, fit, fabric texture (AFTER identifying costume/uniform type and construction)
-22. Objects: items held or nearby with liquid colors and steam effects
-23. Background: setting, colors, depth of field blur
-
-Write as natural flowing language. START WITH: 1) ETHNICITY, 2) SHOT TYPE/FRAMING (state exactly where frame cuts off - "cropped at waist" or "full body with feet visible"), 3) selfie if applicable, then COSTUME/UNIFORM TYPE if applicable, then CLOTHING CONSTRUCTION (fitted vs open, layering, neckline, hem), then eyes, eyelashes, eyebrows, skin tone/texture, body definition, hair, makeup, lips, lighting, clothing state, beverages, and atmospheric effects."""
-
+            # Get prompts from TOML config (portrait.toml)
+            system_prompt = get_system_prompt(tier)
+            user_prompt = get_user_prompt(tier, self.analysis_mode)
         else:
-            # Scene-only prompts (no human)
-            system_base = get_scene_system_prompt()
-            user_base = get_scene_user_prompt(self.analysis_mode)
+            # Get prompts from TOML config (scene.toml)
+            system_prompt = get_scene_system_prompt()
+            user_prompt = get_scene_user_prompt(self.analysis_mode)
 
-            # Build system prompt
-            if system_base and system_base != ZIMAGE_SCENE_RULES:
-                # Use TOML config
-                system_prompt = system_base
-                if length_constraint:
-                    system_prompt += f"\n\n{length_constraint}"
-            else:
-                # Fallback to built-in
-                system_prompt = f"""You are an expert at writing prompts for AI image generation.
-Describe this scene for AI image recreation.
+        # Add length constraint to system prompt
+        if length_constraint:
+            system_prompt += f"\n\n{length_constraint}"
 
-{ZIMAGE_SCENE_RULES}
-
-{ZIMAGE_SYSTEM_RULES}
-
-{length_constraint}"""
-
-            # Build user prompt
-            if user_base:
-                # Use TOML config
-                user_prompt = user_base
-                if cv_hints:
-                    user_prompt = f"{cv_hints}\n\n{user_prompt}"
-            else:
-                # Fallback to built-in
-                user_prompt = f"""Describe this scene in detail.
-{cv_hints}
-
-CRITICAL - Describe in this order:
-1. SHOT TYPE/FRAMING (MUST specify first):
-   - EXTREME CLOSE-UP: Only face/head fills frame, no neck/body visible
-   - CLOSE-UP: Head and partial neck
-   - MEDIUM CLOSE-UP: Head and full neck, partial body
-   - MEDIUM SHOT: Upper body visible
-   - FULL BODY: Entire subject visible
-   - WIDE SHOT: Subject small in frame, environment dominant
-
-2. IF ANIMAL/WILDLIFE:
-   - Species (be specific: "reticulated giraffe", "African lion", "Bengal tiger")
-   - Age (adult, juvenile, calf)
-   - Pose: front-facing/profile/three-quarter view
-   - Eye contact: looking directly at camera, or looking away
-   - Distinctive features: pattern details, markings, horns, tusks, mane, eyelashes
-
-3. Main subject(s): what dominates the frame
-4. Environment: setting, location type, depth of field blur
-5. Colors: dominant palette, mood
-6. Lighting: time of day (golden hour, midday, overcast), quality, direction
-7. Atmospheric effects: steam, smoke, vapor, mist, fog, haze, dust particles
-
-Remember: NO humans in this image.
-START with shot type/framing, then species if animal, then details. Write as natural flowing language."""
+        # Add CV hints to user prompt
+        if cv_hints:
+            user_prompt = f"{cv_hints}\n\n{user_prompt}"
 
         # Add user guidance if provided
         if user_guidance and user_guidance.strip():
