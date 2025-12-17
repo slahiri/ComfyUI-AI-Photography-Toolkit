@@ -2294,13 +2294,18 @@ class LocalModelClient:
 
         with InferenceProgressSpinner("Generating (Florence-2)"):
             with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    num_beams=1,  # Use greedy decoding - beam search has cache issues with newer transformers
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                )
+                gen_kwargs = {
+                    "max_new_tokens": max_tokens,
+                    "num_beams": 1,  # Use greedy decoding - beam search has cache issues with newer transformers
+                    "repetition_penalty": self.repetition_penalty,
+                }
+                if temperature > 0:
+                    gen_kwargs["do_sample"] = True
+                    gen_kwargs["temperature"] = temperature
+                    gen_kwargs["top_p"] = self.top_p
+                else:
+                    gen_kwargs["do_sample"] = False
+                outputs = self.model.generate(**inputs, **gen_kwargs)
 
         # Decode output
         raw_output = self.processor.batch_decode(outputs, skip_special_tokens=False)[0]
@@ -2379,12 +2384,20 @@ class LocalModelClient:
 
         with InferenceProgressSpinner("Generating (SmolVLM)"):
             with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                )
+                gen_kwargs = {
+                    "max_new_tokens": max_tokens,
+                    "repetition_penalty": self.repetition_penalty,
+                }
+                if self.num_beams > 1:
+                    gen_kwargs["num_beams"] = self.num_beams
+                    gen_kwargs["do_sample"] = False
+                elif temperature > 0:
+                    gen_kwargs["do_sample"] = True
+                    gen_kwargs["temperature"] = temperature
+                    gen_kwargs["top_p"] = self.top_p
+                else:
+                    gen_kwargs["do_sample"] = False
+                outputs = self.model.generate(**inputs, **gen_kwargs)
 
         # Only decode the NEW tokens (exclude the input prompt)
         generated_tokens = outputs[0][input_len:]
@@ -2419,13 +2432,21 @@ class LocalModelClient:
 
         with InferenceProgressSpinner("Generating (LLaVA)"):
             with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                    pad_token_id=self.processor.tokenizer.eos_token_id,
-                )
+                gen_kwargs = {
+                    "max_new_tokens": max_tokens,
+                    "repetition_penalty": self.repetition_penalty,
+                    "pad_token_id": self.processor.tokenizer.eos_token_id,
+                }
+                if self.num_beams > 1:
+                    gen_kwargs["num_beams"] = self.num_beams
+                    gen_kwargs["do_sample"] = False
+                elif temperature > 0:
+                    gen_kwargs["do_sample"] = True
+                    gen_kwargs["temperature"] = temperature
+                    gen_kwargs["top_p"] = self.top_p
+                else:
+                    gen_kwargs["do_sample"] = False
+                outputs = self.model.generate(**inputs, **gen_kwargs)
 
         # Only decode the NEW tokens (exclude input prompt)
         generated_tokens = outputs[0][input_len:]
@@ -2454,12 +2475,20 @@ class LocalModelClient:
 
         with InferenceProgressSpinner("Generating (InternVL2)"):
             with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                )
+                gen_kwargs = {
+                    "max_new_tokens": max_tokens,
+                    "repetition_penalty": self.repetition_penalty,
+                }
+                if self.num_beams > 1:
+                    gen_kwargs["num_beams"] = self.num_beams
+                    gen_kwargs["do_sample"] = False
+                elif temperature > 0:
+                    gen_kwargs["do_sample"] = True
+                    gen_kwargs["temperature"] = temperature
+                    gen_kwargs["top_p"] = self.top_p
+                else:
+                    gen_kwargs["do_sample"] = False
+                outputs = self.model.generate(**inputs, **gen_kwargs)
 
         generated_tokens = outputs[0][input_len:] if input_len > 0 else outputs[0]
         return self.processor.decode(generated_tokens, skip_special_tokens=True)
@@ -2499,12 +2528,20 @@ class LocalModelClient:
 
             with InferenceProgressSpinner("Generating (MiniCPM-V)"):
                 with torch.inference_mode():
-                    outputs = self.model.generate(
-                        **inputs,
-                        max_new_tokens=max_tokens,
-                        do_sample=temperature > 0,
-                        temperature=temperature if temperature > 0 else None,
-                    )
+                    gen_kwargs = {
+                        "max_new_tokens": max_tokens,
+                        "repetition_penalty": self.repetition_penalty,
+                    }
+                    if self.num_beams > 1:
+                        gen_kwargs["num_beams"] = self.num_beams
+                        gen_kwargs["do_sample"] = False
+                    elif temperature > 0:
+                        gen_kwargs["do_sample"] = True
+                        gen_kwargs["temperature"] = temperature
+                        gen_kwargs["top_p"] = self.top_p
+                    else:
+                        gen_kwargs["do_sample"] = False
+                    outputs = self.model.generate(**inputs, **gen_kwargs)
 
             generated_tokens = outputs[0][input_len:] if input_len > 0 else outputs[0]
             return self.processor.decode(generated_tokens, skip_special_tokens=True)
@@ -2529,12 +2566,20 @@ class LocalModelClient:
 
         with InferenceProgressSpinner("Generating (PaliGemma)"):
             with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                )
+                gen_kwargs = {
+                    "max_new_tokens": max_tokens,
+                    "repetition_penalty": self.repetition_penalty,
+                }
+                if self.num_beams > 1:
+                    gen_kwargs["num_beams"] = self.num_beams
+                    gen_kwargs["do_sample"] = False
+                elif temperature > 0:
+                    gen_kwargs["do_sample"] = True
+                    gen_kwargs["temperature"] = temperature
+                    gen_kwargs["top_p"] = self.top_p
+                else:
+                    gen_kwargs["do_sample"] = False
+                outputs = self.model.generate(**inputs, **gen_kwargs)
 
         generated_tokens = outputs[0][input_len:]
         return self.processor.decode(generated_tokens, skip_special_tokens=True)
@@ -2568,12 +2613,20 @@ class LocalModelClient:
 
         with InferenceProgressSpinner("Generating (Llama-Vision)"):
             with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                )
+                gen_kwargs = {
+                    "max_new_tokens": max_tokens,
+                    "repetition_penalty": self.repetition_penalty,
+                }
+                if self.num_beams > 1:
+                    gen_kwargs["num_beams"] = self.num_beams
+                    gen_kwargs["do_sample"] = False
+                elif temperature > 0:
+                    gen_kwargs["do_sample"] = True
+                    gen_kwargs["temperature"] = temperature
+                    gen_kwargs["top_p"] = self.top_p
+                else:
+                    gen_kwargs["do_sample"] = False
+                outputs = self.model.generate(**inputs, **gen_kwargs)
 
         generated_tokens = outputs[0][input_len:]
         return self.processor.decode(generated_tokens, skip_special_tokens=True)
@@ -2603,13 +2656,21 @@ class LocalModelClient:
 
         with InferenceProgressSpinner("Generating (Pixtral)"):
             with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                    pad_token_id=self.processor.tokenizer.eos_token_id,
-                )
+                gen_kwargs = {
+                    "max_new_tokens": max_tokens,
+                    "repetition_penalty": self.repetition_penalty,
+                    "pad_token_id": self.processor.tokenizer.eos_token_id,
+                }
+                if self.num_beams > 1:
+                    gen_kwargs["num_beams"] = self.num_beams
+                    gen_kwargs["do_sample"] = False
+                elif temperature > 0:
+                    gen_kwargs["do_sample"] = True
+                    gen_kwargs["temperature"] = temperature
+                    gen_kwargs["top_p"] = self.top_p
+                else:
+                    gen_kwargs["do_sample"] = False
+                outputs = self.model.generate(**inputs, **gen_kwargs)
 
         generated_tokens = outputs[0][input_len:]
         return self.processor.decode(generated_tokens, skip_special_tokens=True)
@@ -2634,12 +2695,20 @@ class LocalModelClient:
 
         with InferenceProgressSpinner("Generating (Molmo)"):
             with torch.inference_mode():
-                outputs = self.model.generate_from_batch(
-                    inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                )
+                gen_kwargs = {
+                    "max_new_tokens": max_tokens,
+                    "repetition_penalty": self.repetition_penalty,
+                }
+                if self.num_beams > 1:
+                    gen_kwargs["num_beams"] = self.num_beams
+                    gen_kwargs["do_sample"] = False
+                elif temperature > 0:
+                    gen_kwargs["do_sample"] = True
+                    gen_kwargs["temperature"] = temperature
+                    gen_kwargs["top_p"] = self.top_p
+                else:
+                    gen_kwargs["do_sample"] = False
+                outputs = self.model.generate_from_batch(inputs, **gen_kwargs)
 
         # Molmo returns the generated text directly
         if isinstance(outputs, str):
@@ -2680,12 +2749,20 @@ class LocalModelClient:
 
         with InferenceProgressSpinner("Generating (Idefics2)"):
             with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                )
+                gen_kwargs = {
+                    "max_new_tokens": max_tokens,
+                    "repetition_penalty": self.repetition_penalty,
+                }
+                if self.num_beams > 1:
+                    gen_kwargs["num_beams"] = self.num_beams
+                    gen_kwargs["do_sample"] = False
+                elif temperature > 0:
+                    gen_kwargs["do_sample"] = True
+                    gen_kwargs["temperature"] = temperature
+                    gen_kwargs["top_p"] = self.top_p
+                else:
+                    gen_kwargs["do_sample"] = False
+                outputs = self.model.generate(**inputs, **gen_kwargs)
 
         generated_tokens = outputs[0][input_len:]
         return self.processor.decode(generated_tokens, skip_special_tokens=True)
@@ -2808,13 +2885,21 @@ class LocalModelClient:
 
         with InferenceProgressSpinner("Generating (Phi-3.5-Vision)"):
             with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                    eos_token_id=self.processor.tokenizer.eos_token_id,
-                )
+                gen_kwargs = {
+                    "max_new_tokens": max_tokens,
+                    "repetition_penalty": self.repetition_penalty,
+                    "eos_token_id": self.processor.tokenizer.eos_token_id,
+                }
+                if self.num_beams > 1:
+                    gen_kwargs["num_beams"] = self.num_beams
+                    gen_kwargs["do_sample"] = False
+                elif temperature > 0:
+                    gen_kwargs["do_sample"] = True
+                    gen_kwargs["temperature"] = temperature
+                    gen_kwargs["top_p"] = self.top_p
+                else:
+                    gen_kwargs["do_sample"] = False
+                outputs = self.model.generate(**inputs, **gen_kwargs)
 
         # Only decode the NEW tokens (exclude the input prompt)
         generated_tokens = outputs[0][input_len:]

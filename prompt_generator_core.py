@@ -1138,10 +1138,14 @@ class LLMClient:
                     quantization=extra.get("quantization", "4-bit"),
                     device=extra.get("device", "auto"),
                     attention_mode=extra.get("attention_mode", "auto"),
-                    keep_model_loaded=extra.get("keep_model_loaded", True),
+                    keep_model_loaded=extra.get("keep_model_loaded", False),
                     temperature=temp,
+                    top_p=extra.get("top_p", 0.9),
+                    repetition_penalty=extra.get("repetition_penalty", 1.2),
+                    num_beams=extra.get("num_beams", 1),
+                    use_torch_compile=extra.get("use_torch_compile", False),
                 )
-                result = text_client.generate_text(system_prompt, user_prompt, max_tokens=max_tokens, temperature=temp)
+                result = text_client.generate_text(user_prompt, system_prompt, max_tokens=max_tokens, temperature=temp)
                 return result.strip() if result else ""
 
             elif provider == "anthropic":
