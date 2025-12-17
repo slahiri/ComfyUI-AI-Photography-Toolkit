@@ -879,6 +879,54 @@ prompt = "Describe revealing elements: exposed skin (sideboob, underboob, cleava
 
 
 # =============================================================================
+# SYNTHESIS - Combines component descriptions into final prompt
+# =============================================================================
+
+[synthesis]
+name = "Prompt Synthesis"
+
+[synthesis.advanced]
+prompt = """Combine these component descriptions into a structured image generation prompt.
+
+STRUCTURE REQUIREMENTS (4-6 sentences):
+1. SENTENCE 1: Subject introduction with framing (e.g., "Close-up portrait of a young woman facing camera...")
+2. SENTENCE 2: Face and expression - USE COMPARISONS (e.g., "smile like sharing a secret", "gaze as if deep in thought", "expression of surprised delight like catching someone off-guard")
+3. SENTENCE 3: Hair and distinctive features - Mark unique identifiers with IMPORTANT: (e.g., "IMPORTANT: single thick braid over right shoulder only")
+4. SENTENCE 4: Clothing/body details - Mark unique patterns with CRITICAL: (e.g., "CRITICAL: zigzag chevron trim pattern on bikini edges")
+5. SENTENCE 5: Environment and lighting
+6. SENTENCE 6: Technical specifications ending with "no text, no watermark"
+
+EMPHASIS RULES:
+- Use "IMPORTANT:" prefix for unique hair styles, accessories, or poses that must not change
+- Use "CRITICAL:" prefix for distinctive patterns, colors, or details that define the look
+- Repeat critical features 2x if they are the main identifying element
+
+EXPRESSION COMPARISONS (use these patterns):
+- Smiling: "warm smile like greeting an old friend" / "playful smile as if sharing a joke"
+- Serious: "intense gaze as if studying something carefully" / "determined expression like facing a challenge"
+- Surprised: "wide eyes like catching something unexpected" / "raised brows as if pleasantly surprised"
+- Relaxed: "serene expression as if meditating" / "peaceful look like enjoying a quiet moment"
+"""
+
+[synthesis.standard]
+prompt = """Combine these descriptions into a structured prompt with 4-6 sentences.
+
+STRUCTURE:
+1. Subject + framing + pose
+2. Expression with comparison (e.g., "smile like sharing a secret")
+3. Hair with IMPORTANT: for unique styles
+4. Clothing with CRITICAL: for unique patterns
+5. Lighting + background
+6. End with "no text, no watermark"
+
+Use IMPORTANT: for unique hair/poses. Use CRITICAL: for distinctive patterns.
+"""
+
+[synthesis.basic]
+prompt = """Combine into 4-6 sentences: 1) Subject+framing 2) Expression 3) Hair 4) Clothing 5) Background 6) "no text, no watermark". Use IMPORTANT: for unique hair styles. Use CRITICAL: for unique patterns."""
+
+
+# =============================================================================
 # ANALYSIS MODE CONFIGURATIONS
 # =============================================================================
 # Which components to analyze for each mode

@@ -1705,14 +1705,21 @@ Use underscores for multi-word tags (long_hair, looking_at_viewer)
 NO sentences or prose - ONLY comma-separated tags.
 End with: no_text, no_watermark"""
         else:
-            synthesis_prompt = f"""Combine these descriptions into one flowing prompt:
+            # Get synthesis instructions from TOML (single source of truth)
+            synthesis_instructions = get_component_prompt("synthesis", tier)
+            if not synthesis_instructions:
+                # Minimal fallback
+                synthesis_instructions = "Combine into 4-6 flowing sentences. End with 'no text, no watermark'."
+
+            synthesis_prompt = f"""Component descriptions to combine:
 
 {json.dumps(components, indent=2)}
 
 {f'User direction: {user_guidance}' if user_guidance else ''}
 
-Write approximately {self.prompt_length} words as natural language.
-End with "no text, no watermark"."""
+{synthesis_instructions}
+
+Write approximately {self.prompt_length} words."""
 
         synthesis_start = time.time()
         result = self.llm_client.call_text(

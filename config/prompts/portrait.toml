@@ -141,44 +141,37 @@ End with "no text, no watermark". Write as flowing sentences."""
 [user.advanced.standard]
 prompt = """Generate a Z-Image prompt (80-150 words). ONLY describe VISIBLE features.
 
-MANDATORY (include ALL of these):
-1. FRAMING: "portrait framing" or "close-up" or "medium shot" or "full body" - REQUIRED
-2. POSE: "facing camera" or "three-quarter view" or "side profile" - REQUIRED
-3. EXPRESSION: "intense gaze" or "confident look" or "serene expression" - REQUIRED
+STRUCTURE - Write exactly 5-6 SENTENCES:
+1. Subject + framing: "Close-up portrait of a [age] [gender] with [skin tone], [pose]."
+2. Expression with COMPARISON: Use vivid comparisons like "warm smile like greeting an old friend" or "intense gaze as if studying something carefully" or "serene expression as if lost in peaceful thought"
+3. Hair + distinctive features: Mark unique styles with IMPORTANT: (e.g., "IMPORTANT: single braid over right shoulder only")
+4. Clothing: Mark unique patterns with CRITICAL: (e.g., "CRITICAL: zigzag trim pattern on edges")
+5. Lighting + background
+6. Technical: "No text, no watermark."
 
-FRAMING DETAILS: Shot type (close-up/medium/full), where frame cuts body (at chest/waist/thighs)
-ANGLE: Geometric (eye level/high/low angle), face angle (front/45°/profile)
-SKIN: Specific tone (warm ivory, cool beige, golden tan, olive, deep brown, porcelain)
-EYES: Shape (almond, round, hooded) + color (steel grey, warm brown, amber, hazel)
+MANDATORY ELEMENTS:
+1. FRAMING: "portrait framing" / "close-up" / "medium shot" / "full body"
+2. POSE: "facing camera" / "three-quarter view" / "side profile"
+3. EXPRESSION with comparison (see examples above)
 
-HAIR (gender-specific):
-- FEMALE: bob, ponytail, loose waves, braided, updo, pixie + color + texture
-- MALE: fade, undercut, buzz cut, slicked back, textured crop, man bun + color
+EMPHASIS RULES:
+- IMPORTANT: prefix for unique hair styles, distinctive accessories, unusual poses
+- CRITICAL: prefix for patterns, specific colors, or details that define the look
+- Repeat critical identifiers 2x if they're the main feature
 
-FACIAL HAIR (if male): clean-shaven, light stubble, heavy stubble, short beard, full beard, goatee
+EXPRESSION COMPARISONS (use these):
+- Happy: "smile like sharing a secret" / "grin as if hearing good news"
+- Serious: "focused gaze like studying details" / "determined look as if facing a challenge"
+- Relaxed: "peaceful expression as if meditating" / "content look like enjoying a quiet moment"
+- Playful: "mischievous smile like planning something fun" / "eyes sparkling as if amused"
 
-BODY TYPE (if visible):
-- FEMALE: slim, athletic, curvy
-- MALE: muscular/athletic, lean, stocky, broad-shouldered, defined abs/chest (if shirtless)
+DETAILS TO INCLUDE:
+- Skin tone, eye color/shape, hair style + texture + color
+- Clothing (type, color, material, where it ends)
+- Lighting (pick ONE mood)
+- Background
 
-CLOTHING - specify length:
-- Each item 3-5 words (type, color, material)
-- MUST specify where garment ends: "waistcoat ending at waist", "coat extending to thighs"
-
-ACCESSORIES: Identify held objects ACCURATELY (sword, phone, book - be precise)
-
-TATTOOS: Describe visible tattoos (location, style, size)
-
-LIGHTING - pick ONE mood only (don't mix):
-- Warm: golden hour, sunset glow
-- Cool: overcast daylight, blue hour
-- Dramatic: Rembrandt (triangle on cheek), split lighting
-- Soft: diffused daylight, window light
-
-BACKGROUND: Simple description
-END: "no text, no watermark, no logos"
-
-Write as flowing narrative sentences, NOT comma-separated tags."""
+Write as flowing sentences, NOT comma-separated tags."""
 
 [user.advanced.detailed]
 prompt = """Generate a COMPREHENSIVE Z-Image prompt (150-250 words). ONLY VISIBLE features.
@@ -327,25 +320,30 @@ MANDATORY: Include framing (portrait/close-up/medium shot), pose (facing camera/
 End with "no text, no watermark"."""
 
 [user.standard.standard]
-prompt = """Describe this image for Z-Image covering:
+prompt = """Describe this image for Z-Image in 5-6 SENTENCES:
 
-MANDATORY FIRST:
-1. Framing: "portrait framing" / "close-up" / "medium shot" / "full body" - REQUIRED
-2. Pose: "facing camera" / "three-quarter view" / "side profile" - REQUIRED
-3. Expression: describe facial expression - REQUIRED
+SENTENCE STRUCTURE:
+1. Subject + framing: "Close-up portrait of [person] with [skin tone], [pose]."
+2. Expression with COMPARISON: "warm smile like greeting a friend" or "focused gaze as if concentrating"
+3. Hair (use IMPORTANT: for unique styles): "IMPORTANT: single braid over right shoulder"
+4. Clothing (use CRITICAL: for unique patterns): "CRITICAL: zigzag trim on edges"
+5. Lighting + background
+6. "No text, no watermark."
 
-THEN INCLUDE:
-- Shot type, which body parts visible vs cropped out
-- Camera angle, depth of field
-- Subject appearance (ethnicity, age, gender)
-- Hair style and color (for men: also facial hair if present)
-- Body type (for men: muscular/lean/stocky; for women: slim/athletic/curvy)
-- Clothing with LENGTH specified (ending at waist, extending to thighs) OR if shirtless: muscles, chest hair, tattoos
-- Accessories: identify held objects accurately (sword, not "object")
-- Lighting style - pick ONE mood (don't mix golden hour with overcast)
-- Background
+MANDATORY:
+1. Framing: "portrait framing" / "close-up" / "medium shot" / "full body"
+2. Pose: "facing camera" / "three-quarter view" / "side profile"
+3. Expression with comparison (smile like..., gaze as if...)
 
-Write flowing sentences. End with "no text, no watermark"."""
+EXPRESSION COMPARISONS:
+- Happy: "smile like sharing a secret"
+- Serious: "gaze as if studying details"
+- Relaxed: "peaceful look like enjoying quiet"
+
+INCLUDE: skin tone, hair style+color, clothing with length, lighting (ONE mood), background.
+
+Use IMPORTANT: for unique hair/poses. Use CRITICAL: for patterns/details.
+Write as sentences, NOT comma lists. End with "no text, no watermark"."""
 
 [user.standard.detailed]
 prompt = """Describe this image in detail for Z-Image:
