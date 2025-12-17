@@ -1491,7 +1491,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.float16
+                load_kwargs["dtype"] = dtype or torch.float16
 
         self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
@@ -1557,9 +1557,9 @@ class LocalModelClient:
             # Skip quantization for Moondream2 - use BF16 if supported, else FP16
             major, _ = torch.cuda.get_device_capability()
             if major >= 8:  # Ampere+ supports BF16
-                load_kwargs["torch_dtype"] = torch.bfloat16
+                load_kwargs["dtype"] = torch.bfloat16
             else:
-                load_kwargs["torch_dtype"] = torch.float16
+                load_kwargs["dtype"] = torch.float16
 
         # Try loading, if cache is corrupted clear it and retry from HuggingFace
         try:
@@ -1601,7 +1601,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype
+                load_kwargs["dtype"] = dtype
 
         # Determine model class based on version (1.5 vs 1.6)
         model_class_name = self.model_info.model_class
@@ -1639,7 +1639,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+                load_kwargs["dtype"] = dtype or torch.bfloat16
 
         self.model = AutoModel.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
@@ -1667,7 +1667,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+                load_kwargs["dtype"] = dtype or torch.bfloat16
 
         self.model = AutoModel.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
@@ -1695,7 +1695,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+                load_kwargs["dtype"] = dtype or torch.bfloat16
 
         self.model = PaliGemmaForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
@@ -1723,7 +1723,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+                load_kwargs["dtype"] = dtype or torch.bfloat16
 
         self.model = MllamaForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
@@ -1751,7 +1751,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+                load_kwargs["dtype"] = dtype or torch.bfloat16
 
         self.model = LlavaForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
@@ -1779,7 +1779,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+                load_kwargs["dtype"] = dtype or torch.bfloat16
 
         self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
@@ -1807,7 +1807,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.bfloat16
+                load_kwargs["dtype"] = dtype or torch.bfloat16
 
         self.model = Idefics2ForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
@@ -1850,7 +1850,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.float16
+                load_kwargs["dtype"] = dtype or torch.float16
 
         self.model = AutoModelForVision2Seq.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
@@ -1880,7 +1880,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.float16
+                load_kwargs["dtype"] = dtype or torch.float16
 
         self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
@@ -1931,7 +1931,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.float16
+                load_kwargs["dtype"] = dtype or torch.float16
 
         self.model = AutoModelForVision2Seq.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
@@ -2003,7 +2003,7 @@ class LocalModelClient:
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
             else:
-                load_kwargs["torch_dtype"] = dtype or torch.float16
+                load_kwargs["dtype"] = dtype or torch.float16
 
         self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
