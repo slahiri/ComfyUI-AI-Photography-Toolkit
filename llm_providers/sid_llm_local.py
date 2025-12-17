@@ -2460,40 +2460,60 @@ class LocalModelClient:
 
         import torch
 
-        # InternVL2 uses chat-style format
-        messages = [{"role": "user", "content": f"<image>\n{prompt.strip()}"}]
+        if not images:
+            return "No image provided"
 
-        # Process inputs
-        inputs = self.processor(
-            text=prompt.strip(),
-            images=images[0] if images else None,
-            return_tensors="pt"
-        )
+        # InternVL2 has a built-in chat method
+        if hasattr(self.model, 'chat'):
+            with InferenceProgressSpinner("Generating (InternVL2)"):
+                with torch.inference_mode():
+                    # InternVL2's chat method handles image processing internally
+                    gen_config = {
+                        "max_new_tokens": max_tokens,
+                        "do_sample": temperature > 0,
+                    }
+                    if temperature > 0:
+                        gen_config["temperature"] = temperature
+                        gen_config["top_p"] = self.top_p
+
+                    response = self.model.chat(
+                        tokenizer=self.tokenizer,
+                        pixel_values=self._preprocess_internvl_image(images[0]),
+                        question=prompt.strip(),
+                        generation_config=gen_config,
+                    )
+            return response
+        else:
+            # Fallback: InternVL2 without chat method - temporarily disabled
+            raise ValueError(
+                "InternVL2 model does not have the expected 'chat' method. "
+                "This may be a compatibility issue. Please try Florence-2 or Qwen3-VL instead."
+            )
+
+    def _preprocess_internvl_image(self, image):
+        """Preprocess image for InternVL2."""
+        import torch
+        import torchvision.transforms as T
+        from torchvision.transforms.functional import InterpolationMode
+
+        IMAGENET_MEAN = (0.485, 0.456, 0.406)
+        IMAGENET_STD = (0.229, 0.224, 0.225)
+
+        def build_transform(input_size):
+            return T.Compose([
+                T.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
+                T.Resize((input_size, input_size), interpolation=InterpolationMode.BICUBIC),
+                T.ToTensor(),
+                T.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
+            ])
+
+        # InternVL2 uses 448x448 images
+        transform = build_transform(448)
+        pixel_values = transform(image).unsqueeze(0)
 
         device = next(self.model.parameters()).device
-        inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in inputs.items()}
-
-        input_len = inputs["input_ids"].shape[1] if "input_ids" in inputs else 0
-
-        with InferenceProgressSpinner("Generating (InternVL2)"):
-            with torch.inference_mode():
-                gen_kwargs = {
-                    "max_new_tokens": max_tokens,
-                    "repetition_penalty": self.repetition_penalty,
-                }
-                if self.num_beams > 1:
-                    gen_kwargs["num_beams"] = self.num_beams
-                    gen_kwargs["do_sample"] = False
-                elif temperature > 0:
-                    gen_kwargs["do_sample"] = True
-                    gen_kwargs["temperature"] = temperature
-                    gen_kwargs["top_p"] = self.top_p
-                else:
-                    gen_kwargs["do_sample"] = False
-                outputs = self.model.generate(**inputs, **gen_kwargs)
-
-        generated_tokens = outputs[0][input_len:] if input_len > 0 else outputs[0]
-        return self.processor.decode(generated_tokens, skip_special_tokens=True)
+        dtype = next(self.model.parameters()).dtype
+        return pixel_values.to(device, dtype=dtype)
 
     def _generate_minicpm(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with MiniCPM-V models."""
