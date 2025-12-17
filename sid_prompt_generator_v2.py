@@ -81,6 +81,12 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                     "llm_model",
                     tooltip="Connect SID_LLM_API or SID_LLM_Local node"
                 ),
+                io.Combo.Input(
+                    "prompt_style",
+                    options=["Expanded", "Tags"],
+                    default="Expanded",
+                    tooltip="Expanded: Natural flowing sentences. Tags: Comma-separated booru-style tags (better for anime/illustration models)"
+                ),
                 io.Int.Input(
                     "prompt_length",
                     default=400,
@@ -127,6 +133,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         cls,
         image,
         llm_model: LLMModelConfig,
+        prompt_style: str,
         prompt_length: int,
         generate_negative: bool,
         generate_caption: bool,
@@ -176,6 +183,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
             temperature=temperature,
             analysis_mode=analysis_mode,
             enable_reasoning=supports_reasoning,
+            prompt_style=prompt_style.lower(),  # "expanded" or "tags"
             prompt_length=prompt_length,
             generate_negative=generate_negative,
             generate_caption=generate_caption,
@@ -188,7 +196,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
 
         # Print metadata and debug log to console
         reasoning_str = "ON" if supports_reasoning else "OFF"
-        print(f"\n[Seed: {seed}, Temperature: {temperature}, Mode: {analysis_mode}, Reasoning: {reasoning_str}]")
+        print(f"\n[Seed: {seed}, Temperature: {temperature}, Mode: {analysis_mode}, Style: {prompt_style}, Reasoning: {reasoning_str}]")
         print(result.get_metadata_str())
 
         return io.NodeOutput(result.prompt, result.negative, result.caption)

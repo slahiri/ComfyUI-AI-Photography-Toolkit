@@ -423,6 +423,157 @@ def get_image_limit(provider: str) -> int:
     return limits.get(provider.lower(), 1024)
 
 
+def get_vocabulary_terms() -> Dict[str, List[str]]:
+    """Load all vocabulary terms from config."""
+    if _CONFIG_AVAILABLE and _config_loader:
+        try:
+            vocab = _config_loader.get_prompts_config().get("vocabulary", {})
+            result = {}
+            for key, value in vocab.items():
+                if isinstance(value, dict) and "terms" in value:
+                    result[key] = value["terms"]
+            return result
+        except Exception:
+            pass
+    # Fallback vocabulary
+    return {
+        "skin_tones": ["warm ivory", "cool beige", "golden tan", "olive", "porcelain"],
+        "hair_textures": ["straight", "wavy", "curly", "coily"],
+        "lighting": ["soft diffused", "dramatic side", "natural window", "golden hour", "studio"],
+    }
+
+
+def convert_to_tags(expanded_prompt: str, vocabulary: Dict[str, List[str]] = None) -> str:
+    """
+    Convert an expanded prompt to comma-separated tags, enhanced with vocabulary.
+
+    This extracts key visual elements and converts them to booru-style tags.
+    """
+    if not expanded_prompt:
+        return ""
+
+    # Load vocabulary if not provided
+    if vocabulary is None:
+        vocabulary = get_vocabulary_terms()
+
+    # Start with base quality tags
+    tags = ["masterpiece", "best quality", "highres"]
+
+    # Extract and convert key phrases to tags
+    prompt_lower = expanded_prompt.lower()
+
+    # Gender detection
+    if any(w in prompt_lower for w in ["woman", "girl", "female", "she", "her"]):
+        tags.append("1girl")
+    elif any(w in prompt_lower for w in ["man", "boy", "male", "he", "his"]):
+        tags.append("1boy")
+
+    # Solo detection
+    if "solo" in prompt_lower or not any(w in prompt_lower for w in ["couple", "group", "people", "two", "multiple"]):
+        if "1girl" in tags or "1boy" in tags:
+            tags.append("solo")
+
+    # Hair color
+    hair_colors = ["blonde", "brown", "black", "red", "white", "silver", "pink", "blue", "green", "purple", "auburn", "chestnut"]
+    for color in hair_colors:
+        if color in prompt_lower and "hair" in prompt_lower:
+            tags.append(f"{color}_hair")
+            break
+
+    # Hair style
+    hair_styles = {
+        "ponytail": "ponytail", "braid": "braid", "twintails": "twintails",
+        "short hair": "short_hair", "long hair": "long_hair", "medium hair": "medium_hair",
+        "wavy": "wavy_hair", "curly": "curly_hair", "straight": "straight_hair",
+        "bangs": "bangs", "bob": "bob_cut", "bun": "hair_bun"
+    }
+    for style, tag in hair_styles.items():
+        if style in prompt_lower:
+            tags.append(tag)
+
+    # Eye color
+    eye_colors = ["blue", "green", "brown", "amber", "hazel", "grey", "red", "purple"]
+    for color in eye_colors:
+        if f"{color} eye" in prompt_lower:
+            tags.append(f"{color}_eyes")
+            break
+
+    # Expression
+    expressions = {
+        "smiling": "smile", "laughing": "laughing", "serious": "serious",
+        "angry": "angry", "sad": "sad", "crying": "crying",
+        "surprised": "surprised", "blushing": "blush", "confident": "confident"
+    }
+    for expr, tag in expressions.items():
+        if expr in prompt_lower:
+            tags.append(tag)
+            break
+
+    # Pose/View
+    poses = {
+        "facing camera": "looking_at_viewer", "looking at viewer": "looking_at_viewer",
+        "from behind": "from_behind", "from side": "from_side", "profile": "profile",
+        "three-quarter": "three-quarter_view", "standing": "standing", "sitting": "sitting",
+        "lying": "lying", "kneeling": "kneeling"
+    }
+    for pose, tag in poses.items():
+        if pose in prompt_lower:
+            tags.append(tag)
+
+    # Clothing (extract key garments)
+    clothing = {
+        "dress": "dress", "shirt": "shirt", "blouse": "blouse", "jacket": "jacket",
+        "coat": "coat", "sweater": "sweater", "hoodie": "hoodie", "bikini": "bikini",
+        "swimsuit": "swimsuit", "uniform": "uniform", "suit": "suit", "skirt": "skirt",
+        "jeans": "jeans", "pants": "pants", "shorts": "shorts"
+    }
+    for item, tag in clothing.items():
+        if item in prompt_lower:
+            tags.append(tag)
+
+    # Environment/Background
+    backgrounds = {
+        "outdoor": "outdoors", "indoor": "indoors", "studio": "studio",
+        "city": "cityscape", "nature": "nature", "beach": "beach", "forest": "forest",
+        "snow": "snow", "rain": "rain", "night": "night", "sunset": "sunset",
+        "sunrise": "sunrise"
+    }
+    for bg, tag in backgrounds.items():
+        if bg in prompt_lower:
+            tags.append(tag)
+
+    # Lighting
+    lighting = {
+        "dramatic": "dramatic_lighting", "soft": "soft_lighting", "backlighting": "backlighting",
+        "rim light": "rim_lighting", "golden hour": "golden_hour", "natural light": "natural_lighting"
+    }
+    for light, tag in lighting.items():
+        if light in prompt_lower:
+            tags.append(tag)
+
+    # Add vocabulary-matched terms
+    all_vocab_terms = []
+    for terms in vocabulary.values():
+        all_vocab_terms.extend(terms)
+
+    for term in all_vocab_terms:
+        if term.lower() in prompt_lower and term.lower().replace(" ", "_") not in tags:
+            # Convert to tag format
+            tag_format = term.lower().replace(" ", "_").replace("-", "_")
+            if tag_format not in tags:
+                tags.append(tag_format)
+
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_tags = []
+    for tag in tags:
+        if tag not in seen:
+            seen.add(tag)
+            unique_tags.append(tag)
+
+    return ", ".join(unique_tags)
+
+
 # =============================================================================
 # Model Configuration
 # =============================================================================
@@ -1318,6 +1469,7 @@ class PromptGenerator:
         temperature: float = 0.7,
         analysis_mode: str = "standard",
         enable_reasoning: bool = False,
+        prompt_style: str = "expanded",
         prompt_length: int = 150,
         generate_negative: bool = False,
         generate_caption: bool = False,
@@ -1336,6 +1488,7 @@ class PromptGenerator:
         self.llm_client = LLMClient(self.config)
         self.analysis_mode = analysis_mode.lower()
         self.enable_reasoning = enable_reasoning
+        self.prompt_style = prompt_style.lower()  # "expanded" or "tags"
         self.prompt_length = prompt_length
         self.generate_negative = generate_negative
         self.generate_caption = generate_caption
@@ -1384,7 +1537,7 @@ class PromptGenerator:
         result = GenerationResult()
 
         reasoning_str = "ON" if self.enable_reasoning else "OFF"
-        self._log(f"\n[PromptGen] Processing {self.config.provider} | Mode: {self.analysis_mode} | Reasoning: {reasoning_str}")
+        self._log(f"\n[PromptGen] Processing {self.config.provider} | Mode: {self.analysis_mode} | Style: {self.prompt_style} | Reasoning: {reasoning_str}")
 
         # Load image if path
         if isinstance(image, (str, Path)):
@@ -1477,12 +1630,19 @@ class PromptGenerator:
         max_words = int(self.prompt_length * 1.5)
         result.prompt = zimage_clean(prompt, self.config.provider, max_words)
 
-        # Step 5b: Add Z-Image realism enhancers for portraits
-        if has_human:
+        # Step 5b: Add Z-Image realism enhancers for portraits (only for expanded mode)
+        if has_human and self.prompt_style == "expanded":
             realism_tags = "realistic skin texture, natural skin pores, photorealistic, ultra detailed"
             result.prompt = f"{result.prompt}, {realism_tags}"
 
-        # Step 5c: Apply user guidance
+        # Step 5c: Convert to tags if requested
+        if self.prompt_style == "tags":
+            self._log(f"[PromptGen] Converting to tag style with vocabulary enhancement...")
+            vocabulary = get_vocabulary_terms()
+            result.prompt = convert_to_tags(result.prompt, vocabulary)
+            self._log(f"[PromptGen] Generated {len(result.prompt.split(','))} tags")
+
+        # Step 5d: Apply user guidance
         if user_guidance and user_guidance.strip():
             user_guidance = user_guidance.strip()
             if self.analysis_mode == "quick":
