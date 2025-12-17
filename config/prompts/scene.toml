@@ -14,10 +14,23 @@
 [system.scene_only]
 base = """You are an image captioning assistant for AI image generation.
 
-Describe the SCENE, LANDSCAPE, OBJECT, or VEHICLE in this image.
+Describe the SCENE, LANDSCAPE, ANIMAL, OBJECT, or VEHICLE in this image.
 There are NO people in this image - do not mention or describe any human subjects.
 
-FIRST: Identify the TERRAIN TYPE, then use appropriate vocabulary:
+═══════════════════════════════════════════════════════════════════════════════
+ANIMAL/WILDLIFE SUBJECTS - If an animal is the main subject:
+═══════════════════════════════════════════════════════════════════════════════
+- SPECIES: Be specific (reticulated giraffe, African elephant, Bengal tiger, red fox, bald eagle)
+- AGE: adult, juvenile, calf, fawn, cub, chick
+- VIEW: front-facing, profile view, three-quarter view, from behind
+- EYE CONTACT: looking directly at camera, looking away, eyes closed
+- FEATURES: distinctive markings, patterns, horns, tusks, mane, spots, stripes, feathers
+- POSE: standing, sitting, lying, running, grazing, alert posture
+- EXPRESSION: calm, alert, curious, aggressive
+- TEXTURE: fur texture (sleek, fluffy, coarse), feather details, skin texture
+- Example: "adult reticulated giraffe in three-quarter view, distinctive orange-brown patches with cream borders, long neck extended, large dark eyes with long eyelashes looking at camera"
+
+FIRST: Identify if this is an ANIMAL subject or LANDSCAPE/SCENE, then use appropriate vocabulary:
 
 ═══════════════════════════════════════════════════════════════════════════════
 MOUNTAIN/ALPINE SCENES:
@@ -104,21 +117,35 @@ Output ONLY the description. Start directly - no introduction."""
 [user.scene_only.quick]
 prompt = """Describe this scene briefly (30-60 words). NO people in this image.
 
-FIRST identify terrain type, then BE SPECIFIC:
-- MOUNTAINS: peak shape (jagged/rounded), count (single/twin/range), rock type, snow coverage
-- WATER: type (glacial lake/river/ocean), exact color (turquoise/teal/emerald), surface texture
-- VEGETATION: species (pine/spruce/aspen), color (dark green/golden), density
-- DESERT: dune shapes, sand color, rock formations
-- COASTAL: beach type, wave conditions, water color
+FIRST identify the main subject type:
 
-Include: terrain type, specific colors, textures, atmospheric conditions.
+IF ANIMAL/WILDLIFE:
+- Species (be specific: reticulated giraffe, Bengal tiger, bald eagle)
+- Age, view angle, eye contact, distinctive features
+- Background/environment briefly
 
-End with "no text, no watermark". Start with "A...":"""
+IF LANDSCAPE/SCENE:
+- MOUNTAINS: peak shape, count, rock type, snow coverage
+- WATER: type, exact color, surface texture
+- VEGETATION: species, color, density
+- DESERT: dune shapes, sand color
+- COASTAL: beach type, wave conditions
+
+End with "no text, no watermark". Start directly:"""
 
 [user.scene_only.standard]
 prompt = """Describe this scene for AI image generation (80-150 words). NO people.
 
-FIRST: Identify the PRIMARY TERRAIN TYPE, then use specific vocabulary:
+FIRST: Identify if this is an ANIMAL subject or LANDSCAPE:
+
+═══ ANIMAL/WILDLIFE (if animal is main subject) ═══
+- SPECIES: Be specific (reticulated giraffe, African elephant, Bengal tiger, red fox)
+- AGE: adult, juvenile, calf, cub
+- VIEW: front-facing, profile, three-quarter view
+- EYE CONTACT: looking at camera, looking away
+- FEATURES: distinctive markings, patterns, horns, tusks, mane, fur texture
+- POSE: standing, sitting, lying, grazing, alert
+- BACKGROUND: savanna, forest, water, etc.
 
 ═══ MOUNTAIN SCENES ═══
 - Peak shape: jagged sharp/rounded weathered/spire-like/pyramidal/horn peak/sawtooth ridge
@@ -154,7 +181,20 @@ End with "no text, no watermark":"""
 [user.scene_only.detailed]
 prompt = """Write a comprehensive description of this scene (150-200 words). NO people.
 
-FIRST: Identify PRIMARY TERRAIN TYPE, then use PRECISE vocabulary:
+FIRST: Identify if this is an ANIMAL subject or LANDSCAPE/SCENE:
+
+════════════════════════════════════════════════════════════════════════════════
+ANIMAL/WILDLIFE (if animal is the main subject):
+════════════════════════════════════════════════════════════════════════════════
+- SPECIES: Be very specific (reticulated giraffe, Masai giraffe, African bush elephant, Bengal tiger, Siberian tiger)
+- AGE: adult, juvenile, calf, fawn, cub, chick
+- VIEW ANGLE: front-facing view, profile view, three-quarter view, from behind, looking over shoulder
+- EYE CONTACT: looking directly at camera, looking away, eyes focused on something off-frame
+- DISTINCTIVE FEATURES: unique markings, pattern details, horn shape, tusk size, mane condition, feather coloring
+- POSE: standing tall, sitting, lying down, walking, running, grazing, drinking, alert posture, relaxed
+- EXPRESSION: calm, alert, curious, sleepy, aggressive, playful
+- TEXTURE: sleek fur, fluffy coat, coarse hair, smooth feathers, wrinkled skin, wet fur
+- BACKGROUND: African savanna, dense forest, grassy plains, watering hole, rocky terrain
 
 ════════════════════════════════════════════════════════════════════════════════
 MOUNTAINS (describe with precision):
@@ -212,7 +252,36 @@ End with "no text, no watermark":"""
 [user.scene_only.extreme]
 prompt = """Write the most detailed description possible (200-300 words). NO people.
 
-CRITICAL: Identify TERRAIN TYPE first. Use PRECISE vocabulary - NO generic terms.
+CRITICAL: Identify if this is an ANIMAL subject or LANDSCAPE first. Use PRECISE vocabulary.
+
+════════════════════════════════════════════════════════════════════════════════════
+ANIMAL/WILDLIFE - MAXIMUM DETAIL (if animal is the main subject):
+════════════════════════════════════════════════════════════════════════════════════
+SPECIES (be extremely specific):
+- Giraffes: reticulated giraffe, Masai giraffe, Rothschild's giraffe, South African giraffe
+- Elephants: African bush elephant, African forest elephant, Asian elephant
+- Big cats: Bengal tiger, Siberian tiger, African lion, leopard, cheetah, jaguar
+- Bears: grizzly bear, polar bear, black bear, brown bear
+- Birds: bald eagle, golden eagle, great horned owl, peacock, flamingo
+
+PHYSICAL DETAILS:
+- Age: adult, sub-adult, juvenile, calf, fawn, cub, chick, yearling
+- Size: large adult, smaller juvenile, massive bull, petite female
+- View: front-facing, profile, three-quarter, from behind, looking over shoulder
+- Eye contact: direct eye contact with camera, looking away left/right, eyes closed, alert gaze
+- Expression: calm, alert, curious, sleepy, aggressive, playful, content
+
+DISTINCTIVE FEATURES (be specific):
+- Patterns: distinctive spot patterns, stripe patterns, unique markings
+- Horns/Tusks: curved horns, straight tusks, ossicones (giraffe), antlers
+- Fur/Feathers: sleek short fur, thick winter coat, fluffy mane, smooth feathers, iridescent plumage
+- Skin texture: wrinkled elephant skin, smooth fur, coarse hair
+
+POSE & BEHAVIOR:
+- Standing tall, sitting, lying down, walking, running, grazing, drinking, feeding, alert stance
+- Head position: raised high, lowered to ground, turned to side
+
+ENVIRONMENT: African savanna, dense jungle, grassy plains, watering hole, rocky outcrop, tree canopy
 
 ════════════════════════════════════════════════════════════════════════════════════
 MOUNTAINS - MAXIMUM PRECISION REQUIRED:
