@@ -216,13 +216,28 @@ def setup_routes(routes):
         """Serve the debug results viewer HTML page."""
         return web.Response(text=get_debug_viewer_html(), content_type="text/html")
 
+    def _parse_timestamp_from_folder(folder_name: str) -> str:
+        """Parse timestamp from folder name like 'session_20251217_162517' or '2025-12-17_12-21-22_xxx'."""
+        import re
+        # Try newer format: session_YYYYMMDD_HHMMSS
+        match = re.match(r'session_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})', folder_name)
+        if match:
+            y, mo, d, h, mi, s = match.groups()
+            return f"{y}-{mo}-{d}T{h}:{mi}:{s}"
+        # Try older format: YYYY-MM-DD_HH-MM-SS_xxx
+        match = re.match(r'(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})_', folder_name)
+        if match:
+            y, mo, d, h, mi, s = match.groups()
+            return f"{y}-{mo}-{d}T{h}:{mi}:{s}"
+        return ""
+
     @routes.get("/sid/debug-results/api/sessions")
     async def list_debug_sessions(request):
         """List all debug result sessions."""
         sessions = []
         if DEBUG_RESULTS_DIR.exists():
             for session_dir in sorted(DEBUG_RESULTS_DIR.iterdir(), reverse=True):
-                if session_dir.is_dir():
+                if session_dir.is_dir() and session_dir.name != "archived":
                     eval_file = session_dir / "evaluation.json"
                     if eval_file.exists():
                         try:
@@ -232,16 +247,52 @@ def setup_routes(routes):
                             # Extract summary info
                             scores = data.get("scores", {})
                             overall = scores.get("overall", {}).get("score", 0)
-                            model_config = data.get("model_config", {})
+
+                            # Try different sources for model info
+                            provider = "unknown"
+                            model = "unknown"
+                            timestamp = ""
+
+                            # 1. Check evaluator field (in evaluation.json)
+                            evaluator = data.get("evaluator", {})
+                            if evaluator:
+                                provider = evaluator.get("provider", provider)
+                                model = evaluator.get("model", model)
+
+                            # 2. Check model_config.json (newer format)
+                            model_config_file = session_dir / "model_config.json"
+                            if model_config_file.exists():
+                                with open(model_config_file, 'r', encoding='utf-8') as f:
+                                    mc = json.load(f)
+                                    provider = mc.get("provider", provider)
+                                    model = mc.get("model", model)
+
+                            # 3. Check metadata.json (older format)
+                            metadata_file = session_dir / "metadata.json"
+                            if metadata_file.exists():
+                                with open(metadata_file, 'r', encoding='utf-8') as f:
+                                    meta = json.load(f)
+                                    mc = meta.get("model_config", {})
+                                    provider = mc.get("provider", provider)
+                                    model = mc.get("model", model)
+                                    timestamp = meta.get("timestamp", "")
+
+                            # Parse timestamp from folder name if not found
+                            if not timestamp:
+                                timestamp = _parse_timestamp_from_folder(session_dir.name)
+
+                            # Check for images (both .jpg and .png)
+                            has_source = (session_dir / "source.jpg").exists() or (session_dir / "source.png").exists()
+                            has_output = (session_dir / "output.jpg").exists() or (session_dir / "output.png").exists()
 
                             sessions.append({
                                 "id": session_dir.name,
-                                "timestamp": data.get("debug_session", {}).get("timestamp", ""),
+                                "timestamp": timestamp,
                                 "overall_score": overall,
-                                "provider": model_config.get("provider", "unknown"),
-                                "model": model_config.get("model", "unknown"),
-                                "has_source": (session_dir / "source.jpg").exists(),
-                                "has_output": (session_dir / "output.jpg").exists(),
+                                "provider": provider,
+                                "model": model,
+                                "has_source": has_source,
+                                "has_output": has_output,
                             })
                         except Exception:
                             pass
@@ -268,11 +319,35 @@ def setup_routes(routes):
             with open(eval_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
-            # Add image URLs
-            data["images"] = {
-                "source": f"/sid/debug-results/api/image/{session_id}/source.jpg" if (session_dir / "source.jpg").exists() else None,
-                "output": f"/sid/debug-results/api/image/{session_id}/output.jpg" if (session_dir / "output.jpg").exists() else None,
-            }
+            # Add image URLs (check both .jpg and .png)
+            source_img = None
+            output_img = None
+            for ext in [".jpg", ".png"]:
+                if (session_dir / f"source{ext}").exists():
+                    source_img = f"/sid/debug-results/api/image/{session_id}/source{ext}"
+                if (session_dir / f"output{ext}").exists():
+                    output_img = f"/sid/debug-results/api/image/{session_id}/output{ext}"
+            data["images"] = {"source": source_img, "output": output_img}
+
+            # Read prompt from prompt.txt if exists
+            prompt_file = session_dir / "prompt.txt"
+            if prompt_file.exists():
+                data["original_prompt"] = prompt_file.read_text(encoding="utf-8")
+
+            # Read model config from model_config.json or metadata.json
+            model_config_file = session_dir / "model_config.json"
+            metadata_file = session_dir / "metadata.json"
+            if model_config_file.exists():
+                with open(model_config_file, 'r', encoding='utf-8') as f:
+                    data["model_config"] = json.load(f)
+            elif metadata_file.exists():
+                with open(metadata_file, 'r', encoding='utf-8') as f:
+                    meta = json.load(f)
+                    data["model_config"] = meta.get("model_config", {})
+                    data["metadata"] = meta
+
+            # Add parsed timestamp
+            data["parsed_timestamp"] = _parse_timestamp_from_folder(session_id)
 
             return web.json_response(data)
         except Exception as e:
@@ -287,7 +362,8 @@ def setup_routes(routes):
         # Security: validate inputs
         if not session_id or ".." in session_id or "/" in session_id or "\\" in session_id:
             return web.json_response({"error": "Invalid session ID"}, status=400)
-        if filename not in ["source.jpg", "output.jpg"]:
+        allowed_files = ["source.jpg", "output.jpg", "source.png", "output.png"]
+        if filename not in allowed_files:
             return web.json_response({"error": "Invalid filename"}, status=400)
 
         image_path = DEBUG_RESULTS_DIR / session_id / filename
@@ -942,13 +1018,25 @@ def get_debug_viewer_html():
                 }
 
                 list.innerHTML = data.sessions.map(s => {
-                    const date = s.timestamp ? new Date(s.timestamp).toLocaleString() : 'Unknown';
+                    // Format timestamp nicely
+                    let dateStr = 'Unknown';
+                    if (s.timestamp) {
+                        const d = new Date(s.timestamp);
+                        const today = new Date();
+                        if (d.toDateString() === today.toDateString()) {
+                            dateStr = d.toLocaleTimeString();
+                        } else {
+                            dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        }
+                    }
+                    // Shorten model name
+                    const shortModel = s.model.replace('claude-', '').replace('-20250929', '').replace('-20241022', '');
                     const scoreClass = s.overall_score >= 7 ? 'score-good' : s.overall_score >= 5 ? 'score-ok' : 'score-bad';
+                    const imgIndicator = (s.has_source || s.has_output) ? '🖼️ ' : '';
                     return `
                         <div class="session-item" data-id="${s.id}" onclick="loadSession('${s.id}')">
-                            <div class="session-id">${s.id}</div>
-                            <div class="session-meta">${date}</div>
-                            <div class="session-meta">${s.provider} / ${s.model}</div>
+                            <div class="session-id">${imgIndicator}${dateStr}</div>
+                            <div class="session-meta">${s.provider} / ${shortModel}</div>
                             <span class="session-score ${scoreClass}">${s.overall_score.toFixed(1)}</span>
                         </div>
                     `;
@@ -989,7 +1077,8 @@ def get_debug_viewer_html():
         function renderSession(data) {
             const scores = data.scores || {};
             const images = data.images || {};
-            const prompt = data.inputs?.prompt?.content || '';
+            // Try multiple sources for original prompt
+            const prompt = data.original_prompt || data.inputs?.prompt?.content || '';
             const improvedPrompt = data.improved_prompt || '';
             // Fields can be at top level or under analysis (handle both)
             const issues = data.issues || data.analysis?.issues || [];
