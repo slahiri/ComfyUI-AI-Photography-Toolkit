@@ -3393,6 +3393,17 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
         try:
+            # Check for unsupported models
+            if vision_model == "Moondream2":
+                raise ValueError(
+                    "Moondream2 is temporarily disabled due to compatibility issues with newer PyTorch versions. "
+                    "Please select a different model:\n"
+                    "  - Florence-2-base (fast, recommended)\n"
+                    "  - Florence-2-large (better quality)\n"
+                    "  - Qwen3-VL-4B (high quality)\n"
+                    "  - SmolVLM-500M or SmolVLM-2B (lightweight)"
+                )
+
             # Clear cache if requested
             if clear_local_cache:
                 cls._clear_all_local_cache(vision_model)
