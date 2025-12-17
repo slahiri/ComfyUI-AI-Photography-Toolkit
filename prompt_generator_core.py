@@ -1057,7 +1057,27 @@ class LLMClient:
             # Get configured temperature (default 0.7)
             temp = getattr(self.config, 'temperature', 0.7)
 
-            if provider == "anthropic":
+            if provider == "local":
+                # Local models use OpenAI-compatible interface
+                # Combine system + user prompt for local models (they don't support separate system messages)
+                combined_prompt = f"{system_prompt}\n\n{user_prompt}" if system_prompt else user_prompt
+                messages = [{
+                    "role": "user",
+                    "content": [
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
+                        {"type": "text", "text": combined_prompt}
+                    ]
+                }]
+                response = self.client.chat.completions.create(
+                    model=self.config.model,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temp
+                )
+                result = response.choices[0].message.content or ""
+                return result.strip()
+
+            elif provider == "anthropic":
                 response = self.client.messages.create(
                     model=self.config.model,
                     max_tokens=max_tokens,
