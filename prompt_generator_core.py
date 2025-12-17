@@ -443,135 +443,64 @@ def get_vocabulary_terms() -> Dict[str, List[str]]:
     }
 
 
-def convert_to_tags(expanded_prompt: str, vocabulary: Dict[str, List[str]] = None) -> str:
+def cleanup_tags(raw_tags: str) -> str:
     """
-    Convert an expanded prompt to comma-separated tags, enhanced with vocabulary.
+    Clean up LLM-generated tags output.
 
-    This extracts key visual elements and converts them to booru-style tags.
+    Simple cleanup function that:
+    - Ensures quality prefix is present
+    - Removes extra whitespace and formatting artifacts
+    - Deduplicates tags while preserving order
+
+    Args:
+        raw_tags: Raw tag output from LLM
     """
-    if not expanded_prompt:
+    if not raw_tags:
         return ""
 
-    # Load vocabulary if not provided
-    if vocabulary is None:
-        vocabulary = get_vocabulary_terms()
+    # Clean up the raw output
+    # Remove any leading/trailing quotes or whitespace
+    cleaned = raw_tags.strip().strip('"\'')
 
-    # Start with base quality tags
-    tags = ["masterpiece", "best quality", "highres"]
-
-    # Extract and convert key phrases to tags
-    prompt_lower = expanded_prompt.lower()
-
-    # Gender detection
-    if any(w in prompt_lower for w in ["woman", "girl", "female", "she", "her"]):
-        tags.append("1girl")
-    elif any(w in prompt_lower for w in ["man", "boy", "male", "he", "his"]):
-        tags.append("1boy")
-
-    # Solo detection
-    if "solo" in prompt_lower or not any(w in prompt_lower for w in ["couple", "group", "people", "two", "multiple"]):
-        if "1girl" in tags or "1boy" in tags:
-            tags.append("solo")
-
-    # Hair color
-    hair_colors = ["blonde", "brown", "black", "red", "white", "silver", "pink", "blue", "green", "purple", "auburn", "chestnut"]
-    for color in hair_colors:
-        if color in prompt_lower and "hair" in prompt_lower:
-            tags.append(f"{color}_hair")
-            break
-
-    # Hair style
-    hair_styles = {
-        "ponytail": "ponytail", "braid": "braid", "twintails": "twintails",
-        "short hair": "short_hair", "long hair": "long_hair", "medium hair": "medium_hair",
-        "wavy": "wavy_hair", "curly": "curly_hair", "straight": "straight_hair",
-        "bangs": "bangs", "bob": "bob_cut", "bun": "hair_bun"
-    }
-    for style, tag in hair_styles.items():
-        if style in prompt_lower:
+    # Split by comma and clean each tag
+    tags = []
+    for tag in cleaned.split(","):
+        tag = tag.strip().strip('"\'')
+        if tag:
+            # Convert spaces to underscores for multi-word tags
+            tag = tag.replace(" ", "_")
             tags.append(tag)
 
-    # Eye color
-    eye_colors = ["blue", "green", "brown", "amber", "hazel", "grey", "red", "purple"]
-    for color in eye_colors:
-        if f"{color} eye" in prompt_lower:
-            tags.append(f"{color}_eyes")
-            break
+    # Ensure quality prefix is at the start
+    quality_tags = ["masterpiece", "best_quality", "highres"]
+    final_tags = []
 
-    # Expression
-    expressions = {
-        "smiling": "smile", "laughing": "laughing", "serious": "serious",
-        "angry": "angry", "sad": "sad", "crying": "crying",
-        "surprised": "surprised", "blushing": "blush", "confident": "confident"
-    }
-    for expr, tag in expressions.items():
-        if expr in prompt_lower:
-            tags.append(tag)
-            break
+    # Add quality tags first if not already present
+    for qt in quality_tags:
+        # Check for variations (best_quality vs best quality)
+        qt_variants = [qt, qt.replace("_", " ")]
+        if not any(t.lower() in qt_variants for t in tags):
+            final_tags.append(qt)
 
-    # Pose/View
-    poses = {
-        "facing camera": "looking_at_viewer", "looking at viewer": "looking_at_viewer",
-        "from behind": "from_behind", "from side": "from_side", "profile": "profile",
-        "three-quarter": "three-quarter_view", "standing": "standing", "sitting": "sitting",
-        "lying": "lying", "kneeling": "kneeling"
-    }
-    for pose, tag in poses.items():
-        if pose in prompt_lower:
-            tags.append(tag)
-
-    # Clothing (extract key garments)
-    clothing = {
-        "dress": "dress", "shirt": "shirt", "blouse": "blouse", "jacket": "jacket",
-        "coat": "coat", "sweater": "sweater", "hoodie": "hoodie", "bikini": "bikini",
-        "swimsuit": "swimsuit", "uniform": "uniform", "suit": "suit", "skirt": "skirt",
-        "jeans": "jeans", "pants": "pants", "shorts": "shorts"
-    }
-    for item, tag in clothing.items():
-        if item in prompt_lower:
-            tags.append(tag)
-
-    # Environment/Background
-    backgrounds = {
-        "outdoor": "outdoors", "indoor": "indoors", "studio": "studio",
-        "city": "cityscape", "nature": "nature", "beach": "beach", "forest": "forest",
-        "snow": "snow", "rain": "rain", "night": "night", "sunset": "sunset",
-        "sunrise": "sunrise"
-    }
-    for bg, tag in backgrounds.items():
-        if bg in prompt_lower:
-            tags.append(tag)
-
-    # Lighting
-    lighting = {
-        "dramatic": "dramatic_lighting", "soft": "soft_lighting", "backlighting": "backlighting",
-        "rim light": "rim_lighting", "golden hour": "golden_hour", "natural light": "natural_lighting"
-    }
-    for light, tag in lighting.items():
-        if light in prompt_lower:
-            tags.append(tag)
-
-    # Add vocabulary-matched terms
-    all_vocab_terms = []
-    for terms in vocabulary.values():
-        all_vocab_terms.extend(terms)
-
-    for term in all_vocab_terms:
-        if term.lower() in prompt_lower and term.lower().replace(" ", "_") not in tags:
-            # Convert to tag format
-            tag_format = term.lower().replace(" ", "_").replace("-", "_")
-            if tag_format not in tags:
-                tags.append(tag_format)
-
-    # Remove duplicates while preserving order
-    seen = set()
-    unique_tags = []
+    # Add remaining tags, deduplicating
+    seen = set(t.lower() for t in final_tags)
     for tag in tags:
-        if tag not in seen:
-            seen.add(tag)
-            unique_tags.append(tag)
+        tag_lower = tag.lower()
+        # Skip if already added or is a quality tag variant
+        if tag_lower not in seen and tag_lower not in ["best_quality", "best quality"]:
+            seen.add(tag_lower)
+            final_tags.append(tag)
 
-    return ", ".join(unique_tags)
+    return ", ".join(final_tags)
+
+
+# Keep old function name as alias for compatibility
+def convert_to_tags(expanded_prompt: str, vocabulary: Dict[str, List[str]] = None, has_human: bool = True) -> str:
+    """
+    Legacy wrapper - now just calls cleanup_tags.
+    The LLM generates tags directly when Tags mode is selected.
+    """
+    return cleanup_tags(expanded_prompt)
 
 
 # =============================================================================
@@ -1635,11 +1564,10 @@ class PromptGenerator:
             realism_tags = "realistic skin texture, natural skin pores, photorealistic, ultra detailed"
             result.prompt = f"{result.prompt}, {realism_tags}"
 
-        # Step 5c: Convert to tags if requested
+        # Step 5c: Clean up tags if tags mode (LLM already generates in tag format)
         if self.prompt_style == "tags":
-            self._log(f"[PromptGen] Converting to tag style with vocabulary enhancement...")
-            vocabulary = get_vocabulary_terms()
-            result.prompt = convert_to_tags(result.prompt, vocabulary)
+            self._log(f"[PromptGen] Cleaning up LLM-generated tags...")
+            result.prompt = cleanup_tags(result.prompt)
             self._log(f"[PromptGen] Generated {len(result.prompt.split(','))} tags")
 
         # Step 5d: Apply user guidance
@@ -1863,6 +1791,20 @@ USER DIRECTION (apply this):
 "{user_guidance.strip()}"
 """
 
+        # Add tag format instruction if tags mode is selected
+        if self.prompt_style == "tags":
+            tag_instruction = """
+
+OUTPUT FORMAT - TAGS:
+Output as comma-separated booru-style tags ONLY. NO sentences or prose.
+Start with: masterpiece, best quality, highres
+Then add descriptive tags like: 1girl, solo, long_hair, brown_eyes, smile, dress, outdoors
+Use underscores for multi-word tags (e.g., long_hair, looking_at_viewer)
+Keep tags concise - single concepts only (e.g., "blue_eyes" not "beautiful sparkling blue eyes")
+Example output: masterpiece, best quality, highres, 1girl, solo, long_hair, blonde_hair, blue_eyes, smile, white_dress, standing, outdoors, sunlight"""
+            system_prompt += tag_instruction
+            user_prompt += "\n\nRemember: Output ONLY comma-separated tags, not sentences."
+
         return system_prompt, user_prompt
 
     def _agentic_generate(self, base64_image: str, has_human: bool,
@@ -2008,8 +1950,22 @@ THEN FOR EACH GARMENT: EXACT COLOR (jet black, charcoal, cream white, ivory, nav
                 "Describe the environment and lighting in 2-3 sentences.", 150
             )
 
-        # Synthesis step
-        synthesis_prompt = f"""Combine these descriptions into one flowing prompt:
+        # Synthesis step - adjust format based on prompt style
+        if self.prompt_style == "tags":
+            synthesis_prompt = f"""Convert these descriptions into comma-separated booru-style tags:
+
+{json.dumps(components, indent=2)}
+
+{f'User direction: {user_guidance}' if user_guidance else ''}
+
+OUTPUT FORMAT - TAGS ONLY:
+Start with: masterpiece, best quality, highres
+Then descriptive tags like: 1girl, solo, long_hair, brown_eyes, smile, dress, outdoors
+Use underscores for multi-word tags (long_hair, looking_at_viewer)
+NO sentences or prose - ONLY comma-separated tags.
+End with: no_text, no_watermark"""
+        else:
+            synthesis_prompt = f"""Combine these descriptions into one flowing prompt:
 
 {json.dumps(components, indent=2)}
 
