@@ -14,6 +14,7 @@ from aiohttp import web
 TOOLKIT_DIR = Path(__file__).parent.parent
 PROMPTS_DIR = TOOLKIT_DIR / "config" / "prompts"
 BACKUP_DIR = TOOLKIT_DIR / "config" / "prompts_backup"
+DEBUG_RESULTS_DIR = TOOLKIT_DIR / "debug_results"
 
 
 def setup_routes(routes):
@@ -154,6 +155,95 @@ def setup_routes(routes):
             return web.json_response({"error": "Git command timed out"}, status=500)
         except Exception as e:
             return web.json_response({"error": str(e)}, status=500)
+
+    # =========================================================================
+    # Debug Results Viewer Routes
+    # =========================================================================
+
+    @routes.get("/sid/debug-results")
+    async def serve_debug_viewer(request):
+        """Serve the debug results viewer HTML page."""
+        return web.Response(text=get_debug_viewer_html(), content_type="text/html")
+
+    @routes.get("/sid/debug-results/api/sessions")
+    async def list_debug_sessions(request):
+        """List all debug result sessions."""
+        sessions = []
+        if DEBUG_RESULTS_DIR.exists():
+            for session_dir in sorted(DEBUG_RESULTS_DIR.iterdir(), reverse=True):
+                if session_dir.is_dir():
+                    eval_file = session_dir / "evaluation.json"
+                    if eval_file.exists():
+                        try:
+                            with open(eval_file, 'r', encoding='utf-8') as f:
+                                data = json.load(f)
+
+                            # Extract summary info
+                            scores = data.get("scores", {})
+                            overall = scores.get("overall", {}).get("score", 0)
+                            model_config = data.get("model_config", {})
+
+                            sessions.append({
+                                "id": session_dir.name,
+                                "timestamp": data.get("debug_session", {}).get("timestamp", ""),
+                                "overall_score": overall,
+                                "provider": model_config.get("provider", "unknown"),
+                                "model": model_config.get("model", "unknown"),
+                                "has_source": (session_dir / "source.jpg").exists(),
+                                "has_output": (session_dir / "output.jpg").exists(),
+                            })
+                        except Exception:
+                            pass
+        return web.json_response({"sessions": sessions})
+
+    @routes.get("/sid/debug-results/api/session/{session_id}")
+    async def get_debug_session(request):
+        """Get details of a specific debug session."""
+        session_id = request.match_info["session_id"]
+
+        # Security: validate session_id format
+        if not session_id or ".." in session_id or "/" in session_id or "\\" in session_id:
+            return web.json_response({"error": "Invalid session ID"}, status=400)
+
+        session_dir = DEBUG_RESULTS_DIR / session_id
+        if not session_dir.exists():
+            return web.json_response({"error": "Session not found"}, status=404)
+
+        eval_file = session_dir / "evaluation.json"
+        if not eval_file.exists():
+            return web.json_response({"error": "Evaluation file not found"}, status=404)
+
+        try:
+            with open(eval_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            # Add image URLs
+            data["images"] = {
+                "source": f"/sid/debug-results/api/image/{session_id}/source.jpg" if (session_dir / "source.jpg").exists() else None,
+                "output": f"/sid/debug-results/api/image/{session_id}/output.jpg" if (session_dir / "output.jpg").exists() else None,
+            }
+
+            return web.json_response(data)
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=500)
+
+    @routes.get("/sid/debug-results/api/image/{session_id}/{filename}")
+    async def get_debug_image(request):
+        """Serve an image from a debug session."""
+        session_id = request.match_info["session_id"]
+        filename = request.match_info["filename"]
+
+        # Security: validate inputs
+        if not session_id or ".." in session_id or "/" in session_id or "\\" in session_id:
+            return web.json_response({"error": "Invalid session ID"}, status=400)
+        if filename not in ["source.jpg", "output.jpg"]:
+            return web.json_response({"error": "Invalid filename"}, status=400)
+
+        image_path = DEBUG_RESULTS_DIR / session_id / filename
+        if not image_path.exists():
+            return web.json_response({"error": "Image not found"}, status=404)
+
+        return web.FileResponse(image_path)
 
 
 def get_editor_html():
@@ -525,6 +615,420 @@ def get_editor_html():
                 e.returnValue = '';
             }
         });
+    </script>
+</body>
+</html>'''
+
+
+def get_debug_viewer_html():
+    """Return the HTML for the debug results viewer UI."""
+    return '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SID Debug Results Viewer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: #252526;
+            border-right: 1px solid #3c3c3c;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            padding: 15px;
+            background: #333;
+            border-bottom: 1px solid #3c3c3c;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .session-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+        .session-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            font-size: 12px;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        .session-item:hover { background: #2a2d2e; }
+        .session-item.active { background: #37373d; }
+        .session-id { font-weight: 600; color: #fff; margin-bottom: 4px; }
+        .session-meta { color: #888; font-size: 11px; }
+        .session-score {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .score-good { background: #16825d; color: #fff; }
+        .score-ok { background: #c49a3a; color: #000; }
+        .score-bad { background: #c42b1c; color: #fff; }
+        /* Main content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .toolbar {
+            padding: 10px 15px;
+            background: #333;
+            border-bottom: 1px solid #3c3c3c;
+            font-size: 13px;
+        }
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #888;
+            gap: 10px;
+        }
+        /* Images section */
+        .images-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .image-card {
+            flex: 1;
+            background: #252526;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .image-card h3 {
+            padding: 10px 15px;
+            background: #333;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .image-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        /* Scores section */
+        .scores-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .score-card {
+            background: #252526;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .score-card h4 {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .score-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .score-reason {
+            font-size: 12px;
+            color: #aaa;
+            line-height: 1.4;
+        }
+        /* Prompt section */
+        .prompt-section {
+            background: #252526;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .prompt-section h3 {
+            padding: 10px 15px;
+            background: #333;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px 8px 0 0;
+        }
+        .prompt-content {
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .improved-prompt {
+            background: #1a3a1a;
+            border-left: 3px solid #4caf50;
+        }
+        /* Analysis section */
+        .analysis-section {
+            background: #252526;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .analysis-section h3 {
+            padding: 10px 15px;
+            background: #333;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px 8px 0 0;
+        }
+        .analysis-content {
+            padding: 15px;
+        }
+        .analysis-list {
+            list-style: none;
+            padding: 0;
+        }
+        .analysis-list li {
+            padding: 6px 0;
+            font-size: 13px;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        .analysis-list li:last-child { border-bottom: none; }
+        .tag-missing { color: #f44336; }
+        .tag-hallucinated { color: #ff9800; }
+        .tag-detected { color: #4caf50; }
+        /* Recommendations */
+        .recommendations-list {
+            list-style: decimal;
+            padding-left: 20px;
+        }
+        .recommendations-list li {
+            padding: 8px 0;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">Debug Sessions</div>
+            <div class="session-list" id="sessionList">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="toolbar" id="toolbar">Select a session to view results</div>
+            <div class="content-area" id="contentArea">
+                <div class="empty-state">
+                    <div style="font-size: 48px;">📊</div>
+                    <div>Select a debug session from the sidebar</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSession = null;
+
+        // Load sessions on page load
+        loadSessions();
+
+        async function loadSessions() {
+            try {
+                const res = await fetch('/sid/debug-results/api/sessions');
+                const data = await res.json();
+
+                const list = document.getElementById('sessionList');
+                if (data.sessions.length === 0) {
+                    list.innerHTML = '<div class="empty-state">No debug sessions found</div>';
+                    return;
+                }
+
+                list.innerHTML = data.sessions.map(s => {
+                    const date = s.timestamp ? new Date(s.timestamp).toLocaleString() : 'Unknown';
+                    const scoreClass = s.overall_score >= 7 ? 'score-good' : s.overall_score >= 5 ? 'score-ok' : 'score-bad';
+                    return `
+                        <div class="session-item" data-id="${s.id}" onclick="loadSession('${s.id}')">
+                            <div class="session-id">${s.id}</div>
+                            <div class="session-meta">${date}</div>
+                            <div class="session-meta">${s.provider} / ${s.model}</div>
+                            <span class="session-score ${scoreClass}">${s.overall_score.toFixed(1)}</span>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                document.getElementById('sessionList').innerHTML =
+                    '<div class="empty-state">Error loading sessions</div>';
+            }
+        }
+
+        async function loadSession(sessionId) {
+            // Update active state
+            document.querySelectorAll('.session-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.id === sessionId);
+            });
+
+            document.getElementById('toolbar').textContent = `Session: ${sessionId}`;
+            document.getElementById('contentArea').innerHTML = '<div class="loading">Loading...</div>';
+
+            try {
+                const res = await fetch(`/sid/debug-results/api/session/${sessionId}`);
+                const data = await res.json();
+
+                if (data.error) {
+                    document.getElementById('contentArea').innerHTML =
+                        `<div class="empty-state">${data.error}</div>`;
+                    return;
+                }
+
+                currentSession = data;
+                renderSession(data);
+            } catch (e) {
+                document.getElementById('contentArea').innerHTML =
+                    '<div class="empty-state">Error loading session</div>';
+            }
+        }
+
+        function renderSession(data) {
+            const scores = data.scores || {};
+            const analysis = data.analysis || {};
+            const images = data.images || {};
+            const prompt = data.inputs?.prompt?.content || '';
+            const improvedPrompt = data.improved_prompt || '';
+
+            let html = '';
+
+            // Images
+            html += '<div class="images-section">';
+            if (images.source) {
+                html += `
+                    <div class="image-card">
+                        <h3>Source Image</h3>
+                        <img src="${images.source}" alt="Source">
+                    </div>
+                `;
+            }
+            if (images.output) {
+                html += `
+                    <div class="image-card">
+                        <h3>Output Image</h3>
+                        <img src="${images.output}" alt="Output">
+                    </div>
+                `;
+            }
+            html += '</div>';
+
+            // Scores
+            html += '<div class="scores-section">';
+            for (const [key, value] of Object.entries(scores)) {
+                const score = value.score || 0;
+                const color = score >= 7 ? '#4caf50' : score >= 5 ? '#ff9800' : '#f44336';
+                html += `
+                    <div class="score-card">
+                        <h4>${key.replace(/_/g, ' ')}</h4>
+                        <div class="score-value" style="color: ${color}">${score.toFixed(1)}</div>
+                        <div class="score-reason">${value.reason || ''}</div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+
+            // Original Prompt
+            if (prompt) {
+                html += `
+                    <div class="prompt-section">
+                        <h3>Original Prompt</h3>
+                        <div class="prompt-content">${escapeHtml(prompt)}</div>
+                    </div>
+                `;
+            }
+
+            // Improved Prompt
+            if (improvedPrompt) {
+                html += `
+                    <div class="prompt-section">
+                        <h3>Improved Prompt (Suggested)</h3>
+                        <div class="prompt-content improved-prompt">${escapeHtml(improvedPrompt)}</div>
+                    </div>
+                `;
+            }
+
+            // Analysis - Missing Elements
+            if (analysis.missing_elements && analysis.missing_elements.length > 0) {
+                html += `
+                    <div class="analysis-section">
+                        <h3>Missing Elements</h3>
+                        <div class="analysis-content">
+                            <ul class="analysis-list">
+                                ${analysis.missing_elements.map(e => `<li class="tag-missing">❌ ${escapeHtml(e)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Analysis - Hallucinated Elements
+            if (analysis.hallucinated_elements && analysis.hallucinated_elements.length > 0) {
+                html += `
+                    <div class="analysis-section">
+                        <h3>Hallucinated Elements</h3>
+                        <div class="analysis-content">
+                            <ul class="analysis-list">
+                                ${analysis.hallucinated_elements.map(e => `<li class="tag-hallucinated">⚠️ ${escapeHtml(e)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Recommendations
+            if (data.recommendations && data.recommendations.length > 0) {
+                html += `
+                    <div class="analysis-section">
+                        <h3>Recommendations</h3>
+                        <div class="analysis-content">
+                            <ol class="recommendations-list">
+                                ${data.recommendations.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
+                            </ol>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('contentArea').innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     </script>
 </body>
 </html>'''
