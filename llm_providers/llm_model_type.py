@@ -25,7 +25,8 @@ class LLMModelConfig:
 
     # Provider identification
     provider: str                    # "anthropic", "openai", "ollama", etc.
-    model: str                       # Model identifier (e.g., "claude-sonnet-4-5-20250929")
+    model: str                       # Vision model identifier (e.g., "claude-sonnet-4-5-20250929")
+    text_model: str = ""             # Text model identifier (if different from vision model)
 
     # Authentication
     api_key: str = ""               # API key (empty for local providers like Ollama)
@@ -34,6 +35,9 @@ class LLMModelConfig:
     # Generation parameters
     max_tokens: int = 1024          # Maximum output tokens
     temperature: float = 0.7         # Creativity (0.0-1.0)
+
+    # Analysis mode - set by LLM provider node
+    analysis_mode: str = "standard"  # "quick", "standard", "deep" (deep only for API)
 
     # Capabilities
     supports_vision: bool = True     # Whether model supports image input
@@ -59,10 +63,12 @@ class LLMModelConfig:
         return {
             "provider": self.provider,
             "model": self.model,
+            "text_model": self.text_model,
             "api_key": self.api_key,
             "api_url": self.api_url,
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
+            "analysis_mode": self.analysis_mode,
             "supports_vision": self.supports_vision,
             "supports_system_prompt": self.supports_system_prompt,
             "supports_reasoning": self.supports_reasoning,
@@ -75,10 +81,12 @@ class LLMModelConfig:
         return cls(
             provider=data.get("provider", ""),
             model=data.get("model", ""),
+            text_model=data.get("text_model", ""),
             api_key=data.get("api_key", ""),
             api_url=data.get("api_url", ""),
             max_tokens=data.get("max_tokens", 1024),
             temperature=data.get("temperature", 0.7),
+            analysis_mode=data.get("analysis_mode", "standard"),
             supports_vision=data.get("supports_vision", True),
             supports_system_prompt=data.get("supports_system_prompt", True),
             supports_reasoning=data.get("supports_reasoning", False),

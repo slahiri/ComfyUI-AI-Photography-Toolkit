@@ -1034,10 +1034,15 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         has_human = True
 
         if is_local_model:
+            import time
             debug_lines.append("Running subject detection guardrail for local model...")
             print(f"[SID-Prompt] Running subject detection guardrail...")
+            print(f"[SID-Prompt] (This may take 30-60 seconds for local vision models...)")
 
+            detect_start = time.time()
             detection = cls._detect_subject_type(client, llm_model, base64_image)
+            detect_time = time.time() - detect_start
+            print(f"[SID-Prompt] Detection completed in {detect_time:.1f}s")
             has_human = detection["has_human"]
             detected_subject = detection["subject_type"]
             prompt_mode = detection["prompt_mode"]
@@ -1377,9 +1382,13 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
 
         elif provider in ["openai", "openai_compatible", "grok", "gemini", "groq", "together", "openrouter", "fireworks", "cerebras", "huggingface", "mistral", "deepseek", "ollama", "lmstudio", "custom"]:
             from openai import OpenAI
+            import httpx
+            # Add timeout for local models (Ollama can be slow with vision)
+            timeout = httpx.Timeout(timeout=120.0, connect=30.0)  # 2 min timeout per call
             return OpenAI(
                 api_key=llm_model.api_key or "not-needed",
-                base_url=llm_model.api_url if llm_model.api_url else None
+                base_url=llm_model.api_url if llm_model.api_url else None,
+                timeout=timeout
             )
 
         elif provider == "local":
@@ -1475,7 +1484,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
     def _detect_subject_type(cls, client, llm_model: LLMModelConfig, base64_image: str) -> dict:
         """
         Detect subject type and human presence in a single call.
-        Returns dict with 'has_human' and 'subject_type' for smarter prompt selection.
+        Returns dict with 'has_human', 'subject_type', 'terrain_type' for smarter prompt selection.
 
         Subject types:
         - PORTRAIT: Human is the main/only subject
@@ -1488,109 +1497,268 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         - LANDSCAPE: Nature/scenery only
         - ARCHITECTURE: Building/interior only
         - OBJECT: Product/still life only
+
+        Terrain types (for LANDSCAPE subjects):
+        - MOUNTAIN: Alpine peaks, hills, cliffs, rocky terrain
+        - DESERT: Sand dunes, arid landscape, canyons
+        - FOREST: Dense trees, woodland, jungle
+        - COASTAL: Beach, ocean, sea cliffs
+        - VALLEY: River valley, glacial valley, gorge
+        - GRASSLAND: Prairie, meadow, savanna
+        - WETLAND: Marsh, swamp, lake shore
+        - URBAN: City park, urban nature
         """
         check_interrupted()
+        import re
 
-        # Single detection prompt that returns both pieces of info
-        # Made more explicit to reduce false positives on landscapes
-        detection_prompt = """Look at this image carefully and answer TWO questions:
+        default_result = {"has_human": False, "subject_type": "LANDSCAPE", "terrain_type": "MOUNTAIN", "prompt_mode": "scene_only"}
 
-1. Is there a HUMAN PERSON clearly visible in this image?
-   - Answer YES ONLY if you can see a person's face, body, hands, or any human body part
-   - Answer NO if the image shows only nature, objects, animals, vehicles, or buildings without any humans
-   - When in doubt, answer NO
+        # =====================================================================
+        # STEP 1: Simple binary human detection (most reliable)
+        # =====================================================================
+        # Ultra-simple prompt - just ask for YES or NO
+        human_prompt = """Is there a human person in this image? Answer YES or NO only."""
 
-2. What is the PRIMARY subject?
-
-Categories (pick ONE):
-- PORTRAIT: Human face or body is the main subject
-- PET: Animal (dog, cat, bird, horse, etc.) - no humans
-- VEHICLE: Car, motorcycle, plane, boat - no humans
-- LANDSCAPE: Nature scene (mountains, lake, beach, forest, sky) - no humans
-- ARCHITECTURE: Building, interior, bridge, structure - no humans
-- OBJECT: Product, food, still life - no humans
-
-IMPORTANT: If the image is a nature/landscape scene with mountains, water, trees, or sky, answer:
-HUMAN: NO
-SUBJECT: LANDSCAPE
-
-Answer format (exactly two lines):
-HUMAN: YES or NO
-SUBJECT: <category>"""
-
-        default_result = {"has_human": False, "subject_type": "LANDSCAPE", "prompt_mode": "scene_only"}
+        has_human = False
 
         try:
             if hasattr(client, 'messages'):
                 # Anthropic
                 response = client.messages.create(
                     model=llm_model.model,
-                    max_tokens=50,
+                    max_tokens=30,
                     temperature=0,
                     messages=[{
                         "role": "user",
                         "content": [
                             {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_image}},
-                            {"type": "text", "text": detection_prompt}
+                            {"type": "text", "text": human_prompt}
                         ]
                     }]
                 )
-                answer = response.content[0].text.strip().upper()
+                human_answer = response.content[0].text.strip()
             else:
                 # OpenAI-style (Ollama, LM Studio, etc.)
                 response = client.chat.completions.create(
                     model=llm_model.model,
-                    max_tokens=50,
+                    max_tokens=100,  # More room for thinking models
                     temperature=0,
                     messages=[{
                         "role": "user",
                         "content": [
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
-                            {"type": "text", "text": detection_prompt}
+                            {"type": "text", "text": human_prompt}
                         ]
                     }]
                 )
-                answer = response.choices[0].message.content.strip().upper() if response.choices[0].message.content else ""
+                human_answer = response.choices[0].message.content.strip() if response.choices[0].message.content else ""
 
-            # Parse the response
-            has_human = "HUMAN: YES" in answer or "HUMAN:YES" in answer
+            # Debug: Show FULL raw response (important for debugging)
+            print(f"[SID-Prompt] Step 1 - Human detection FULL raw response:")
+            print(f"[SID-Prompt] >>> {human_answer}")
+            print(f"[SID-Prompt] <<< (end of response)")
 
-            # Extract subject type
-            subject_type = "LANDSCAPE"  # Default
-            for subj in ["PORTRAIT", "PET", "VEHICLE", "LANDSCAPE", "ARCHITECTURE", "OBJECT"]:
-                if f"SUBJECT: {subj}" in answer or f"SUBJECT:{subj}" in answer:
-                    subject_type = subj
-                    break
+            # Strip <think>...</think> tags from Qwen3 models (handle nested/malformed too)
+            human_clean = re.sub(r'<think>.*?</think>', '', human_answer, flags=re.DOTALL | re.IGNORECASE).strip()
+            # Also try stripping everything before the last line (thinking models often put answer at end)
+            lines = human_clean.strip().split('\n')
+            last_line = lines[-1].strip() if lines else ""
 
-            # SANITY CHECK: If subject is non-human category but has_human=True, be skeptical
-            # A pure LANDSCAPE/VEHICLE/OBJECT/ARCHITECTURE shouldn't have a human
-            # If LLM says LANDSCAPE but also HUMAN:YES, it's likely a false positive
-            if has_human and subject_type in ["LANDSCAPE", "VEHICLE", "OBJECT", "ARCHITECTURE"]:
-                print(f"[SID-Prompt] Warning: Contradictory detection (human=YES but subject={subject_type})")
-                print(f"[SID-Prompt] Overriding to has_human=False (likely false positive)")
+            human_upper = human_clean.upper()
+            last_line_upper = last_line.upper()
+
+            print(f"[SID-Prompt] After stripping think tags: '{human_clean}'")
+            print(f"[SID-Prompt] Last line: '{last_line}'")
+
+            # Parse human detection - check multiple indicators
+            # Priority 1: Check last line first (most models put answer at end)
+            if "YES" in last_line_upper and "NO" not in last_line_upper:
+                has_human = True
+            elif "NO" in last_line_upper and "YES" not in last_line_upper:
                 has_human = False
-
-            # Determine prompt mode based on combination
-            if has_human:
-                if subject_type == "PORTRAIT":
-                    prompt_mode = "portrait"  # Human-focused prompts
-                else:
-                    prompt_mode = "human_with_subject"  # Balanced prompts (PET with human)
+            # Priority 2: Check for Chinese responses (是/否)
+            elif "是" in human_clean or "有" in human_clean:
+                has_human = True
+            elif "否" in human_clean or "没有" in human_clean or "无" in human_clean:
+                has_human = False
+            # Priority 3: Check full response
             else:
-                prompt_mode = "scene_only"  # No human keywords at all
+                has_yes = "YES" in human_upper
+                has_no = "NO" in human_upper
 
-            result = {
-                "has_human": has_human,
-                "subject_type": subject_type,
-                "prompt_mode": prompt_mode
-            }
+                if has_yes and has_no:
+                    # Check which appears LAST (answer usually at end)
+                    yes_pos = human_upper.rfind("YES")
+                    no_pos = human_upper.rfind("NO")
+                    has_human = yes_pos > no_pos
+                elif has_yes:
+                    has_human = True
+                else:
+                    has_human = False
 
-            print(f"[SID-Prompt] Subject detection: has_human={has_human}, subject={subject_type}, mode={prompt_mode}")
-            return result
+            print(f"[SID-Prompt] Step 1 - Human detected: {has_human}")
 
         except Exception as e:
-            print(f"[SID-Prompt] Subject detection failed: {e}, defaulting to scene_only")
-            return default_result
+            print(f"[SID-Prompt] Step 1 failed: {e}, assuming no human")
+            has_human = False
+
+        check_interrupted()
+
+        # =====================================================================
+        # STEP 2: Subject and terrain classification (only if no human)
+        # =====================================================================
+        subject_type = "PORTRAIT" if has_human else "LANDSCAPE"
+        terrain_type = None
+
+        if not has_human:
+            # Only classify subject type if no human detected
+            subject_prompt = """What is the main subject of this image?
+
+Answer with just ONE word from this list:
+- PET (animal like dog, cat, bird, horse)
+- VEHICLE (car, motorcycle, plane, boat)
+- LANDSCAPE (nature scene, mountains, beach, forest)
+- ARCHITECTURE (building, interior, bridge)
+- OBJECT (product, food, still life)
+
+Answer:"""
+
+            try:
+                if hasattr(client, 'messages'):
+                    response = client.messages.create(
+                        model=llm_model.model,
+                        max_tokens=30,
+                        temperature=0,
+                        messages=[{
+                            "role": "user",
+                            "content": [
+                                {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_image}},
+                                {"type": "text", "text": subject_prompt}
+                            ]
+                        }]
+                    )
+                    subject_answer = response.content[0].text.strip()
+                else:
+                    response = client.chat.completions.create(
+                        model=llm_model.model,
+                        max_tokens=50,
+                        temperature=0,
+                        messages=[{
+                            "role": "user",
+                            "content": [
+                                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
+                                {"type": "text", "text": subject_prompt}
+                            ]
+                        }]
+                    )
+                    subject_answer = response.choices[0].message.content.strip() if response.choices[0].message.content else ""
+
+                print(f"[SID-Prompt] Step 2 - Subject detection raw: {subject_answer[:150]}...")
+
+                # Strip think tags and parse
+                subject_clean = re.sub(r'<think>.*?</think>', '', subject_answer, flags=re.DOTALL | re.IGNORECASE).strip()
+                subject_upper = subject_clean.upper()
+
+                # Find subject type
+                for subj in ["PET", "VEHICLE", "LANDSCAPE", "ARCHITECTURE", "OBJECT"]:
+                    if subj in subject_upper:
+                        subject_type = subj
+                        break
+
+                print(f"[SID-Prompt] Step 2 - Subject type: {subject_type}")
+
+            except Exception as e:
+                print(f"[SID-Prompt] Step 2 subject failed: {e}, defaulting to LANDSCAPE")
+                subject_type = "LANDSCAPE"
+
+            # Step 2b: Terrain classification for LANDSCAPE
+            if subject_type == "LANDSCAPE":
+                terrain_prompt = """What type of terrain is shown in this landscape?
+
+Answer with ONE word from this list:
+- MOUNTAIN (peaks, hills, cliffs, rocky)
+- DESERT (sand, arid, canyon)
+- FOREST (trees, woodland, jungle)
+- COASTAL (beach, ocean, sea, shore)
+- VALLEY (river valley, gorge)
+- GRASSLAND (meadow, prairie, plains)
+- WETLAND (marsh, swamp, lake)
+- URBAN (city park, urban nature)
+
+Answer:"""
+
+                try:
+                    if hasattr(client, 'messages'):
+                        response = client.messages.create(
+                            model=llm_model.model,
+                            max_tokens=30,
+                            temperature=0,
+                            messages=[{
+                                "role": "user",
+                                "content": [
+                                    {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_image}},
+                                    {"type": "text", "text": terrain_prompt}
+                                ]
+                            }]
+                        )
+                        terrain_answer = response.content[0].text.strip()
+                    else:
+                        response = client.chat.completions.create(
+                            model=llm_model.model,
+                            max_tokens=50,
+                            temperature=0,
+                            messages=[{
+                                "role": "user",
+                                "content": [
+                                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
+                                    {"type": "text", "text": terrain_prompt}
+                                ]
+                            }]
+                        )
+                        terrain_answer = response.choices[0].message.content.strip() if response.choices[0].message.content else ""
+
+                    print(f"[SID-Prompt] Step 2b - Terrain raw: {terrain_answer[:100]}...")
+
+                    terrain_clean = re.sub(r'<think>.*?</think>', '', terrain_answer, flags=re.DOTALL | re.IGNORECASE).strip()
+                    terrain_upper = terrain_clean.upper()
+
+                    for terrain in ["MOUNTAIN", "DESERT", "FOREST", "COASTAL", "VALLEY", "GRASSLAND", "WETLAND", "URBAN"]:
+                        if terrain in terrain_upper:
+                            terrain_type = terrain
+                            break
+
+                    if terrain_type is None:
+                        terrain_type = "MOUNTAIN"  # Default
+
+                    print(f"[SID-Prompt] Step 2b - Terrain type: {terrain_type}")
+
+                except Exception as e:
+                    print(f"[SID-Prompt] Step 2b terrain failed: {e}, defaulting to MOUNTAIN")
+                    terrain_type = "MOUNTAIN"
+
+        # If human detected, terrain is None and subject is PORTRAIT
+        if has_human:
+            terrain_type = None
+            subject_type = "PORTRAIT"
+
+        # =====================================================================
+        # STEP 3: Determine prompt mode
+        # =====================================================================
+        if has_human:
+            prompt_mode = "portrait"  # Human-focused prompts
+        else:
+            prompt_mode = "scene_only"  # No human keywords at all
+
+        result = {
+            "has_human": has_human,
+            "subject_type": subject_type,
+            "terrain_type": terrain_type,
+            "prompt_mode": prompt_mode
+        }
+
+        terrain_info = f", terrain={terrain_type}" if terrain_type else ""
+        print(f"[SID-Prompt] Final detection: has_human={has_human}, subject={subject_type}{terrain_info}, mode={prompt_mode}")
+        return result
 
     @classmethod
     def _validate_no_human_hallucination(cls, prompt: str, debug_lines: List[str]) -> str:

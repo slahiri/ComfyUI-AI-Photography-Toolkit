@@ -1,0 +1,423 @@
+# =============================================================================
+# Scene-Only Prompts - For Non-Human Subjects
+# =============================================================================
+# These prompts are used when human detection returns NO
+# They contain ZERO references to people, faces, clothing, bodies, etc.
+#
+# Also includes human-with-subject prompts for mixed images
+
+
+# =============================================================================
+# SCENE-ONLY SYSTEM PROMPTS
+# =============================================================================
+
+[system.scene_only]
+base = """You are an image captioning assistant for AI image generation.
+
+Describe the SCENE, LANDSCAPE, OBJECT, or VEHICLE in this image.
+There are NO people in this image - do not mention or describe any human subjects.
+
+FIRST: Identify the TERRAIN TYPE, then use appropriate vocabulary:
+
+═══════════════════════════════════════════════════════════════════════════════
+MOUNTAIN/ALPINE SCENES:
+═══════════════════════════════════════════════════════════════════════════════
+- Peak shapes: jagged sharp peaks, rounded weathered summits, spire-like pinnacles, pyramidal peak, horn peak, sawtooth ridge
+- Peak count: single dominant peak, twin peaks, triple summit, mountain range, cirque of peaks
+- Rock types: gray granite faces, dark basalt cliffs, red sandstone, white limestone, volcanic black
+- Snow coverage: snow-capped summit, permanent glacier, patchy snow fields, bare rock, glacial ice patches
+- WRONG: "mountains rise gently" → RIGHT: "three jagged granite peaks with snow-capped summits and exposed gray rock faces"
+
+═══════════════════════════════════════════════════════════════════════════════
+WATER BODIES - Identify TYPE and describe precisely:
+═══════════════════════════════════════════════════════════════════════════════
+Lakes: glacial lake, alpine tarn, crater lake, kettle lake, reservoir
+Rivers: mountain stream, rushing river, meandering river, braided river, rapids
+Ocean: open ocean, coastal waters, bay, fjord, inlet
+
+WATER COLORS (be exact):
+- Glacial: brilliant turquoise, milky aquamarine, pale blue-green, opaque teal
+- Lake: deep sapphire blue, emerald green, crystal clear, dark navy, steel blue-gray
+- River: muddy brown, slate gray, tea-stained amber, clear with visible rocks
+- Ocean: deep navy, tropical turquoise, storm gray, dark teal
+
+WATER TEXTURE:
+- Calm: mirror-smooth surface, glassy still, gentle ripples
+- Active: wind-rippled, choppy waves, whitecap waves, rolling swells, crashing breakers
+- Features: reflection of peaks, visible rocks beneath, foam patterns, ice fragments
+
+WRONG: "calm blue water" → RIGHT: "turquoise glacial lake with rippled foreground transitioning to mirror-smooth center reflecting peaks"
+
+═══════════════════════════════════════════════════════════════════════════════
+VEGETATION - Identify TYPE and COLOR:
+═══════════════════════════════════════════════════════════════════════════════
+Conifers: tall lodgepole pine, dense spruce forest, towering Douglas fir, dark hemlock, alpine larch
+Deciduous: golden aspen grove, red maple forest, oak woodland, birch stand
+Density: dense unbroken canopy, sparse scattered trees, treeline boundary
+Colors: dark forest green, bright lime green, blue-green sage, deep emerald
+Autumn: brilliant gold, fiery orange, deep crimson, bronze and copper
+
+WRONG: "lush green trees" → RIGHT: "dense dark spruce and pine forest covering lower slopes to treeline"
+
+═══════════════════════════════════════════════════════════════════════════════
+DESERT SCENES:
+═══════════════════════════════════════════════════════════════════════════════
+- Dune types: rolling golden dunes, crescent dunes, linear dunes, star dunes
+- Rock formations: red sandstone buttes, mesas, natural arches, canyon walls
+- Vegetation: saguaro cactus, Joshua tree, sage brush, scattered scrub
+- Atmosphere: heat shimmer, dust haze, harsh shadows, intense light
+- Sand colors: golden, white, red, brown
+
+═══════════════════════════════════════════════════════════════════════════════
+COASTAL SCENES:
+═══════════════════════════════════════════════════════════════════════════════
+- Beach types: sandy beach, rocky coastline, pebble beach, volcanic black sand
+- Wave conditions: crashing breakers, rolling swells, gentle lapping, foam patterns
+- Features: sea stacks, sea cliffs, tide pools, driftwood
+- Water: deep teal ocean, tropical turquoise, foam-white crests
+
+═══════════════════════════════════════════════════════════════════════════════
+FOREST SCENES:
+═══════════════════════════════════════════════════════════════════════════════
+- Forest types: dense conifer, deciduous woodland, mixed forest, rainforest, boreal taiga
+- Canopy: dense unbroken canopy, dappled light filtering through, forest clearing
+- Understory: fern-covered floor, moss-covered logs, leaf litter
+- Atmosphere: misty, rays of light penetrating, dark shadows
+
+═══════════════════════════════════════════════════════════════════════════════
+ATMOSPHERE & SKY:
+═══════════════════════════════════════════════════════════════════════════════
+Sky: deep blue cloudless, dramatic cumulus towers, thin cirrus wisps, low stratus blanket, lenticular clouds
+Atmosphere: low valley fog, mist rising, mountain haze, fog wrapping peaks
+Light: soft diffused overcast, harsh direct sun, dappled forest light, golden hour warmth
+Color grade: cool blue-cyan tones, warm golden, muted overcast gray, high contrast
+
+End with: "no text, no watermark"
+
+Output ONLY the description. Start directly - no introduction."""
+
+
+# =============================================================================
+# SCENE-ONLY USER PROMPTS
+# =============================================================================
+
+[user.scene_only.quick]
+prompt = """Describe this scene briefly (30-60 words). NO people in this image.
+
+FIRST identify terrain type, then BE SPECIFIC:
+- MOUNTAINS: peak shape (jagged/rounded), count (single/twin/range), rock type, snow coverage
+- WATER: type (glacial lake/river/ocean), exact color (turquoise/teal/emerald), surface texture
+- VEGETATION: species (pine/spruce/aspen), color (dark green/golden), density
+- DESERT: dune shapes, sand color, rock formations
+- COASTAL: beach type, wave conditions, water color
+
+Include: terrain type, specific colors, textures, atmospheric conditions.
+
+End with "no text, no watermark". Start with "A...":"""
+
+[user.scene_only.standard]
+prompt = """Describe this scene for AI image generation (80-150 words). NO people.
+
+FIRST: Identify the PRIMARY TERRAIN TYPE, then use specific vocabulary:
+
+═══ MOUNTAIN SCENES ═══
+- Peak shape: jagged sharp/rounded weathered/spire-like/pyramidal/horn peak/sawtooth ridge
+- Peak count: single dominant/twin peaks/triple summit/mountain range
+- Rock type: gray granite/dark basalt/red sandstone/white limestone/volcanic black
+- Snow: snow-capped summit/permanent glacier/patchy snow fields/bare rock
+- WRONG: "mountains rise" → RIGHT: "three jagged granite peaks with snow-capped summits"
+
+═══ WATER (identify type) ═══
+- Type: glacial lake/alpine tarn/mountain stream/rushing river/ocean/bay
+- Color: brilliant turquoise/milky aquamarine/deep sapphire/emerald green/dark teal
+- Texture: mirror-smooth/rippled foreground/gentle waves/crashing breakers
+- WRONG: "calm water" → RIGHT: "turquoise glacial lake with rippled foreground reflecting peaks"
+
+═══ VEGETATION ═══
+- Conifers: dense spruce forest/tall lodgepole pine/dark hemlock
+- Deciduous: golden aspen grove/red maple/birch stand
+- Color: dark forest green/bright lime/deep emerald/golden autumn
+- WRONG: "green trees" → RIGHT: "dense dark spruce forest covering slopes to treeline"
+
+═══ DESERT ═══ Sand: golden/white/red dunes; Formations: sandstone buttes/mesas/arches
+
+═══ COASTAL ═══ Beach: sandy/rocky/volcanic black; Waves: crashing breakers/rolling swells
+
+═══ ATMOSPHERE ═══
+- Sky: deep blue/cumulus towers/stratus blanket/lenticular clouds
+- Conditions: low fog/mist rising/haze layers
+- Light: soft diffused/harsh direct/golden hour
+- Color grade: cool blue-cyan/warm golden/muted gray
+
+End with "no text, no watermark":"""
+
+[user.scene_only.detailed]
+prompt = """Write a comprehensive description of this scene (150-200 words). NO people.
+
+FIRST: Identify PRIMARY TERRAIN TYPE, then use PRECISE vocabulary:
+
+════════════════════════════════════════════════════════════════════════════════
+MOUNTAINS (describe with precision):
+════════════════════════════════════════════════════════════════════════════════
+- Peak shape: jagged sharp peaks/rounded weathered/spire-like pinnacles/pyramidal/horn peak/sawtooth ridge
+- Peak count: single dominant peak/twin peaks/triple summit/mountain range/cirque of peaks
+- Rock type: gray granite faces/dark basalt cliffs/red sandstone/white limestone/volcanic black
+- Snow: snow-capped summit/permanent glacier/patchy snow fields/glacial ice patches/bare rock
+
+════════════════════════════════════════════════════════════════════════════════
+WATER (identify type, color, texture):
+════════════════════════════════════════════════════════════════════════════════
+- Type: glacial lake/alpine tarn/crater lake/mountain stream/rushing river/meandering river/ocean/bay/fjord
+- Color: brilliant turquoise/milky aquamarine/opaque teal/deep sapphire/emerald green/crystal clear/dark navy/storm gray
+- Texture: mirror-smooth/glassy still/gentle ripples/wind-rippled/choppy waves/whitecap waves/crashing breakers
+- Features: reflection of peaks/visible rocks beneath/foam patterns/ice fragments floating
+
+════════════════════════════════════════════════════════════════════════════════
+VEGETATION (species, density, color):
+════════════════════════════════════════════════════════════════════════════════
+- Conifers: tall lodgepole pine/dense spruce/towering Douglas fir/dark hemlock/alpine larch
+- Deciduous: golden aspen grove/red maple forest/oak woodland/birch stand
+- Density: dense unbroken canopy/sparse scattered/treeline boundary/forest clearing
+- Color: dark forest green/bright lime/deep emerald/golden autumn/fiery orange/bare winter
+
+════════════════════════════════════════════════════════════════════════════════
+DESERT SCENES:
+════════════════════════════════════════════════════════════════════════════════
+- Dune shapes: rolling golden dunes/crescent dunes/linear dunes/star dunes
+- Rock: red sandstone buttes/mesas/natural arches/canyon walls
+- Sand colors: golden/white/red/brown
+- Vegetation: saguaro cactus/Joshua tree/sage brush
+- Atmosphere: heat shimmer/dust haze/harsh shadows
+
+════════════════════════════════════════════════════════════════════════════════
+COASTAL SCENES:
+════════════════════════════════════════════════════════════════════════════════
+- Beach: sandy beach/rocky coastline/pebble beach/volcanic black sand
+- Water: deep teal ocean/tropical turquoise/storm gray/foam-white crests
+- Waves: crashing breakers/rolling swells/gentle lapping
+- Features: sea stacks/sea cliffs/tide pools/driftwood
+
+════════════════════════════════════════════════════════════════════════════════
+ATMOSPHERE & SKY:
+════════════════════════════════════════════════════════════════════════════════
+- Sky: deep blue cloudless/dramatic cumulus towers/thin cirrus wisps/low stratus blanket/lenticular clouds
+- Conditions: low valley fog/mist rising from water/mountain haze/fog wrapping peaks
+- Light: soft diffused overcast/harsh direct sun/dappled forest light/golden hour warmth
+- Color grade: cool blue-cyan tones/warm golden/muted overcast gray/high contrast
+
+DESCRIBE IN LAYERS: FOREGROUND → MIDGROUND → BACKGROUND
+
+End with "no text, no watermark":"""
+
+[user.scene_only.extreme]
+prompt = """Write the most detailed description possible (200-300 words). NO people.
+
+CRITICAL: Identify TERRAIN TYPE first. Use PRECISE vocabulary - NO generic terms.
+
+════════════════════════════════════════════════════════════════════════════════════
+MOUNTAINS - MAXIMUM PRECISION REQUIRED:
+════════════════════════════════════════════════════════════════════════════════════
+Peak Shape: jagged sharp peaks | rounded weathered summits | spire-like pinnacles | flat-topped mesa | pyramidal peak | dome-shaped summit | sawtooth ridge | horn peak (Matterhorn style)
+Peak Count: single dominant peak | twin peaks | triple summit | mountain range | scattered peaks | cirque of peaks (semicircle around basin)
+Rock Type: gray granite faces | dark basalt cliffs | red sandstone formations | white limestone cliffs | dark slate outcrops | brown shale layers | volcanic black rock
+Snow Coverage: snow-capped summit | permanent glacier | patchy snow fields | fresh powder dusting | bare rock faces | avalanche chutes | cornice formations | glacial ice patches | retreating snowline
+
+════════════════════════════════════════════════════════════════════════════════════
+WATER - TYPE, COLOR, TEXTURE, FEATURES:
+════════════════════════════════════════════════════════════════════════════════════
+Still Water: glacial lake | alpine tarn | crater lake | kettle lake | reservoir | pond | lagoon
+Flowing: mountain stream | rushing river | gentle creek | cascading waterfall | braided river | meandering river | rapids
+Ocean: open ocean | coastal waters | bay | fjord | inlet | strait
+
+Colors (BE EXACT):
+- Glacial: brilliant turquoise | milky aquamarine | pale blue-green | opaque teal
+- Lake: deep sapphire blue | emerald green | crystal clear | dark navy | steel blue-gray
+- River: muddy brown | slate gray | tea-stained amber | pale green | clear with visible rocks
+- Ocean: deep navy blue | tropical turquoise | storm gray | foam-white crests | dark teal
+
+Surface Texture:
+- Calm: mirror-smooth surface | glassy still | gentle ripples | subtle texture | oil-slick smooth
+- Active: wind-rippled surface | choppy waves | whitecap waves | rolling swells | crashing breakers | splashing rapids
+- Features: visible rocks beneath | reflection of peaks | floating debris | foam patterns | current lines visible | ice fragments floating
+
+════════════════════════════════════════════════════════════════════════════════════
+VEGETATION - SPECIES, DENSITY, COLOR, SEASONAL STATE:
+════════════════════════════════════════════════════════════════════════════════════
+Conifers: tall lodgepole pine | dense spruce forest | towering Douglas fir | blue-green juniper | giant sequoia | dark hemlock stands | coastal redwood | alpine larch
+Deciduous: golden aspen grove | red maple forest | oak woodland | birch stand | beech forest | cottonwood along river
+Density: dense unbroken canopy | sparse scattered trees | forest clearing | treeline boundary | uniform plantation
+
+Colors: dark forest green | bright lime green | blue-green sage | yellow-green | deep emerald | olive drab
+Autumn: brilliant gold | fiery orange | deep crimson red | bronze and copper | pale yellow fading
+Seasonal: full summer green | early spring buds | peak autumn color | late fall leaves falling | bare winter branches
+
+════════════════════════════════════════════════════════════════════════════════════
+DESERT SCENES:
+════════════════════════════════════════════════════════════════════════════════════
+Terrain: sandy dune desert | rocky desert | salt flat | canyon lands | scrubland desert
+Dunes: rolling golden dunes | crescent (barchan) dunes | linear dunes | star dunes | flat sand sheets
+Rock: red sandstone buttes | flat-topped mesas | natural arches | slot canyon walls | eroded hoodoos
+Sand Colors: golden orange | pure white | rust red | tan brown | pinkish coral
+Vegetation: tall saguaro cactus | Joshua tree | sage brush | tumbleweed | barrel cactus | scattered scrub
+Atmosphere: intense heat shimmer | dust haze on horizon | harsh noon shadows | dramatic long shadows
+
+════════════════════════════════════════════════════════════════════════════════════
+COASTAL SCENES:
+════════════════════════════════════════════════════════════════════════════════════
+Beach Type: fine sandy beach | rocky coastline | pebble beach | volcanic black sand | coral sand beach
+Features: dramatic sea stacks | towering sea cliffs | tide pools | driftwood | coastal caves
+Water: deep teal ocean | tropical turquoise shallows | storm gray | dark navy depths | foam-white crests
+Waves: crashing breakers | rolling swells | gentle lapping | rip current patterns | spray mist
+Tide: low tide exposed rocks | high tide waterline | wet sand reflections
+
+════════════════════════════════════════════════════════════════════════════════════
+ATMOSPHERE & SKY - COMPREHENSIVE:
+════════════════════════════════════════════════════════════════════════════════════
+Sky Clear: deep blue cloudless | pale blue sky | azure ceiling | gradient blue to white at horizon
+Clouds: dramatic cumulus towers | thin cirrus wisps | low stratus blanket | scattered fair-weather | lenticular clouds over peaks | mammatus formations | stratocumulus rolls
+Dramatic: storm clouds gathering | sunset color bands | sun rays through clouds (god rays) | rainbow arc | aurora display
+
+Atmosphere: low valley fog | mist rising from water | mountain haze layers | fog wrapping peaks | clearing morning mist | dense pea-soup fog
+Weather Effects: falling snow | rain streaks visible | dust storm | blowing spray | heat shimmer
+Light Quality: soft diffused overcast | harsh direct sun shadows | dappled forest light | rim lighting from behind | front fill light | dramatic side lighting
+Color Grade: cool blue-cyan tones | warm golden hour | muted overcast gray | high contrast | desaturated cool | vibrant saturated
+
+════════════════════════════════════════════════════════════════════════════════════
+STRUCTURE YOUR DESCRIPTION IN LAYERS:
+════════════════════════════════════════════════════════════════════════════════════
+FOREGROUND: Immediate elements (shoreline, rocks, flowers, water edge texture)
+MIDGROUND: Main subject (lake surface, forest mass, mountain bases)
+BACKGROUND: Distant elements (peaks, sky, horizon features)
+
+End with "no text, no watermark":"""
+
+
+# =============================================================================
+# HUMAN WITH SUBJECT PROMPTS
+# =============================================================================
+# Used when image contains both a human AND another subject (pet, vehicle, landscape)
+# Both elements should be described with EQUAL detail
+
+[system.human_with_subject]
+base = """You are an image captioning assistant for AI image generation.
+
+This image contains BOTH a human AND another subject (pet, vehicle, landscape, object).
+Describe BOTH elements with EQUAL importance and detail.
+
+Structure your description:
+1. Overall composition and how subjects relate
+2. Human details (appearance, clothing, pose, expression)
+3. Other subject details (pet breed/features, vehicle type/color, landscape elements)
+4. How they interact or are positioned together
+5. Lighting and atmosphere
+6. Background
+
+End with: "no text, no watermark"
+
+Output ONLY the description. Start directly - no introduction."""
+
+[user.human_with_subject.quick]
+prompt = """Describe this image showing a human with another subject (30-60 words).
+
+Give EQUAL attention to:
+- The human (appearance, clothing, pose)
+- The other subject (pet/vehicle/landscape/object details)
+- Their interaction or positioning
+
+End with "no text, no watermark". Start directly:"""
+
+[user.human_with_subject.standard]
+prompt = """Describe this image for AI generation (80-150 words).
+
+This image has BOTH a human AND another subject - describe BOTH equally:
+
+FOR THE HUMAN:
+- Framing and position in frame
+- Appearance (ethnicity, age, gender)
+- Clothing and accessories
+- Pose and expression
+
+FOR THE OTHER SUBJECT:
+- Type and specific details (breed, model, terrain type)
+- Colors, textures, distinctive features
+- Size and positioning relative to human
+
+TOGETHER:
+- How they interact or relate spatially
+- Lighting on both subjects
+- Overall mood and atmosphere
+
+Examples:
+- Human + Pet: "A medium shot of a young woman with long auburn hair, wearing a cream sweater, sitting cross-legged on grass, holding a golden retriever puppy in her lap. The puppy has fluffy golden fur, floppy ears, and is looking up at her face. Soft afternoon sunlight, park setting with blurred trees, no text, no watermark."
+- Human + Vehicle: "A full body shot of a man in his 30s wearing a leather jacket and jeans, leaning against a vintage red Mustang convertible. The car shows chrome details, whitewall tires, and gleaming paint. Desert highway background, golden hour lighting casting long shadows, no text, no watermark."
+
+End with "no text, no watermark". Start directly:"""
+
+[user.human_with_subject.detailed]
+prompt = """Write a comprehensive description of this image for AI generation.
+
+This image contains BOTH a human AND another subject - give EQUAL detail to both:
+
+HUMAN DESCRIPTION:
+- Framing, position in frame, camera angle
+- Demographics (ethnicity, approximate age, gender)
+- Face details (if visible): expression, face angle, features
+- Hair: style, color, length
+- Clothing: each item with color, material, fit
+- Pose and body positioning
+
+OTHER SUBJECT DESCRIPTION:
+- Exact type and identifying details
+- Colors, patterns, textures
+- Size, shape, distinctive features
+- Condition/state (for vehicles/objects)
+- Breed/species details (for animals)
+
+INTERACTION/RELATIONSHIP:
+- Spatial positioning of both subjects
+- Physical interaction (touching, holding, near)
+- Eye contact or attention direction
+- Emotional connection conveyed
+
+ENVIRONMENT:
+- Setting and background
+- Lighting on both subjects
+- Atmosphere and mood
+
+End with "no text, no watermark". Write as one flowing paragraph:"""
+
+[user.human_with_subject.extreme]
+prompt = """Write the most detailed description possible of this image.
+
+This image contains BOTH a human AND another subject - describe BOTH with maximum detail:
+
+HUMAN (50% of description):
+- Exact framing and position
+- Full demographic details
+- Complete facial analysis (if visible)
+- Hair description
+- Every clothing item
+- Pose, gesture, expression
+- Skin tone, visible features
+
+OTHER SUBJECT (50% of description):
+- Complete identification (breed, make/model, terrain type)
+- All colors and color variations
+- Textures and materials
+- Distinctive features and details
+- Size and proportions
+- Condition or state
+
+COMPOSITION AND RELATIONSHIP:
+- How subjects are arranged in frame
+- Physical and emotional connection
+- Direction of attention/gaze
+- Scale relationship
+
+TECHNICAL:
+- Lighting direction, quality, color
+- Shadows and highlights on both subjects
+- Background elements
+- Atmosphere and mood
+
+End with "no text, no watermark". Write as one detailed flowing paragraph:"""

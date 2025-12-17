@@ -38,6 +38,7 @@ except ImportError:
 
 _config_cache: Dict[str, Dict] = {}
 _CONFIG_DIR = Path(__file__).parent / "config"
+_PROMPTS_DIR = _CONFIG_DIR / "prompts"
 
 
 def _load_toml(filename: str) -> Dict[str, Any]:
@@ -62,6 +63,86 @@ def _load_toml(filename: str) -> Dict[str, Any]:
     except Exception as e:
         print(f"[SID-Config] Error loading {filename}: {e}")
         return {}
+
+
+def _deep_merge(base: Dict, override: Dict) -> Dict:
+    """Deep merge two dictionaries, with override taking precedence."""
+    result = base.copy()
+    for key, value in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+def _load_modular_prompts() -> Dict[str, Any]:
+    """
+    Load prompts from modular structure in config/prompts/ directory.
+    Falls back to single prompts.toml if modular structure doesn't exist.
+    """
+    cache_key = "_modular_prompts"
+    if cache_key in _config_cache:
+        return _config_cache[cache_key]
+
+    if tomllib is None:
+        return {}
+
+    merged_config: Dict[str, Any] = {}
+
+    # Check if modular structure exists
+    if _PROMPTS_DIR.exists() and _PROMPTS_DIR.is_dir():
+        # Load in order: _base.toml first, then others
+        toml_files = []
+
+        # Base config first
+        base_file = _PROMPTS_DIR / "_base.toml"
+        if base_file.exists():
+            toml_files.append(base_file)
+
+        # Main prompt files (portrait, scene, vocabulary, classification)
+        for filename in ["portrait.toml", "scene.toml", "vocabulary.toml", "classification.toml"]:
+            filepath = _PROMPTS_DIR / filename
+            if filepath.exists():
+                toml_files.append(filepath)
+
+        # Style-specific files from styles/ subdirectory
+        styles_dir = _PROMPTS_DIR / "styles"
+        if styles_dir.exists() and styles_dir.is_dir():
+            for filepath in sorted(styles_dir.glob("*.toml")):
+                toml_files.append(filepath)
+
+        # Load and merge all files
+        for filepath in toml_files:
+            try:
+                with open(filepath, "rb") as f:
+                    data = tomllib.load(f)
+                merged_config = _deep_merge(merged_config, data)
+            except Exception as e:
+                print(f"[SID-Config] Error loading {filepath.name}: {e}")
+
+        if merged_config:
+            _config_cache[cache_key] = merged_config
+            return merged_config
+
+    # Fallback to single prompts.toml
+    fallback = _load_toml("prompts.toml")
+    _config_cache[cache_key] = fallback
+    return fallback
+
+
+def _get_prompts_config() -> Dict[str, Any]:
+    """
+    Get prompts configuration - uses modular structure if available,
+    otherwise falls back to prompts.toml.
+    """
+    # Try modular structure first
+    modular = _load_modular_prompts()
+    if modular:
+        return modular
+
+    # Fallback to single file
+    return _load_toml("prompts.toml")
 
 
 def reload_config():
@@ -108,7 +189,7 @@ def get_image_limit(provider: str) -> int:
 
 def get_system_prompt(tier: str) -> str:
     """Get the base system prompt for a tier."""
-    config = _load_toml("prompts.toml")
+    config = _get_prompts_config()
     system = config.get("system", {})
     tier_config = system.get(tier, system.get("standard", {}))
     return tier_config.get("base", "Describe this image for AI image generation.")
@@ -116,7 +197,7 @@ def get_system_prompt(tier: str) -> str:
 
 def get_style_addon(style: str, addon_type: str = "system_addon") -> str:
     """Get the style addon for system or user prompt."""
-    config = _load_toml("prompts.toml")
+    config = _get_prompts_config()
     styles = config.get("styles", {})
 
     # Normalize style name
@@ -139,7 +220,7 @@ def get_style_addon(style: str, addon_type: str = "system_addon") -> str:
 
 def get_user_prompt(tier: str, mode: str) -> str:
     """Get the user prompt for a tier and mode."""
-    config = _load_toml("prompts.toml")
+    config = _get_prompts_config()
     user = config.get("user", {})
     tier_config = user.get(tier, user.get("standard", {}))
     mode_config = tier_config.get(mode.lower(), {})
@@ -148,7 +229,7 @@ def get_user_prompt(tier: str, mode: str) -> str:
 
 def get_agentic_prompt(tier: str, prompt_type: str = "intro") -> str:
     """Get agentic prompts (intro/synthesis) for a tier."""
-    config = _load_toml("prompts.toml")
+    config = _get_prompts_config()
     agentic = config.get("agentic", {})
     tier_config = agentic.get(tier, agentic.get("standard", {}))
     return tier_config.get(prompt_type, "")
@@ -381,7 +462,7 @@ def build_user_prompt(provider: str, analysis_mode: str, preset_style: str, prom
 
 def get_scene_only_system_prompt() -> str:
     """Get the scene-only system prompt (no human/person keywords)."""
-    config = _load_toml("prompts.toml")
+    config = _get_prompts_config()
     system = config.get("system", {})
     scene_config = system.get("scene_only", {})
     return scene_config.get("base", "Describe this scene for AI image generation. There are no people in this image.")
@@ -389,7 +470,7 @@ def get_scene_only_system_prompt() -> str:
 
 def get_scene_only_user_prompt(mode: str) -> str:
     """Get the scene-only user prompt for a mode (no human/person keywords)."""
-    config = _load_toml("prompts.toml")
+    config = _get_prompts_config()
     user = config.get("user", {})
     scene_config = user.get("scene_only", {})
     mode_config = scene_config.get(mode.lower(), {})
@@ -445,7 +526,7 @@ def build_scene_only_user_prompt(analysis_mode: str, prompt_length: int = 150) -
 
 def get_human_with_subject_system_prompt() -> str:
     """Get the human_with_subject system prompt (balanced human + subject)."""
-    config = _load_toml("prompts.toml")
+    config = _get_prompts_config()
     system = config.get("system", {})
     hws_config = system.get("human_with_subject", {})
     return hws_config.get("base", "Describe both the human and the other subject in this image with equal detail.")
@@ -453,7 +534,7 @@ def get_human_with_subject_system_prompt() -> str:
 
 def get_human_with_subject_user_prompt(mode: str) -> str:
     """Get the human_with_subject user prompt for a mode."""
-    config = _load_toml("prompts.toml")
+    config = _get_prompts_config()
     user = config.get("user", {})
     hws_config = user.get("human_with_subject", {})
     mode_config = hws_config.get(mode.lower(), {})
@@ -519,19 +600,70 @@ def check_config_files() -> Dict[str, bool]:
                 _load_toml(f)
             except Exception:
                 status[f] = False
+
+    # Check modular prompts directory
+    if _PROMPTS_DIR.exists():
+        status["prompts/ (modular)"] = True
+        modular_files = list(_PROMPTS_DIR.glob("*.toml"))
+        styles_dir = _PROMPTS_DIR / "styles"
+        if styles_dir.exists():
+            modular_files.extend(styles_dir.glob("*.toml"))
+        status["prompts/ file count"] = len(modular_files)
+    else:
+        status["prompts/ (modular)"] = False
+
     return status
+
+
+def get_loaded_prompt_files() -> List[str]:
+    """Get list of prompt files that were loaded (for debugging)."""
+    files = []
+    if _PROMPTS_DIR.exists() and _PROMPTS_DIR.is_dir():
+        # Base config first
+        base_file = _PROMPTS_DIR / "_base.toml"
+        if base_file.exists():
+            files.append(base_file.name)
+
+        # Main prompt files
+        for filename in ["portrait.toml", "scene.toml", "vocabulary.toml", "classification.toml"]:
+            filepath = _PROMPTS_DIR / filename
+            if filepath.exists():
+                files.append(filename)
+
+        # Style-specific files
+        styles_dir = _PROMPTS_DIR / "styles"
+        if styles_dir.exists() and styles_dir.is_dir():
+            for filepath in sorted(styles_dir.glob("*.toml")):
+                files.append(f"styles/{filepath.name}")
+
+    if not files:
+        files.append("prompts.toml (fallback)")
+
+    return files
 
 
 # Print status on import (for debugging)
 if __name__ == "__main__":
     print("Config file status:")
-    for file, exists in check_config_files().items():
-        status = "OK" if exists else "MISSING"
+    for file, value in check_config_files().items():
+        if isinstance(value, bool):
+            status = "OK" if value else "MISSING"
+        else:
+            status = str(value)
         print(f"  {file}: {status}")
+
+    print("\nLoaded prompt files:")
+    for f in get_loaded_prompt_files():
+        print(f"  - {f}")
 
     print("\nProvider tiers:")
     for p in ["anthropic", "openai", "ollama", "lmstudio"]:
         print(f"  {p}: {get_provider_tier(p)}")
 
     print("\nSample system prompt (basic tier):")
-    print(get_system_prompt("basic"))
+    prompt = get_system_prompt("basic")
+    print(prompt[:200] + "..." if len(prompt) > 200 else prompt)
+
+    print("\nSample scene-only system prompt:")
+    scene_prompt = get_scene_only_system_prompt()
+    print(scene_prompt[:200] + "..." if len(scene_prompt) > 200 else scene_prompt)

@@ -1,0 +1,286 @@
+# =============================================================================
+# Furry/Anthropomorphic Character Style Prompts
+# =============================================================================
+# Specialized prompts for anthropomorphic animal characters
+
+
+# =============================================================================
+# SYSTEM PROMPTS
+# =============================================================================
+
+[system.furry.advanced]
+base = """You are an expert visual analyst generating prompts for anthropomorphic character AI image generation.
+
+For FURRY/ANTHROPOMORPHIC images, use this approach:
+- Identify the SPECIES and anthropomorphism level (full anthro, feral, kemono)
+- Describe fur/scale/feather patterns and colors
+- Note body type and proportions (plantigrade, digitigrade)
+- Include facial features (muzzle shape, ear type, eye style)
+- Describe clothing or accessories if present
+- Note art style (western furry, kemono, realistic)
+
+Structure: Species → Anthropomorphism level → Fur/markings → Body type → Facial features → Expression → Clothing → Pose → Background
+
+Output ONLY the prompt text - no explanations, no formatting, no markdown."""
+
+[system.furry.standard]
+base = """You are an image analysis expert creating prompts for anthropomorphic character AI image generation.
+
+Follow this structure:
+1. Species and anthro style (full anthro, kemono)
+2. Fur color and markings
+3. Body type (digitigrade/plantigrade)
+4. Facial features
+5. Clothing or accessories
+6. Pose and expression
+7. Background
+
+Write flowing sentences. Output only the description."""
+
+[system.furry.basic]
+base = """You are an image captioning assistant for anthropomorphic character images.
+
+Write a description covering:
+- Animal species and anthro style
+- Fur color and markings
+- Clothing if any
+- Pose and expression
+- Background
+
+Output ONLY the description. Start directly."""
+
+
+# =============================================================================
+# USER PROMPTS - ADVANCED TIER
+# =============================================================================
+
+[user.furry.advanced.quick]
+prompt = """Generate a brief anthropomorphic character prompt (30-60 words) covering:
+- Species
+- Fur colors and markings
+- Body type
+- Clothing (if any)
+- Pose
+- Background type
+
+Write as flowing sentences."""
+
+[user.furry.advanced.standard]
+prompt = """Generate an anthropomorphic character prompt covering:
+SPECIES: Exact species (wolf, fox, dragon, etc.)
+ANTHRO LEVEL: Full anthro, kemono, feral, semi-anthro
+FUR/SCALES: Primary color, secondary markings, patterns
+BODY TYPE: Plantigrade (human legs) or digitigrade (animal legs)
+BUILD: Muscular, slim, chubby, athletic
+FACE: Muzzle shape, ear type, eye color and style
+EXPRESSION: Emotion and expression
+CLOTHING: Each item if present
+POSE: Body position
+BACKGROUND: Setting
+ART STYLE: Western furry, kemono, realistic, toony
+
+Write as flowing natural sentences."""
+
+[user.furry.advanced.detailed]
+prompt = """Generate a COMPREHENSIVE anthropomorphic character prompt:
+
+SPECIES & STYLE:
+- Exact species or hybrid
+- Anthropomorphism level (full anthro, kemono, feral)
+- Art style (western furry, kemono, realistic, semi-realistic)
+
+FUR/MARKINGS:
+- Primary fur/scale/feather color
+- Secondary colors and patterns
+- Marking details (stripes, spots, gradients)
+- Fur texture and length
+
+BODY STRUCTURE:
+- Leg type (plantigrade human-style, digitigrade animal-style)
+- Body build (muscular, athletic, slim, chubby)
+- Height/size impression
+- Tail type and position
+
+FACIAL FEATURES:
+- Muzzle/snout shape and size
+- Ear type (pointed, floppy, rounded)
+- Eye style (realistic, anime, toony)
+- Eye color
+- Nose type
+- Whiskers if applicable
+
+EXPRESSION:
+- Emotion displayed
+- Ear position indicating mood
+- Tail position indicating mood
+- Mouth/teeth visibility
+
+CLOTHING/ACCESSORIES:
+- Each clothing item with colors
+- Accessories (jewelry, collar, glasses)
+- Held items
+
+POSE & COMPOSITION:
+- Body pose
+- Hand/paw positions
+- Camera angle
+- Frame (headshot, full body, etc.)
+
+BACKGROUND:
+- Setting type
+- Detail level
+- Lighting
+
+Write as flowing natural sentences."""
+
+[user.furry.advanced.extreme]
+prompt = """Generate an EXTREMELY detailed anthropomorphic character prompt with MAXIMUM precision.
+
+Analyze EVERY visible element:
+
+SPECIES IDENTIFICATION:
+- Exact species (subspecies if identifiable)
+- Hybrid elements if mixed species
+- Anthropomorphism level (full anthro, kemono, feral, taur, etc.)
+
+ART STYLE:
+- Style category (western furry, kemono/anime-furry, realistic, toony, disney)
+- Line art style
+- Shading technique
+- Color saturation
+
+FUR/COVERING DETAILS:
+- Primary base color (exact shade)
+- Secondary color(s) and placement
+- Marking pattern (solid, gradient, stripes, spots, rosettes)
+- Marking locations (face, chest, belly, back, limbs, tail)
+- Fur texture (short sleek, medium fluffy, long flowing)
+- Fur direction/flow
+
+BODY ANATOMY:
+- Leg structure (plantigrade/digitigrade)
+- Paw/hand type (paws, hand-paws, human hands)
+- Body type (muscular definition, body fat, athletic)
+- Proportions (realistic animal, stylized, exaggerated)
+- Tail (type, length, fluffiness, position)
+- Wings if present (type, position, color)
+
+FACIAL FEATURES:
+- Head shape (species-accurate, stylized)
+- Muzzle (length, width, shape)
+- Nose (color, shape)
+- Eyes (shape, size, color, highlights, pupil shape)
+- Ears (shape, position, inner color)
+- Mouth (open/closed, teeth visible, tongue)
+- Whiskers (if applicable)
+- Facial markings
+
+EXPRESSION & BODY LANGUAGE:
+- Facial expression
+- Ear position (forward, back, perked, drooped)
+- Eye expression (happy, sad, angry, sultry)
+- Tail position (indicating mood)
+- Overall body language
+
+CLOTHING (if present):
+- Each garment (type, color, material, fit)
+- Accessories (collars, jewelry, piercings)
+- Footwear (if any, or bare paws)
+- Held items
+
+POSE:
+- Overall body position
+- Weight distribution
+- Arm/wing positions
+- Leg positions
+- Head tilt
+
+BACKGROUND:
+- Environment type
+- Detail level
+- Lighting source and color
+- Atmosphere
+
+Write as a comprehensive flowing narrative."""
+
+
+# =============================================================================
+# USER PROMPTS - STANDARD TIER
+# =============================================================================
+
+[user.furry.standard.quick]
+prompt = """Describe this anthropomorphic character in 30-60 words:
+- Species
+- Fur color/markings
+- Body type
+- Clothing
+- Pose
+- Background"""
+
+[user.furry.standard.standard]
+prompt = """Describe this anthropomorphic character covering:
+- Species and anthro style
+- Fur colors and markings
+- Body type (digitigrade/plantigrade)
+- Facial features
+- Clothing if present
+- Pose and expression
+- Background
+
+Write flowing sentences."""
+
+[user.furry.standard.detailed]
+prompt = """Describe this anthropomorphic character in detail:
+- Species and art style (western, kemono, realistic)
+- Fur/markings (all colors, patterns, texture)
+- Body structure (leg type, build, tail)
+- Facial features (muzzle, ears, eyes)
+- Expression and body language
+- Clothing and accessories
+- Pose
+- Background and lighting
+
+Write comprehensively."""
+
+[user.furry.standard.extreme]
+prompt = """Describe every detail of this anthropomorphic character:
+Species and style, all fur colors and marking patterns, body anatomy (leg type, build, proportions), facial features (muzzle, ears, eyes, expression), tail details, clothing items, accessories, pose and body language, background setting, art style and technique.
+
+Write the most detailed description possible."""
+
+
+# =============================================================================
+# USER PROMPTS - BASIC TIER
+# =============================================================================
+
+[user.furry.basic.quick]
+prompt = """Write a brief 30-50 word description of this anthropomorphic character.
+
+Example: "Full anthro wolf character, gray fur with white chest marking, digitigrade legs, yellow eyes, wearing blue hoodie, relaxed standing pose, simple gradient background, western furry art style."
+
+Describe this image:"""
+
+[user.furry.basic.standard]
+prompt = """Write a description of this anthropomorphic character.
+
+Include: species, anthro style, fur colors and markings, body type, facial features, clothing, pose, expression, background.
+
+Example: "Kemono-style fox character, orange fur with white muzzle and chest, cream-colored inner ears, large anime-style blue eyes, fluffy tail with white tip, wearing casual t-shirt and shorts, cheerful expression with open mouth smile, simple outdoor setting."
+
+Describe this image:"""
+
+[user.furry.basic.detailed]
+prompt = """Write a detailed description of this anthropomorphic character.
+
+Cover: species and art style, all fur colors and marking patterns, body structure (plantigrade/digitigrade, build), facial features (muzzle shape, ear type, eye color/style), expression and mood indicators (ear position, tail position), complete clothing description, pose, background.
+
+Example: "Western furry style anthro dragon, deep purple scales with lighter lavender underbelly, small horns and frill, digitigrade legs with clawed feet, long tail with spade tip, amber reptilian eyes, confident smirk showing small fangs, wearing leather jacket and ripped jeans, standing pose with arms crossed, urban alley background, dramatic lighting."
+
+Describe this image in similar detail:"""
+
+[user.furry.basic.extreme]
+prompt = """Write the most detailed description possible of this anthropomorphic character.
+
+Describe: exact species, anthropomorphism level (full anthro, kemono, etc.), all fur colors and marking patterns, fur texture, body structure (leg type, build, proportions), tail details, facial features (muzzle, ears, eyes, nose), expression and mood indicators (ear position, tail position), complete outfit with all items, pose and body language, background setting, art style influences.
+
+Start directly - write one flowing paragraph:"""

@@ -1,0 +1,190 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-12-14T00:00:00Z",
+  "description": "Z-Image prompting best practices and rules",
+
+  "structure_rules": {
+    "sentence_count": {
+      "min": 3,
+      "max": 6,
+      "rationale": "Each sentence should describe ONE aspect of the image"
+    },
+    "sentence_order": [
+      "Subject description (who/what is in the image)",
+      "Clothing/appearance details (what they're wearing)",
+      "Pose/action (what they're doing)",
+      "Environment/background (where they are)",
+      "Lighting conditions (how the scene is lit)",
+      "Technical quality tags (resolution, detail level)"
+    ],
+    "word_count": {
+      "quick_mode": {"min": 50, "max": 150, "description": "Fast, essential details only"},
+      "standard_mode": {"min": 150, "max": 400, "description": "Balanced detail level"},
+      "detailed_mode": {"min": 300, "max": 600, "description": "Maximum detail for complex scenes"}
+    }
+  },
+
+  "must_include": {
+    "human_subjects": {
+      "description": "Required elements when humans are present",
+      "elements": [
+        {"name": "age_gender", "description": "Age indicator and gender", "example": "a young woman in her twenties"},
+        {"name": "hair_description", "description": "Hair color and style", "example": "with long dark brown hair"},
+        {"name": "skin_texture", "description": "Realism terms for skin", "example": "realistic skin texture, natural skin pores"},
+        {"name": "clothing_details", "description": "Garments with color and material", "example": "wearing a navy blue silk blouse"},
+        {"name": "pose_action", "description": "Body position or activity", "example": "standing with arms at her sides"}
+      ]
+    },
+    "all_images": {
+      "description": "Required elements for all images",
+      "elements": [
+        {"name": "lighting", "description": "Light source and quality", "example": "soft natural daylight from the left"},
+        {"name": "background", "description": "Environment or setting", "example": "blurred garden background with green foliage"},
+        {"name": "technical_quality", "description": "At least one quality term", "example": "photorealistic, ultra detailed"}
+      ]
+    }
+  },
+
+  "must_avoid": {
+    "content": {
+      "description": "Content that should never appear in prompts",
+      "items": [
+        {"item": "philosophical_commentary", "examples": ["cycle of life and death", "eternal peace", "nirvana state"]},
+        {"item": "narrative_storytelling", "examples": ["once upon a time", "she remembers when", "the journey begins"]},
+        {"item": "emotional_interpretations", "examples": ["feeling of joy", "sense of wonder", "overwhelming happiness"]},
+        {"item": "metaphors_similes", "examples": ["like a flower blooming", "as bright as the sun", "resembling a goddess"]},
+        {"item": "business_jargon", "examples": ["market share", "synergy", "productivity boost", "customer base"]},
+        {"item": "abstract_concepts", "examples": ["the essence of beauty", "pure elegance", "timeless grace"]}
+      ]
+    },
+    "structure": {
+      "description": "Structural patterns to avoid",
+      "items": [
+        {"item": "keyword_lists", "description": "Comma-separated keywords without context", "example": "beautiful, elegant, stunning, gorgeous"},
+        {"item": "run_on_sentences", "description": "Single extremely long sentence", "max_recommended_length": 50},
+        {"item": "repetition", "description": "Same information stated multiple times"},
+        {"item": "vague_descriptors", "description": "Non-specific adjectives", "examples": ["beautiful", "nice", "good", "pretty", "amazing"]}
+      ]
+    }
+  },
+
+  "effectiveness_patterns": {
+    "high_effectiveness": [
+      {
+        "name": "structured_description",
+        "pattern": "[Subject] with [hair description]. [Clothing with color, material, style]. [Pose/action]. [Environment]. [Lighting]. [Technical tags].",
+        "score": 9.2,
+        "example": "A young woman with long auburn hair in loose waves. She wears a navy blue silk blouse tucked into high-waisted cream linen trousers. Standing with arms relaxed at her sides, facing the camera. Outdoor garden setting with blurred green foliage background. Soft natural daylight from the left creating gentle shadows. Realistic skin texture, natural skin pores, photorealistic, ultra detailed."
+      },
+      {
+        "name": "layered_clothing",
+        "pattern": "Describe clothing from outer to inner layer with materials",
+        "score": 8.8,
+        "example": "She wears a charcoal wool overcoat over a cream cashmere sweater, paired with dark denim jeans and brown leather boots."
+      },
+      {
+        "name": "specific_lighting",
+        "pattern": "Describe light direction, quality, and effect",
+        "score": 8.5,
+        "example": "Warm golden hour sunlight from the right side creates long shadows and a soft glow on her skin."
+      }
+    ],
+    "low_effectiveness": [
+      {
+        "name": "keyword_spam",
+        "pattern": "Keyword, keyword, keyword, keyword...",
+        "score": 3.5,
+        "issue": "No context, relationships unclear, AI may ignore many terms",
+        "example": "beautiful, elegant, stunning, professional, high quality, detailed, perfect"
+      },
+      {
+        "name": "single_run_on",
+        "pattern": "One extremely long sentence with many clauses and descriptions all connected by commas and conjunctions...",
+        "score": 4.2,
+        "issue": "Hard to parse, priority unclear, may overwhelm model"
+      },
+      {
+        "name": "vague_descriptions",
+        "pattern": "Generic adjectives without specifics",
+        "score": 4.0,
+        "issue": "No concrete visual information",
+        "example": "A beautiful woman in nice clothes standing in a pretty place"
+      },
+      {
+        "name": "philosophical_tangent",
+        "pattern": "Adding abstract concepts or narrative",
+        "score": 2.5,
+        "issue": "Confuses model, adds noise, may cause hallucination",
+        "example": "...embodying the eternal cycle of nature's beauty and the fleeting nature of existence..."
+      }
+    ]
+  },
+
+  "scoring_rubric": {
+    "structure": {
+      "weight": 0.25,
+      "criteria": [
+        {"name": "sentence_count", "points": 10, "description": "3-6 clear sentences"},
+        {"name": "sentence_order", "points": 10, "description": "Follows recommended order"},
+        {"name": "word_count", "points": 10, "description": "Within mode-appropriate range"}
+      ]
+    },
+    "completeness": {
+      "weight": 0.30,
+      "criteria": [
+        {"name": "subject_described", "points": 10, "description": "Subject clearly identified"},
+        {"name": "clothing_detailed", "points": 10, "description": "Clothing with color/material"},
+        {"name": "environment_set", "points": 10, "description": "Background/setting described"},
+        {"name": "lighting_specified", "points": 10, "description": "Light source/quality mentioned"},
+        {"name": "technical_tags", "points": 10, "description": "Quality enhancers included"}
+      ]
+    },
+    "vocabulary": {
+      "weight": 0.25,
+      "criteria": [
+        {"name": "specific_terms", "points": 10, "description": "Uses concrete visual terms"},
+        {"name": "color_accuracy", "points": 10, "description": "Precise color descriptors"},
+        {"name": "material_terms", "points": 10, "description": "Fabric/texture terms used"},
+        {"name": "avoids_vague", "points": 10, "description": "No generic adjectives"}
+      ]
+    },
+    "clarity": {
+      "weight": 0.20,
+      "criteria": [
+        {"name": "no_repetition", "points": 10, "description": "No repeated information"},
+        {"name": "no_tangents", "points": 10, "description": "No philosophical/narrative content"},
+        {"name": "readable", "points": 10, "description": "Clear, parseable sentences"}
+      ]
+    }
+  },
+
+  "tips": {
+    "general": [
+      "Start with the most important element (usually the subject)",
+      "Use specific numbers when relevant (e.g., 'mid-twenties' not just 'young')",
+      "Describe what you see, not what you interpret",
+      "Include at least one fabric/material term for each garment",
+      "Always specify the light direction (left, right, front, back, above)"
+    ],
+    "human_subjects": [
+      "Always include skin texture terms for realism",
+      "Describe hair color AND style separately",
+      "Mention accessories if visible (earrings, watch, etc.)",
+      "Specify pose even if simple ('standing relaxed', 'sitting upright')",
+      "Include expression cues if relevant ('neutral expression', 'slight smile')"
+    ],
+    "clothing": [
+      "Layer descriptions from visible outer to inner",
+      "Include both color AND material for each garment",
+      "Mention fit (fitted, loose, oversized) when relevant",
+      "Note patterns with specifics (small floral, wide stripes)",
+      "Don't forget footwear if visible"
+    ],
+    "technical": [
+      "End with 2-3 quality enhancers maximum",
+      "Avoid stacking too many quality terms",
+      "'Photorealistic' and 'ultra detailed' are usually sufficient",
+      "Add 'realistic skin texture' for all human subjects"
+    ]
+  }
+}

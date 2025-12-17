@@ -241,6 +241,7 @@ class LocalModelInfo:
     max_output_tokens: int = 4096
     description: str = ""
     model_class: str = ""  # HuggingFace model class
+    target_image_size: int = 384  # Target image size for Standard mode (pixels)
 
 
 # =============================================================================
@@ -259,7 +260,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Fast vision model",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=320
     ),
     "Qwen3-VL-4B-Instruct": LocalModelInfo(
         name="Qwen3-VL 4B (Vision) | 4K | 2GB [Recommended]",
@@ -269,7 +271,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Best balance for vision",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=384
     ),
     "Qwen3-VL-8B-Instruct": LocalModelInfo(
         name="Qwen3-VL 8B (Vision) | 4K | 4.5GB",
@@ -279,7 +282,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="High quality vision",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=448
     ),
     "Qwen3-VL-2B-Thinking": LocalModelInfo(
         name="Qwen3-VL 2B Thinking (Vision) | 4K | 1.5GB",
@@ -290,7 +294,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         is_thinking=True,
         max_output_tokens=4096,
         description="Fast reasoning vision",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=320
     ),
     "Qwen3-VL-4B-Thinking": LocalModelInfo(
         name="Qwen3-VL 4B Thinking (Vision) | 4K | 2GB",
@@ -301,7 +306,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         is_thinking=True,
         max_output_tokens=4096,
         description="Balanced reasoning vision",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=384
     ),
     "Qwen3-VL-8B-Thinking": LocalModelInfo(
         name="Qwen3-VL 8B Thinking (Vision) | 4K | 4.5GB",
@@ -312,7 +318,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         is_thinking=True,
         max_output_tokens=4096,
         description="Best reasoning vision",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=448
     ),
     "Qwen2.5-VL-3B-Instruct": LocalModelInfo(
         name="Qwen2.5-VL 3B (Vision) | 4K | 2GB",
@@ -322,7 +329,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Compact vision model",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=352
     ),
     "Qwen2.5-VL-7B-Instruct": LocalModelInfo(
         name="Qwen2.5-VL 7B (Vision) | 4K | 4GB",
@@ -332,7 +340,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Stable quality vision",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=416
     ),
 
     # QwenVL FP8 Pre-quantized Models
@@ -345,7 +354,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         is_fp8=True,
         max_output_tokens=4096,
         description="Pre-quantized FP8",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=320
     ),
     "Qwen3-VL-2B-Thinking-FP8": LocalModelInfo(
         name="Qwen3-VL 2B Thinking FP8 (Vision) | 4K | 2.5GB",
@@ -357,7 +367,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         is_thinking=True,
         max_output_tokens=4096,
         description="Pre-quantized FP8 reasoning",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=320
     ),
     "Qwen3-VL-4B-Instruct-FP8": LocalModelInfo(
         name="Qwen3-VL 4B FP8 (Vision) | 4K | 2.5GB",
@@ -368,7 +379,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         is_fp8=True,
         max_output_tokens=4096,
         description="Pre-quantized FP8",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=384
     ),
     "Qwen3-VL-4B-Thinking-FP8": LocalModelInfo(
         name="Qwen3-VL 4B Thinking FP8 (Vision) | 4K | 2.5GB",
@@ -380,7 +392,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         is_thinking=True,
         max_output_tokens=4096,
         description="Pre-quantized FP8 reasoning",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=384
     ),
     "Qwen3-VL-8B-Instruct-FP8": LocalModelInfo(
         name="Qwen3-VL 8B FP8 (Vision) | 4K | 7.5GB",
@@ -391,7 +404,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         is_fp8=True,
         max_output_tokens=4096,
         description="Pre-quantized FP8",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=448
     ),
     "Qwen3-VL-8B-Thinking-FP8": LocalModelInfo(
         name="Qwen3-VL 8B Thinking FP8 (Vision) | 4K | 7.5GB",
@@ -403,7 +417,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         is_thinking=True,
         max_output_tokens=4096,
         description="Pre-quantized FP8 reasoning",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=448
     ),
 
     # QwenVL 32B Models (Large)
@@ -415,7 +430,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Largest Qwen3-VL",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=512
     ),
     "Qwen3-VL-32B-Thinking": LocalModelInfo(
         name="Qwen3-VL 32B Thinking (Vision) | 4K | 8.5GB",
@@ -426,7 +442,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         is_thinking=True,
         max_output_tokens=4096,
         description="Best reasoning vision",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=512
     ),
     "Qwen3-VL-32B-Instruct-FP8": LocalModelInfo(
         name="Qwen3-VL 32B FP8 (Vision) | 4K | 24GB",
@@ -437,7 +454,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         is_fp8=True,
         max_output_tokens=4096,
         description="Pre-quantized FP8 large",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=512
     ),
     "Qwen3-VL-32B-Thinking-FP8": LocalModelInfo(
         name="Qwen3-VL 32B Thinking FP8 (Vision) | 4K | 24GB",
@@ -449,7 +467,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         is_thinking=True,
         max_output_tokens=4096,
         description="Pre-quantized FP8 reasoning large",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=512
     ),
 
     # =========================================================================
@@ -463,7 +482,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=1024,
         description="Ultra-fast captioning",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        target_image_size=256
     ),
     "Florence-2-large": LocalModelInfo(
         name="Florence-2 Large (Vision) | 1K | 1.2GB",
@@ -473,7 +493,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=1024,
         description="Better captioning quality",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        target_image_size=320
     ),
     "Florence-2-base-ft": LocalModelInfo(
         name="Florence-2 Base FT (Vision) | 1K | 0.6GB",
@@ -483,7 +504,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=1024,
         description="Fine-tuned for tasks",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        target_image_size=256
     ),
     "Florence-2-large-ft": LocalModelInfo(
         name="Florence-2 Large FT (Vision) | 1K | 1.2GB",
@@ -493,7 +515,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=1024,
         description="Best Florence quality",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        target_image_size=320
     ),
 
     # =========================================================================
@@ -507,7 +530,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=2048,
         description="Efficient VLM",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        target_image_size=320
     ),
 
     # =========================================================================
@@ -521,7 +545,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="LLaVA 1.5 - Good quality",
-        model_class="LlavaForConditionalGeneration"
+        model_class="LlavaForConditionalGeneration",
+        target_image_size=384
     ),
     "LLaVA-1.5-13B": LocalModelInfo(
         name="LLaVA 1.5 13B (Vision) | 4K | 13GB",
@@ -531,7 +556,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="LLaVA 1.5 - Best quality",
-        model_class="LlavaForConditionalGeneration"
+        model_class="LlavaForConditionalGeneration",
+        target_image_size=448
     ),
     "LLaVA-1.6-Mistral-7B": LocalModelInfo(
         name="LLaVA 1.6 Mistral 7B (Vision) | 4K | 7GB",
@@ -541,7 +567,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="LLaVA 1.6 with Mistral backbone",
-        model_class="LlavaNextForConditionalGeneration"
+        model_class="LlavaNextForConditionalGeneration",
+        target_image_size=384
     ),
     "LLaVA-1.6-Vicuna-7B": LocalModelInfo(
         name="LLaVA 1.6 Vicuna 7B (Vision) | 4K | 7GB",
@@ -551,7 +578,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="LLaVA 1.6 with Vicuna backbone",
-        model_class="LlavaNextForConditionalGeneration"
+        model_class="LlavaNextForConditionalGeneration",
+        target_image_size=384
     ),
     "LLaVA-1.6-Vicuna-13B": LocalModelInfo(
         name="LLaVA 1.6 Vicuna 13B (Vision) | 4K | 13GB",
@@ -561,7 +589,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="LLaVA 1.6 Vicuna - Best quality",
-        model_class="LlavaNextForConditionalGeneration"
+        model_class="LlavaNextForConditionalGeneration",
+        target_image_size=448
     ),
 
     # =========================================================================
@@ -575,7 +604,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Fast InternVL2",
-        model_class="AutoModel"
+        model_class="AutoModel",
+        target_image_size=320
     ),
     "InternVL2-4B": LocalModelInfo(
         name="InternVL2 4B (Vision) | 4K | 4GB",
@@ -585,7 +615,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Balanced InternVL2",
-        model_class="AutoModel"
+        model_class="AutoModel",
+        target_image_size=384
     ),
     "InternVL2-8B": LocalModelInfo(
         name="InternVL2 8B (Vision) | 4K | 8GB",
@@ -595,7 +626,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="High quality InternVL2",
-        model_class="AutoModel"
+        model_class="AutoModel",
+        target_image_size=448
     ),
 
     # =========================================================================
@@ -609,7 +641,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Efficient multi-modal model",
-        model_class="AutoModel"
+        model_class="AutoModel",
+        target_image_size=384
     ),
 
     # =========================================================================
@@ -623,7 +656,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Google PaliGemma 3B",
-        model_class="PaliGemmaForConditionalGeneration"
+        model_class="PaliGemmaForConditionalGeneration",
+        target_image_size=448
     ),
     "PaliGemma2-3B": LocalModelInfo(
         name="PaliGemma2 3B (Vision) | 4K | 3GB",
@@ -633,7 +667,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Google PaliGemma2 3B",
-        model_class="PaliGemmaForConditionalGeneration"
+        model_class="PaliGemmaForConditionalGeneration",
+        target_image_size=448
     ),
 
     # =========================================================================
@@ -647,7 +682,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Meta Llama 3.2 Vision",
-        model_class="MllamaForConditionalGeneration"
+        model_class="MllamaForConditionalGeneration",
+        target_image_size=448
     ),
 
     # =========================================================================
@@ -661,7 +697,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Mistral Pixtral 12B",
-        model_class="LlavaForConditionalGeneration"
+        model_class="LlavaForConditionalGeneration",
+        target_image_size=448
     ),
 
     # =========================================================================
@@ -675,7 +712,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Allen AI Molmo 7B",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        target_image_size=384
     ),
     "Molmo-7B-O": LocalModelInfo(
         name="Molmo 7B-O (Vision) | 4K | 7GB",
@@ -685,7 +723,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="Allen AI Molmo 7B OpenAI-style",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        target_image_size=384
     ),
 
     # =========================================================================
@@ -699,7 +738,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="HuggingFace Idefics2 8B",
-        model_class="Idefics2ForConditionalGeneration"
+        model_class="Idefics2ForConditionalGeneration",
+        target_image_size=416
     ),
     "Idefics2-8B-Chatty": LocalModelInfo(
         name="Idefics2 8B Chatty (Vision) | 4K | 8GB",
@@ -709,7 +749,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="HuggingFace Idefics2 8B Chatty",
-        model_class="Idefics2ForConditionalGeneration"
+        model_class="Idefics2ForConditionalGeneration",
+        target_image_size=416
     ),
 
     # =========================================================================
@@ -723,7 +764,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=1024,
         description="Tiniest VLM",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=224
     ),
     "SmolVLM-500M": LocalModelInfo(
         name="SmolVLM 500M (Vision) | 1K | 0.6GB",
@@ -733,7 +775,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=1024,
         description="Very small VLM",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=256
     ),
     "SmolVLM-2B": LocalModelInfo(
         name="SmolVLM 2B (Vision) | 2K | 2GB",
@@ -743,7 +786,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=2048,
         description="Best SmolVLM",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForVision2Seq",
+        target_image_size=320
     ),
 
     # =========================================================================
@@ -757,7 +801,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.VISION,
         max_output_tokens=4096,
         description="High quality vision",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        target_image_size=384
     ),
 
     # =========================================================================
@@ -1008,6 +1053,66 @@ def load_custom_models():
 load_custom_models()
 
 
+def free_comfyui_memory(required_gb: float = 0) -> float:
+    """
+    Free ComfyUI's cached models to make VRAM available.
+
+    Args:
+        required_gb: Amount of VRAM needed (will try to free this much)
+
+    Returns:
+        Available VRAM in GB after cleanup
+    """
+    import torch
+
+    try:
+        # First check if we already have enough
+        if torch.cuda.is_available():
+            current_free = get_available_vram_gb()
+            if current_free >= required_gb:
+                return current_free
+
+        # Ask ComfyUI to unload models
+        print(f"[SID_LLM_Local] Freeing VRAM for local LLM (need {required_gb:.1f}GB)...")
+
+        # Soft empty cache first (unloads models to CPU if possible)
+        comfy.model_management.soft_empty_cache()
+
+        # Force garbage collection
+        gc.collect()
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+
+        # Check again
+        if torch.cuda.is_available():
+            current_free = get_available_vram_gb()
+            if current_free >= required_gb:
+                print(f"[SID_LLM_Local] Freed VRAM: {current_free:.1f}GB available")
+                return current_free
+
+        # If still not enough, try harder - unload all models
+        try:
+            comfy.model_management.unload_all_models()
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+        except Exception as e:
+            print(f"[SID_LLM_Local] Warning: Could not unload all models: {e}")
+
+        if torch.cuda.is_available():
+            current_free = get_available_vram_gb()
+            print(f"[SID_LLM_Local] After full cleanup: {current_free:.1f}GB available")
+            return current_free
+
+    except Exception as e:
+        print(f"[SID_LLM_Local] Warning: Memory cleanup failed: {e}")
+
+    return get_available_vram_gb()
+
+
 def get_available_vram_gb() -> float:
     """Get available VRAM in GB."""
     try:
@@ -1068,19 +1173,6 @@ def enforce_memory(model_info: "LocalModelInfo", quantization: str, device: str 
     if actual_device == "cpu":
         return quantization
 
-    # Get available memory
-    if actual_device == "cuda":
-        available = get_available_vram_gb()
-    elif actual_device == "mps":
-        # MPS uses system memory, estimate conservatively
-        try:
-            import psutil
-            available = psutil.virtual_memory().available / (1024**3)
-        except ImportError:
-            available = 16.0  # Conservative estimate
-    else:
-        available = 0
-
     # Safety margin (require 20% extra)
     safety_margin = 1.2
 
@@ -1094,18 +1186,36 @@ def enforce_memory(model_info: "LocalModelInfo", quantization: str, device: str 
     current_quant = quantization
     needed = vram_map.get(current_quant, model_info.vram_4bit) * safety_margin
 
+    # Get initial available memory
+    if actual_device == "cuda":
+        available = get_available_vram_gb()
+    elif actual_device == "mps":
+        try:
+            import psutil
+            available = psutil.virtual_memory().available / (1024**3)
+        except ImportError:
+            available = 16.0
+    else:
+        available = 0
+
+    # If not enough memory, try to free ComfyUI's cached models first
+    if needed > available and actual_device == "cuda":
+        available = free_comfyui_memory(needed)
+
     # Auto-downgrade if needed
     if needed > available:
         if current_quant == "None (FP16)":
-            print(f"[SID_LLM_Local] FP16 needs {needed:.1f}GB, only {available:.1f}GB available, downgrading to 8-bit")
             current_quant = "8-bit"
             needed = model_info.vram_8bit * safety_margin
 
     if needed > available:
         if current_quant == "8-bit":
-            print(f"[SID_LLM_Local] 8-bit needs {needed:.1f}GB, only {available:.1f}GB available, downgrading to 4-bit")
             current_quant = "4-bit"
             needed = model_info.vram_4bit * safety_margin
+
+    # Final check - try one more cleanup if still not enough
+    if needed > available and actual_device == "cuda":
+        available = free_comfyui_memory(needed)
 
     if needed > available:
         raise RuntimeError(
@@ -1149,7 +1259,6 @@ class LocalModelClient:
     def unload_model(cls):
         """Force unload the cached model to free VRAM for other nodes."""
         if cls._cached_model is not None:
-            print(f"[LocalModelClient] Force unloading model to free VRAM...")
             # Delete model references
             del cls._cached_model
             cls._cached_model = None
@@ -1160,7 +1269,6 @@ class LocalModelClient:
             cls._image_cache.clear()
             # Aggressively clear memory
             clear_memory()
-            print(f"[LocalModelClient] Model unloaded, VRAM freed")
             return True
         return False
 
@@ -1171,6 +1279,7 @@ class LocalModelClient:
         device: str = "auto",
         attention_mode: str = "auto",
         keep_model_loaded: bool = True,
+        temperature: float = 0.7,
         top_p: float = 0.9,
         repetition_penalty: float = 1.2,
         num_beams: int = 1,
@@ -1181,6 +1290,7 @@ class LocalModelClient:
         self.device = device
         self.attention_mode = attention_mode
         self.keep_model_loaded = keep_model_loaded
+        self.temperature = temperature  # Store user's temperature setting
         self.top_p = top_p
         self.repetition_penalty = repetition_penalty
         self.num_beams = num_beams
@@ -1192,12 +1302,10 @@ class LocalModelClient:
         self.model_info = LOCAL_MODELS.get(model_name)
 
     def _get_device_info(self) -> Dict[str, Any]:
-        """Detect GPU type and available memory with detailed logging."""
+        """Detect GPU type and available memory."""
         import torch
 
         info = {"type": "cpu", "available_gb": 0, "total_gb": 0, "gpu_name": "N/A"}
-
-        print("[LocalModelClient] Detecting device...")
 
         # Check CUDA
         if torch.cuda.is_available():
@@ -1207,29 +1315,12 @@ class LocalModelClient:
             info["available_gb"] = (props.total_memory - torch.cuda.memory_allocated(0)) / (1024**3)
             info["gpu_name"] = props.name
             info["compute_capability"] = f"{props.major}.{props.minor}"
-            print(f"  CUDA available: {info['gpu_name']}")
-            print(f"  Compute capability: {info['compute_capability']}")
-            print(f"  VRAM: {info['total_gb']:.1f}GB total, {info['available_gb']:.1f}GB free")
-
-            # Check bitsandbytes for quantization
-            try:
-                import bitsandbytes
-                print(f"  bitsandbytes: installed (v{bitsandbytes.__version__})")
-            except ImportError:
-                print("  WARNING: bitsandbytes not installed - 4-bit/8-bit quantization unavailable")
-                print("  Install with: pip install bitsandbytes")
 
         elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             info["type"] = "mps"
             info["total_gb"] = 16  # Estimate
             info["available_gb"] = 16
             info["gpu_name"] = "Apple Silicon (MPS)"
-            print(f"  MPS available: Apple Silicon GPU")
-
-        else:
-            print("  WARNING: No GPU detected - running on CPU (will be slow)")
-            print("  For CUDA: ensure NVIDIA drivers and pytorch+cuda are installed")
-            print("  For MPS: ensure macOS 12.3+ with Apple Silicon")
 
         return info
 
@@ -1244,13 +1335,11 @@ class LocalModelClient:
         if self.quantization == "None (FP16)":
             needed = model_info.vram_fp16 * safety_margin
             if needed > available:
-                print(f"[LocalModelClient] FP16 needs {needed:.1f}GB, auto-downgrading to 8-bit")
                 self.quantization = "8-bit"
 
         if self.quantization == "8-bit":
             needed = model_info.vram_8bit * safety_margin
             if needed > available:
-                print(f"[LocalModelClient] 8-bit needs {needed:.1f}GB, auto-downgrading to 4-bit")
                 self.quantization = "4-bit"
 
         return self.quantization
@@ -1265,7 +1354,6 @@ class LocalModelClient:
         signature = (self.model_name, self.quantization, self.device, self.attention_mode)
         if (LocalModelClient._cached_model is not None and
             LocalModelClient._cached_signature == signature):
-            print(f"[LocalModelClient] Reusing cached model: {self.model_name}")
             self.model = LocalModelClient._cached_model
             self.processor = LocalModelClient._cached_processor
             self.tokenizer = LocalModelClient._cached_tokenizer
@@ -1273,7 +1361,6 @@ class LocalModelClient:
 
         # Clear memory before loading new model
         if LocalModelClient._cached_model is not None:
-            print(f"[LocalModelClient] Unloading previous model...")
             LocalModelClient._cached_model = None
             LocalModelClient._cached_processor = None
             LocalModelClient._cached_tokenizer = None
@@ -1284,9 +1371,7 @@ class LocalModelClient:
         if not self.model_info:
             raise ValueError(f"Unknown model: {self.model_name}")
 
-        print(f"[LocalModelClient] Loading model: {self.model_info.name}")
-        print(f"  Family: {self.model_info.family.value}")
-        print(f"  Repo: {self.model_info.repo_id}")
+        print(f"[LocalModel] Loading {self.model_name}...")
 
         # Download model
         family_dir = os.path.join(LLM_LOCAL_DIR, self.model_info.family.value)
@@ -1294,7 +1379,7 @@ class LocalModelClient:
         model_path = os.path.join(family_dir, self.model_name)
 
         if not os.path.exists(model_path):
-            print(f"  Downloading model to {model_path}...")
+            print(f"[LocalModel] Downloading from {self.model_info.repo_id}...")
             snapshot_download(
                 repo_id=self.model_info.repo_id,
                 local_dir=model_path,
@@ -1308,13 +1393,9 @@ class LocalModelClient:
         else:
             device = self.device
 
-        print(f"  Device: {device} (Total: {device_info['total_gb']:.1f}GB, Available: {device_info['available_gb']:.1f}GB)")
-
         # Auto-downgrade quantization
         if not self.model_info.is_fp8:
             self._auto_downgrade_quantization(self.model_info, device_info)
-
-        print(f"  Quantization: {self.quantization}")
 
         # Load based on model family
         if self.model_info.family == ModelFamily.FLORENCE2:
@@ -1355,7 +1436,7 @@ class LocalModelClient:
             LocalModelClient._cached_tokenizer = self.tokenizer
             LocalModelClient._cached_signature = signature
 
-        print(f"[LocalModelClient] Model loaded successfully")
+        print(f"[LocalModel] Ready ({device.upper()}, {self.quantization}, temp={self.temperature})")
 
     def _get_quantization_config(self, device: str):
         """
@@ -1368,8 +1449,6 @@ class LocalModelClient:
         optimal_dtype = get_optimal_dtype(device)
 
         if device != "cuda" or self.quantization == "None (FP16)":
-            dtype_name = "BF16" if optimal_dtype == torch.bfloat16 else "FP16"
-            print(f"  Using {dtype_name} (no quantization)")
             return None, optimal_dtype
 
         try:
@@ -1533,7 +1612,6 @@ class LocalModelClient:
             from transformers import LlavaForConditionalGeneration
             ModelClass = LlavaForConditionalGeneration
 
-        print(f"[LocalModelClient] Loading LLaVA with {model_class_name}...")
         self.model = ModelClass.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
 
@@ -1563,7 +1641,6 @@ class LocalModelClient:
             else:
                 load_kwargs["torch_dtype"] = dtype or torch.bfloat16
 
-        print(f"[LocalModelClient] Loading InternVL2...")
         self.model = AutoModel.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
 
@@ -1592,7 +1669,6 @@ class LocalModelClient:
             else:
                 load_kwargs["torch_dtype"] = dtype or torch.bfloat16
 
-        print(f"[LocalModelClient] Loading MiniCPM-V...")
         self.model = AutoModel.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
 
@@ -1621,7 +1697,6 @@ class LocalModelClient:
             else:
                 load_kwargs["torch_dtype"] = dtype or torch.bfloat16
 
-        print(f"[LocalModelClient] Loading PaliGemma...")
         self.model = PaliGemmaForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
 
@@ -1650,7 +1725,6 @@ class LocalModelClient:
             else:
                 load_kwargs["torch_dtype"] = dtype or torch.bfloat16
 
-        print(f"[LocalModelClient] Loading Llama 3.2 Vision...")
         self.model = MllamaForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
 
@@ -1679,7 +1753,6 @@ class LocalModelClient:
             else:
                 load_kwargs["torch_dtype"] = dtype or torch.bfloat16
 
-        print(f"[LocalModelClient] Loading Pixtral...")
         self.model = LlavaForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
 
@@ -1708,7 +1781,6 @@ class LocalModelClient:
             else:
                 load_kwargs["torch_dtype"] = dtype or torch.bfloat16
 
-        print(f"[LocalModelClient] Loading Molmo...")
         self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
 
@@ -1737,7 +1809,6 @@ class LocalModelClient:
             else:
                 load_kwargs["torch_dtype"] = dtype or torch.bfloat16
 
-        print(f"[LocalModelClient] Loading Idefics2...")
         self.model = Idefics2ForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
 
@@ -1749,6 +1820,7 @@ class LocalModelClient:
 
     def _load_smolvlm(self, model_path: str, device: str):
         """Load SmolVLM model with speed optimizations."""
+        import importlib.metadata
         import torch
         from transformers import AutoModelForVision2Seq, AutoProcessor
 
@@ -1764,7 +1836,6 @@ class LocalModelClient:
             try:
                 # Check both import AND package metadata (transformers requires metadata)
                 import flash_attn
-                import importlib.metadata
                 importlib.metadata.version("flash_attn")  # This will raise if metadata missing
                 major, _ = torch.cuda.get_device_capability()
                 if major >= 8:
@@ -1823,6 +1894,7 @@ class LocalModelClient:
 
     def _load_qwenvl(self, model_path: str, device: str):
         """Load QwenVL model with speed optimizations."""
+        import importlib.metadata
         import torch
         from transformers import AutoModelForVision2Seq, AutoProcessor, AutoTokenizer
 
@@ -1838,26 +1910,21 @@ class LocalModelClient:
         actual_attention_mode = self.attention_mode
         if self.attention_mode != "auto":
             load_kwargs["attn_implementation"] = self.attention_mode
-            print(f"  Using {self.attention_mode} (user-specified)")
         elif device == "cuda":
             try:
                 # Check both import AND package metadata (transformers requires metadata)
                 import flash_attn
-                import importlib.metadata
                 importlib.metadata.version("flash_attn")  # This will raise if metadata missing
                 major, _ = torch.cuda.get_device_capability()
                 if major >= 8:
                     load_kwargs["attn_implementation"] = "flash_attention_2"
                     actual_attention_mode = "flash_attention_2"
-                    print("  Using Flash Attention 2 (auto-detected)")
                 else:
                     load_kwargs["attn_implementation"] = "sdpa"
                     actual_attention_mode = "sdpa"
-                    print("  Using SDPA (GPU compute capability < 8.0)")
             except (ImportError, importlib.metadata.PackageNotFoundError):
                 load_kwargs["attn_implementation"] = "sdpa"
                 actual_attention_mode = "sdpa"
-                print("  Using SDPA (flash_attn not properly installed)")
 
         if device == "cuda":
             load_kwargs["device_map"] = {"": 0}
@@ -1896,7 +1963,6 @@ class LocalModelClient:
         min_pixels = 256 * patch_size * patch_size   # ~100K-200K pixels
         max_pixels = 1280 * patch_size * patch_size  # ~500K-1M pixels
 
-        print(f"  Resolution limits: {min_pixels//1000}K - {max_pixels//1000}K pixels (patch_size={patch_size})")
 
         self.processor = AutoProcessor.from_pretrained(
             model_path,
@@ -1908,6 +1974,7 @@ class LocalModelClient:
 
     def _load_text_model(self, model_path: str, device: str):
         """Load text-only model (Qwen2.5, Llama, Phi, Mistral, Gemma)."""
+        import importlib.metadata
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -1922,18 +1989,14 @@ class LocalModelClient:
         if device == "cuda":
             try:
                 import flash_attn
-                import importlib.metadata
                 importlib.metadata.version("flash_attn")
                 major, _ = torch.cuda.get_device_capability()
                 if major >= 8:
                     load_kwargs["attn_implementation"] = "flash_attention_2"
-                    print("  Using Flash Attention 2")
                 else:
                     load_kwargs["attn_implementation"] = "sdpa"
-                    print("  Using SDPA")
             except (ImportError, importlib.metadata.PackageNotFoundError):
                 load_kwargs["attn_implementation"] = "sdpa"
-                print("  Using SDPA (flash_attn not available)")
 
         if device == "cuda":
             load_kwargs["device_map"] = {"": 0}
@@ -2122,19 +2185,9 @@ class LocalModelClient:
             retry_count += 1
             if retry_count <= max_retries:
                 current_temp = min(1.0, temperature + 0.2 * retry_count)
-                print(f"[LocalModelClient] Response too short ({word_count} words), retrying {retry_count}/{max_retries} with temp={current_temp:.1f}")
 
         elapsed = time.time() - start_time
         word_count = len(response_text.split())
-        tokens_approx = len(response_text) // 4  # Rough token estimate
-
-        # Quality metrics
-        print(f"[LocalModelClient] Generated in {elapsed:.1f}s")
-        print(f"  Output: {word_count} words, ~{tokens_approx} tokens")
-        if elapsed > 0:
-            print(f"  Speed: ~{tokens_approx/elapsed:.1f} tokens/sec")
-        if retry_count > 0:
-            print(f"  Retries: {retry_count}")
 
         # CRITICAL: Clean up GPU memory after generation to prevent VAE decode hangs
         # This ensures CUDA operations are complete and memory is freed for subsequent nodes
@@ -2171,8 +2224,8 @@ class LocalModelClient:
             # Force garbage collection to release any dangling references
             gc.collect()
 
-        except Exception as e:
-            print(f"[LocalModelClient] Warning: Cleanup failed: {e}")
+        except Exception:
+            pass
 
     def _generate_florence2(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with Florence-2."""
@@ -2654,14 +2707,11 @@ class LocalModelClient:
 
                 DynamicCache.get_usable_length = get_usable_length_compat
 
-            if needs_patching:
-                print("[LocalModelClient] DynamicCache compatibility patches applied for transformers 4.49+")
-
         except ImportError:
             # transformers not installed or DynamicCache not available
             pass
-        except Exception as e:
-            print(f"[LocalModelClient] Warning: DynamicCache patching failed: {e}")
+        except Exception:
+            pass
 
     def _generate_phi35_vision(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
         """Generate with Phi-3.5-Vision."""
@@ -2936,10 +2986,20 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
     def define_schema(cls) -> comfy_io.Schema:
         """Define the node schema."""
 
-        # Build model options with display names
-        model_options = []
+        # Build separate model lists for vision and text
+        vision_models = []
+        text_models = []
         for model_id, model_info in LOCAL_MODELS.items():
-            model_options.append(model_id)
+            if model_info.model_type == ModelType.VISION:
+                vision_models.append(model_id)
+            elif model_info.model_type == ModelType.TEXT:
+                text_models.append(model_id)
+            else:  # BOTH - add to vision list
+                vision_models.append(model_id)
+
+        # Ensure we have at least one option in each list
+        if not text_models:
+            text_models = ["(No text models available)"]
 
         quantization_options = [
             "Auto (Detect Best)",
@@ -2950,10 +3010,9 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
 
         max_tokens_options = [
             "Low (512)",
-            "Medium (1024)",
-            "High (2048)",
-            "Very High (Model Max)",
-            "Custom",
+            "Medium (2048)",
+            "High (4096)",
+            "Max (Model Capacity)",
         ]
 
         total_vram = get_total_vram_gb()
@@ -2963,14 +3022,25 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
             node_id="SID_LLM_Local",
             display_name="SID LLM Local",
             category="SID Photography Toolkit/LLM Providers",
-            description=f"Local Vision Models{vram_info} - No API needed",
+            description=f"Local Transformers Models{vram_info}",
             inputs=[
+                # Vision Models
                 comfy_io.Combo.Input(
-                    "model",
-                    options=model_options,
+                    "vision_model",
+                    options=vision_models,
                     default=cls.get_default_model(),
-                    tooltip="Select model: Name | Max Tokens | VRAM (4-bit)"
+                    display_name="Vision Model",
+                    tooltip="Vision model for image analysis"
                 ),
+                # Text Models
+                comfy_io.Combo.Input(
+                    "text_model",
+                    options=text_models,
+                    default="Qwen3-0.6B-Instruct" if "Qwen3-0.6B-Instruct" in text_models else text_models[0] if text_models else "",
+                    display_name="Text Model",
+                    tooltip="Text model (future use)"
+                ),
+                # Settings
                 comfy_io.Combo.Input(
                     "quantization",
                     options=quantization_options,
@@ -2996,15 +3066,9 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                 comfy_io.Combo.Input(
                     "max_tokens_preset",
                     options=max_tokens_options,
-                    default="Medium (1024)",
-                    tooltip="Output length: Low=512, Medium=1024, High=2048, Very High=Model Max"
-                ),
-                comfy_io.Int.Input(
-                    "custom_max_tokens",
-                    default=1024,
-                    min=128,
-                    max=4096,
-                    tooltip="Custom max tokens (only used when preset is 'Custom')"
+                    default="Medium (2048)",
+                    display_name="Max Tokens",
+                    tooltip="Output length: Low=512, Medium=2048, High=4096, Max=Model's full capacity"
                 ),
                 comfy_io.Boolean.Input(
                     "keep_model_loaded",
@@ -3016,6 +3080,7 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     "attention_mode",
                     options=ATTENTION_MODES,
                     default="auto",
+                    display_name="Attention Mode",
                     tooltip="Attention implementation: auto (recommended), flash_attention_2 (Ampere+), sdpa, eager"
                 ),
                 comfy_io.Float.Input(
@@ -3026,6 +3091,7 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     step=0.1,
                     round=0.1,
                     display_mode=comfy_io.NumberDisplay.slider,
+                    display_name="Repetition Penalty",
                     tooltip="Penalize repeated tokens (1.0=off, 1.2=recommended, 2.0=strong)"
                 ),
                 comfy_io.Float.Input(
@@ -3036,6 +3102,7 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     step=0.05,
                     round=0.05,
                     display_mode=comfy_io.NumberDisplay.slider,
+                    display_name="Top P",
                     tooltip="Nucleus sampling (0.9=recommended, lower=more focused)"
                 ),
                 comfy_io.Int.Input(
@@ -3043,13 +3110,21 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     default=1,
                     min=1,
                     max=8,
-                    tooltip="Beam search width (1=sampling, >1=beam search for stable outputs, disables temperature/top_p)"
+                    display_name="Num Beams",
+                    tooltip="Beam search width (1=sampling, >1=beam search for stable outputs)"
                 ),
                 comfy_io.Boolean.Input(
                     "use_torch_compile",
                     default=False,
-                    display_name="Use Torch Compile",
-                    tooltip="Enable torch.compile for faster inference (CUDA + Torch 2.1+ only, first run slower)"
+                    display_name="Torch Compile",
+                    tooltip="Enable torch.compile for faster inference (CUDA + Torch 2.1+ only)"
+                ),
+                # Analysis mode - Local supports Quick/Standard only (no Deep)
+                comfy_io.Combo.Input(
+                    "analysis_mode",
+                    options=["Quick", "Standard"],
+                    default="Standard",
+                    tooltip="Analysis depth: Quick (fast, 30-60 words), Standard (balanced, 80-150 words)"
                 ),
             ],
             outputs=[
@@ -3064,21 +3139,25 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
     @classmethod
     def execute(
         cls,
-        model: str,
+        vision_model: str,
+        text_model: str,
         quantization: str,
         device: str,
         temperature: float,
         max_tokens_preset: str,
-        custom_max_tokens: int,
         keep_model_loaded: bool,
         attention_mode: str,
         repetition_penalty: float,
         top_p: float,
         num_beams: int,
         use_torch_compile: bool,
+        analysis_mode: str,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
         try:
+            # Use vision_model (primary use case)
+            model = vision_model
+
             # Validate model
             model_info = LOCAL_MODELS.get(model)
             if not model_info:
@@ -3088,21 +3167,16 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
             if quantization == "Auto (Detect Best)":
                 available_vram = get_available_vram_gb()
                 if available_vram <= 0:
-                    # No GPU detected, use 4-bit (can fallback to CPU)
                     quant = "4-bit"
-                    print(f"[SID_LLM_Local] Auto-quantization: No GPU, using 4-bit")
                 else:
                     # Select based on available VRAM with safety margin
                     safety_margin = 1.2
                     if model_info.vram_fp16 * safety_margin <= available_vram:
                         quant = "None (FP16)"
-                        print(f"[SID_LLM_Local] Auto-quantization: FP16 (VRAM: {available_vram:.1f}GB available)")
                     elif model_info.vram_8bit * safety_margin <= available_vram:
                         quant = "8-bit"
-                        print(f"[SID_LLM_Local] Auto-quantization: 8-bit (VRAM: {available_vram:.1f}GB available)")
                     else:
                         quant = "4-bit"
-                        print(f"[SID_LLM_Local] Auto-quantization: 4-bit (VRAM: {available_vram:.1f}GB available)")
             else:
                 quant_map = {
                     "4-bit (VRAM-friendly)": "4-bit",
@@ -3118,16 +3192,14 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
             model_max_tokens = model_info.max_output_tokens
             max_tokens_map = {
                 "Low (512)": 512,
-                "Medium (1024)": 1024,
-                "High (2048)": 2048,
-                "Very High (Model Max)": model_max_tokens,
-                "Custom": custom_max_tokens,
+                "Medium (2048)": 2048,
+                "High (4096)": 4096,
+                "Max (Model Capacity)": model_max_tokens,
             }
-            max_tokens = max_tokens_map.get(max_tokens_preset, 1024)
+            max_tokens = max_tokens_map.get(max_tokens_preset, 2048)
 
-            # Validate custom_max_tokens doesn't exceed model max
+            # Cap to model's maximum if preset exceeds it
             if max_tokens > model_max_tokens:
-                print(f"[SID_LLM_Local] Warning: Requested {max_tokens} tokens exceeds model max ({model_max_tokens}), capping")
                 max_tokens = model_max_tokens
 
             # Reasoning is permanently disabled for local models
@@ -3141,10 +3213,12 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
             config = LLMModelConfig(
                 provider=cls.PROVIDER_NAME,
                 model=model,
+                text_model=text_model,
                 api_key="",
                 api_url="",
                 max_tokens=max_tokens,
                 temperature=temperature,
+                analysis_mode=analysis_mode.lower(),
                 supports_vision=supports_vision_cap,
                 supports_system_prompt=True,
                 supports_reasoning=reasoning_enabled,
@@ -3165,13 +3239,11 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     "use_torch_compile": use_torch_compile,
                     "supports_text": supports_text_cap,
                     "supports_vision": supports_vision_cap,
+                    "target_image_size": model_info.target_image_size,
                 },
             )
 
-            print(f"[SID_LLM_Local] Configured: {model}")
-            print(f"  Type: {model_info.model_type.value.upper()}, Family: {model_info.family.value}")
-            print(f"  VRAM: {model_info.vram_4bit:.1f}-{model_info.vram_fp16:.1f}GB, Quantization: {quant}")
-            print(f"  Device: {device}, Max Tokens: {max_tokens}")
+            print(f"[SID_LLM_Local] {model} ({quant})")
 
             return comfy_io.NodeOutput(config)
 
@@ -3181,3 +3253,145 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
         except Exception as e:
             # Catch unexpected errors and raise with context
             raise RuntimeError(f"[SID_LLM_Local] Unexpected error: {type(e).__name__}: {str(e)}") from e
+
+
+# =============================================================================
+# SID_LLM_Local_API - For Ollama, LM Studio, OpenAI Compatible
+# =============================================================================
+
+class SID_LLM_Local_API(comfy_io.ComfyNode):
+    """
+    Local API Provider for Ollama and LM Studio endpoints.
+
+    Providers:
+    - Ollama (localhost:11434)
+    - LM Studio (localhost:1234)
+
+    No API key required. Runs against local API servers.
+    """
+
+    @classmethod
+    def define_schema(cls) -> comfy_io.Schema:
+        """Define the node schema."""
+        provider_options = ["Ollama", "LM Studio"]
+
+        return comfy_io.Schema(
+            node_id="SID_LLM_Local_API",
+            display_name="SID LLM Local API",
+            category="SID Photography Toolkit/LLM Providers",
+            description="Ollama, LM Studio endpoints",
+            inputs=[
+                comfy_io.Combo.Input(
+                    "provider",
+                    options=provider_options,
+                    default="Ollama",
+                    tooltip="Select local API provider"
+                ),
+                comfy_io.String.Input(
+                    "vision_model",
+                    default="llava:latest",
+                    display_name="Vision Model",
+                    tooltip="Vision model for image analysis (e.g., 'llava:latest', 'llama3.2-vision', 'qwen2-vl')"
+                ),
+                comfy_io.String.Input(
+                    "text_model",
+                    default="llama3.2:latest",
+                    display_name="Text Model",
+                    tooltip="Text model for prompt enhancement (e.g., 'llama3.2:latest', 'qwen2.5:latest')"
+                ),
+                comfy_io.String.Input(
+                    "api_url",
+                    default="",
+                    display_name="API URL (Optional)",
+                    tooltip="Custom API URL. Leave empty for default (Ollama: localhost:11434, LM Studio: localhost:1234)"
+                ),
+                comfy_io.Float.Input(
+                    "temperature",
+                    default=0.3,
+                    min=0.0,
+                    max=2.0,
+                    step=0.1,
+                    round=0.1,
+                    display_mode=comfy_io.NumberDisplay.slider,
+                    tooltip="Creativity (0=deterministic, 0.3=balanced, 1+=creative)"
+                ),
+                # Analysis mode - Local API supports Quick/Standard only (no Deep)
+                comfy_io.Combo.Input(
+                    "analysis_mode",
+                    options=["Quick", "Standard"],
+                    default="Standard",
+                    tooltip="Analysis depth: Quick (fast, 30-60 words), Standard (balanced, 80-150 words)"
+                ),
+            ],
+            outputs=[
+                LLM_MODEL_Type.Output(
+                    "llm_model",
+                    display_name="LLM_MODEL",
+                    tooltip="LLM configuration to connect to prompt generator"
+                ),
+            ],
+        )
+
+    @classmethod
+    def execute(
+        cls,
+        provider: str,
+        vision_model: str,
+        text_model: str,
+        api_url: str,
+        temperature: float,
+        analysis_mode: str,
+    ) -> comfy_io.NodeOutput:
+        """Create and return the LLM model configuration."""
+        try:
+            if not vision_model.strip():
+                raise ValueError("[SID_LLM_Local_API] Please enter a vision model name")
+
+            vision_model_name = vision_model.strip()
+            text_model_name = text_model.strip() if text_model.strip() else vision_model_name
+
+            # Determine provider name and default URL
+            if provider == "Ollama":
+                provider_name = "ollama"
+                default_url = "http://localhost:11434/v1"
+            else:  # LM Studio
+                provider_name = "lmstudio"
+                default_url = "http://localhost:1234/v1"
+
+            # Use custom URL or default
+            actual_url = api_url.strip() if api_url.strip() else default_url
+
+            # Ensure URL ends with /v1
+            actual_url = actual_url.rstrip("/")
+            if not actual_url.endswith("/v1"):
+                actual_url = f"{actual_url}/v1"
+
+            # Create configuration (use reasonable default for local APIs)
+            config = LLMModelConfig(
+                provider=provider_name,
+                model=vision_model_name,
+                text_model=text_model_name,
+                api_key="",
+                api_url=actual_url,
+                max_tokens=4096,  # Default for local API providers
+                temperature=temperature,
+                analysis_mode=analysis_mode.lower(),
+                supports_vision=True,
+                supports_system_prompt=True,
+                supports_reasoning=False,
+                extra_params={
+                    "target_image_size": 512,
+                },
+            )
+
+            print(f"[SID_LLM_Local_API] {provider}")
+            print(f"  Vision: {vision_model_name}")
+            print(f"  Text: {text_model_name}")
+            print(f"  URL: {actual_url}")
+
+            return comfy_io.NodeOutput(config)
+
+        except ValueError:
+            raise
+        except Exception as e:
+            raise RuntimeError(f"[SID_LLM_Local_API] Unexpected error: {type(e).__name__}: {str(e)}") from e

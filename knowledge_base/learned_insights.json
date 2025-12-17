@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-12-14T00:00:00Z",
+  "description": "Accumulated insights from debug sessions",
+
+  "sessions": [],
+
+  "term_effectiveness": {
+    "description": "Effectiveness scores updated from actual usage",
+    "terms": {}
+  },
+
+  "model_observations": {
+    "description": "Observed model-specific patterns from debug sessions",
+    "models": {}
+  },
+
+  "common_failures": {
+    "description": "Frequently observed failure patterns",
+    "patterns": []
+  },
+
+  "successful_patterns": {
+    "description": "Patterns that consistently produce good results",
+    "patterns": []
+  },
+
+  "vocabulary_additions": {
+    "description": "New terms discovered through web search or analysis",
+    "terms": []
+  },
+
+  "statistics": {
+    "total_sessions": 0,
+    "average_score": 0.0,
+    "score_distribution": {
+      "excellent": 0,
+      "good": 0,
+      "average": 0,
+      "poor": 0
+    },
+    "most_common_issues": [],
+    "most_effective_improvements": []
+  }
+}

@@ -3316,9 +3316,137 @@ terms = ["almond", "round", "hooded", "deep-set", "upturned", "downturned", "mon
 [vocabulary.eye_colors]
 terms = ["steel grey", "warm brown", "pale blue", "amber", "hazel", "green", "dark brown"]
 
-[vocabulary.hair_styles]
-terms = ["bob", "pixie cut", "long layers", "braided", "ponytail", "loose waves", "updo", "tight curls"]
+# =============================================================================
+# FEMALE-SPECIFIC VOCABULARY
+# =============================================================================
+[vocabulary.hair_styles_female]
+terms = ["bob", "pixie cut", "long layers", "braided", "ponytail", "loose waves", "updo", "tight curls", "bun", "half-up", "french braid", "fishtail braid", "beach waves", "straight blowout"]
 
+# =============================================================================
+# MALE-SPECIFIC VOCABULARY
+# =============================================================================
+[vocabulary.hair_styles_male]
+terms = [
+    "buzz cut",           # Very short, uniform length
+    "crew cut",           # Short sides, slightly longer top
+    "fade",               # Gradual length change on sides
+    "undercut",           # Shaved sides, longer top
+    "pompadour",          # Voluminous swept-back style
+    "quiff",              # Front swept upward
+    "slicked back",       # Hair combed backward
+    "man bun",            # Long hair tied up
+    "textured crop",      # Short with texture on top
+    "side part",          # Classic parted style
+    "medium length",      # Chin to shoulder length
+    "curly natural",      # Natural curls
+    "braids/locs",        # Braided or locked hair
+    "bald/shaved"         # Clean shaven head
+]
+
+[vocabulary.male_facial_hair]
+terms = [
+    "clean-shaven",       # No facial hair
+    "light stubble",      # 1-2 days growth
+    "heavy stubble",      # 3-5 days growth
+    "short beard",        # Trimmed close beard
+    "full beard",         # Thick, longer beard
+    "goatee",             # Chin beard only
+    "mustache",           # Upper lip only
+    "soul patch",         # Small patch below lip
+    "mutton chops",       # Sideburns extending to jaw
+    "designer stubble",   # Maintained stubble look
+    "scruffy/unkempt"     # Natural, untrimmed growth
+]
+
+[vocabulary.male_body_types]
+terms = [
+    "muscular/athletic",  # Well-defined muscles, fit
+    "lean/toned",         # Slim with muscle definition
+    "stocky/solid",       # Broad, thick build
+    "slim/slender",       # Thin, narrow frame
+    "average build",      # Neither thin nor heavy
+    "broad-shouldered",   # Wide shoulders, V-shape
+    "barrel-chested",     # Wide, deep chest
+    "tall and lanky",     # Tall, thin limbs
+    "compact/short",      # Shorter, proportionate
+    "bodybuilder",        # Extremely muscular
+    "dad bod"             # Soft midsection, normal
+]
+
+[vocabulary.male_features]
+terms = [
+    "square jaw",         # Strong, angular jawline
+    "chiseled features",  # Sharp, defined bone structure
+    "soft features",      # Rounded, gentle features
+    "rugged/weathered",   # Rough, outdoor look
+    "boyish face",        # Youthful appearance
+    "strong brow",        # Prominent brow ridge
+    "high cheekbones",    # Prominent cheekbones
+    "cleft chin",         # Dimple in chin
+    "dimples",            # Cheek dimples
+    "angular nose",       # Sharp, defined nose
+    "broad nose",         # Wide nose bridge
+    "prominent adam's apple"
+]
+
+[vocabulary.male_expressions]
+terms = [
+    "confident smirk",    # Self-assured half-smile
+    "serious/intense",    # Focused, no smile
+    "warm smile",         # Friendly, genuine smile
+    "stoic/neutral",      # Expressionless, calm
+    "brooding/pensive",   # Deep in thought
+    "playful grin",       # Mischievous smile
+    "determined look",    # Resolute expression
+    "relaxed/casual",     # At ease, comfortable
+    "fierce/aggressive",  # Intense, powerful
+    "charming smile"      # Attractive, engaging
+]
+
+[vocabulary.male_clothing_casual]
+terms = [
+    "plain t-shirt",      # Basic tee
+    "henley shirt",       # Button-neck tee
+    "polo shirt",         # Collared casual shirt
+    "button-down shirt",  # Casual button shirt
+    "flannel shirt",      # Plaid flannel
+    "hoodie",             # Hooded sweatshirt
+    "crewneck sweater",   # Round neck sweater
+    "jeans",              # Denim pants
+    "chinos",             # Cotton trousers
+    "cargo pants",        # Utility pants
+    "shorts",             # Casual shorts
+    "joggers/sweatpants", # Athletic pants
+    "sneakers",           # Casual athletic shoes
+    "boots"               # Ankle or higher boots
+]
+
+[vocabulary.male_clothing_formal]
+terms = [
+    "suit jacket/blazer", # Formal jacket
+    "dress shirt",        # Formal button-up
+    "tie/bow tie",        # Neckwear
+    "vest/waistcoat",     # Formal vest
+    "dress pants",        # Formal trousers
+    "tuxedo",             # Black tie formal
+    "oxford shoes",       # Formal lace-ups
+    "loafers"             # Slip-on dress shoes
+]
+
+[vocabulary.male_clothing_athletic]
+terms = [
+    "tank top",           # Sleeveless shirt
+    "compression shirt",  # Tight athletic top
+    "athletic shorts",    # Sport shorts
+    "compression leggings", # Tight athletic pants
+    "swim trunks",        # Swimming shorts
+    "wetsuit",            # Water sport suit
+    "running shoes"       # Athletic footwear
+]
+
+# =============================================================================
+# GENDER-NEUTRAL VOCABULARY (applies to all)
+# =============================================================================
 [vocabulary.hair_textures]
 terms = ["silky straight", "wavy", "tight curls", "coily", "windswept", "sleek", "frizzy"]
 
@@ -3413,6 +3541,350 @@ terms = [
     "vibrant saturated"           # Rich, punchy colors
 ]
 
+# =============================================================================
+# COMPREHENSIVE TERRAIN CLASSIFICATION VOCABULARY
+# =============================================================================
+# Use these terms for precise landscape/scene descriptions
+
+# -----------------------------------------------------------------------------
+# TERRAIN TYPES - Primary classification
+# -----------------------------------------------------------------------------
+[vocabulary.terrain_types]
+mountain = [
+    "alpine mountain range",      # High altitude, above treeline
+    "foothill region",            # Lower transitional mountains
+    "volcanic landscape",         # Active/dormant volcano area
+    "glacier region",             # Ice-covered high mountains
+    "rocky highlands"             # High elevation rocky terrain
+]
+desert = [
+    "sandy dune desert",          # Rolling sand dunes
+    "rocky desert",               # Stone and gravel desert
+    "salt flat",                  # Dried salt lake bed
+    "canyon lands",               # Eroded desert canyons
+    "scrubland desert"            # Desert with sparse vegetation
+]
+forest = [
+    "dense conifer forest",       # Pine, spruce, fir dominated
+    "deciduous woodland",         # Leaf-shedding tree forest
+    "mixed forest",               # Combination of conifers and deciduous
+    "tropical rainforest",        # Dense equatorial jungle
+    "boreal taiga",               # Northern conifer forest
+    "temperate rainforest"        # Wet, moss-covered forest
+]
+grassland = [
+    "open prairie",               # Flat grass plains
+    "alpine meadow",              # High altitude grassland
+    "savanna",                    # Tropical grassland with scattered trees
+    "steppe",                     # Semi-arid grassland
+    "tundra"                      # Arctic/alpine low vegetation
+]
+coastal = [
+    "sandy beach",                # Fine sand shoreline
+    "rocky coastline",            # Cliff and rock formations
+    "pebble beach",               # Stone-covered shore
+    "coral reef area",            # Tropical reef waters
+    "tidal flats",                # Low-tide exposed seafloor
+    "sea cliffs"                  # Dramatic cliff faces meeting ocean
+]
+wetland = [
+    "marshland",                  # Grass-dominated wetland
+    "swamp",                      # Tree-dominated wetland
+    "bog",                        # Acidic peat wetland
+    "river delta",                # Where river meets sea
+    "mangrove forest"             # Coastal tidal forest
+]
+valley = [
+    "U-shaped glacial valley",    # Carved by glaciers
+    "V-shaped river valley",      # Carved by water
+    "wide river basin",           # Broad flat valley floor
+    "narrow gorge",               # Deep narrow valley
+    "alpine cirque"               # Bowl-shaped glacier-carved valley head
+]
+
+# -----------------------------------------------------------------------------
+# MOUNTAIN CHARACTERISTICS - Detailed peak descriptions
+# -----------------------------------------------------------------------------
+[vocabulary.mountain_peaks]
+shapes = [
+    "jagged sharp peaks",         # Knife-edge ridges
+    "rounded weathered summits",  # Smooth, old mountains
+    "spire-like pinnacles",       # Needle-like rock towers
+    "flat-topped mesa",           # Plateau summit
+    "pyramidal peak",             # Classic pointed mountain
+    "dome-shaped summit",         # Smooth rounded top
+    "sawtooth ridge",             # Series of pointed peaks
+    "horn peak"                   # Steep-sided pointed peak (Matterhorn style)
+]
+peak_count = [
+    "single dominant peak",       # One main mountain
+    "twin peaks",                 # Two prominent summits
+    "triple summit",              # Three peaks
+    "mountain range",             # Multiple peaks in row
+    "scattered peaks",            # Random peak distribution
+    "cirque of peaks"             # Semicircle of peaks around basin
+]
+rock_types = [
+    "gray granite faces",         # Light gray igneous rock
+    "dark basalt cliffs",         # Black volcanic rock
+    "red sandstone formations",   # Orange-red sedimentary
+    "white limestone cliffs",     # Light sedimentary rock
+    "dark slate outcrops",        # Gray metamorphic rock
+    "brown shale layers",         # Layered sedimentary
+    "volcanic black rock"         # Recent lava rock
+]
+snow_coverage = [
+    "snow-capped summit",         # Snow only on peak
+    "permanent glacier",          # Year-round ice
+    "patchy snow fields",         # Scattered snow patches
+    "fresh powder dusting",       # Light new snowfall
+    "bare rock faces",            # No snow visible
+    "avalanche chutes",           # Snow-slide paths
+    "cornice formations",         # Overhanging snow edges
+    "glacial ice patches",        # Blue ice visible
+    "retreating snowline"         # Snow melting at edges
+]
+
+# -----------------------------------------------------------------------------
+# WATER BODY TYPES - Classification and characteristics
+# -----------------------------------------------------------------------------
+[vocabulary.water_types]
+still_water = [
+    "glacial lake",               # Glacier-fed, mineral color
+    "alpine tarn",                # Small mountain lake
+    "crater lake",                # In volcanic crater
+    "kettle lake",                # Glacier-formed depression
+    "reservoir",                  # Man-made lake
+    "pond",                       # Small body of water
+    "lagoon"                      # Shallow coastal water
+]
+flowing_water = [
+    "mountain stream",            # Small fast water
+    "rushing river",              # Large fast-moving water
+    "gentle creek",               # Small slow water
+    "cascading waterfall",        # Water falling over rocks
+    "braided river",              # Multiple channels
+    "meandering river",           # Winding slow river
+    "rapids section"              # Fast rocky section
+]
+ocean_water = [
+    "open ocean",                 # Deep sea
+    "coastal waters",             # Near-shore ocean
+    "bay",                        # Sheltered water inlet
+    "fjord",                      # Glacial coastal inlet
+    "inlet",                      # Narrow water passage
+    "strait"                      # Water between landmasses
+]
+
+[vocabulary.water_colors_detailed]
+glacial = [
+    "brilliant turquoise",        # Classic glacier-fed color
+    "milky aquamarine",           # Sediment-rich glacier water
+    "pale blue-green",            # Light glacial tint
+    "opaque teal"                 # Dense mineral content
+]
+alpine_lake = [
+    "deep sapphire blue",         # Very deep clear lake
+    "emerald green",              # Mineral/algae tint
+    "crystal clear",              # Transparent to bottom
+    "dark navy",                  # Deep shadowed water
+    "steel blue-gray"             # Overcast reflection
+]
+river = [
+    "muddy brown",                # Sediment-laden
+    "slate gray",                 # Cloudy conditions
+    "tea-stained amber",          # Tannin from forest
+    "pale green",                 # Algae presence
+    "clear with visible rocks"    # Mountain stream clarity
+]
+ocean = [
+    "deep navy blue",             # Deep ocean
+    "tropical turquoise",         # Shallow warm water
+    "storm gray",                 # Overcast conditions
+    "foam-white crests",          # Wave tops
+    "dark teal",                  # Medium depth
+    "sandy brown nearshore"       # Sediment near beach
+]
+
+[vocabulary.water_surface_textures]
+calm = [
+    "mirror-smooth surface",      # Perfect reflection
+    "glassy still",               # No movement
+    "gentle ripples",             # Light breeze effect
+    "subtle texture",             # Minimal disturbance
+    "oil-slick smooth"            # Ultra calm
+]
+active = [
+    "wind-rippled surface",       # Light wind patterns
+    "choppy waves",               # Moderate wind
+    "whitecap waves",             # Strong wind, foam
+    "rolling swells",             # Ocean wave motion
+    "crashing breakers",          # Shore-breaking waves
+    "splashing rapids"            # Fast water turbulence
+]
+features = [
+    "visible rocks beneath",      # Clear shallow water
+    "reflection of peaks",        # Mountain mirror
+    "floating debris",            # Surface material
+    "foam patterns",              # White foam areas
+    "current lines visible",      # Flow patterns
+    "ice fragments floating"      # Glacial ice pieces
+]
+
+# -----------------------------------------------------------------------------
+# VEGETATION - Detailed plant types by environment
+# -----------------------------------------------------------------------------
+[vocabulary.vegetation_conifer]
+types = [
+    "tall lodgepole pine",        # Straight thin pines
+    "dense spruce forest",        # Pointed Christmas-tree shape
+    "towering Douglas fir",       # Giant conifers
+    "blue-green juniper",         # Low spreading conifers
+    "giant sequoia",              # Massive ancient trees
+    "dark hemlock stands",        # Shade-tolerant conifers
+    "coastal redwood",            # Extremely tall trees
+    "alpine larch"                # Deciduous conifer
+]
+density = [
+    "dense unbroken canopy",      # Full coverage
+    "sparse scattered trees",     # Individual trees
+    "forest clearing",            # Gap in trees
+    "treeline boundary",          # Upper limit of trees
+    "uniform plantation"          # Planted rows
+]
+
+[vocabulary.vegetation_deciduous]
+types = [
+    "golden aspen grove",         # Fall colors, white bark
+    "red maple forest",           # Fall red colors
+    "oak woodland",               # Broad spreading trees
+    "birch stand",                # White bark trees
+    "beech forest",               # Smooth gray bark
+    "cottonwood along river"      # Riverbank trees
+]
+seasonal_state = [
+    "full summer green",          # Peak leaf coverage
+    "early spring buds",          # Just leafing out
+    "peak autumn color",          # Fall foliage
+    "late fall, leaves falling",  # Transitional
+    "bare winter branches"        # No leaves
+]
+
+[vocabulary.vegetation_other]
+tropical = [
+    "palm tree grove",            # Tropical palms
+    "dense jungle canopy",        # Rainforest
+    "bamboo forest",              # Bamboo stands
+    "banana plantation",          # Cultivated tropical
+    "fern understory"             # Shade plants
+]
+desert = [
+    "saguaro cactus",             # Tall desert cactus
+    "Joshua tree",                # Yucca trees
+    "sage brush",                 # Desert shrub
+    "tumbleweed",                 # Dried rolling plants
+    "barrel cactus"               # Round desert cactus
+]
+alpine = [
+    "low alpine shrubs",          # Above treeline bushes
+    "tundra moss and lichen",     # Ground cover
+    "wildflower meadow",          # Colorful blooms
+    "krummholz (stunted trees)",  # Wind-shaped trees
+    "alpine grass tussocks"       # Mountain grass clumps
+]
+
+[vocabulary.vegetation_colors]
+green_states = [
+    "dark forest green",          # Deep conifer color
+    "bright lime green",          # Fresh spring growth
+    "blue-green sage",            # Gray-green desert
+    "yellow-green",               # Stressed or young
+    "deep emerald",               # Healthy lush vegetation
+    "olive drab"                  # Muted green
+]
+autumn = [
+    "brilliant gold",             # Aspen, birch fall
+    "fiery orange",               # Maple fall
+    "deep crimson red",           # Oak, maple fall
+    "bronze and copper",          # Mixed fall
+    "pale yellow fading"          # Late fall
+]
+
+# -----------------------------------------------------------------------------
+# ATMOSPHERE & SKY CONDITIONS
+# -----------------------------------------------------------------------------
+[vocabulary.sky_conditions]
+clear = [
+    "deep blue cloudless",        # Perfect clear sky
+    "pale blue sky",              # Light clear sky
+    "azure ceiling",              # Rich blue
+    "gradient blue to white"      # Fading to horizon
+]
+clouds = [
+    "dramatic cumulus towers",    # Puffy storm builders
+    "thin cirrus wisps",          # High ice clouds
+    "low stratus blanket",        # Overcast layer
+    "scattered fair-weather",     # Puffy white clouds
+    "lenticular clouds",          # Lens-shaped over peaks
+    "mammatus formations",        # Bubble-like underneath
+    "stratocumulus rolls"         # Rolling cloud rows
+]
+dramatic = [
+    "storm clouds gathering",     # Dark threatening
+    "sunset color bands",         # Orange/pink/purple
+    "sun rays through clouds",    # God rays
+    "rainbow arc",                # After rain
+    "aurora display"              # Northern/southern lights
+]
+
+[vocabulary.atmospheric_effects]
+haze_fog = [
+    "low valley fog",             # Fog in low areas
+    "mist rising from water",     # Evaporating moisture
+    "mountain haze layers",       # Distance haze
+    "fog wrapping peaks",         # Clouds around summits
+    "clearing morning mist",      # Dissipating fog
+    "dense pea-soup fog"          # Visibility limiting
+]
+weather = [
+    "falling snow",               # Active precipitation
+    "rain streaks visible",       # Visible rainfall
+    "dust storm",                 # Desert sand/dust
+    "blowing spray",              # Ocean/waterfall mist
+    "heat shimmer"                # Hot air distortion
+]
+light_quality = [
+    "soft diffused overcast",     # Even cloud light
+    "harsh direct sun",           # Strong shadows
+    "dappled forest light",       # Through tree canopy
+    "rim lighting from behind",   # Backlit edges
+    "front fill light",           # Even illumination
+    "side lighting dramatic"      # Strong side shadows
+]
+
+# -----------------------------------------------------------------------------
+# TERRAIN-SPECIFIC VOCABULARY GUIDES
+# -----------------------------------------------------------------------------
+[vocabulary.terrain_desert_guide]
+description = "For desert scenes, include: sand color (gold, white, red, brown), dune shapes (crescent, linear, star), rock formations (buttes, mesas, arches), vegetation (cactus, scrub), and atmospheric conditions (heat shimmer, dust)."
+example = "Rolling golden sand dunes with sharp crescent ridges, scattered red sandstone buttes in midground, sparse saguaro cacti, pale blue hazy sky with heat shimmer, harsh midday light casting deep shadows."
+
+[vocabulary.terrain_mountain_guide]
+description = "For mountain scenes, include: peak shape and count, rock type and color, snow/ice coverage, treeline position, foreground elements, and atmospheric depth."
+example = "Three jagged granite peaks with snow-capped summits, exposed gray rock faces above treeline, dense dark conifer forest covering lower slopes, turquoise glacial lake in foreground with rippled surface, low clouds wrapping middle peak, cool blue-cyan color grade."
+
+[vocabulary.terrain_coastal_guide]
+description = "For coastal scenes, include: beach type (sand, rock, pebble), water color and texture, wave conditions, tide state, coastal features (cliffs, stacks), and sky reflection."
+example = "Rocky coastline with dramatic sea stacks, dark volcanic sand beach, crashing white-foam breakers, deep teal ocean with rolling swells, weathered cliff faces, dramatic sunset sky reflecting orange on wet sand."
+
+[vocabulary.terrain_forest_guide]
+description = "For forest scenes, include: tree species and density, canopy coverage, understory vegetation, light filtering, ground cover, and seasonal state."
+example = "Dense old-growth conifer forest with towering Douglas fir, dark green canopy filtering dappled light, fern-covered forest floor, fallen moss-covered logs, misty atmosphere with rays of light penetrating canopy."
+
+[vocabulary.terrain_valley_guide]
+description = "For valley scenes, include: valley shape (U-shaped glacial, V-shaped river), floor features, surrounding slopes, water features, and scale indicators."
+example = "Wide U-shaped glacial valley with flat meadow floor, meandering river with clear water, steep forested slopes on both sides, distant snow-capped peaks at valley head, morning mist lingering in valley bottom."
+
 
 # =============================================================================
 # PRESET STYLE ADDONS - Added to system prompt based on selected style
@@ -3474,8 +3946,23 @@ FRAMING: Shot type (close-up/medium/full), where frame cuts body, rule of thirds
 ANGLE: Geometric (eye level/high/low angle), face angle (front/45°/profile)
 SKIN: Specific tone (warm ivory, cool beige, golden tan, olive, deep brown, porcelain)
 EYES: Shape (almond, round, hooded) + color (steel grey, warm brown, amber, hazel)
-HAIR: Style FIRST (bob, ponytail, loose waves), then color, texture (silky, wavy, coily)
-CLOTHING: Each item 3-5 words (type, color, material)
+
+HAIR (gender-specific):
+- FEMALE: bob, ponytail, loose waves, braided, updo, pixie + color + texture
+- MALE: fade, undercut, buzz cut, slicked back, textured crop, man bun + color
+
+FACIAL HAIR (if male): clean-shaven, light stubble, heavy stubble, short beard, full beard, goatee
+
+BODY TYPE (if visible):
+- FEMALE: slim, athletic, curvy
+- MALE: muscular/athletic, lean, stocky, broad-shouldered, defined abs/chest (if shirtless)
+
+CLOTHING OR SHIRTLESS:
+- If clothed: Each item 3-5 words (type, color, material)
+- If shirtless/bare-chested: describe visible muscles, definition, body hair if present
+
+TATTOOS: Describe visible tattoos (location, style, size)
+
 POSE: Body position, weight distribution
 
 LIGHTING - use specific patterns:
@@ -3502,18 +3989,35 @@ SUBJECT - use specific visual vocabulary:
 - FACE ANGLE: front view, 45° angle, three-quarter, profile left/right
 - EYE SHAPE: almond, round, hooded, deep-set, upturned, downturned
 - EYE COLOR: steel grey, warm brown, pale blue, amber, hazel, green
-- HAIR STYLE: bob, pixie, long layers, braided, ponytail, loose waves, tight curls
-- HAIR TEXTURE: silky straight, wavy, coily, frizzy, windswept, slicked back
+
+HAIR (GENDER-SPECIFIC):
+- FEMALE styles: bob, pixie, long layers, braided, ponytail, loose waves, updo, tight curls
+- MALE styles: buzz cut, fade, undercut, slicked back, textured crop, pompadour, side part, man bun
+- TEXTURE: silky straight, wavy, coily, frizzy, windswept, sleek
+
+FACIAL HAIR (male subjects): clean-shaven, light stubble, heavy stubble, designer stubble, short trimmed beard, full thick beard, goatee, mustache
+
+FACE FEATURES (male subjects): square jaw, chiseled features, rugged/weathered, boyish face, strong brow, cleft chin
+
+BODY TYPE:
+- MALE: muscular/athletic, lean/toned, stocky/solid, broad-shouldered, barrel-chested, bodybuilder build
+- FEMALE: slim, athletic, curvy, petite
+
+IF SHIRTLESS/BARE-CHESTED (describe in detail):
+- Muscle definition: defined pecs, visible abs (4-pack/6-pack/8-pack), V-taper, arm muscles
+- Chest hair: none, light dusting, moderate, thick
+- Body features: veins visible, tan lines, scars
+- TATTOOS: location (arm sleeve, chest piece, back), style (tribal, realistic, script), size
 
 BODY POSITIONING: Describe each limb independently - shoulders, arms, hands, legs
 
-CLOTHING: Each item 3-5 words (type, color, material, fit)
+CLOTHING (if worn): Each item 3-5 words (type, color, material, fit)
 
 LIGHTING PATTERN - be specific:
 - NATURAL: soft diffused daylight, golden hour warmth, blue hour cool, window light
 - STUDIO SETUPS: Rembrandt (triangle shadow on cheek), butterfly (shadow under nose), split (half-face lit), loop (soft nose shadow)
 - EFFECTS: rim lighting (edge glow), high key (bright, minimal shadows), low key (dark, dramatic)
-- DESCRIBE: Where highlights fall (forehead, cheekbones), where shadows form (jawline, neck)
+- DESCRIBE: Where highlights fall (forehead, cheekbones, muscles), where shadows form (jawline, neck, abs)
 
 BACKGROUND: Type, color palette, blur level
 
@@ -3532,22 +4036,41 @@ FRAMING & VISIBILITY:
 - EXACT frame cutoff (e.g., "frame cuts at mid-thigh")
 - Rule of thirds: face/eyes placement relative to intersection points
 
-VISUAL VOCABULARY - use these specific terms:
+═══════════════════════════════════════════════════════════════════════════════
+VISUAL VOCABULARY FOR WOMEN:
+═══════════════════════════════════════════════════════════════════════════════
+SKIN: warm ivory, cool beige, golden tan, deep brown, olive, porcelain, dewy, matte
+EYES: almond/round/hooded/deep-set + steel grey/warm brown/pale blue/amber/hazel
+HAIR STYLE: bob, pixie cut, long layers, braided, ponytail, loose waves, updo, tight curls
+HAIR TEXTURE: silky straight, wavy, coily, windswept, sleek
+HAIR COLOR: honey blonde, chestnut brown, jet black, auburn, platinum, copper red
+BODY TYPE: slim, athletic, curvy, petite, hourglass
+EXPRESSION: warm smile, confident gaze, soft expression, playful look
 
-SKIN:
-- Tone: warm ivory, cool beige, golden tan, deep brown, olive, porcelain
-- Texture: smooth, dewy, matte, freckled, sun-weathered, flawless
+═══════════════════════════════════════════════════════════════════════════════
+VISUAL VOCABULARY FOR MEN:
+═══════════════════════════════════════════════════════════════════════════════
+SKIN: warm ivory, golden tan, deep brown, olive, sun-weathered, bronzed
+EYES: almond/round/hooded/deep-set + steel grey/warm brown/pale blue/amber/dark brown
+HAIR STYLE: buzz cut, fade, undercut, slicked back, textured crop, pompadour, side part, man bun, bald/shaved
+HAIR TEXTURE: short and neat, wavy, curly, windswept
+HAIR COLOR: dark brown, jet black, salt-and-pepper, sandy blonde
+FACIAL HAIR: clean-shaven, light stubble, heavy stubble, designer stubble, short trimmed beard, full thick beard, goatee, mustache
+FACE FEATURES: square jaw, chiseled features, rugged/weathered, boyish face, strong brow, cleft chin, prominent cheekbones
+BODY TYPE: muscular/athletic, lean/toned, stocky/solid, broad-shouldered, barrel-chested, V-taper
+EXPRESSION: confident smirk, serious/intense, warm smile, stoic/neutral, brooding/pensive, determined look
 
-EYES:
-- Shape: almond, round, hooded, deep-set, upturned, downturned, monolid
-- Color: steel grey, warm brown, pale blue, amber, hazel, green, dark brown
-- State: bright and alert, half-lidded, focused, soft gaze
+IF SHIRTLESS/BARE-CHESTED (CRITICAL - describe in detail):
+- MUSCLES: defined pecs, visible abs (4-pack/6-pack/8-pack), V-taper torso, biceps, triceps, deltoids, obliques
+- MUSCLE DEFINITION: ripped/shredded, toned, soft definition, bulky
+- CHEST HAIR: none (smooth), light dusting, moderate coverage, thick/dense
+- BODY HAIR: arm hair, leg hair, treasure trail
+- VEINS: visible veins on arms, forearms, hands
+- TATTOOS: location (arm sleeve, half sleeve, chest piece, shoulder, back, ribs), style (tribal, realistic, geometric, script, traditional), size
 
-HAIR:
-- Style: bob, pixie cut, long layers, braided, ponytail, loose waves, updo
-- Texture: silky straight, wavy, tight curls, coily, windswept, sleek
-- Color: exact shade (honey blonde, chestnut brown, jet black, auburn)
-
+═══════════════════════════════════════════════════════════════════════════════
+UNIVERSAL FEATURES:
+═══════════════════════════════════════════════════════════════════════════════
 FACE ANGLE: front view (0°), 45° angle, three-quarter, profile left, profile right
 
 BODY POSITIONING: Describe EACH limb independently:
@@ -3556,14 +4079,14 @@ BODY POSITIONING: Describe EACH limb independently:
 - Left/right leg position (if visible)
 - Weight distribution
 
-CLOTHING: 3-5 words each (type, color, material, fit)
+CLOTHING (if worn): 3-5 words each (type, color, material, fit)
 
 LIGHTING ANALYSIS - be SPECIFIC:
 - Pattern: Rembrandt, butterfly, split, loop, broad, short
 - Quality: soft diffused, hard dramatic, golden hour, blue hour
 - Direction: key light from upper left/right, fill level
 - Rim/edge: present or absent, intensity
-- Shadow mapping: WHERE highlights fall (forehead, cheekbones, nose bridge), WHERE shadows form (under eyes, jawline, neck, collar bones)
+- Shadow mapping: WHERE highlights fall (forehead, cheekbones, nose bridge, muscles), WHERE shadows form (under eyes, jawline, neck, abs, between muscles)
 
 BACKGROUND: Type, color temperature, blur/bokeh quality
 
@@ -3586,11 +4109,12 @@ End with "no text, no watermark"."""
 
 [user.standard.standard]
 prompt = """Describe this image for Z-Image covering:
-- Framing: shot type, which body parts visible vs cropped out, rule of thirds position (left/center/right)
+- Framing: shot type, which body parts visible vs cropped out, rule of thirds position
 - Camera angle, depth of field
-- Subject appearance (ethnicity, age, expression)
-- Hair style and color
-- Clothing (color, material for each item)
+- Subject appearance (ethnicity, age, gender, expression)
+- Hair style and color (for men: also facial hair if present)
+- Body type (for men: muscular/lean/stocky; for women: slim/athletic/curvy)
+- Clothing OR if shirtless: describe visible muscles, chest hair, tattoos
 - Pose
 - Lighting style
 - Background
@@ -3599,14 +4123,25 @@ Write flowing sentences. End with "no text, no watermark"."""
 
 [user.standard.detailed]
 prompt = """Describe this image in detail for Z-Image:
-- Framing: shot type, body parts visible (head, shoulders, chest, waist, legs, feet), where frame cuts body, subject position (left/center/right third, upper/center/lower third)
+- Framing: shot type, body parts visible (head, shoulders, chest, waist, legs, feet), where frame cuts body, subject position
 - Composition: camera angle, subject distance (fills frame/medium/far), depth of field
-- Subject: ethnicity, skin tone, age, face angle
-- Hair: style, color, length
-- Face: shape, expression, makeup
+- Subject: ethnicity, skin tone, age, gender, face angle
+
+FOR WOMEN:
+- Hair: style (bob, ponytail, waves, updo), color, texture
+- Body type: slim, athletic, curvy
 - Clothing: all items with colors and materials
-- Body positioning: left/right shoulder position, left/right arm position and hand placement, leg positions if visible
-- Light and shadow: where highlights fall on face, shadows under eyes/jawline, light on body
+
+FOR MEN:
+- Hair: style (fade, undercut, buzz cut, slicked back), color
+- Facial hair: clean-shaven, stubble, short beard, full beard, goatee
+- Face features: jawline, brow, cheekbones
+- Body type: muscular, athletic, lean, stocky, broad-shouldered
+- IF SHIRTLESS: muscle definition (pecs, abs, arms), chest hair (none/light/thick), visible veins
+- TATTOOS: location, style, size if visible
+
+- Body positioning: left/right shoulder, arm positions, leg positions
+- Light and shadow: highlights on face/body, shadows under jawline, light on muscles if shirtless
 - Lighting style: use keywords like "soft natural light", "studio lighting"
 - Background details
 
@@ -3614,8 +4149,20 @@ Write comprehensively. End with "no text, no watermark, no logos"."""
 
 [user.standard.extreme]
 prompt = """Describe every visible detail for Z-Image:
-FRAMING: Shot type, which body parts are visible top-to-bottom (head/shoulders/chest/waist/hips/thighs/knees/legs/feet), where exactly frame cuts body, subject scale in frame, rule of thirds positioning (horizontal and vertical).
-Subject appearance, hair styling, facial features and angle, eye details, all clothing items with materials, body positioning (left shoulder, right shoulder, left arm with hand, right arm with hand, left leg, right leg - each independently), any tattoos or accessories, light and shadow analysis (highlights on forehead/cheeks, shadows under eyes/jawline, light on chest/arms), lighting style (specific keywords), and complete background analysis.
+
+FRAMING: Shot type, which body parts visible top-to-bottom, where frame cuts body, rule of thirds positioning.
+
+FOR WOMEN: hair style (specific: bob, pixie, layers, ponytail, braids, updo) + color + texture, body type (slim/athletic/curvy), clothing with materials.
+
+FOR MEN: hair style (buzz cut, fade, undercut, slicked back, textured crop, man bun) + color, facial hair (clean-shaven/light stubble/heavy stubble/short beard/full thick beard/goatee/mustache), face features (square jaw/chiseled/rugged/boyish/strong brow), body type (muscular/athletic/lean/stocky/broad-shouldered).
+
+IF MAN IS SHIRTLESS - DESCRIBE IN DETAIL:
+- Muscle definition: pecs, abs (how many visible), V-taper, arm muscles (biceps, forearms)
+- Chest hair: none/smooth, light dusting, moderate, thick/dense
+- Body hair: arm hair, visible veins
+- Tattoos: exact location (arm sleeve, half sleeve, chest piece, shoulder, back), style (tribal, realistic, script), size
+
+Body positioning (each limb independently), light and shadow analysis (highlights on forehead/cheeks/muscles, shadows under eyes/jawline/between abs), lighting style keywords, and complete background analysis.
 
 Write the most detailed description possible. End with "correct human anatomy, no text, no watermark"."""
 
@@ -3632,9 +4179,10 @@ prompt = """Write a brief 30-50 word description of this image for AI generation
 IMPORTANT: Describe ONLY what you actually see. Do NOT invent people or details that are not present.
 
 Examples:
-- Person: "A medium shot of an adult Asian woman, front view, dark hair in ponytail, wearing white blouse, soft natural lighting, plain gray background, no text, no watermark."
+- Woman: "A medium shot of an adult Asian woman, front view, dark hair in ponytail, wearing white blouse, soft natural lighting, plain gray background, no text, no watermark."
+- Man: "A medium shot of an adult man, muscular build, short dark hair with fade, full beard, wearing black t-shirt, confident expression, natural lighting, gym background, no text, no watermark."
+- Shirtless Man: "A full body shot of athletic man on beach, tanned skin, defined abs, tribal arm tattoo, wearing swim trunks, holding surfboard, golden hour lighting, ocean background, no text, no watermark."
 - Landscape: "A wide shot of misty mountains at sunrise, layers of blue ridges fading into distance, orange sky gradient, pine trees in foreground silhouette, no text, no watermark."
-- Vehicle: "A low angle shot of a red sports car on wet asphalt, dramatic lighting, city lights reflected, motion blur background, no text, no watermark."
 
 Describe this image in similar format:"""
 
@@ -3643,14 +4191,15 @@ prompt = """Write a description of this image for Z-Image AI generation.
 
 IMPORTANT: Describe ONLY what is actually visible. Do NOT add people or details that are not in the image.
 
-For PEOPLE: Include shot type, ethnicity, age, face angle, hair, clothing, pose, lighting, background.
+FOR WOMEN: Include shot type, ethnicity, age, face angle, hair style, body type, clothing, pose, lighting, background.
+FOR MEN: Include shot type, ethnicity, age, face angle, hair style, facial hair (beard/stubble/clean-shaven), body type (muscular/lean/stocky), clothing OR if shirtless (muscle definition, chest hair, tattoos), pose, lighting, background.
 For LANDSCAPES: Include composition, terrain features, weather/atmosphere, colors, lighting conditions.
 For VEHICLES: Include angle, vehicle type/model, color, condition, setting, lighting.
-For OBJECTS: Include framing, object details, materials, textures, background, lighting.
 
 Examples:
-- Person: "A close-up portrait of an adult European woman, 45 degree angle view, shoulder-length blonde wavy hair, wearing a fitted navy blue blazer, confident smile, soft diffused daylight from left, blurred office background, no text, no watermark."
-- Landscape: "A panoramic view of a coastal cliff at golden hour, dramatic waves crashing against rocks below, grass-covered cliff top, warm orange and purple sky with scattered clouds, no text, no watermark."
+- Woman: "A close-up portrait of an adult European woman, 45 degree angle view, shoulder-length blonde wavy hair, slim build, wearing a fitted navy blue blazer, confident smile, soft diffused daylight from left, blurred office background, no text, no watermark."
+- Man: "A medium shot of a Latino man in his 30s, front view, textured crop haircut, heavy stubble, muscular athletic build, wearing fitted gray henley shirt, serious expression, dramatic side lighting, urban street background, no text, no watermark."
+- Shirtless Man: "A full body shot of a muscular man on beach, golden tan skin, short dark hair with undercut, full beard, defined pecs and six-pack abs, light chest hair, sleeve tattoo on left arm, wearing black compression shorts, confident pose holding paddle, warm sunset lighting, tropical beach background, no text, no watermark."
 
 Describe this image:"""
 
@@ -3659,28 +4208,45 @@ prompt = """Write a comprehensive description of this image for Z-Image AI gener
 
 CRITICAL: Describe ONLY what is actually in the image. Do NOT invent people, objects, or details that are not present.
 
-FOR IMAGES WITH PEOPLE: Cover framing, camera angle, subject appearance (ethnicity, skin tone, age), face angle, hair, facial features, all visible clothing, body positioning, light and shadow, lighting style, background.
+FOR WOMEN: Cover framing, camera angle, appearance (ethnicity, skin tone, age), face angle, hair (style, color, texture), body type, all visible clothing, body positioning, light and shadow, lighting style, background.
 
-FOR LANDSCAPES/SCENES: Cover composition, foreground elements, mid-ground features, background elements, sky/atmosphere, color palette, lighting conditions (time of day, weather), mood/atmosphere.
+FOR MEN: Cover framing, camera angle, appearance (ethnicity, skin tone, age), face angle, hair (style: fade/undercut/buzz cut/slicked back), facial hair (clean-shaven/stubble/short beard/full beard/goatee), face features (jawline, brow), body type (muscular/athletic/lean/stocky/broad-shouldered).
+IF SHIRTLESS: muscle definition (pecs, abs, arms), chest hair (none/light/thick), visible veins, tattoos (location, style).
+Clothing if worn, body positioning, light and shadow, lighting style, background.
 
-FOR VEHICLES/OBJECTS: Cover angle, main subject details (type, color, condition, features), surrounding environment, reflections, lighting style, background.
+FOR LANDSCAPES/SCENES: Cover composition, foreground elements, mid-ground features, background elements, sky/atmosphere, color palette, lighting conditions.
 
 Examples:
-- Person: "A medium shot of an adult South Asian woman, front view, warm olive skin, long black hair loose over shoulders, gentle smile, wearing emerald green silk dress, soft diffused daylight from window, cream wall background, no text, no watermark."
-- Landscape: "A wide panoramic shot of a valley at sunset, rolling green hills in foreground with scattered wildflowers, dense pine forest in midground, snow-capped mountains in distance, dramatic orange and pink sky with scattered clouds, golden hour lighting casting long shadows, atmospheric haze in valley, no text, no watermark."
+- Woman: "A medium shot of an adult South Asian woman, front view, warm olive skin, long black hair loose over shoulders, gentle smile, slim build, wearing emerald green silk dress, soft diffused daylight from window, cream wall background, no text, no watermark."
+- Man: "A medium close-up of a Black man in his late 20s, three-quarter view, dark skin, short curly hair with high fade, designer stubble, square jaw and strong brow, muscular neck visible, wearing crisp white dress shirt open at collar, confident smirk, dramatic Rembrandt lighting, dark studio background, no text, no watermark."
+- Shirtless Man: "A full body shot of a muscular Caucasian man in his 30s, front view, tanned skin, dark hair styled back, full thick beard, chiseled features with strong jaw. Shirtless with well-defined pecs, visible six-pack abs with V-taper, moderate chest hair, veins visible on forearms, large tribal tattoo covering right shoulder and upper arm, wearing black athletic leggings. Standing pose holding kayak paddle, golden hour beach lighting casting warm shadows on muscles, tropical coastline background with boats, no text, no watermark."
 
 Describe this image in similar detail:"""
 
 [user.basic.extreme]
 prompt = """Write the most detailed description possible of this image for Z-Image AI generation.
 
-CRITICAL: Describe ONLY what is actually visible. Do NOT add people, objects, or details that are not in the image. If the image is a landscape, describe the landscape. If it's a vehicle, describe the vehicle. Do NOT invent human subjects.
+CRITICAL: Describe ONLY what is actually visible. Do NOT add people, objects, or details that are not in the image.
 
-FOR IMAGES WITH PEOPLE: Describe framing, camera angle, appearance (ethnicity, skin tone, age), face angle, hair, facial features, ALL clothing items, body positioning, light and shadow on body, any tattoos or accessories, lighting keywords, background details.
+FOR WOMEN: Describe framing, camera angle, appearance (ethnicity, skin tone, age), face angle, hair style/color/texture, body type, ALL clothing items with materials, body positioning, light and shadow on body, any accessories, lighting keywords, background details.
 
-FOR LANDSCAPES/NATURE: Describe composition and framing, all foreground elements in detail, mid-ground features, distant background elements, sky condition and colors, atmospheric effects (fog, haze, mist), color palette (warm/cool tones), lighting direction and quality (golden hour, overcast, harsh midday), textures visible, seasonal indicators, weather conditions.
+FOR MEN: Describe framing, camera angle, appearance (ethnicity, skin tone, age), face angle.
+- HAIR: style (buzz cut, fade, undercut, slicked back, textured crop, pompadour, man bun), color
+- FACIAL HAIR: clean-shaven, light stubble, heavy stubble, designer stubble, short trimmed beard, full thick beard, goatee, mustache
+- FACE FEATURES: jawline (square, angular), cheekbones, brow, chin
+- BODY TYPE: muscular/athletic, lean/toned, stocky, broad-shouldered, V-taper
 
-FOR VEHICLES/OBJECTS: Describe angle and framing, subject details (make, model if identifiable, color, condition, distinctive features), surface textures and reflections, surrounding environment, lighting and shadows, background elements.
+IF MAN IS SHIRTLESS (describe ALL these details):
+- MUSCLES: pecs (defined, chest separation), abs (4-pack, 6-pack, 8-pack, soft), obliques, V-taper, arm muscles (biceps, triceps, forearms), shoulder deltoids
+- MUSCLE DEFINITION: ripped/shredded, toned, soft definition, bulky mass
+- CHEST HAIR: none (smooth), light dusting, moderate coverage, thick/dense, hair pattern
+- BODY HAIR: arm hair, treasure trail
+- VEINS: visible veins on arms, forearms, hands, abs
+- TATTOOS: exact location (full sleeve, half sleeve, chest piece, shoulder, back, ribs, script on chest), style (tribal, realistic, geometric, traditional, script), size, colors
+
+Body positioning (each limb independently), light and shadow analysis (highlights on muscles, shadows between abs, under pecs), lighting keywords, background details.
+
+FOR LANDSCAPES/NATURE: Describe composition, all foreground elements, mid-ground, background, sky, atmospheric effects, color palette, lighting direction and quality.
 
 Start directly with "A..." - write one flowing paragraph. End with "no text, no watermark":"""
 
@@ -3697,28 +4263,80 @@ base = """You are an image captioning assistant for AI image generation.
 Describe the SCENE, LANDSCAPE, OBJECT, or VEHICLE in this image.
 There are NO people in this image - do not mention or describe any human subjects.
 
-USE SPECIFIC VISUAL VOCABULARY:
+FIRST: Identify the TERRAIN TYPE, then use appropriate vocabulary:
 
-FOR MOUNTAINS/TERRAIN:
-- Peak types: jagged alpine peaks, craggy limestone cliffs, smooth rounded hills, rugged Dolomite spires, exposed rock faces, snow-capped summits
-- NOT generic: "mountains rise gently" → BE SPECIFIC: "jagged limestone peaks with exposed gray rock faces"
+═══════════════════════════════════════════════════════════════════════════════
+MOUNTAIN/ALPINE SCENES:
+═══════════════════════════════════════════════════════════════════════════════
+- Peak shapes: jagged sharp peaks, rounded weathered summits, spire-like pinnacles, pyramidal peak, horn peak, sawtooth ridge
+- Peak count: single dominant peak, twin peaks, triple summit, mountain range, cirque of peaks
+- Rock types: gray granite faces, dark basalt cliffs, red sandstone, white limestone, volcanic black
+- Snow coverage: snow-capped summit, permanent glacier, patchy snow fields, bare rock, glacial ice patches
+- WRONG: "mountains rise gently" → RIGHT: "three jagged granite peaks with snow-capped summits and exposed gray rock faces"
 
-FOR WATER:
-- Colors: turquoise glacial lake, teal alpine water, deep navy blue, emerald green, crystal clear
-- Texture: rippled surface, mirror-smooth, gentle waves, choppy, glassy calm
-- NOT generic: "calm water" → BE SPECIFIC: "turquoise glacial lake with visible ripples in foreground"
+═══════════════════════════════════════════════════════════════════════════════
+WATER BODIES - Identify TYPE and describe precisely:
+═══════════════════════════════════════════════════════════════════════════════
+Lakes: glacial lake, alpine tarn, crater lake, kettle lake, reservoir
+Rivers: mountain stream, rushing river, meandering river, braided river, rapids
+Ocean: open ocean, coastal waters, bay, fjord, inlet
 
-FOR VEGETATION:
-- Types: dark conifer forest, pine trees, spruce, evergreen, deciduous, alpine meadow
-- NOT generic: "lush green trees" → BE SPECIFIC: "dense dark pine forest covering mountainsides"
+WATER COLORS (be exact):
+- Glacial: brilliant turquoise, milky aquamarine, pale blue-green, opaque teal
+- Lake: deep sapphire blue, emerald green, crystal clear, dark navy, steel blue-gray
+- River: muddy brown, slate gray, tea-stained amber, clear with visible rocks
+- Ocean: deep navy, tropical turquoise, storm gray, dark teal
 
-FOR ATMOSPHERE:
-- Conditions: low-hanging clouds, morning mist, atmospheric haze, fog wisps around peaks
-- Color grade: cool blue-cyan tones, warm golden hour, muted overcast, high contrast
+WATER TEXTURE:
+- Calm: mirror-smooth surface, glassy still, gentle ripples
+- Active: wind-rippled, choppy waves, whitecap waves, rolling swells, crashing breakers
+- Features: reflection of peaks, visible rocks beneath, foam patterns, ice fragments
 
-FOR SKY:
-- Conditions: overcast gray, partly cloudy, clear blue, dramatic storm clouds
-- Light: soft diffused light, harsh direct sun, golden hour warmth, blue hour cool
+WRONG: "calm blue water" → RIGHT: "turquoise glacial lake with rippled foreground transitioning to mirror-smooth center reflecting peaks"
+
+═══════════════════════════════════════════════════════════════════════════════
+VEGETATION - Identify TYPE and COLOR:
+═══════════════════════════════════════════════════════════════════════════════
+Conifers: tall lodgepole pine, dense spruce forest, towering Douglas fir, dark hemlock, alpine larch
+Deciduous: golden aspen grove, red maple forest, oak woodland, birch stand
+Density: dense unbroken canopy, sparse scattered trees, treeline boundary
+Colors: dark forest green, bright lime green, blue-green sage, deep emerald
+Autumn: brilliant gold, fiery orange, deep crimson, bronze and copper
+
+WRONG: "lush green trees" → RIGHT: "dense dark spruce and pine forest covering lower slopes to treeline"
+
+═══════════════════════════════════════════════════════════════════════════════
+DESERT SCENES:
+═══════════════════════════════════════════════════════════════════════════════
+- Dune types: rolling golden dunes, crescent dunes, linear dunes, star dunes
+- Rock formations: red sandstone buttes, mesas, natural arches, canyon walls
+- Vegetation: saguaro cactus, Joshua tree, sage brush, scattered scrub
+- Atmosphere: heat shimmer, dust haze, harsh shadows, intense light
+- Sand colors: golden, white, red, brown
+
+═══════════════════════════════════════════════════════════════════════════════
+COASTAL SCENES:
+═══════════════════════════════════════════════════════════════════════════════
+- Beach types: sandy beach, rocky coastline, pebble beach, volcanic black sand
+- Wave conditions: crashing breakers, rolling swells, gentle lapping, foam patterns
+- Features: sea stacks, sea cliffs, tide pools, driftwood
+- Water: deep teal ocean, tropical turquoise, foam-white crests
+
+═══════════════════════════════════════════════════════════════════════════════
+FOREST SCENES:
+═══════════════════════════════════════════════════════════════════════════════
+- Forest types: dense conifer, deciduous woodland, mixed forest, rainforest, boreal taiga
+- Canopy: dense unbroken canopy, dappled light filtering through, forest clearing
+- Understory: fern-covered floor, moss-covered logs, leaf litter
+- Atmosphere: misty, rays of light penetrating, dark shadows
+
+═══════════════════════════════════════════════════════════════════════════════
+ATMOSPHERE & SKY:
+═══════════════════════════════════════════════════════════════════════════════
+Sky: deep blue cloudless, dramatic cumulus towers, thin cirrus wisps, low stratus blanket, lenticular clouds
+Atmosphere: low valley fog, mist rising, mountain haze, fog wrapping peaks
+Light: soft diffused overcast, harsh direct sun, dappled forest light, golden hour warmth
+Color grade: cool blue-cyan tones, warm golden, muted overcast gray, high contrast
 
 End with: "no text, no watermark"
 
@@ -3727,102 +4345,199 @@ Output ONLY the description. Start directly - no introduction."""
 [user.scene_only.quick]
 prompt = """Describe this scene briefly (30-60 words). NO people in this image.
 
-BE SPECIFIC - use exact terms:
-- Mountains: "jagged alpine peaks" not "gentle mountains"
-- Water: "turquoise glacial lake" not "calm water"
-- Trees: "dark conifer forest" not "green trees"
-- Include: snow, rock type, water color, vegetation type
+FIRST identify terrain type, then BE SPECIFIC:
+- MOUNTAINS: peak shape (jagged/rounded), count (single/twin/range), rock type, snow coverage
+- WATER: type (glacial lake/river/ocean), exact color (turquoise/teal/emerald), surface texture
+- VEGETATION: species (pine/spruce/aspen), color (dark green/golden), density
+- DESERT: dune shapes, sand color, rock formations
+- COASTAL: beach type, wave conditions, water color
+
+Include: terrain type, specific colors, textures, atmospheric conditions.
 
 End with "no text, no watermark". Start with "A...":"""
 
 [user.scene_only.standard]
 prompt = """Describe this scene for AI image generation (80-150 words). NO people.
 
-USE SPECIFIC VOCABULARY - avoid generic descriptions:
+FIRST: Identify the PRIMARY TERRAIN TYPE, then use specific vocabulary:
 
-FOR MOUNTAINS:
-- Peak shape: jagged/craggy/rounded/rugged/smooth
-- Rock type: limestone cliffs, granite faces, volcanic
-- Snow: snow-capped summits, glacial ice, bare rock
-- NOT: "mountains rise gently" → USE: "jagged Dolomite-style limestone peaks with exposed gray rock faces"
+═══ MOUNTAIN SCENES ═══
+- Peak shape: jagged sharp/rounded weathered/spire-like/pyramidal/horn peak/sawtooth ridge
+- Peak count: single dominant/twin peaks/triple summit/mountain range
+- Rock type: gray granite/dark basalt/red sandstone/white limestone/volcanic black
+- Snow: snow-capped summit/permanent glacier/patchy snow fields/bare rock
+- WRONG: "mountains rise" → RIGHT: "three jagged granite peaks with snow-capped summits"
 
-FOR WATER:
-- Exact color: turquoise, teal, emerald, deep blue, crystal clear (not just "blue")
-- Surface: rippled foreground, mirror-smooth, gentle waves, choppy
-- Type: glacial lake, alpine lake, river, ocean
+═══ WATER (identify type) ═══
+- Type: glacial lake/alpine tarn/mountain stream/rushing river/ocean/bay
+- Color: brilliant turquoise/milky aquamarine/deep sapphire/emerald green/dark teal
+- Texture: mirror-smooth/rippled foreground/gentle waves/crashing breakers
+- WRONG: "calm water" → RIGHT: "turquoise glacial lake with rippled foreground reflecting peaks"
 
-FOR VEGETATION:
-- Tree type: dark conifer forest, pine, spruce, evergreen, deciduous, bare
-- NOT: "lush green trees" → USE: "dense dark pine forest covering steep slopes"
+═══ VEGETATION ═══
+- Conifers: dense spruce forest/tall lodgepole pine/dark hemlock
+- Deciduous: golden aspen grove/red maple/birch stand
+- Color: dark forest green/bright lime/deep emerald/golden autumn
+- WRONG: "green trees" → RIGHT: "dense dark spruce forest covering slopes to treeline"
 
-FOR ATMOSPHERE:
-- Color grade: cool blue-cyan tones, warm golden, muted overcast
-- Conditions: low clouds wrapping peaks, morning mist, haze in valley
+═══ DESERT ═══ Sand: golden/white/red dunes; Formations: sandstone buttes/mesas/arches
 
-Example: "A wide shot of a turquoise glacial alpine lake surrounded by jagged Dolomite-style limestone peaks with snow-capped summits and exposed gray rock faces. Dense dark conifer forest covers the lower mountain slopes. Low clouds wrap around the peaks. Cool blue-cyan color grade, soft overcast lighting, rippled water surface in foreground reflecting the mountains, no text, no watermark."
+═══ COASTAL ═══ Beach: sandy/rocky/volcanic black; Waves: crashing breakers/rolling swells
+
+═══ ATMOSPHERE ═══
+- Sky: deep blue/cumulus towers/stratus blanket/lenticular clouds
+- Conditions: low fog/mist rising/haze layers
+- Light: soft diffused/harsh direct/golden hour
+- Color grade: cool blue-cyan/warm golden/muted gray
 
 End with "no text, no watermark":"""
 
 [user.scene_only.detailed]
 prompt = """Write a comprehensive description of this scene (150-200 words). NO people.
 
-USE PRECISE VISUAL VOCABULARY - avoid generic terms:
+FIRST: Identify PRIMARY TERRAIN TYPE, then use PRECISE vocabulary:
 
-TERRAIN/MOUNTAINS (be exact):
-- Shape: jagged alpine peaks, craggy limestone cliffs, rugged Dolomite spires, smooth rounded hills
-- Rock: exposed gray rock faces, granite, volcanic black, sandstone red
-- Snow/Ice: snow-capped summits, glacial patches, bare rock, dusted peaks
-- WRONG: "mountains rise gently" → RIGHT: "jagged limestone peaks with exposed rock faces and snow-dusted summits"
+════════════════════════════════════════════════════════════════════════════════
+MOUNTAINS (describe with precision):
+════════════════════════════════════════════════════════════════════════════════
+- Peak shape: jagged sharp peaks/rounded weathered/spire-like pinnacles/pyramidal/horn peak/sawtooth ridge
+- Peak count: single dominant peak/twin peaks/triple summit/mountain range/cirque of peaks
+- Rock type: gray granite faces/dark basalt cliffs/red sandstone/white limestone/volcanic black
+- Snow: snow-capped summit/permanent glacier/patchy snow fields/glacial ice patches/bare rock
+- WRONG: "mountains rise" → RIGHT: "three jagged granite peaks with snow-capped summits and exposed gray rock"
 
-WATER (describe precisely):
-- Color: turquoise glacial, teal alpine, deep navy, emerald green, crystal clear (NOT just "blue water")
-- Surface texture: rippled in foreground, mirror-smooth center, gentle waves, visible rocks beneath
-- WRONG: "calm reflective water" → RIGHT: "turquoise glacial lake with rippled surface in foreground transitioning to mirror-smooth center"
+════════════════════════════════════════════════════════════════════════════════
+WATER (identify type, color, texture):
+════════════════════════════════════════════════════════════════════════════════
+- Type: glacial lake/alpine tarn/crater lake/mountain stream/rushing river/meandering river/ocean/bay/fjord
+- Color: brilliant turquoise/milky aquamarine/opaque teal/deep sapphire/emerald green/crystal clear/dark navy/storm gray
+- Texture: mirror-smooth/glassy still/gentle ripples/wind-rippled/choppy waves/whitecap waves/crashing breakers
+- Features: reflection of peaks/visible rocks beneath/foam patterns/ice fragments floating
+- WRONG: "calm water" → RIGHT: "turquoise glacial lake with rippled foreground, mirror-smooth center reflecting peaks"
 
-VEGETATION (specific types):
-- Trees: dark conifer forest, dense pine, spruce, evergreen, deciduous, bare branches
-- Coverage: forest covering slopes, treeline ending at rocks, sparse alpine
-- WRONG: "lush green trees" → RIGHT: "dense dark conifer forest of pine and spruce"
+════════════════════════════════════════════════════════════════════════════════
+VEGETATION (species, density, color):
+════════════════════════════════════════════════════════════════════════════════
+- Conifers: tall lodgepole pine/dense spruce/towering Douglas fir/dark hemlock/alpine larch
+- Deciduous: golden aspen grove/red maple forest/oak woodland/birch stand
+- Density: dense unbroken canopy/sparse scattered/treeline boundary/forest clearing
+- Color: dark forest green/bright lime/deep emerald/golden autumn/fiery orange/bare winter
+- WRONG: "green trees" → RIGHT: "dense dark spruce and fir forest covering slopes to treeline"
 
-ATMOSPHERE/LIGHT:
-- Color grade: cool blue-cyan tones, warm golden, muted gray
-- Conditions: low clouds wrapping peaks, mist in valley, fog wisps, clear
+════════════════════════════════════════════════════════════════════════════════
+DESERT SCENES:
+════════════════════════════════════════════════════════════════════════════════
+- Dune shapes: rolling golden dunes/crescent dunes/linear dunes/star dunes
+- Rock: red sandstone buttes/mesas/natural arches/canyon walls
+- Sand colors: golden/white/red/brown
+- Vegetation: saguaro cactus/Joshua tree/sage brush
+- Atmosphere: heat shimmer/dust haze/harsh shadows
 
-FOREGROUND → MIDGROUND → BACKGROUND layers
+════════════════════════════════════════════════════════════════════════════════
+COASTAL SCENES:
+════════════════════════════════════════════════════════════════════════════════
+- Beach: sandy beach/rocky coastline/pebble beach/volcanic black sand
+- Water: deep teal ocean/tropical turquoise/storm gray/foam-white crests
+- Waves: crashing breakers/rolling swells/gentle lapping
+- Features: sea stacks/sea cliffs/tide pools/driftwood
+
+════════════════════════════════════════════════════════════════════════════════
+ATMOSPHERE & SKY:
+════════════════════════════════════════════════════════════════════════════════
+- Sky: deep blue cloudless/dramatic cumulus towers/thin cirrus wisps/low stratus blanket/lenticular clouds
+- Conditions: low valley fog/mist rising from water/mountain haze/fog wrapping peaks
+- Light: soft diffused overcast/harsh direct sun/dappled forest light/golden hour warmth
+- Color grade: cool blue-cyan tones/warm golden/muted overcast gray/high contrast
+
+DESCRIBE IN LAYERS: FOREGROUND → MIDGROUND → BACKGROUND
 
 End with "no text, no watermark":"""
 
 [user.scene_only.extreme]
 prompt = """Write the most detailed description possible (200-300 words). NO people.
 
-CRITICAL: Use PRECISE visual vocabulary, NOT generic descriptions.
+CRITICAL: Identify TERRAIN TYPE first. Use PRECISE vocabulary - NO generic terms.
 
-TERRAIN/MOUNTAINS - describe exactly:
-- Peak shape: jagged alpine, craggy limestone, rugged Dolomite spires, smooth rounded, volcanic cones
-- Rock type: exposed gray limestone faces, dark granite, red sandstone, volcanic black
-- Snow/ice: snow-capped summits, glacial ice patches, snow dusting, bare rock
-- AVOID: "gentle mountains" → USE: "jagged Dolomite-style peaks with exposed gray limestone and snow-capped summits"
+════════════════════════════════════════════════════════════════════════════════════
+MOUNTAINS - MAXIMUM PRECISION REQUIRED:
+════════════════════════════════════════════════════════════════════════════════════
+Peak Shape: jagged sharp peaks | rounded weathered summits | spire-like pinnacles | flat-topped mesa | pyramidal peak | dome-shaped summit | sawtooth ridge | horn peak (Matterhorn style)
+Peak Count: single dominant peak | twin peaks | triple summit | mountain range | scattered peaks | cirque of peaks (semicircle around basin)
+Rock Type: gray granite faces | dark basalt cliffs | red sandstone formations | white limestone cliffs | dark slate outcrops | brown shale layers | volcanic black rock
+Snow Coverage: snow-capped summit | permanent glacier | patchy snow fields | fresh powder dusting | bare rock faces | avalanche chutes | cornice formations | glacial ice patches | retreating snowline
 
-WATER - be precise:
-- Exact color: turquoise glacial, teal alpine, deep navy, emerald green, crystal clear with visible bottom
-- Surface texture by zone: rippled/choppy foreground, transitioning to mirror-smooth center, reflections
-- AVOID: "calm blue water" → USE: "turquoise glacial lake with rippled surface in foreground, mirror-smooth center reflecting peaks"
+WRONG: "mountains in background" → RIGHT: "three jagged granite peaks with snow-capped summits, exposed gray rock faces above treeline, avalanche chutes visible on north face"
 
-VEGETATION - specific types:
-- Tree species: dark conifer forest (pine, spruce, fir), deciduous (birch, aspen), bare winter branches
-- Coverage pattern: dense forest on lower slopes, treeline ending at rock, sparse alpine meadow
-- Color: dark green conifers, bright deciduous, autumn colors, winter bare
-- AVOID: "lush green trees" → USE: "dense dark conifer forest of spruce and pine covering lower mountain slopes"
+════════════════════════════════════════════════════════════════════════════════════
+WATER - TYPE, COLOR, TEXTURE, FEATURES:
+════════════════════════════════════════════════════════════════════════════════════
+Still Water: glacial lake | alpine tarn | crater lake | kettle lake | reservoir | pond | lagoon
+Flowing: mountain stream | rushing river | gentle creek | cascading waterfall | braided river | meandering river | rapids
+Ocean: open ocean | coastal waters | bay | fjord | inlet | strait
 
-ATMOSPHERE & COLOR GRADE:
-- Overall tone: cool blue-cyan grade, warm golden, neutral, muted overcast gray
-- Conditions: low clouds wrapping peaks, morning mist rising, fog in valley, haze layers
-- Light quality: soft diffused overcast, harsh direct sun, golden hour warmth
+Colors (BE EXACT):
+- Glacial: brilliant turquoise | milky aquamarine | pale blue-green | opaque teal
+- Lake: deep sapphire blue | emerald green | crystal clear | dark navy | steel blue-gray
+- River: muddy brown | slate gray | tea-stained amber | pale green | clear with visible rocks
+- Ocean: deep navy blue | tropical turquoise | storm gray | foam-white crests | dark teal
 
-LAYERS (describe each):
-- FOREGROUND: water texture, shoreline details, rocks, vegetation
-- MIDGROUND: lake surface, forest coverage, mountain bases
-- BACKGROUND: peaks, sky condition, distant features
+Surface Texture:
+- Calm: mirror-smooth surface | glassy still | gentle ripples | subtle texture | oil-slick smooth
+- Active: wind-rippled surface | choppy waves | whitecap waves | rolling swells | crashing breakers | splashing rapids
+- Features: visible rocks beneath | reflection of peaks | floating debris | foam patterns | current lines visible | ice fragments floating
+
+WRONG: "calm water" → RIGHT: "turquoise glacial lake with gentle ripples in foreground transitioning to mirror-smooth center, sharp peak reflections visible, ice fragments floating near shore"
+
+════════════════════════════════════════════════════════════════════════════════════
+VEGETATION - SPECIES, DENSITY, COLOR, SEASONAL STATE:
+════════════════════════════════════════════════════════════════════════════════════
+Conifers: tall lodgepole pine | dense spruce forest | towering Douglas fir | blue-green juniper | giant sequoia | dark hemlock stands | coastal redwood | alpine larch
+Deciduous: golden aspen grove | red maple forest | oak woodland | birch stand | beech forest | cottonwood along river
+Density: dense unbroken canopy | sparse scattered trees | forest clearing | treeline boundary | uniform plantation
+
+Colors: dark forest green | bright lime green | blue-green sage | yellow-green | deep emerald | olive drab
+Autumn: brilliant gold | fiery orange | deep crimson red | bronze and copper | pale yellow fading
+Seasonal: full summer green | early spring buds | peak autumn color | late fall leaves falling | bare winter branches
+
+WRONG: "trees on slopes" → RIGHT: "dense dark spruce and lodgepole pine forest covering lower slopes, treeline ending abruptly at 3000m, sparse krummholz above"
+
+════════════════════════════════════════════════════════════════════════════════════
+DESERT SCENES:
+════════════════════════════════════════════════════════════════════════════════════
+Terrain: sandy dune desert | rocky desert | salt flat | canyon lands | scrubland desert
+Dunes: rolling golden dunes | crescent (barchan) dunes | linear dunes | star dunes | flat sand sheets
+Rock: red sandstone buttes | flat-topped mesas | natural arches | slot canyon walls | eroded hoodoos
+Sand Colors: golden orange | pure white | rust red | tan brown | pinkish coral
+Vegetation: tall saguaro cactus | Joshua tree | sage brush | tumbleweed | barrel cactus | scattered scrub
+Atmosphere: intense heat shimmer | dust haze on horizon | harsh noon shadows | dramatic long shadows
+
+════════════════════════════════════════════════════════════════════════════════════
+COASTAL SCENES:
+════════════════════════════════════════════════════════════════════════════════════
+Beach Type: fine sandy beach | rocky coastline | pebble beach | volcanic black sand | coral sand beach
+Features: dramatic sea stacks | towering sea cliffs | tide pools | driftwood | coastal caves
+Water: deep teal ocean | tropical turquoise shallows | storm gray | dark navy depths | foam-white crests
+Waves: crashing breakers | rolling swells | gentle lapping | rip current patterns | spray mist
+Tide: low tide exposed rocks | high tide waterline | wet sand reflections
+
+════════════════════════════════════════════════════════════════════════════════════
+ATMOSPHERE & SKY - COMPREHENSIVE:
+════════════════════════════════════════════════════════════════════════════════════
+Sky Clear: deep blue cloudless | pale blue sky | azure ceiling | gradient blue to white at horizon
+Clouds: dramatic cumulus towers | thin cirrus wisps | low stratus blanket | scattered fair-weather | lenticular clouds over peaks | mammatus formations | stratocumulus rolls
+Dramatic: storm clouds gathering | sunset color bands | sun rays through clouds (god rays) | rainbow arc | aurora display
+
+Atmosphere: low valley fog | mist rising from water | mountain haze layers | fog wrapping peaks | clearing morning mist | dense pea-soup fog
+Weather Effects: falling snow | rain streaks visible | dust storm | blowing spray | heat shimmer
+Light Quality: soft diffused overcast | harsh direct sun shadows | dappled forest light | rim lighting from behind | front fill light | dramatic side lighting
+Color Grade: cool blue-cyan tones | warm golden hour | muted overcast gray | high contrast | desaturated cool | vibrant saturated
+
+════════════════════════════════════════════════════════════════════════════════════
+STRUCTURE YOUR DESCRIPTION IN LAYERS:
+════════════════════════════════════════════════════════════════════════════════════
+FOREGROUND: Immediate elements (shoreline, rocks, flowers, water edge texture)
+MIDGROUND: Main subject (lake surface, forest mass, mountain bases)
+BACKGROUND: Distant elements (peaks, sky, horizon features)
 
 End with "no text, no watermark":"""
 
@@ -3970,14 +4685,30 @@ Z-Image requires:
 - Structured format: composition → subject → details → lighting
 - Geometric face angles (front view, 45°, profile)
 - Specific lighting keywords (soft diffused daylight, cinematic warm key, rim lighting)
-- Minimal clothing descriptions (3-5 words each)
+- Minimal clothing descriptions (3-5 words each) OR detailed shirtless descriptions
 - Cleanup constraints at end
+
+FOR FEMALE SUBJECTS - describe:
+- Hair: style (bob, pixie, long layers, ponytail, braided, updo), color, texture
+- Body type: slim, athletic, curvy, petite
+- Clothing: each item (type, color, material)
+
+FOR MALE SUBJECTS - describe:
+- Hair: style (buzz cut, fade, undercut, slicked back, textured crop, pompadour, man bun)
+- Facial hair: clean-shaven, stubble, short beard, full beard, goatee
+- Face features: square jaw, chiseled features, rugged, strong brow
+- Body type: muscular, athletic, lean, stocky, broad-shouldered
+- IF SHIRTLESS: muscle definition (pecs, abs, V-taper), chest hair (none/light/moderate/thick), visible veins
+- TATTOOS: location, style, size
 
 Analyze each component separately, then synthesize into a flowing prompt."""
 
 synthesis = """Now combine all analysis into a single flowing Z-Image prompt.
 
-Structure: Shot type → Camera angle → Subject demographics → Hair → Face angle → Expression → Clothing → Pose → Lighting → Background
+Structure: Shot type → Camera angle → Subject demographics → Hair (+ facial hair if male) → Face angle → Expression → Body type → Clothing OR shirtless details → Pose → Lighting → Background
+
+For men: Include facial hair, body type, muscle definition if shirtless, tattoos if visible.
+For women: Include hair style, body type, clothing details.
 
 Use geometric terms for face angles. Use specific lighting keywords.
 End with "correct human anatomy, no text, no watermark, no logos".
@@ -3986,20 +4717,33 @@ Output ONLY the final prompt text."""
 
 [agentic.standard]
 intro = """Analyze this image step by step for Z-Image prompt generation.
-Focus on: composition, subject, clothing, lighting, background.
-Use geometric face angles and specific lighting keywords."""
+Focus on: composition, subject, clothing (or shirtless details), lighting, background.
+Use geometric face angles and specific lighting keywords.
+
+FOR MEN: Include facial hair (clean-shaven/stubble/beard), body type (muscular/lean/stocky), and if shirtless describe muscles and chest hair.
+FOR WOMEN: Include hair style and body type."""
 
 synthesis = """Combine your analysis into a flowing Z-Image prompt.
-Structure: composition → subject → clothing → lighting → background.
+Structure: composition → subject (with gender-specific details) → clothing/body → lighting → background.
+For shirtless men: include muscle definition, chest hair, tattoos if visible.
 End with "no text, no watermark".
 Output only the final prompt."""
 
 [agentic.basic]
 # Simplified for local models - single pass instead of multi-step
 # Local models don't benefit from multi-step reasoning, use direct prompts
-intro = """Write a detailed description of this image for Z-Image AI generation. Include shot type, subject appearance, face angle, clothing, pose, lighting, and background. Start directly - no introduction needed."""
+intro = """Write a detailed description of this image for Z-Image AI generation.
 
-synthesis = """Write the final description as a single flowing paragraph. Use geometric face angles (front view/45°/profile). End with "no text, no watermark". Start directly with "A..." or the subject description."""
+Include: shot type, subject appearance, face angle, clothing OR shirtless body details, pose, lighting, background.
+
+FOR MEN describe: hair style, facial hair, body type, and if shirtless describe muscles/chest hair/tattoos.
+FOR WOMEN describe: hair style, body type, clothing details.
+
+Start directly - no introduction needed."""
+
+synthesis = """Write the final description as a single flowing paragraph. Use geometric face angles (front view/45°/profile).
+For shirtless men: describe muscle definition, chest hair, visible tattoos.
+End with "no text, no watermark". Start directly with "A..." or the subject description."""
 
 
 # =============================================================================

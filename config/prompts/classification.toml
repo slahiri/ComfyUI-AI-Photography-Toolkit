@@ -1,0 +1,802 @@
+# =============================================================================
+# Image Classification Prompts
+# =============================================================================
+# First-pass classification prompts to detect image style, subject type, etc.
+# Used to determine which prompt template set to use
+
+
+# =============================================================================
+# IMAGE STYLE CLASSIFICATION
+# =============================================================================
+# First-pass classification to detect if image is photographic or illustrated
+# This determines which prompt template set to use
+
+[classification]
+# Prompt to classify image style before detailed analysis
+detect_style = """Classify this image into ONE of these categories:
+
+PHOTOGRAPHIC:
+- photo: Real photograph of actual people/scenes
+- cosplay: Real photo of person in anime/game costume with stylized makeup
+
+JAPANESE STYLES:
+- anime: Japanese animation style (large eyes, colorful hair, stylized features)
+- manga: Japanese comic/black-and-white illustration style
+- hentai: Adult anime/manga illustration style
+- chibi: Super-deformed cute anime style (large head, small body)
+- webtoon: Korean webcomic style (vertical scroll format, soft shading)
+
+WESTERN STYLES:
+- cartoon: Western animation style (Disney, Pixar, etc.)
+- comic: Western comic book style (Marvel, DC - bold lines, dynamic poses)
+
+DIGITAL ART:
+- illustration: Digital art, concept art, or painted style
+- pixel_art: Retro pixel-based art style (8-bit, 16-bit game graphics)
+- sketch: Lineart, pencil drawings, or uncolored artwork
+- painting: Traditional art styles (oil painting, watercolor, acrylic)
+
+3D/CGI:
+- 3d_render: Stylized 3D rendered/CGI character or scene
+- realistic_render: Photorealistic CGI/AI-generated faces (Unreal Engine quality)
+
+SPECIAL:
+- furry: Anthropomorphic animal characters
+- vtuber: Virtual YouTuber style (Live2D aesthetic, modern anime)
+
+Respond with ONLY the category name, nothing else."""
+
+# Valid classification values
+valid_styles = [
+    "photo", "cosplay",
+    "anime", "manga", "hentai", "chibi", "webtoon",
+    "cartoon", "comic",
+    "illustration", "pixel_art", "sketch", "painting",
+    "3d_render", "realistic_render",
+    "furry", "vtuber"
+]
+
+# Style groups for prompt template selection
+# Styles in same group use same prompt templates
+[classification.style_groups]
+photographic = ["photo", "cosplay", "realistic_render"]
+anime_style = ["anime", "manga", "hentai", "chibi", "webtoon", "vtuber"]
+western_style = ["cartoon", "comic"]
+artistic = ["illustration", "painting", "sketch"]
+special = ["pixel_art", "3d_render", "furry"]
+
+# Default if classification fails
+default_style = "photo"
+
+
+# =============================================================================
+# SUBJECT TYPE CLASSIFICATION
+# =============================================================================
+# Identifies what/who is the main subject of the image
+
+[subject_type]
+detect_subject = """Classify the PRIMARY SUBJECT of this image into ONE category:
+
+HUMAN SUBJECTS:
+- single_woman: One adult female (18+)
+- single_man: One adult male (18+)
+- couple: Two people together (romantic or posed)
+- group: Three or more people
+- child: Person appearing under 18
+- baby: Infant or toddler
+- elderly: Visibly older adult (60+)
+
+NON-HUMAN CHARACTERS:
+- humanoid: Human-like but not human (elf, vampire, android face)
+- robot: Mechanical/robotic character
+- cyborg: Human with visible mechanical parts
+- alien: Extraterrestrial being
+
+CREATURES:
+- animal_real: Real-world animal (dog, cat, horse, etc.)
+- animal_fantasy: Mythical creature (dragon, phoenix, unicorn)
+- monster: Horror/fantasy monster
+- hybrid: Part human, part creature (mermaid, centaur, but NOT furry)
+
+NON-LIVING:
+- landscape: Natural scenery (mountains, beach, forest)
+- cityscape: Urban environment, skyline
+- interior: Indoor space/room
+- architecture: Building, structure focus
+- vehicle: Car, plane, ship, etc.
+- object: Product, item, still life
+- food: Food/beverage photography
+- abstract: Patterns, textures, non-representational
+
+Respond with ONLY the category name, nothing else."""
+
+valid_subjects = [
+    "single_woman", "single_man", "couple", "group", "child", "baby", "elderly",
+    "humanoid", "robot", "cyborg", "alien",
+    "animal_real", "animal_fantasy", "monster", "hybrid",
+    "landscape", "cityscape", "interior", "architecture", "vehicle", "object", "food", "abstract"
+]
+
+# Subject groups for template selection
+[subject_type.groups]
+human = ["single_woman", "single_man", "couple", "group", "child", "baby", "elderly"]
+character = ["humanoid", "robot", "cyborg", "alien"]
+creature = ["animal_real", "animal_fantasy", "monster", "hybrid"]
+scene = ["landscape", "cityscape", "interior", "architecture"]
+object = ["vehicle", "object", "food"]
+abstract = ["abstract"]
+
+default_subject = "unknown"
+
+
+# =============================================================================
+# SCENE TYPE / FRAMING CLASSIFICATION
+# =============================================================================
+# Identifies how the subject is framed/presented
+
+[scene_type]
+detect_scene = """Classify the SCENE TYPE / FRAMING of this image:
+
+PORTRAIT FRAMING (subject fills frame):
+- headshot: Face/head only, shoulders may be cropped
+- bust: Head and shoulders/upper chest
+- upper_body: Head to waist/hips
+- three_quarter: Head to knees
+- full_body: Entire body visible head to feet
+
+COMPOSITIONAL STYLE:
+- closeup_detail: Extreme closeup on specific feature (eyes, hands, lips)
+- environmental: Subject small in larger setting
+- group_shot: Multiple subjects arranged together
+
+ACTION/POSE TYPE:
+- static_posed: Still, deliberate pose
+- candid: Natural, unposed moment
+- action: Movement, dynamic pose
+- dramatic: Theatrical, exaggerated pose
+
+CAMERA DISTANCE:
+- intimate: Very close, personal
+- personal: Normal conversation distance
+- social: Full body with some environment
+- public: Subject smaller, environment dominant
+- distant: Landscape/wide scene
+
+Respond with ONLY the category name, nothing else."""
+
+valid_scenes = [
+    "headshot", "bust", "upper_body", "three_quarter", "full_body",
+    "closeup_detail", "environmental", "group_shot",
+    "static_posed", "candid", "action", "dramatic",
+    "intimate", "personal", "social", "public", "distant"
+]
+
+[scene_type.groups]
+portrait = ["headshot", "bust", "upper_body", "three_quarter", "full_body"]
+composition = ["closeup_detail", "environmental", "group_shot"]
+pose = ["static_posed", "candid", "action", "dramatic"]
+distance = ["intimate", "personal", "social", "public", "distant"]
+
+default_scene = "upper_body"
+
+
+# =============================================================================
+# CAMERA ANGLE CLASSIFICATION
+# =============================================================================
+
+[camera_angle]
+detect_angle = """Classify the CAMERA ANGLE of this image:
+
+VERTICAL ANGLE:
+- eye_level: Camera at subject's eye height
+- high_angle: Camera above, looking down
+- low_angle: Camera below, looking up
+- birds_eye: Directly overhead, top-down view
+- worms_eye: Directly below, looking straight up
+- dutch_angle: Tilted/canted frame
+
+HORIZONTAL ANGLE (for faces/subjects):
+- front_view: Facing camera directly (0°)
+- three_quarter_left: Turned ~45° to camera's right
+- three_quarter_right: Turned ~45° to camera's left
+- profile_left: Side view, facing camera's right (90°)
+- profile_right: Side view, facing camera's left (90°)
+- back_view: Back of subject to camera (180°)
+- over_shoulder: View from behind shoulder
+
+Respond with ONLY the category name, nothing else."""
+
+valid_angles = [
+    "eye_level", "high_angle", "low_angle", "birds_eye", "worms_eye", "dutch_angle",
+    "front_view", "three_quarter_left", "three_quarter_right",
+    "profile_left", "profile_right", "back_view", "over_shoulder"
+]
+
+[camera_angle.groups]
+vertical = ["eye_level", "high_angle", "low_angle", "birds_eye", "worms_eye", "dutch_angle"]
+horizontal = ["front_view", "three_quarter_left", "three_quarter_right", "profile_left", "profile_right", "back_view", "over_shoulder"]
+
+default_angle = "eye_level"
+
+
+# =============================================================================
+# CONTENT RATING CLASSIFICATION
+# =============================================================================
+
+[content_rating]
+detect_rating = """Classify the CONTENT RATING of this image:
+
+SAFE:
+- sfw: Completely safe for work, family-friendly
+- sfw_suggestive: Safe but mildly flirty/attractive (swimwear, form-fitting clothes)
+
+MATURE:
+- mature_suggestive: Revealing clothing, implied sensuality
+- mature_partial: Partial nudity, strategic coverage (lingerie, artistic nude)
+
+ADULT:
+- nsfw_nudity: Full nudity visible
+- nsfw_explicit: Explicit sexual content
+
+SPECIAL:
+- artistic_nude: Classical/artistic nude (non-sexual context)
+- medical: Clinical/educational context
+
+Respond with ONLY the category name, nothing else."""
+
+valid_ratings = [
+    "sfw", "sfw_suggestive",
+    "mature_suggestive", "mature_partial",
+    "nsfw_nudity", "nsfw_explicit",
+    "artistic_nude", "medical"
+]
+
+[content_rating.groups]
+safe = ["sfw", "sfw_suggestive"]
+mature = ["mature_suggestive", "mature_partial", "artistic_nude"]
+adult = ["nsfw_nudity", "nsfw_explicit"]
+special = ["medical"]
+
+default_rating = "sfw"
+
+
+# =============================================================================
+# LIGHTING CLASSIFICATION
+# =============================================================================
+
+[lighting]
+detect_lighting = """Classify the PRIMARY LIGHTING of this image:
+
+NATURAL LIGHT:
+- bright_daylight: Direct sunlight, harsh shadows
+- soft_daylight: Overcast/diffused natural light
+- golden_hour: Warm sunrise/sunset lighting
+- blue_hour: Twilight, cool blue tones
+- moonlight: Nighttime natural light
+- window_light: Indoor natural light from windows
+
+STUDIO/ARTIFICIAL:
+- studio_soft: Professional soft lighting (softbox, beauty dish)
+- studio_hard: Dramatic studio with hard shadows
+- ring_light: Circular catchlights, flat frontal light
+- flash: On-camera or direct flash
+- continuous: Video/continuous artificial light
+
+DRAMATIC/STYLIZED:
+- high_key: Bright, low contrast, minimal shadows
+- low_key: Dark, high contrast, deep shadows
+- rembrandt: Classic triangle light on cheek
+- split: Half face lit, half in shadow
+- rim_light: Strong backlight creating edge glow
+- silhouette: Subject dark against bright background
+
+ENVIRONMENTAL:
+- neon: Colorful artificial/neon lighting
+- candlelight: Warm, flickering light source
+- firelight: Orange/red fire illumination
+- streetlight: Urban night lighting
+- mixed: Multiple light sources/colors
+
+Respond with ONLY the category name, nothing else."""
+
+valid_lighting = [
+    "bright_daylight", "soft_daylight", "golden_hour", "blue_hour", "moonlight", "window_light",
+    "studio_soft", "studio_hard", "ring_light", "flash", "continuous",
+    "high_key", "low_key", "rembrandt", "split", "rim_light", "silhouette",
+    "neon", "candlelight", "firelight", "streetlight", "mixed"
+]
+
+[lighting.groups]
+natural = ["bright_daylight", "soft_daylight", "golden_hour", "blue_hour", "moonlight", "window_light"]
+studio = ["studio_soft", "studio_hard", "ring_light", "flash", "continuous"]
+dramatic = ["high_key", "low_key", "rembrandt", "split", "rim_light", "silhouette"]
+environmental = ["neon", "candlelight", "firelight", "streetlight", "mixed"]
+
+default_lighting = "soft_daylight"
+
+
+# =============================================================================
+# COLOR/MOOD CLASSIFICATION
+# =============================================================================
+
+[color_mood]
+detect_mood = """Classify the COLOR MOOD / PALETTE of this image:
+
+COLOR TEMPERATURE:
+- warm: Orange, yellow, red dominant tones
+- cool: Blue, cyan, teal dominant tones
+- neutral: Balanced, no strong color cast
+- mixed_warm_cool: Both warm and cool tones present
+
+SATURATION:
+- vibrant: Highly saturated, punchy colors
+- muted: Desaturated, subdued colors
+- pastel: Soft, light colors
+- monochrome: Single color or grayscale
+- black_white: True black and white
+
+COLOR PALETTE:
+- earth_tones: Browns, tans, natural colors
+- jewel_tones: Rich, deep colors (emerald, ruby, sapphire)
+- neon_colors: Bright fluorescent colors
+- skin_tones: Dominated by skin/flesh colors
+- natural_greens: Nature/foliage dominant
+- urban_grays: Concrete, metal, city palette
+
+MOOD:
+- bright_cheerful: Light, happy, uplifting
+- dark_moody: Shadowy, atmospheric, mysterious
+- dreamy_soft: Ethereal, hazy, romantic
+- harsh_gritty: High contrast, raw, edgy
+- cinematic: Film-like color grading
+- vintage_retro: Aged, nostalgic color treatment
+
+Respond with ONLY the category name, nothing else."""
+
+valid_moods = [
+    "warm", "cool", "neutral", "mixed_warm_cool",
+    "vibrant", "muted", "pastel", "monochrome", "black_white",
+    "earth_tones", "jewel_tones", "neon_colors", "skin_tones", "natural_greens", "urban_grays",
+    "bright_cheerful", "dark_moody", "dreamy_soft", "harsh_gritty", "cinematic", "vintage_retro"
+]
+
+[color_mood.groups]
+temperature = ["warm", "cool", "neutral", "mixed_warm_cool"]
+saturation = ["vibrant", "muted", "pastel", "monochrome", "black_white"]
+palette = ["earth_tones", "jewel_tones", "neon_colors", "skin_tones", "natural_greens", "urban_grays"]
+mood = ["bright_cheerful", "dark_moody", "dreamy_soft", "harsh_gritty", "cinematic", "vintage_retro"]
+
+default_mood = "neutral"
+
+
+# =============================================================================
+# CONTEXT / GENRE CLASSIFICATION
+# =============================================================================
+# Identifies the thematic context or genre of the image
+
+[context_genre]
+detect_context = """Classify the CONTEXT / GENRE of this image:
+
+ACTIVITIES:
+- sports: Athletic activity, competition, exercise, fitness
+- dance: Dancing, ballet, performance movement
+- music: Musical performance, instruments, concerts
+- gaming: Video games, esports, tabletop gaming
+- cooking: Food preparation, kitchen activity
+- crafts: Art creation, DIY, handmade activities
+
+PROFESSIONAL/OCCUPATIONAL:
+- military: Armed forces, soldiers, combat, uniforms
+- police_security: Law enforcement, security personnel
+- medical: Healthcare, doctors, nurses, hospitals
+- business: Corporate, office, professional setting
+- construction: Building, labor, industrial work
+- service_industry: Retail, hospitality, customer service
+
+TRANSPORTATION/VEHICLES:
+- aviation: Aircraft, planes, helicopters, pilots
+- maritime: Boats, ships, sailing, naval
+- automotive: Cars, motorcycles, racing
+- railway: Trains, stations, rail transport
+- space: Spacecraft, astronauts, space scenes
+
+EVENTS/OCCASIONS:
+- wedding: Weddings, ceremonies, bridal
+- party: Celebrations, nightlife, social gatherings
+- festival: Cultural festivals, parades, fairs
+- graduation: Academic ceremonies
+- religious: Religious ceremonies, spiritual contexts
+- funeral: Memorial services, mourning
+
+LIFESTYLE:
+- fashion: Fashion shoots, runway, style-focused
+- beauty: Makeup, skincare, cosmetics focus
+- fitness: Gym, workout, exercise (non-competitive)
+- travel: Tourism, vacation, exploration
+- nature: Wildlife, outdoors, hiking
+- urban: Street photography, city life
+
+ENTERTAINMENT:
+- film_tv: Movie/TV production, cinema
+- theater: Stage performance, plays
+- cosplay: Costume play, character recreation
+- modeling: Professional modeling, poses
+- influencer: Social media content style
+
+EDUCATIONAL/DOCUMENTARY:
+- documentary: Journalistic, reportage style
+- scientific: Research, laboratory, experiments
+- historical: Historical recreation, period pieces
+- educational: Teaching, learning environments
+
+FANTASY/FICTION:
+- fantasy: Magical, fantastical settings
+- scifi: Science fiction, futuristic
+- horror: Scary, creepy, horror genre
+- superhero: Comic book heroes, powers
+- steampunk: Victorian-futurism aesthetic
+- cyberpunk: High-tech dystopian aesthetic
+
+DOMESTIC/PERSONAL:
+- family: Family activities, gatherings
+- pets: Pet photography, animal companions
+- home: Domestic scenes, everyday life
+- garden: Gardening, outdoor home spaces
+
+SPECIALIZED:
+- boudoir: Intimate, sensual photography style
+- maternity: Pregnancy, expecting mothers
+- newborn: Baby photography
+- senior: Senior portraits, elderly focus
+- headshot: Professional headshots
+
+Respond with ONLY the category name, nothing else. If no specific genre applies, respond with "general"."""
+
+valid_contexts = [
+    # Activities
+    "sports", "dance", "music", "gaming", "cooking", "crafts",
+    # Professional
+    "military", "police_security", "medical", "business", "construction", "service_industry",
+    # Transportation
+    "aviation", "maritime", "automotive", "railway", "space",
+    # Events
+    "wedding", "party", "festival", "graduation", "religious", "funeral",
+    # Lifestyle
+    "fashion", "beauty", "fitness", "travel", "nature", "urban",
+    # Entertainment
+    "film_tv", "theater", "cosplay", "modeling", "influencer",
+    # Educational
+    "documentary", "scientific", "historical", "educational",
+    # Fantasy/Fiction
+    "fantasy", "scifi", "horror", "superhero", "steampunk", "cyberpunk",
+    # Domestic
+    "family", "pets", "home", "garden",
+    # Specialized
+    "boudoir", "maternity", "newborn", "senior", "headshot",
+    # Default
+    "general"
+]
+
+[context_genre.groups]
+activities = ["sports", "dance", "music", "gaming", "cooking", "crafts"]
+professional = ["military", "police_security", "medical", "business", "construction", "service_industry"]
+transportation = ["aviation", "maritime", "automotive", "railway", "space"]
+events = ["wedding", "party", "festival", "graduation", "religious", "funeral"]
+lifestyle = ["fashion", "beauty", "fitness", "travel", "nature", "urban"]
+entertainment = ["film_tv", "theater", "cosplay", "modeling", "influencer"]
+educational = ["documentary", "scientific", "historical", "educational"]
+fiction = ["fantasy", "scifi", "horror", "superhero", "steampunk", "cyberpunk"]
+domestic = ["family", "pets", "home", "garden"]
+specialized = ["boudoir", "maternity", "newborn", "senior", "headshot"]
+
+default_context = "general"
+
+
+# =============================================================================
+# CLOTHING STYLE CLASSIFICATION
+# =============================================================================
+# Identifies the type/style of clothing worn
+
+[clothing_style]
+detect_clothing = """Classify the PRIMARY CLOTHING STYLE in this image:
+
+FORMAL/PROFESSIONAL:
+- business_formal: Suits, ties, formal office wear
+- business_casual: Smart casual, blazers without ties
+- formal_gown: Evening gowns, ball gowns, formal dresses
+- tuxedo: Black tie, formal menswear
+
+CASUAL:
+- casual_everyday: T-shirts, jeans, relaxed wear
+- streetwear: Urban fashion, sneakers, hoodies
+- athleisure: Sporty casual, yoga pants, athletic-inspired
+- loungewear: Comfortable home wear, pajamas, robes
+
+TRADITIONAL/CULTURAL:
+- western_traditional: Cowboy, rodeo style
+- asian_traditional: Kimono, hanbok, cheongsam, sari
+- middle_eastern: Hijab, abaya, thobe, kaftan
+- african_traditional: Kente, dashiki, traditional prints
+- european_folk: Dirndl, lederhosen, folk costumes
+- indigenous: Native/tribal traditional wear
+
+COSTUMES/UNIFORMS:
+- military_uniform: Armed forces uniforms
+- police_uniform: Law enforcement attire
+- medical_uniform: Scrubs, lab coats, nurse uniforms
+- school_uniform: Academic uniforms
+- sports_uniform: Team jerseys, athletic uniforms
+- service_uniform: Restaurant, hotel, airline staff
+- costume_character: Cosplay, character costumes
+- costume_historical: Period costumes, renaissance, etc.
+
+SWIMWEAR/INTIMATE:
+- swimwear_onepiece: One-piece swimsuits
+- swimwear_bikini: Two-piece swimwear
+- swimwear_mens: Swim trunks, speedos
+- lingerie: Intimate apparel, undergarments
+- sleepwear: Nightgowns, sleep sets
+
+OUTERWEAR:
+- coat_jacket: Coats, blazers, jackets
+- winter_wear: Heavy coats, parkas, down jackets
+- rain_gear: Raincoats, waterproof wear
+
+SPECIALTY:
+- bridal: Wedding dresses, bridal wear
+- maternity: Pregnancy-appropriate clothing
+- activewear: Gym wear, running gear, sports specific
+- dance_wear: Tutus, leotards, dance costumes
+- fetish_wear: Latex, leather, fetish-specific
+
+MINIMAL/NONE:
+- minimal_clothing: Very little clothing visible
+- nude: No clothing (artistic/implied)
+- wrapped_draped: Sheets, towels, fabric wraps
+
+Respond with ONLY the category name, nothing else. If clothing is not visible or not applicable, respond with "not_visible"."""
+
+valid_clothing = [
+    # Formal
+    "business_formal", "business_casual", "formal_gown", "tuxedo",
+    # Casual
+    "casual_everyday", "streetwear", "athleisure", "loungewear",
+    # Traditional
+    "western_traditional", "asian_traditional", "middle_eastern", "african_traditional", "european_folk", "indigenous",
+    # Uniforms
+    "military_uniform", "police_uniform", "medical_uniform", "school_uniform", "sports_uniform", "service_uniform", "costume_character", "costume_historical",
+    # Swimwear
+    "swimwear_onepiece", "swimwear_bikini", "swimwear_mens", "lingerie", "sleepwear",
+    # Outerwear
+    "coat_jacket", "winter_wear", "rain_gear",
+    # Specialty
+    "bridal", "maternity", "activewear", "dance_wear", "fetish_wear",
+    # Minimal
+    "minimal_clothing", "nude", "wrapped_draped",
+    # Not visible
+    "not_visible"
+]
+
+[clothing_style.groups]
+formal = ["business_formal", "business_casual", "formal_gown", "tuxedo"]
+casual = ["casual_everyday", "streetwear", "athleisure", "loungewear"]
+traditional = ["western_traditional", "asian_traditional", "middle_eastern", "african_traditional", "european_folk", "indigenous"]
+uniform = ["military_uniform", "police_uniform", "medical_uniform", "school_uniform", "sports_uniform", "service_uniform", "costume_character", "costume_historical"]
+swimwear_intimate = ["swimwear_onepiece", "swimwear_bikini", "swimwear_mens", "lingerie", "sleepwear"]
+outerwear = ["coat_jacket", "winter_wear", "rain_gear"]
+specialty = ["bridal", "maternity", "activewear", "dance_wear", "fetish_wear"]
+minimal = ["minimal_clothing", "nude", "wrapped_draped"]
+
+default_clothing = "casual_everyday"
+
+
+# =============================================================================
+# FABRIC/MATERIAL CLASSIFICATION
+# =============================================================================
+# Identifies the primary fabric or material visible
+
+[fabric_material]
+detect_fabric = """Classify the PRIMARY FABRIC/MATERIAL visible on clothing:
+
+NATURAL FIBERS:
+- cotton: Cotton fabric (t-shirts, jeans, casual)
+- linen: Linen fabric (summer wear, relaxed)
+- wool: Wool, tweed, cashmere
+- silk: Silk, satin (shiny, flowing)
+- denim: Denim/jeans material
+- leather_real: Genuine leather
+- fur_real: Real fur
+
+SYNTHETIC:
+- polyester: Polyester, synthetic blends
+- nylon: Nylon, spandex, athletic materials
+- latex: Latex, rubber
+- pvc_vinyl: PVC, vinyl, patent leather
+- faux_leather: Faux/synthetic leather
+- faux_fur: Synthetic fur
+
+SPECIALTY:
+- lace: Lace fabric, delicate openwork
+- velvet: Velvet, velour
+- chiffon: Chiffon, sheer fabrics
+- tulle: Tulle, netting (tutus, veils)
+- sequins_beaded: Sequined, beaded, embellished
+- metallic: Metallic fabrics, lamé
+- mesh_sheer: Mesh, see-through materials
+- knit_crochet: Knitted, crocheted fabrics
+
+TEXTURE PATTERNS:
+- plain_solid: Solid color, no pattern
+- striped: Striped patterns
+- plaid_check: Plaid, checkered, tartan
+- floral: Floral patterns
+- animal_print: Leopard, zebra, snake prints
+- geometric: Geometric patterns
+- tie_dye: Tie-dye, ombre
+- camo: Camouflage pattern
+
+Respond with ONLY the category name, nothing else. If fabric is not clearly visible, respond with "not_visible"."""
+
+valid_fabrics = [
+    # Natural
+    "cotton", "linen", "wool", "silk", "denim", "leather_real", "fur_real",
+    # Synthetic
+    "polyester", "nylon", "latex", "pvc_vinyl", "faux_leather", "faux_fur",
+    # Specialty
+    "lace", "velvet", "chiffon", "tulle", "sequins_beaded", "metallic", "mesh_sheer", "knit_crochet",
+    # Patterns
+    "plain_solid", "striped", "plaid_check", "floral", "animal_print", "geometric", "tie_dye", "camo",
+    # Not visible
+    "not_visible"
+]
+
+[fabric_material.groups]
+natural = ["cotton", "linen", "wool", "silk", "denim", "leather_real", "fur_real"]
+synthetic = ["polyester", "nylon", "latex", "pvc_vinyl", "faux_leather", "faux_fur"]
+specialty = ["lace", "velvet", "chiffon", "tulle", "sequins_beaded", "metallic", "mesh_sheer", "knit_crochet"]
+patterns = ["plain_solid", "striped", "plaid_check", "floral", "animal_print", "geometric", "tie_dye", "camo"]
+
+default_fabric = "cotton"
+
+
+# =============================================================================
+# EYEWEAR CLASSIFICATION
+# =============================================================================
+# Identifies type of eyewear worn
+
+[eyewear]
+detect_eyewear = """Classify the EYEWEAR in this image:
+
+PRESCRIPTION/VISION:
+- glasses_regular: Standard eyeglasses, frames
+- glasses_reading: Reading glasses, small frames
+- glasses_thick_frame: Bold, thick-framed glasses
+- glasses_rimless: Rimless or semi-rimless
+- glasses_cat_eye: Cat-eye shaped frames
+- glasses_round: Round/circular frames
+- glasses_aviator: Aviator-style frames
+- glasses_oversized: Large, oversized frames
+
+SUNGLASSES:
+- sunglasses_aviator: Classic aviator sunglasses
+- sunglasses_wayfarer: Wayfarer style
+- sunglasses_cat_eye: Cat-eye sunglasses
+- sunglasses_round: Round sunglasses
+- sunglasses_sport: Wraparound, sport sunglasses
+- sunglasses_oversized: Large fashion sunglasses
+- sunglasses_mirrored: Mirrored/reflective lenses
+- sunglasses_shield: Single-lens shield style
+
+SPECIALTY:
+- monocle: Single-lens monocle
+- goggles_swim: Swimming goggles
+- goggles_ski: Ski/snowboard goggles
+- goggles_safety: Safety/lab goggles
+- goggles_steampunk: Steampunk-style goggles
+- vr_headset: VR/AR headset
+- eye_patch: Pirate/medical eye patch
+- blindfold: Eyes covered/blindfolded
+
+NONE:
+- no_eyewear: No eyewear present
+
+Respond with ONLY the category name, nothing else."""
+
+valid_eyewear = [
+    # Prescription
+    "glasses_regular", "glasses_reading", "glasses_thick_frame", "glasses_rimless", "glasses_cat_eye", "glasses_round", "glasses_aviator", "glasses_oversized",
+    # Sunglasses
+    "sunglasses_aviator", "sunglasses_wayfarer", "sunglasses_cat_eye", "sunglasses_round", "sunglasses_sport", "sunglasses_oversized", "sunglasses_mirrored", "sunglasses_shield",
+    # Specialty
+    "monocle", "goggles_swim", "goggles_ski", "goggles_safety", "goggles_steampunk", "vr_headset", "eye_patch", "blindfold",
+    # None
+    "no_eyewear"
+]
+
+[eyewear.groups]
+prescription = ["glasses_regular", "glasses_reading", "glasses_thick_frame", "glasses_rimless", "glasses_cat_eye", "glasses_round", "glasses_aviator", "glasses_oversized"]
+sunglasses = ["sunglasses_aviator", "sunglasses_wayfarer", "sunglasses_cat_eye", "sunglasses_round", "sunglasses_sport", "sunglasses_oversized", "sunglasses_mirrored", "sunglasses_shield"]
+specialty = ["monocle", "goggles_swim", "goggles_ski", "goggles_safety", "goggles_steampunk", "vr_headset", "eye_patch", "blindfold"]
+
+default_eyewear = "no_eyewear"
+
+
+# =============================================================================
+# ACCESSORIES CLASSIFICATION
+# =============================================================================
+# Identifies notable accessories
+
+[accessories]
+detect_accessories = """Identify the MOST PROMINENT ACCESSORY in this image:
+
+HEADWEAR:
+- hat_baseball: Baseball caps, snapbacks
+- hat_beanie: Beanies, knit caps
+- hat_fedora: Fedoras, trilbies
+- hat_cowboy: Cowboy/western hats
+- hat_sun: Sun hats, wide-brim
+- hat_formal: Top hats, formal hats
+- headband: Headbands, sweatbands
+- crown_tiara: Crowns, tiaras
+- helmet: Helmets (bike, motorcycle, sports)
+- hood: Hood up from hoodie/jacket
+- turban_wrap: Turbans, head wraps
+- veil: Veils, face coverings
+
+JEWELRY:
+- necklace: Necklaces, chains, pendants
+- earrings: Earrings (studs, hoops, dangles)
+- bracelet: Bracelets, bangles
+- ring: Rings (finger)
+- watch: Wristwatches
+- body_piercing: Visible piercings (nose, lip, etc.)
+- choker: Choker necklaces
+
+NECKWEAR:
+- tie: Neckties
+- bowtie: Bow ties
+- scarf: Scarves
+- bandana: Bandanas, neck scarves
+
+BAGS/CARRIED:
+- handbag: Handbags, purses
+- backpack: Backpacks
+- briefcase: Briefcases, laptop bags
+
+OTHER:
+- belt: Belts (visible)
+- gloves: Gloves
+- mask_face: Face masks (surgical, fashion)
+- mask_costume: Costume/masquerade masks
+- weapon_prop: Prop weapons (swords, guns)
+- wings_prop: Costume wings
+- tail_prop: Costume tails
+
+NONE:
+- no_accessories: No notable accessories
+
+Respond with ONLY the category name, nothing else."""
+
+valid_accessories = [
+    # Headwear
+    "hat_baseball", "hat_beanie", "hat_fedora", "hat_cowboy", "hat_sun", "hat_formal", "headband", "crown_tiara", "helmet", "hood", "turban_wrap", "veil",
+    # Jewelry
+    "necklace", "earrings", "bracelet", "ring", "watch", "body_piercing", "choker",
+    # Neckwear
+    "tie", "bowtie", "scarf", "bandana",
+    # Bags
+    "handbag", "backpack", "briefcase",
+    # Other
+    "belt", "gloves", "mask_face", "mask_costume", "weapon_prop", "wings_prop", "tail_prop",
+    # None
+    "no_accessories"
+]
+
+[accessories.groups]
+headwear = ["hat_baseball", "hat_beanie", "hat_fedora", "hat_cowboy", "hat_sun", "hat_formal", "headband", "crown_tiara", "helmet", "hood", "turban_wrap", "veil"]
+jewelry = ["necklace", "earrings", "bracelet", "ring", "watch", "body_piercing", "choker"]
+neckwear = ["tie", "bowtie", "scarf", "bandana"]
+bags = ["handbag", "backpack", "briefcase"]
+other = ["belt", "gloves", "mask_face", "mask_costume", "weapon_prop", "wings_prop", "tail_prop"]
+
+default_accessories = "no_accessories"

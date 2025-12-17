@@ -2,7 +2,7 @@
 """
 ComfyUI-AI-Photography-Toolkit - Cloud LLM Provider Node
 
-Single node for all cloud-based and local LLM providers.
+Single node for all cloud-based LLM providers.
 Only vision-capable models are listed (required for image analysis).
 
 Cloud Providers (API key required):
@@ -23,12 +23,7 @@ Author: Siddhartha Lahiri
 Email: siddhartha.lahiri@gmail.com
 License: MIT
 
-Local Providers (no API key):
-- Ollama (dynamic detection)
-- LM Studio (dynamic detection)
-- Custom OpenAI-compatible endpoints
-
-For local vision models with VRAM management, use SID_LLM_Local instead.
+For local providers (Ollama, LM Studio) and local vision models, use SID_LLM_Local.
 """
 
 from typing import List, Dict, Any, Tuple
@@ -249,40 +244,7 @@ PROVIDERS = {
         "default_model": "meta-llama/Llama-3.2-11B-Vision-Instruct",
     },
 
-    # =========================================================================
-    # Local Providers (no API key required)
-    # =========================================================================
-    "Ollama (Local)": {
-        "api_url": "http://localhost:11434/v1",
-        "api_key_url": "",
-        "provider_name": "ollama",
-        "requires_key": False,
-        "is_local": True,
-        "models": "dynamic",  # Auto-detected from Ollama API, use custom_model for manual entry
-        "fallback_models": [],  # No fallback - use custom_model field instead
-        "default_model": "use custom_model field",
-    },
-    "LM Studio (Local)": {
-        "api_url": "http://localhost:1234/v1",
-        "api_key_url": "",
-        "provider_name": "lmstudio",
-        "requires_key": False,
-        "is_local": True,
-        "models": "dynamic",  # Auto-detected from LM Studio API, use custom_model for manual entry
-        "fallback_models": [],  # No fallback - use custom_model field instead
-        "default_model": "use custom_model field",
-    },
-    "Custom OpenAI-Compatible": {
-        "api_url": "http://localhost:8080/v1",
-        "api_key_url": "",
-        "provider_name": "openai_compatible",
-        "requires_key": False,
-        "is_local": True,
-        "models": [
-            "custom (use custom_model field)",
-        ],
-        "default_model": "custom (use custom_model field)",
-    },
+    # Local Providers (Ollama, LM Studio) moved to SID_LLM_Local node
 }
 
 # Model metadata for all providers
@@ -484,7 +446,7 @@ def get_model_metadata(model: str) -> Dict[str, Any]:
 
 class SID_LLM_API(comfy_io.ComfyNode):
     """
-    Unified LLM Provider for Cloud and Local APIs.
+    Cloud LLM Provider for API-based services.
     Only vision-capable models are listed (required for image analysis).
 
     Cloud Providers (API key required):
@@ -501,12 +463,7 @@ class SID_LLM_API(comfy_io.ComfyNode):
     - Fireworks AI (Llama 4, Llama 3.2 vision, Qwen VL)
     - HuggingFace Inference (Llama 3.2 vision, Qwen VL)
 
-    Local Providers (no API key):
-    - Ollama (localhost:11434 - dynamic detection)
-    - LM Studio (localhost:1234 - dynamic detection)
-    - Custom OpenAI-compatible endpoints
-
-    For local vision models with VRAM management, use SID_LLM_Local instead.
+    For local providers (Ollama, LM Studio) and local models, use SID_LLM_Local.
     """
 
     @classmethod
@@ -515,20 +472,11 @@ class SID_LLM_API(comfy_io.ComfyNode):
         all_models = get_all_models()
         provider_list = list(PROVIDERS.keys())
 
-        # Max tokens presets
-        max_tokens_options = [
-            "Low (512)",
-            "Medium (2048)",
-            "High (8192)",
-            "Very High (Model Max)",
-            "Custom",
-        ]
-
         return comfy_io.Schema(
             node_id="SID_LLM_API",
             display_name="SID LLM API",
             category="SID Photography Toolkit/LLM Providers",
-            description="Unified LLM provider: Cloud (Anthropic, OpenAI, Gemini, Groq, etc.) + Local (Ollama, LM Studio)",
+            description="Cloud LLM provider: Anthropic, OpenAI, Gemini, Groq, Together AI, etc.",
             inputs=[
                 # Provider selection
                 comfy_io.Combo.Input(
@@ -543,7 +491,7 @@ class SID_LLM_API(comfy_io.ComfyNode):
                     "api_key",
                     default="",
                     multiline=False,
-                    tooltip="API key for your provider (not needed for local providers)"
+                    tooltip="API key for your provider"
                 ),
 
                 # Model selection - all models from all providers
@@ -552,22 +500,6 @@ class SID_LLM_API(comfy_io.ComfyNode):
                     options=all_models,
                     default="[Anthropic] claude-sonnet-4-5-20250929 (Vision)",
                     tooltip="Select model (provider prefix shows which API will be used)"
-                ),
-
-                # Custom model override
-                comfy_io.String.Input(
-                    "custom_model",
-                    default="",
-                    multiline=False,
-                    tooltip="Override model name (for custom/unlisted models)"
-                ),
-
-                # Custom API URL
-                comfy_io.String.Input(
-                    "api_url",
-                    default="",
-                    multiline=False,
-                    tooltip="Custom API URL (leave empty to use provider default)"
                 ),
 
                 # Temperature
@@ -582,23 +514,6 @@ class SID_LLM_API(comfy_io.ComfyNode):
                     tooltip="Creativity level (0=deterministic, 0.3=balanced, 1+=creative)"
                 ),
 
-                # Max tokens preset
-                comfy_io.Combo.Input(
-                    "max_tokens_preset",
-                    options=max_tokens_options,
-                    default="Medium (2048)",
-                    tooltip="Output length: Low=512, Medium=2048, High=8192, Very High=Model Max"
-                ),
-
-                # Custom max tokens (only used when preset is "Custom")
-                comfy_io.Int.Input(
-                    "custom_max_tokens",
-                    default=4096,
-                    min=128,
-                    max=200000,
-                    tooltip="Custom max tokens (only used when preset is 'Custom')"
-                ),
-
                 # Reasoning toggle
                 comfy_io.Boolean.Input(
                     "enable_reasoning",
@@ -607,16 +522,12 @@ class SID_LLM_API(comfy_io.ComfyNode):
                     tooltip="Enable extended thinking for supported models (Claude 4.5, o1, o3, DeepSeek R1, etc.)"
                 ),
 
-                # Repetition penalty
-                comfy_io.Float.Input(
-                    "repetition_penalty",
-                    default=1.15,
-                    min=1.0,
-                    max=2.0,
-                    step=0.05,
-                    round=0.05,
-                    display_mode=comfy_io.NumberDisplay.slider,
-                    tooltip="Reduce repetitive text (1.0=off, 1.15=default, 2.0=strong). Maps to frequency_penalty for OpenAI-compatible APIs."
+                # Analysis mode - API supports Standard/Detailed
+                comfy_io.Combo.Input(
+                    "analysis_mode",
+                    options=["Standard", "Detailed"],
+                    default="Standard",
+                    tooltip="Standard: Fast single-pass generation (80-150 words). Detailed: Multi-step agentic analysis (150-250 words)"
                 ),
             ],
             outputs=[
@@ -634,22 +545,14 @@ class SID_LLM_API(comfy_io.ComfyNode):
         provider: str,
         api_key: str,
         model: str,
-        custom_model: str,
-        api_url: str,
         temperature: float,
-        max_tokens_preset: str,
-        custom_max_tokens: int,
         enable_reasoning: bool,
-        repetition_penalty: float,
+        analysis_mode: str,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
         try:
             # Parse model selection
             model_provider, model_name = parse_model_selection(model)
-
-            # Use custom model if provided
-            if custom_model.strip():
-                model_name = custom_model.strip()
 
             # Get provider config
             provider_config = PROVIDERS.get(provider)
@@ -658,36 +561,13 @@ class SID_LLM_API(comfy_io.ComfyNode):
 
             provider_name = provider_config["provider_name"]
 
-            # Determine API URL
-            if api_url.strip():
-                actual_url = api_url.strip()
-            else:
-                actual_url = provider_config.get("api_url", "")
-
-            # Use default URLs for local providers if not specified
+            # Get API URL from provider config
+            actual_url = provider_config.get("api_url", "")
             if not actual_url:
-                if provider_name == "lmstudio":
-                    actual_url = "http://localhost:1234/v1"
-                    print(f"[SID_LLM_API] Using default LM Studio URL: {actual_url}")
-                elif provider_name == "ollama":
-                    actual_url = "http://localhost:11434/v1"
-                    print(f"[SID_LLM_API] Using default Ollama URL: {actual_url}")
-                else:
-                    raise ValueError(f"API URL is required for {provider}")
-
-            # Auto-fix common URL mistakes for local providers
-            # LM Studio and Ollama require /v1 suffix for OpenAI-compatible API
-            if provider_name in ("lmstudio", "ollama", "openai_compatible"):
-                # Remove trailing slash first
-                actual_url = actual_url.rstrip("/")
-                # Add /v1 if missing
-                if not actual_url.endswith("/v1"):
-                    actual_url = f"{actual_url}/v1"
-                    print(f"[SID_LLM_API] Auto-corrected URL to: {actual_url}")
+                raise ValueError(f"API URL not configured for {provider}")
 
             # Check if provider requires API key
             requires_key = provider_config.get("requires_key", True)
-            is_local = provider_config.get("is_local", False)
 
             # Validate API key - RAISE ERROR if required but missing
             if requires_key and not api_key.strip():
@@ -702,25 +582,6 @@ class SID_LLM_API(comfy_io.ComfyNode):
             model_supports_reasoning = metadata["supports_reasoning"]
             model_max_tokens = metadata["max_output_tokens"]
 
-            # Resolve max_tokens from preset
-            max_tokens_map = {
-                "Low (512)": 512,
-                "Medium (2048)": 2048,
-                "High (8192)": 8192,
-                "Very High (Model Max)": model_max_tokens,
-                "Custom": custom_max_tokens,
-            }
-            max_tokens = max_tokens_map.get(max_tokens_preset, 2048)
-
-            # Cap max_tokens to model's maximum
-            if max_tokens > model_max_tokens:
-                print(f"[SID_LLM_API] Note: Capping max_tokens from {max_tokens} to model max {model_max_tokens}")
-                max_tokens = model_max_tokens
-
-            # Validate max_tokens
-            if max_tokens < 1:
-                raise ValueError(f"max_tokens must be at least 1, got {max_tokens}")
-
             # Validate temperature
             if temperature < 0 or temperature > 2:
                 raise ValueError(f"Temperature must be between 0 and 2, got {temperature}")
@@ -733,40 +594,28 @@ class SID_LLM_API(comfy_io.ComfyNode):
             if enable_reasoning and not model_supports_reasoning:
                 print(f"[SID_LLM_API] Note: Reasoning disabled - {model_name} does not support it")
 
-            # Create configuration
+            # Create configuration (use model's max tokens as capability)
             config = LLMModelConfig(
                 provider=provider_name,
                 model=model_name,
                 api_key=api_key.strip(),
                 api_url=actual_url,
-                max_tokens=max_tokens,
+                max_tokens=model_max_tokens,
                 temperature=temperature,
+                analysis_mode=analysis_mode.lower(),
                 supports_vision=True,
                 supports_system_prompt=True,
                 supports_reasoning=actual_reasoning,
                 extra_params={
-                    "model_max_output_tokens": model_max_tokens,
                     "original_provider": provider,
-                    "is_local": is_local,
                     "requires_key": requires_key,
                     "reasoning_supported": model_supports_reasoning,
-                    "repetition_penalty": repetition_penalty,
                 },
             )
 
-            provider_type = "Local" if is_local else "Cloud"
             reasoning_status = "ON" if actual_reasoning else ("OFF (not supported)" if not model_supports_reasoning else "OFF")
-            print(f"[SID_LLM_API] Configured: {provider} ({provider_type})")
-            print(f"  Model: {model_name}")
-            print(f"  URL: {actual_url}")
-            print(f"  max_tokens={max_tokens} ({max_tokens_preset}), temp={temperature}")
-            print(f"  reasoning={reasoning_status}")
-
-            # Warn if local provider model may not support vision (but allow it)
-            if is_local and not is_likely_vision_model(model_name):
-                print(f"  ⚠️ WARNING: '{model_name}' may not support vision/image input.")
-                print(f"     For image analysis, consider using a vision model like 'llava', 'llama3.2-vision', etc.")
-                print(f"     Proceeding anyway - if this model does support vision, you can ignore this warning.")
+            print(f"[SID_LLM_API] {provider}: {model_name}")
+            print(f"  temp={temperature}, reasoning={reasoning_status}")
 
             return comfy_io.NodeOutput(config)
 

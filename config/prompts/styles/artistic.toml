@@ -1,0 +1,246 @@
+# =============================================================================
+# Artistic/Traditional Media Style Prompts
+# =============================================================================
+# Specialized prompts for paintings, sketches, illustrations, and traditional art
+
+
+# =============================================================================
+# SYSTEM PROMPTS
+# =============================================================================
+
+[system.artistic.advanced]
+base = """You are an expert visual analyst generating prompts for artistic/traditional media AI image generation.
+
+For ARTISTIC images (paintings, sketches, illustrations), use this approach:
+- Identify the MEDIUM (oil painting, watercolor, pencil sketch, digital painting)
+- Describe brushwork or line quality (loose, precise, textured)
+- Note color palette and harmony (complementary, analogous, monochromatic)
+- Describe composition and focal points
+- Include lighting mood and atmosphere
+- Note art movement influence if apparent (impressionist, realistic, abstract)
+
+Structure: Medium → Technique → Subject → Composition → Color palette → Lighting/mood → Style influence
+
+Output ONLY the prompt text - no explanations, no formatting, no markdown."""
+
+[system.artistic.standard]
+base = """You are an image analysis expert creating prompts for artistic AI image generation.
+
+Follow this structure:
+1. Art medium (oil, watercolor, pencil, digital)
+2. Technique and brushwork
+3. Subject description
+4. Color palette
+5. Lighting and mood
+6. Composition style
+
+Write flowing sentences. Output only the description."""
+
+[system.artistic.basic]
+base = """You are an image captioning assistant for paintings and artistic images.
+
+Write a description covering:
+- Art medium and style
+- Subject appearance
+- Color palette
+- Mood and atmosphere
+- Composition
+
+Output ONLY the description. Start directly."""
+
+
+# =============================================================================
+# USER PROMPTS - ADVANCED TIER
+# =============================================================================
+
+[user.artistic.advanced.quick]
+prompt = """Generate a brief artistic/painting style prompt (30-60 words) covering:
+- Art medium (oil, watercolor, digital, sketch)
+- Subject basics
+- Color palette
+- Mood/atmosphere
+- Style influence
+
+Write as flowing sentences."""
+
+[user.artistic.advanced.standard]
+prompt = """Generate an artistic/painting style prompt covering:
+MEDIUM: Specific medium (oil painting, watercolor, pencil sketch, charcoal, digital painting)
+TECHNIQUE: Brushwork style (loose, precise, impasto, glazed, textured)
+SUBJECT: Main subject description
+COMPOSITION: Arrangement, focal point, rule of thirds
+COLORS: Palette type (warm, cool, complementary, monochromatic)
+LIGHTING: Direction, quality, mood
+STYLE: Art movement influence (impressionist, realistic, abstract, classical)
+
+Write as flowing natural sentences. End with "artistic painting, [medium] style"."""
+
+[user.artistic.advanced.detailed]
+prompt = """Generate a COMPREHENSIVE artistic/painting style prompt:
+
+MEDIUM & TECHNIQUE:
+- Specific medium (oil on canvas, watercolor on paper, digital painting)
+- Brush/tool characteristics (round brushes, palette knife, wet-on-wet)
+- Texture quality (smooth, textured, impasto, glazed)
+- Finish (matte, glossy, rough)
+
+SUBJECT:
+- Primary subject description
+- Secondary elements
+- Relationship between elements
+
+COMPOSITION:
+- Layout (rule of thirds, golden ratio, centered)
+- Focal point placement
+- Leading lines and eye flow
+- Negative space usage
+
+COLOR PALETTE:
+- Dominant colors
+- Color harmony (complementary, analogous, triadic)
+- Value range (high key, low key, full range)
+- Saturation levels
+
+LIGHTING & ATMOSPHERE:
+- Light source direction
+- Light quality (soft, harsh, diffused)
+- Shadow treatment
+- Overall mood (dramatic, serene, mysterious)
+
+STYLE INFLUENCE:
+- Art movement (impressionism, realism, romanticism, abstract)
+- Artist influence if apparent
+- Period characteristics
+
+Write as flowing natural sentences. End with "professional [medium] painting, artistic composition, museum quality"."""
+
+[user.artistic.advanced.extreme]
+prompt = """Generate an EXTREMELY detailed artistic/painting style prompt with MAXIMUM precision.
+
+Analyze EVERY visible element:
+
+MEDIUM ANALYSIS:
+- Exact medium (oil on linen, watercolor on cold press, graphite on bristol, digital)
+- Canvas/paper texture visibility
+- Paint application (alla prima, layered glazes, impasto, washes)
+- Tool marks (brush strokes, palette knife, sponge, finger)
+
+TECHNIQUE SPECIFICS:
+- Brushwork character (loose gestural, tight controlled, broken color)
+- Edge handling (lost and found edges, hard edges, soft blending)
+- Underpainting evidence
+- Finishing techniques (varnish, fixative effects)
+
+SUBJECT RENDERING:
+- Primary subject with all details
+- Secondary subjects and their treatment
+- Background handling (detailed, suggested, abstract)
+- Focus hierarchy
+
+COMPOSITIONAL ANALYSIS:
+- Overall structure (pyramid, diagonal, s-curve, grid)
+- Focal point and visual hierarchy
+- Balance (symmetrical, asymmetrical)
+- Rhythm and repetition
+- Framing elements
+
+COLOR THEORY APPLICATION:
+- Dominant hue and supporting colors
+- Color temperature shifts
+- Value structure (light pattern, shadow shapes)
+- Chroma variation
+- Color mixing evidence (optical mixing, physical mixing)
+
+LIGHT AND ATMOSPHERE:
+- Primary light source (natural, artificial, multiple)
+- Light color temperature
+- Shadow color and transparency
+- Atmospheric perspective
+- Reflected light
+
+STYLE AND INFLUENCE:
+- Art historical period
+- Specific movement characteristics
+- Individual artist influence
+- Contemporary vs. traditional approach
+
+Write as a comprehensive flowing narrative. End with "masterwork [medium] painting, exceptional technique, gallery quality, artistic excellence"."""
+
+
+# =============================================================================
+# USER PROMPTS - STANDARD TIER
+# =============================================================================
+
+[user.artistic.standard.quick]
+prompt = """Describe this painting/artwork in 30-60 words:
+- Art medium
+- Subject
+- Color palette
+- Mood
+- Style"""
+
+[user.artistic.standard.standard]
+prompt = """Describe this painting/artwork covering:
+- Medium (oil, watercolor, digital, sketch)
+- Brushwork/technique
+- Subject
+- Color palette
+- Lighting and mood
+- Style influence
+
+Write flowing sentences."""
+
+[user.artistic.standard.detailed]
+prompt = """Describe this painting/artwork in detail:
+- Medium and technique (brushwork, texture)
+- Subject description
+- Composition and layout
+- Color palette and harmony
+- Lighting direction and mood
+- Style influence or art movement
+- Overall atmosphere
+
+Write comprehensively."""
+
+[user.artistic.standard.extreme]
+prompt = """Describe every detail of this painting/artwork:
+Medium and surface, technique (brushwork, application method), subject rendering, compositional structure, color palette and values, lighting and shadow treatment, style influence, atmosphere and mood.
+
+Write the most detailed description possible."""
+
+
+# =============================================================================
+# USER PROMPTS - BASIC TIER
+# =============================================================================
+
+[user.artistic.basic.quick]
+prompt = """Write a brief 30-50 word description of this painting/artwork.
+
+Example: "Oil painting of a woman in a garden, impressionist style with loose brushwork, warm summer palette of greens and yellows, soft afternoon light, peaceful atmosphere."
+
+Describe this image:"""
+
+[user.artistic.basic.standard]
+prompt = """Write a description of this painting/artwork.
+
+Include: art medium, technique/brushwork, subject, color palette, lighting, mood, style influence.
+
+Example: "Digital painting in semi-realistic style, portrait of a young man, smooth blending with visible brush texture in hair, cool blue and purple palette, dramatic side lighting creating strong shadows, moody atmospheric feel, contemporary fantasy art influence."
+
+Describe this image:"""
+
+[user.artistic.basic.detailed]
+prompt = """Write a detailed description of this painting/artwork.
+
+Cover: medium (oil, watercolor, digital, etc.), technique (brushwork, texture), subject with details, composition, color palette and harmony, lighting direction and quality, mood and atmosphere, style influence.
+
+Example: "Watercolor painting on textured paper, landscape of mountain lake at sunset, loose wet-on-wet technique with controlled details in foreground rocks, warm orange and cool purple color harmony, golden hour lighting with long shadows, serene contemplative mood, plein air impressionist influence."
+
+Describe this image in similar detail:"""
+
+[user.artistic.basic.extreme]
+prompt = """Write the most detailed description possible of this painting/artwork.
+
+Describe: exact medium and surface, technique (brushwork style, application method, texture), complete subject description, compositional structure, color palette (dominant colors, harmony type, values), lighting (source, direction, quality, shadow treatment), mood and atmosphere, style influence or art movement.
+
+Start directly - write one flowing paragraph:"""

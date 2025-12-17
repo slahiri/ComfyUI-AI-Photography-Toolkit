@@ -1,0 +1,254 @@
+# =============================================================================
+# Anime/Manga/Illustrated Style Prompts
+# =============================================================================
+# Specialized prompts for anime, manga, cartoon, and illustrated content
+
+
+# =============================================================================
+# SYSTEM PROMPTS
+# =============================================================================
+
+[system.illustrated.advanced]
+base = """You are an expert visual analyst generating prompts for AI image generation of illustrated/animated content.
+
+For ANIME/MANGA/CARTOON/HENTAI images, use this approach:
+- Describe the ART STYLE first (anime, manga, cartoon, cel-shaded, etc.)
+- Use anime-specific terminology (ahoge, twintails, heterochromia, etc.)
+- Describe character design elements (eye size, face shape, proportions)
+- Include color palette and shading style (flat colors, gradient shading, etc.)
+- Note any specific anime tropes or visual elements
+- For hentai: include detailed body proportions and exposure levels
+
+Structure: Art style → Character design → Hair → Face/expression → Outfit → Pose → Background → Lighting/shading style
+
+Output ONLY the prompt text - no explanations, no formatting, no markdown."""
+
+[system.illustrated.standard]
+base = """You are an image analysis expert creating prompts for anime/manga/cartoon AI image generation.
+
+Follow this structure:
+1. Art style (anime, manga, cartoon, cel-shaded, etc.)
+2. Character design (eye style, face shape, body proportions)
+3. Hair (anime-style description: color, style, accessories)
+4. Expression and pose
+5. Outfit/clothing with colors
+6. Background and setting
+7. Shading style (flat, gradient, soft)
+
+Write flowing sentences, not tags. Output only the description."""
+
+[system.illustrated.basic]
+base = """You are an image captioning assistant for anime/manga/cartoon images.
+
+Write a description covering:
+- Art style (anime, manga, cartoon)
+- Character appearance (hair color, eye color, style)
+- Clothing and outfit
+- Pose and expression
+- Background
+- Color palette
+
+Output ONLY the description. Start directly - no "This is" or "The image shows"."""
+
+
+# =============================================================================
+# USER PROMPTS - ADVANCED TIER
+# =============================================================================
+
+[user.illustrated.advanced.quick]
+prompt = """Generate a brief anime/manga-style prompt (30-60 words) covering:
+- Art style (anime, manga, cartoon, etc.)
+- Character basics (hair color, eye color, key features)
+- Outfit (brief)
+- Pose
+- Background type
+
+Write as flowing sentences."""
+
+[user.illustrated.advanced.standard]
+prompt = """Generate an anime/manga-style prompt covering:
+ART STYLE: Specific style (modern anime, 90s anime, manga, chibi, etc.)
+CHARACTER DESIGN: Eye size/style, face shape, body proportions
+HAIR: Color (can be unnatural), style (twintails, ahoge, etc.), length
+FACE: Eye color, expression, any markings
+OUTFIT: Each item with colors (school uniform, fantasy armor, etc.)
+POSE: Body position, hand gestures
+BACKGROUND: Setting type, level of detail
+SHADING: Flat colors, soft shading, cel-shading, etc.
+
+Write as flowing natural sentences. End with "clean lines, high quality illustration"."""
+
+[user.illustrated.advanced.detailed]
+prompt = """Generate a COMPREHENSIVE anime/manga-style prompt:
+
+ART STYLE:
+- Specific anime style (modern, 90s, chibi, realistic anime, etc.)
+- Line art quality (thick outlines, thin lines, no outlines)
+- Coloring style (flat, gradient, painterly)
+
+CHARACTER DESIGN:
+- Eye style (large sparkly, narrow, heterochromia)
+- Face shape and proportions
+- Body type and proportions
+- Skin tone
+
+HAIR:
+- Color (natural or fantasy colors like pink, blue, silver)
+- Style (specific anime styles: hime cut, twin tails, side ponytail, ahoge)
+- Accessories (ribbons, clips, headbands)
+
+FACE & EXPRESSION:
+- Eye color and details (highlights, pupil shape)
+- Expression (anime expressions or describe emotion)
+- Blush marks, sweat drops, or other anime visual elements
+
+OUTFIT:
+- Type (school uniform, fantasy, casual, etc.)
+- Each item with colors and details
+- Accessories
+
+POSE & COMPOSITION:
+- Body pose and gesture
+- Hand position
+- Camera angle
+
+BACKGROUND:
+- Setting type
+- Level of detail (simple, detailed, abstract)
+- Color palette
+
+Write as flowing natural sentences. End with "clean lines, detailed illustration, high quality anime art"."""
+
+[user.illustrated.advanced.extreme]
+prompt = """Generate an EXTREMELY detailed anime/manga-style prompt with MAXIMUM precision.
+
+Analyze EVERY visible element:
+
+ART STYLE & TECHNIQUE:
+- Exact anime substyle (modern seasonal anime, 80s/90s retro, light novel illustration, visual novel, manga panel)
+- Line art: thickness, consistency, color
+- Shading technique: cel-shading, soft gradient, painterly, flat
+- Color saturation and palette
+
+CHARACTER DESIGN SPECIFICATIONS:
+- Eye style: size relative to face, shape (round, almond, narrow), highlights pattern, pupil design
+- Face proportions: chin shape, nose style, mouth size
+- Body proportions: head-to-body ratio, limb length, hand size
+- Skin rendering: tone, blush placement, shading
+
+HAIR (extremely detailed):
+- Primary color and any gradients/highlights
+- Exact style with anime terminology (hime cut, twin tails, side tail, ahoge, antenna hair)
+- Length and volume
+- Movement/flow direction
+- Any accessories (ribbons, clips, flowers, ornaments)
+
+FACIAL FEATURES:
+- Eye color with specific shade
+- Eye details: catchlights, lower highlights, gradient in iris
+- Eyebrow shape and color
+- Expression with anime-specific elements (blush lines, sweat drops, sparkles)
+- Any facial markings, moles, or unique features
+
+OUTFIT (comprehensive):
+- Outfit category (school uniform, fantasy, idol, maid, etc.)
+- Each garment: type, color, material appearance, fit
+- Patterns or designs on clothing
+- All accessories: jewelry, bags, weapons, etc.
+- Footwear
+
+POSE & BODY POSITION:
+- Overall pose description
+- Head tilt and direction
+- Arm positions and hand gestures
+- Leg position if visible
+- Weight distribution
+
+BACKGROUND & ENVIRONMENT:
+- Setting type and location
+- Background detail level
+- Atmospheric effects (sparkles, petals, light rays)
+- Color scheme relationship to character
+
+Write as a comprehensive flowing narrative. End with "masterpiece, best quality, detailed anime illustration, clean lines, vibrant colors"."""
+
+
+# =============================================================================
+# USER PROMPTS - STANDARD TIER
+# =============================================================================
+
+[user.illustrated.standard.quick]
+prompt = """Describe this anime/manga/cartoon image in 30-60 words:
+- Art style
+- Character appearance (hair, eyes)
+- Outfit
+- Pose
+- Background"""
+
+[user.illustrated.standard.standard]
+prompt = """Describe this anime/manga/cartoon image covering:
+- Art style (anime type, shading style)
+- Character design (eye style, proportions)
+- Hair color and style
+- Expression
+- Outfit with colors
+- Pose
+- Background
+
+Write flowing sentences."""
+
+[user.illustrated.standard.detailed]
+prompt = """Describe this anime/manga/cartoon image in detail:
+- Art style and technique
+- Character design (eyes, face, proportions)
+- Hair (color, style, accessories)
+- Expression and any anime visual elements
+- Complete outfit description
+- Pose and body position
+- Background and setting
+- Color palette and shading
+
+Write comprehensively."""
+
+[user.illustrated.standard.extreme]
+prompt = """Describe every detail of this anime/manga/cartoon image:
+Art style and shading technique, character design (eye style, face shape, proportions), hair color/style/accessories, facial expression with anime elements, complete outfit with all items and colors, pose and hand positions, background setting, color palette, any special effects or visual elements.
+
+Write the most detailed description possible."""
+
+
+# =============================================================================
+# USER PROMPTS - BASIC TIER
+# =============================================================================
+
+[user.illustrated.basic.quick]
+prompt = """Write a brief 30-50 word description of this anime/cartoon image.
+
+Example: "Anime style illustration of a young woman with long pink twin tails, large blue eyes, wearing a school uniform with blue skirt, cheerful smile, simple gradient background, soft cel-shading."
+
+Describe this image:"""
+
+[user.illustrated.basic.standard]
+prompt = """Write a description of this anime/manga/cartoon image.
+
+Include: art style, hair color and style, eye color and size, outfit with colors, pose, expression, background.
+
+Example: "Modern anime style, a girl with shoulder-length silver hair and red eyes, wearing a black gothic lolita dress with white lace trim, sitting pose with hands on lap, gentle smile, indoor setting with window, soft lighting, flat colors with gradient shading."
+
+Describe this image:"""
+
+[user.illustrated.basic.detailed]
+prompt = """Write a detailed description of this anime/manga/cartoon image.
+
+Cover: art style (anime type, shading), character design (eye style, face, proportions), hair (color, style, any accessories), expression, complete outfit (each item with colors), pose and hand positions, background setting, color palette.
+
+Example: "90s anime style with soft cel-shading, a young woman with very long straight black hair with hime cut bangs, large expressive purple eyes with star-shaped highlights, delicate features, wearing a white sailor uniform with blue collar and red ribbon, pleated navy skirt, standing pose with one hand raised in greeting, bright cheerful expression, cherry blossom trees in background, soft pink and blue color palette."
+
+Describe this image in similar detail:"""
+
+[user.illustrated.basic.extreme]
+prompt = """Write the most detailed description possible of this anime/manga/cartoon image.
+
+Describe: exact art style and shading technique, character design (eye size and style, face shape, body proportions), hair (exact color including any gradients, specific anime hairstyle name, length, accessories), eye color and details (highlights, pupil shape), expression with any anime elements (blush, sparkles), complete outfit (every garment with colors and details), pose (body position, arm positions, hand gestures), background (setting, detail level, atmosphere), overall color palette.
+
+Start directly with the style - write one flowing paragraph:"""

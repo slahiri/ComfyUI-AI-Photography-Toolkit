@@ -72,3 +72,6 @@ test_*.py
 compare_results.py
 download_test_images.py
 nul
+
+# Debug output
+debug_results/

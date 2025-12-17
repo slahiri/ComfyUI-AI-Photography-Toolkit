@@ -1,17 +1,58 @@
 # ComfyUI-AI-Photography-Toolkit Dependencies
+# Version 4.3.0
+
+# =============================================================================
+# LLM API SDKs
+# =============================================================================
 
 # Anthropic Claude API
 anthropic>=0.39.0
 
-# OpenAI-compatible API (for Grok/xAI)
+# OpenAI-compatible API (for OpenAI, Grok, LM Studio, Ollama)
 openai>=1.0.0
 
-# HTTP requests (for Ollama local API)
+# HTTP requests (for Ollama direct API)
 requests>=2.28.0
+
+# =============================================================================
+# CV Detection (Fast Human Detection)
+# =============================================================================
+
+# YOLO for person detection (~30ms inference)
+ultralytics>=8.0.0
+
+# MediaPipe for face detection (optional - YOLO is primary)
+mediapipe>=0.10.0
+
+# OpenCV for image processing
+opencv-python>=4.8.0
+
+# Scikit-learn for color clustering (K-means)
+scikit-learn>=1.3.0
+
+# =============================================================================
+# Core Dependencies
+# =============================================================================
 
 # YAML config parsing
 pyyaml>=6.0
 
-# Image processing (usually included with ComfyUI, but listed for completeness)
+# Image processing (usually included with ComfyUI)
 pillow>=10.0.0
 numpy>=1.24.0
+
+# Extended typing support
+typing-extensions>=4.0.0
+
+# =============================================================================
+# Local Models (Optional - for SID_LLM_Local)
+# =============================================================================
+
+# HuggingFace Transformers
+transformers>=4.57.0
+
+# HuggingFace Accelerate (for model loading)
+accelerate>=0.33.0
+
+# System utilities (for memory detection)
+psutil>=5.9.0

@@ -1,0 +1,639 @@
+# =============================================================================
+# Portrait Prompts - Human Subject Descriptions
+# =============================================================================
+# System and user prompts for describing human subjects (portraits, people).
+# Organized by tier (advanced/standard/basic) and mode (quick/standard/detailed/extreme).
+#
+# Tier Mapping:
+# - advanced: Claude, GPT-4, Gemini (full capability, complex prompts)
+# - standard: Together, Fireworks, Groq (moderate complexity)
+# - basic: Ollama, LM Studio, Local (simple direct prompts)
+
+
+# =============================================================================
+# SYSTEM PROMPTS - Set the model's role and behavior
+# =============================================================================
+
+[system.advanced]
+# For Claude, GPT-4, Gemini - full capability
+base = """You are an expert visual analyst generating prompts for Z-Image Turbo text-to-image AI.
+
+THE GOLDEN RULE: Every word must describe something VISIBLE. No abstract concepts.
+
+CRITICAL REQUIREMENTS (MUST INCLUDE):
+1. FRAMING: ALWAYS specify shot type (portrait framing, close-up, medium shot, full body) - this is MANDATORY
+2. POSE: ALWAYS specify body position (three-quarter view, facing camera, side profile) - this is MANDATORY
+3. EXPRESSION: ALWAYS describe facial expression (intense gaze, serene expression, confident look)
+4. ACCESSORIES: Carefully identify and describe any held objects or accessories accurately
+5. GARMENT LENGTH: When describing clothing, specify where it ends (waistcoat ending at waist, coat extending to thighs)
+
+CAMERA-FIRST APPROACH - Write like camera instructions, not creative writing:
+- COMPOSITION: Shot type (close-up, medium shot, full-body), where frame cuts the body
+- ANGLE: Geometric terms (front view, 45° angle, profile, eye level, low angle, high angle)
+- SUBJECT: Concrete visible details (skin tone, eye color, hair texture)
+- LIGHTING: Use specific patterns - NEVER mix conflicting terms (don't combine "golden hour" with "overcast sky")
+- TECHNICAL: Lens focal length, depth of field, bokeh quality
+
+VISUAL VOCABULARY:
+- Skin: warm ivory, cool beige, golden tan, deep brown, olive, porcelain
+- Eyes: almond, round, hooded, deep-set; steel grey, warm brown, amber, hazel
+- Hair: silky straight, wavy, tight curls, coily; bob, pixie, long layers, braided
+- Lighting: Rembrandt (triangle on cheek), butterfly (under-nose shadow), split (half-face), loop (soft shadow), rim (edge glow)
+
+AVOID:
+- Abstract words like "beautiful", "mysterious", "interesting", "nice"
+- Conflicting descriptors (don't mix warm and cool lighting terms)
+- Vague accessory descriptions (identify objects precisely - sword not "trophy")
+
+FORMAT: Natural flowing sentences, NOT comma-separated tags. Keep clothing to 3-5 words per item.
+END WITH: "no text, no watermark, no logos"
+
+Output ONLY the prompt - no explanations, no markdown."""
+
+[system.standard]
+# For mid-tier models - slightly simplified
+base = """You are an image analysis expert creating prompts for Z-Image AI image generation.
+
+GOLDEN RULE: Every word describes something VISIBLE - no abstract adjectives.
+
+MANDATORY REQUIREMENTS:
+1. FRAMING: MUST specify (portrait framing, close-up, medium shot, full body)
+2. POSE: MUST specify (three-quarter view, facing camera, side profile)
+3. EXPRESSION: MUST describe (intense gaze, serene, confident)
+
+CAMERA-FIRST STRUCTURE:
+1. SHOT: Type (close-up/medium/full-body), camera angle (eye level/high/low)
+2. SUBJECT: Skin tone (warm ivory, olive, golden tan), face angle (front/45°/profile)
+3. FEATURES: Eye shape and color, hair style and texture
+4. CLOTHING: 3-5 words per item (type, color, material) + specify length (ending at waist, etc.)
+5. ACCESSORIES: Identify held objects accurately (sword, not "object")
+6. LIGHTING: Specific keywords - pick ONE mood (don't mix golden hour with overcast)
+7. BACKGROUND: Simple description
+8. END: "no text, no watermark"
+
+AVOID: "beautiful", "mysterious", conflicting lighting terms.
+
+Write flowing sentences, not tags. Output only the description."""
+
+[system.basic]
+# For local models like LLaVA, Moondream, Ollama, Qwen - direct single-shot prompts
+base = """You are an image description assistant creating prompts for AI image generation.
+
+OUTPUT FORMAT - CRITICAL:
+- Write 4-6 SEPARATE SENTENCES with periods
+- Each sentence describes ONE aspect only
+- NEVER write comma-separated keyword lists
+- Follow this order: Subject → Hair/Makeup → Clothing → Pose → Lighting/Background
+
+ACCURACY RULES:
+- Describe ONLY what is VISIBLE - zero hallucination
+- Do NOT invent people, objects, or details not present
+- Be PRECISE about hair texture: straight vs wavy vs curly (these are different!)
+- Include makeup details if visible (eye makeup, lip color)
+
+SENTENCE STRUCTURE:
+1. Subject: "A [shot type] of a [age] [gender] with [skin tone] skin and [expression]."
+2. Hair/Makeup: "[Texture] [color] hair [style]. [Makeup description if visible]."
+3. Clothing: "Wearing [garment details with color and coverage]."
+4. Pose: "[Position] in [view] view, [arm/body details]."
+5. Setting: "[Lighting type], [background]. No text, no watermark."
+
+HAIR TEXTURE - BE ACCURATE:
+- Straight: silky straight, pin-straight
+- Wavy: wavy, loose waves, soft waves
+- Curly: curly, tight curls, ringlets
+- Include bangs if present: "with bangs", "with side-swept fringe"
+
+MAKEUP (describe if visible):
+- Eyes: natural, smoky eyes, winged liner, bold shadow
+- Lips: nude, pink, red lipstick, berry
+
+LIGHTING (pick ONE, don't mix warm and cool):
+- Soft studio lighting, dramatic side lighting
+- Natural window light, golden hour warmth
+- High-key bright, low-key moody
+
+End every description with: "no text, no watermark"
+
+Start directly with "A..." - write complete sentences."""
+
+
+# =============================================================================
+# USER PROMPTS - ADVANCED TIER (Claude, GPT-4, Gemini)
+# =============================================================================
+
+[user.advanced.quick]
+prompt = """Generate a brief Z-Image prompt (30-60 words).
+
+MANDATORY (must include):
+1. FRAMING: "portrait framing" / "close-up" / "medium shot" / "full body"
+2. POSE: "facing camera" / "three-quarter view" / "side profile"
+3. EXPRESSION: brief description (smiling, serious, intense gaze)
+
+ALSO INCLUDE:
+- Skin tone (warm ivory, olive, golden tan, deep brown)
+- Hair (style first, then color)
+- Clothing (one line: type, color, material)
+- Lighting keyword (soft diffused/Rembrandt/rim light/golden hour) - pick ONE
+
+End with "no text, no watermark". Write as flowing sentences."""
+
+[user.advanced.standard]
+prompt = """Generate a Z-Image prompt (80-150 words). ONLY describe VISIBLE features.
+
+MANDATORY (include ALL of these):
+1. FRAMING: "portrait framing" or "close-up" or "medium shot" or "full body" - REQUIRED
+2. POSE: "facing camera" or "three-quarter view" or "side profile" - REQUIRED
+3. EXPRESSION: "intense gaze" or "confident look" or "serene expression" - REQUIRED
+
+FRAMING DETAILS: Shot type (close-up/medium/full), where frame cuts body (at chest/waist/thighs)
+ANGLE: Geometric (eye level/high/low angle), face angle (front/45°/profile)
+SKIN: Specific tone (warm ivory, cool beige, golden tan, olive, deep brown, porcelain)
+EYES: Shape (almond, round, hooded) + color (steel grey, warm brown, amber, hazel)
+
+HAIR (gender-specific):
+- FEMALE: bob, ponytail, loose waves, braided, updo, pixie + color + texture
+- MALE: fade, undercut, buzz cut, slicked back, textured crop, man bun + color
+
+FACIAL HAIR (if male): clean-shaven, light stubble, heavy stubble, short beard, full beard, goatee
+
+BODY TYPE (if visible):
+- FEMALE: slim, athletic, curvy
+- MALE: muscular/athletic, lean, stocky, broad-shouldered, defined abs/chest (if shirtless)
+
+CLOTHING - specify length:
+- Each item 3-5 words (type, color, material)
+- MUST specify where garment ends: "waistcoat ending at waist", "coat extending to thighs"
+
+ACCESSORIES: Identify held objects ACCURATELY (sword, phone, book - be precise)
+
+TATTOOS: Describe visible tattoos (location, style, size)
+
+LIGHTING - pick ONE mood only (don't mix):
+- Warm: golden hour, sunset glow
+- Cool: overcast daylight, blue hour
+- Dramatic: Rembrandt (triangle on cheek), split lighting
+- Soft: diffused daylight, window light
+
+BACKGROUND: Simple description
+END: "no text, no watermark, no logos"
+
+Write as flowing narrative sentences, NOT comma-separated tags."""
+
+[user.advanced.detailed]
+prompt = """Generate a COMPREHENSIVE Z-Image prompt (150-250 words). ONLY VISIBLE features.
+
+MANDATORY FIRST (include ALL):
+1. FRAMING: "portrait framing" / "close-up" / "medium shot" / "full body" - REQUIRED
+2. POSE: "facing camera" / "three-quarter view" / "side profile" - REQUIRED
+3. EXPRESSION: detailed description (intense piercing gaze, warm confident smile) - REQUIRED
+
+FRAMING DETAILS:
+- Shot type (ECU/CU/MCU/MS/MFS/FS/LS)
+- Body parts visible vs cropped
+- Frame cutoff point (e.g., "cropped at mid-thigh")
+- Rule of thirds positioning
+
+SUBJECT - use specific visual vocabulary:
+- SKIN TONE: warm ivory, cool beige, golden tan, olive, deep brown, porcelain, sun-kissed, freckled
+- FACE ANGLE: front view, 45° angle, three-quarter, profile left/right
+- EYE SHAPE: almond, round, hooded, deep-set, upturned, downturned
+- EYE COLOR: steel grey, warm brown, pale blue, amber, hazel, green
+
+HAIR (GENDER-SPECIFIC):
+- FEMALE styles: bob, pixie, long layers, braided, ponytail, loose waves, updo, tight curls
+- MALE styles: buzz cut, fade, undercut, slicked back, textured crop, pompadour, side part, man bun
+- TEXTURE: silky straight, wavy, coily, frizzy, windswept, sleek
+
+FACIAL HAIR (male subjects): clean-shaven, light stubble, heavy stubble, designer stubble, short trimmed beard, full thick beard, goatee, mustache
+
+FACE FEATURES (male subjects): square jaw, chiseled features, rugged/weathered, boyish face, strong brow, cleft chin
+
+BODY TYPE:
+- MALE: muscular/athletic, lean/toned, stocky/solid, broad-shouldered, barrel-chested, bodybuilder build
+- FEMALE: slim, athletic, curvy, petite
+
+IF SHIRTLESS/BARE-CHESTED (describe in detail):
+- Muscle definition: defined pecs, visible abs (4-pack/6-pack/8-pack), V-taper, arm muscles
+- Chest hair: none, light dusting, moderate, thick
+- Body features: veins visible, tan lines, scars
+- TATTOOS: location (arm sleeve, chest piece, back), style (tribal, realistic, script), size
+
+BODY POSITIONING: Describe each limb independently - shoulders, arms, hands, legs
+
+CLOTHING (if worn):
+- Each item 3-5 words (type, color, material, fit)
+- MUST specify garment length: "short waistcoat ending at waist", "long coat extending to thighs"
+
+ACCESSORIES: Identify held objects PRECISELY (ornate golden sword, leather satchel - not "object" or "item")
+
+LIGHTING PATTERN - pick ONE mood (don't mix warm/cool):
+- WARM: golden hour warmth, sunset glow, candlelight
+- COOL: overcast daylight, blue hour, moonlight
+- DRAMATIC: Rembrandt (triangle shadow on cheek), split (half-face lit)
+- SOFT: diffused daylight, window light, high key
+- DESCRIBE: Where highlights fall, where shadows form
+
+BACKGROUND: Type, color palette, blur level
+
+END: "correct human anatomy, no text, no watermark, no logos"
+
+Write as flowing narrative, NOT tags."""
+
+[user.advanced.extreme]
+prompt = """Generate an EXTREMELY detailed Z-Image prompt (200-300 words). MAXIMUM precision, ONLY VISIBLE features.
+
+GOLDEN RULE: Every word must describe something you can SEE. No abstract adjectives.
+
+MANDATORY FIRST (MUST include ALL of these):
+1. FRAMING: "portrait framing" / "close-up" / "medium shot" / "full body" - REQUIRED at start
+2. POSE: "facing camera" / "three-quarter view" / "side profile" - REQUIRED
+3. EXPRESSION: detailed description (intense piercing gaze, warm confident smile, serene look) - REQUIRED
+
+FRAMING & VISIBILITY DETAILS:
+- Shot type: ECU/BCU/CU/MCU/MS/MFS/FS/LS
+- Body parts: which FULLY visible, PARTIALLY cropped, NOT visible
+- EXACT frame cutoff (e.g., "frame cuts at mid-thigh")
+- Rule of thirds: face/eyes placement relative to intersection points
+
+VISUAL VOCABULARY FOR WOMEN:
+- SKIN: warm ivory, cool beige, golden tan, deep brown, olive, porcelain, dewy, matte
+- EYES: almond/round/hooded/deep-set + steel grey/warm brown/pale blue/amber/hazel
+- HAIR STYLE: bob, pixie cut, long layers, braided, ponytail, loose waves, updo, tight curls
+- HAIR TEXTURE: silky straight, wavy, coily, windswept, sleek
+- HAIR COLOR: honey blonde, chestnut brown, jet black, auburn, platinum, copper red
+- BODY TYPE: slim, athletic, curvy, petite, hourglass
+- EXPRESSION: warm smile, confident gaze, soft expression, playful look
+
+VISUAL VOCABULARY FOR MEN:
+- SKIN: warm ivory, golden tan, deep brown, olive, sun-weathered, bronzed
+- EYES: almond/round/hooded/deep-set + steel grey/warm brown/pale blue/amber/dark brown
+- HAIR STYLE: buzz cut, fade, undercut, slicked back, textured crop, pompadour, side part, man bun, bald/shaved
+- HAIR TEXTURE: short and neat, wavy, curly, windswept
+- HAIR COLOR: dark brown, jet black, salt-and-pepper, sandy blonde
+- FACIAL HAIR: clean-shaven, light stubble, heavy stubble, designer stubble, short trimmed beard, full thick beard, goatee, mustache
+- FACE FEATURES: square jaw, chiseled features, rugged/weathered, boyish face, strong brow, cleft chin, prominent cheekbones
+- BODY TYPE: muscular/athletic, lean/toned, stocky/solid, broad-shouldered, barrel-chested, V-taper
+- EXPRESSION: confident smirk, serious/intense, warm smile, stoic/neutral, brooding/pensive, determined look
+
+IF SHIRTLESS/BARE-CHESTED (CRITICAL - describe in detail):
+- MUSCLES: defined pecs, visible abs (4-pack/6-pack/8-pack), V-taper torso, biceps, triceps, deltoids, obliques
+- MUSCLE DEFINITION: ripped/shredded, toned, soft definition, bulky
+- CHEST HAIR: none (smooth), light dusting, moderate coverage, thick/dense
+- BODY HAIR: arm hair, leg hair, treasure trail
+- VEINS: visible veins on arms, forearms, hands
+- TATTOOS: location (arm sleeve, half sleeve, chest piece, shoulder, back, ribs), style (tribal, realistic, geometric, script, traditional), size
+
+UNIVERSAL FEATURES:
+- FACE ANGLE: front view (0°), 45° angle, three-quarter, profile left, profile right
+- BODY POSITIONING: Describe EACH limb independently
+
+CLOTHING (if worn):
+- Each item with type, color, material, fit
+- MUST specify garment length: "short waistcoat ending at natural waist", "long coat extending to mid-thigh"
+
+ACCESSORIES - CRITICAL (identify PRECISELY):
+- Describe held objects accurately: "ornate golden sword with blue enamel hilt" not "golden object"
+- Don't guess - describe what you actually see (sword not trophy, phone not device)
+- Include position: "held at chest level", "resting on shoulder"
+
+LIGHTING ANALYSIS - pick ONE mood (NEVER mix warm and cool):
+- WARM OPTIONS: golden hour, sunset warmth, candlelight, tungsten
+- COOL OPTIONS: overcast daylight, blue hour, moonlight, fluorescent
+- DRAMATIC: Rembrandt (triangle on cheek), split (half-face lit), low key
+- SOFT: diffused daylight, window light, high key
+- Direction: key light from upper left/right, fill level
+- Rim/edge: present or absent, intensity
+- Shadow mapping: WHERE highlights fall, WHERE shadows form
+
+BACKGROUND: Type, color temperature, blur/bokeh quality
+
+END: "correct human anatomy, natural hands and fingers, no text, no watermark, no logos, sharp focus"
+
+Write as comprehensive flowing narrative, NOT comma tags."""
+
+
+# =============================================================================
+# USER PROMPTS - STANDARD TIER (Together, Fireworks, Groq)
+# =============================================================================
+
+[user.standard.quick]
+prompt = """Describe this image in 30-60 words for Z-Image:
+MANDATORY: Include framing (portrait/close-up/medium shot), pose (facing camera/three-quarter view), expression
+- Shot type and angle
+- Subject appearance
+- Clothing (brief)
+- Lighting style (pick ONE - don't mix warm and cool)
+End with "no text, no watermark"."""
+
+[user.standard.standard]
+prompt = """Describe this image for Z-Image covering:
+
+MANDATORY FIRST:
+1. Framing: "portrait framing" / "close-up" / "medium shot" / "full body" - REQUIRED
+2. Pose: "facing camera" / "three-quarter view" / "side profile" - REQUIRED
+3. Expression: describe facial expression - REQUIRED
+
+THEN INCLUDE:
+- Shot type, which body parts visible vs cropped out
+- Camera angle, depth of field
+- Subject appearance (ethnicity, age, gender)
+- Hair style and color (for men: also facial hair if present)
+- Body type (for men: muscular/lean/stocky; for women: slim/athletic/curvy)
+- Clothing with LENGTH specified (ending at waist, extending to thighs) OR if shirtless: muscles, chest hair, tattoos
+- Accessories: identify held objects accurately (sword, not "object")
+- Lighting style - pick ONE mood (don't mix golden hour with overcast)
+- Background
+
+Write flowing sentences. End with "no text, no watermark"."""
+
+[user.standard.detailed]
+prompt = """Describe this image in detail for Z-Image:
+
+MANDATORY FIRST (include ALL):
+1. Framing: "portrait framing" / "close-up" / "medium shot" / "full body" - REQUIRED
+2. Pose: "facing camera" / "three-quarter view" / "side profile" - REQUIRED
+3. Expression: detailed description - REQUIRED
+
+THEN INCLUDE:
+- Shot type, body parts visible (head, shoulders, chest, waist, legs, feet), where frame cuts body
+- Composition: camera angle, subject distance (fills frame/medium/far), depth of field
+- Subject: ethnicity, skin tone, age, gender, face angle
+
+FOR WOMEN:
+- Hair: style (bob, ponytail, waves, updo), color, texture
+- Body type: slim, athletic, curvy
+- Clothing: all items with colors, materials, AND length (ending at waist, etc.)
+
+FOR MEN:
+- Hair: style (fade, undercut, buzz cut, slicked back), color
+- Facial hair: clean-shaven, stubble, short beard, full beard, goatee
+- Face features: jawline, brow, cheekbones
+- Body type: muscular, athletic, lean, stocky, broad-shouldered
+- IF SHIRTLESS: muscle definition (pecs, abs, arms), chest hair (none/light/thick), visible veins
+- TATTOOS: location, style, size if visible
+
+ACCESSORIES: Identify held objects PRECISELY (ornate sword, leather bag - not "object")
+
+- Body positioning: left/right shoulder, arm positions, leg positions
+- Light and shadow: highlights on face/body, shadows under jawline
+- Lighting style: pick ONE mood (don't mix golden hour with overcast)
+- Background details
+
+Write comprehensively. End with "no text, no watermark, no logos"."""
+
+[user.standard.extreme]
+prompt = """Describe every visible detail for Z-Image:
+
+MANDATORY FIRST (REQUIRED):
+1. FRAMING: "portrait framing" / "close-up" / "medium shot" / "full body"
+2. POSE: "facing camera" / "three-quarter view" / "side profile"
+3. EXPRESSION: detailed facial expression
+
+FRAMING DETAILS: Shot type, which body parts visible top-to-bottom, where frame cuts body, rule of thirds positioning.
+
+FOR WOMEN: hair style (specific: bob, pixie, layers, ponytail, braids, updo) + color + texture, body type (slim/athletic/curvy), clothing with materials AND length specified.
+
+FOR MEN: hair style (buzz cut, fade, undercut, slicked back, textured crop, man bun) + color, facial hair (clean-shaven/light stubble/heavy stubble/short beard/full thick beard/goatee/mustache), face features (square jaw/chiseled/rugged/boyish/strong brow), body type (muscular/athletic/lean/stocky/broad-shouldered).
+
+IF MAN IS SHIRTLESS - DESCRIBE IN DETAIL:
+- Muscle definition: pecs, abs (how many visible), V-taper, arm muscles (biceps, forearms)
+- Chest hair: none/smooth, light dusting, moderate, thick/dense
+- Body hair: arm hair, visible veins
+- Tattoos: exact location (arm sleeve, half sleeve, chest piece, shoulder, back), style (tribal, realistic, script), size
+
+CLOTHING LENGTH: Always specify (waistcoat ending at waist, coat extending to thighs)
+
+ACCESSORIES - CRITICAL: Identify held objects PRECISELY (ornate golden sword, vintage camera - NOT "object" or "item")
+
+Body positioning (each limb independently), light and shadow analysis.
+
+LIGHTING: Pick ONE mood only (don't mix golden hour with overcast sky).
+
+Write the most detailed description possible. End with "correct human anatomy, no text, no watermark"."""
+
+
+# =============================================================================
+# USER PROMPTS - BASIC TIER (Ollama, LM Studio, Local)
+# =============================================================================
+
+[user.basic.quick]
+prompt = """Write 3-4 SHORT SENTENCES describing THIS IMAGE for AI generation.
+
+CRITICAL: Write SEPARATE SENTENCES, not comma-separated keywords. Each sentence = ONE aspect.
+
+SENTENCE 1 - Subject: "A [age] [gender] with [skin tone] and [expression]."
+SENTENCE 2 - Hair/Face: "[Hair texture: straight/wavy/curly] [color] hair [style]. [Makeup if visible]."
+SENTENCE 3 - Clothing: "Wearing [garment] in [color]."
+SENTENCE 4 - Setting: "[Lighting type], [background]. No text, no watermark."
+
+HAIR TEXTURE (pick one): silky straight, wavy, loose waves, tight curls, curly with bangs
+MAKEUP (if visible): natural makeup, bold smoky eyes, red lipstick, nude lips
+
+Example output (4 sentences):
+"A young woman in her twenties with olive skin and a confident expression. Long wavy dark brown hair with side-swept bangs, bold smoky eye makeup and red lipstick. Wearing a fitted black crop top with thin straps. Soft studio lighting against a dark backdrop. No text, no watermark."
+
+Now describe THIS image in 3-4 sentences:"""
+
+[user.basic.standard]
+prompt = """Write 4-5 SEPARATE SENTENCES describing THIS IMAGE for Z-Image AI generation.
+
+CRITICAL RULES:
+- Write SEPARATE SENTENCES with periods, NOT comma-separated keywords
+- Each sentence describes ONE aspect only
+- Describe ONLY what is VISIBLE - do NOT invent details
+
+STRUCTURE (follow this order):
+
+SENTENCE 1 - Subject & Expression:
+"A [age: young/mid-twenties/thirties] [gender] with [skin tone] skin, [expression: confident/serene/intense/sultry]."
+
+SENTENCE 2 - Hair & Makeup:
+"[Texture: straight/wavy/curly/loose waves] [color] hair [style: with bangs/side-swept/in ponytail/loose]. [Makeup: natural/bold smoky eyes/dramatic eyeliner/red lipstick/nude lips]."
+
+SENTENCE 3 - Clothing (be specific):
+"Wearing a [fit: fitted/loose/cropped] [color] [garment type] with [details: thin straps/V-neck/high collar], [where it ends: exposing midriff/ending at waist/extending to thighs]."
+
+SENTENCE 4 - Pose & Position:
+"[Pose: Standing/Seated] in [view: frontal/three-quarter/profile] view, [arm position], [body angle]."
+
+SENTENCE 5 - Lighting & Background:
+"[Lighting: Soft studio/Dramatic side/Natural window/Golden hour] lighting, [background: dark backdrop/bright interior/blurred cityscape]. No text, no watermark."
+
+HAIR VOCABULARY:
+- Texture: silky straight, wavy, loose waves, tight curls, coily
+- With bangs: "wavy hair with bangs", "straight hair with side-swept fringe"
+- Style: loose over shoulders, pulled back, in high ponytail, in messy bun
+
+MAKEUP VOCABULARY:
+- Eyes: natural, bold smoky eyes, dramatic winged eyeliner, soft eyeshadow
+- Lips: nude lips, red lipstick, pink gloss, berry-colored lips
+
+Example output (5 sentences):
+"A young woman in her mid-twenties with olive skin and a confident, slightly sultry expression. Long wavy dark brown hair with soft bangs framing her face, dramatic smoky eye makeup with bold red lipstick. Wearing a fitted black cropped top with thin straps exposing her toned midriff, paired with high-waisted light gray pants. Standing in frontal view facing the camera with arms relaxed at her sides. Soft diffused studio lighting against a minimalist white interior with tall windows. No text, no watermark."
+
+Now describe THIS image in 4-5 separate sentences:"""
+
+[user.basic.detailed]
+prompt = """Write 5-6 SEPARATE SENTENCES describing THIS IMAGE in detail for Z-Image AI generation.
+
+CRITICAL RULES:
+- Write SEPARATE SENTENCES with periods - NOT comma-separated keywords
+- Each sentence = ONE aspect (subject, hair, clothing, pose, lighting, background)
+- Describe ONLY what you SEE - do NOT invent or hallucinate details
+- If something is not clearly visible, do NOT guess
+
+SENTENCE STRUCTURE (follow this exact order):
+
+SENTENCE 1 - Subject Overview:
+"A [shot type: close-up/medium shot/full body] of a [age: young/mid-twenties/thirties/forties] [gender] with [skin tone: fair/olive/tan/brown/dark] skin and [face shape: oval/round/angular] features."
+
+SENTENCE 2 - Expression & Eyes:
+"[Expression: confident/serene/intense/playful/sultry] expression with [eye description: almond-shaped dark eyes/round blue eyes/hooded green eyes], [gaze: direct gaze at camera/looking away/downcast]."
+
+SENTENCE 3 - Hair & Makeup:
+"[Length: Short/Medium/Long] [texture: straight/wavy/curly/coily] [color] hair [style: with bangs/side-parted/swept back/in ponytail/loose over shoulders]. [Makeup details: Natural makeup/Bold smoky eye makeup with dramatic eyeliner/Soft neutral eyeshadow with nude lips/Heavy makeup with red lipstick]."
+
+SENTENCE 4 - Clothing Details:
+"Wearing a [fit] [color] [garment] with [specific details: thin straps/crossed back straps/deep V-neck/high collar], [coverage: exposing shoulders/revealing midriff/covering to waist], paired with [bottom garment if visible]."
+
+SENTENCE 5 - Pose & Body:
+"[Body type: slim/athletic/curvy/toned] build, [pose: standing/seated/reclining] in [view: frontal/three-quarter/profile/back] view, [arm details: arms at sides/one hand raised/hands on hips], [body angle: torso twisted slightly/facing directly forward]."
+
+SENTENCE 6 - Lighting & Environment:
+"[Lighting: Soft diffused studio lighting/Dramatic side lighting with strong shadows/Natural window light/High-contrast rim lighting] against [background: dark gradient backdrop/bright white interior/blurred urban scene/minimalist architectural setting]. Realistic skin texture, no text, no watermark."
+
+HAIR TEXTURE VOCABULARY:
+- Straight: silky straight, pin-straight
+- Wavy: wavy, loose waves, beachy waves, soft waves
+- Curly: curly, tight curls, ringlets, coily
+- WITH BANGS: "wavy hair with soft bangs", "straight hair with blunt bangs", "curly hair with side-swept fringe"
+
+MAKEUP VOCABULARY:
+- Natural: "minimal natural makeup", "fresh-faced with light makeup"
+- Dramatic: "bold smoky eye makeup", "dramatic winged eyeliner", "heavy contour"
+- Lips: "nude pink lips", "bold red lipstick", "glossy berry lips", "matte mauve lips"
+
+Example output (6 sentences):
+"A medium shot of a young woman in her mid-twenties with warm olive skin and oval features. Confident, slightly sultry expression with almond-shaped dark brown eyes gazing directly at camera. Long wavy dark brown hair with soft side-swept bangs framing her face, dramatic smoky eye makeup with bold red lipstick. Wearing a stylized black cropped top with thin crossed straps across the back, exposing her toned midriff and shoulders, paired with a flowing light gray skirt with black waistband. Athletic toned build, standing in frontal view facing the camera with arms relaxed at her sides. Soft diffused studio lighting against a bright minimalist white architectural interior with tall windows. Realistic skin texture, no text, no watermark."
+
+Now describe THIS image in 5-6 separate sentences:"""
+
+[user.basic.extreme]
+prompt = """Write 6-7 SEPARATE DETAILED SENTENCES describing THIS IMAGE for Z-Image AI generation.
+
+ABSOLUTE RULES:
+- Write SEPARATE SENTENCES with periods - NEVER comma-separated keywords
+- One sentence per aspect - follow the exact order below
+- Describe ONLY what is VISIBLE - zero hallucination or invention
+- Be PRECISE about hair texture (straight vs wavy vs curly) and makeup
+
+SENTENCE-BY-SENTENCE STRUCTURE:
+
+SENTENCE 1 - Shot & Subject:
+"A [shot: extreme close-up/close-up/medium close-up/medium shot/full body] captures a [age] [gender] with [specific skin tone: porcelain/fair/warm olive/golden tan/medium brown/deep brown] skin."
+
+SENTENCE 2 - Face & Expression:
+"[Face shape: oval/heart-shaped/angular/round] face with [specific expression: confident gaze/serene smile/intense stare/playful smirk/sultry look], [eye details: almond-shaped dark brown eyes/round blue eyes with thick lashes/hooded hazel eyes]."
+
+SENTENCE 3 - Hair (BE PRECISE):
+"[Length: Short/Shoulder-length/Long/Very long] [EXACT texture: silky straight/wavy/loose waves/tight curls/coily/kinky] [color: jet black/dark brown/chestnut/auburn/honey blonde/platinum] hair, [style: with blunt bangs/with side-swept fringe/parted in middle/swept back/cascading over shoulders/in high ponytail/in loose bun]."
+
+SENTENCE 4 - Makeup (if visible):
+"[Makeup level: Minimal natural makeup/Moderate makeup/Heavy glamour makeup] featuring [eye makeup: bare lids/soft neutral shadow/bold smoky eyes/dramatic winged liner/colorful eyeshadow] and [lip color: bare lips/nude pink/coral/red lipstick/berry/dark plum]."
+
+SENTENCE 5 - Clothing (SPECIFIC):
+"Wearing [fit: fitted/loose/oversized/cropped] [color] [garment: top/blouse/dress/jacket] with [construction: thin spaghetti straps/crossed back straps/cap sleeves/long sleeves/strapless], [neckline: crew neck/V-neck/sweetheart/off-shoulder], [coverage: fully covering/exposing shoulders/revealing décolletage/exposing midriff to hips]."
+
+SENTENCE 6 - Pose & Body:
+"[Build: petite/slim/athletic/toned/curvy] physique, [position: standing/seated/leaning] in [view: frontal/three-quarter left/three-quarter right/profile/from behind] view, [arms: arms relaxed at sides/one arm raised/hands on hips/arms crossed], [any distinctive pose details]."
+
+SENTENCE 7 - Lighting & Setting:
+"[Lighting type: Soft diffused studio lighting/Dramatic Rembrandt lighting/Natural window light/High-key bright lighting/Low-key moody lighting] creating [shadow details: soft shadows/strong contrast/rim highlighting edges], against [background: solid dark backdrop/gradient gray/bright white studio/blurred interior/architectural setting with windows]. Realistic skin texture, natural skin pores, no text, no watermark."
+
+VOCABULARY REFERENCE:
+
+HAIR TEXTURE (choose accurately):
+- STRAIGHT: silky straight, pin-straight, sleek straight
+- WAVY: wavy, soft waves, loose waves, beachy waves, tousled waves
+- CURLY: curly, tight curls, springy curls, ringlets, coily, kinky curls
+- BANGS: with blunt bangs, with wispy bangs, with side-swept fringe, with curtain bangs
+
+MAKEUP:
+- EYES: bare/natural, soft neutral shadow, smoky charcoal, dramatic black liner, bold colorful shadow
+- LIPS: bare, nude pink, peachy nude, coral, classic red, deep berry, dark plum
+
+Example output (7 sentences):
+"A medium close-up captures a young woman in her mid-twenties with warm olive skin. Oval face with a confident, slightly sultry expression, almond-shaped dark brown eyes with thick black lashes gazing directly at camera. Long loose wavy dark brown hair with golden highlights, soft side-swept bangs framing her face. Bold glamour makeup featuring dramatic smoky charcoal eyeshadow with winged black liner and classic red lipstick. Wearing a fitted white cropped top with thin spaghetti straps and sweetheart neckline, exposing her shoulders and toned midriff. Athletic toned physique, standing in frontal view facing camera with arms relaxed at sides, slight twist in torso. Soft diffused studio lighting creating gentle shadows under cheekbones, against a bright minimalist white architectural interior with tall windows casting even illumination. Realistic skin texture, natural skin pores, no text, no watermark."
+
+Now describe THIS image in 6-7 detailed separate sentences:"""
+
+
+# =============================================================================
+# AGENTIC PROMPTS - For reasoning-enabled multi-step analysis
+# =============================================================================
+
+[agentic.advanced]
+intro = """You are performing a comprehensive visual analysis for Z-Image prompt generation.
+
+Z-Image requires:
+- Structured format: composition → subject → details → lighting
+- Geometric face angles (front view, 45°, profile)
+- Specific lighting keywords (soft diffused daylight, cinematic warm key, rim lighting)
+- Minimal clothing descriptions (3-5 words each) OR detailed shirtless descriptions
+- Cleanup constraints at end
+
+FOR FEMALE SUBJECTS - describe:
+- Hair: style (bob, pixie, long layers, ponytail, braided, updo), color, texture
+- Body type: slim, athletic, curvy, petite
+- Clothing: each item (type, color, material)
+
+FOR MALE SUBJECTS - describe:
+- Hair: style (buzz cut, fade, undercut, slicked back, textured crop, pompadour, man bun)
+- Facial hair: clean-shaven, stubble, short beard, full beard, goatee
+- Face features: square jaw, chiseled features, rugged, strong brow
+- Body type: muscular, athletic, lean, stocky, broad-shouldered
+- IF SHIRTLESS: muscle definition (pecs, abs, V-taper), chest hair (none/light/moderate/thick), visible veins
+- TATTOOS: location, style, size
+
+Analyze each component separately, then synthesize into a flowing prompt."""
+
+synthesis = """Now combine all analysis into a single flowing Z-Image prompt.
+
+Structure: Shot type → Camera angle → Subject demographics → Hair (+ facial hair if male) → Face angle → Expression → Body type → Clothing OR shirtless details → Pose → Lighting → Background
+
+For men: Include facial hair, body type, muscle definition if shirtless, tattoos if visible.
+For women: Include hair style, body type, clothing details.
+
+Use geometric terms for face angles. Use specific lighting keywords.
+End with "correct human anatomy, no text, no watermark, no logos".
+
+Output ONLY the final prompt text."""
+
+[agentic.standard]
+intro = """Analyze this image step by step for Z-Image prompt generation.
+Focus on: composition, subject, clothing (or shirtless details), lighting, background.
+Use geometric face angles and specific lighting keywords.
+
+FOR MEN: Include facial hair (clean-shaven/stubble/beard), body type (muscular/lean/stocky), and if shirtless describe muscles and chest hair.
+FOR WOMEN: Include hair style and body type."""
+
+synthesis = """Combine your analysis into a flowing Z-Image prompt.
+Structure: composition → subject (with gender-specific details) → clothing/body → lighting → background.
+For shirtless men: include muscle definition, chest hair, tattoos if visible.
+End with "no text, no watermark".
+Output only the final prompt."""
+
+[agentic.basic]
+intro = """Write a detailed description of this image for Z-Image AI generation.
+
+Include: shot type, subject appearance, face angle, clothing OR shirtless body details, pose, lighting, background.
+
+FOR MEN describe: hair style, facial hair, body type, and if shirtless describe muscles/chest hair/tattoos.
+FOR WOMEN describe: hair style, body type, clothing details.
+
+Start directly - no introduction needed."""
+
+synthesis = """Write the final description as a single flowing paragraph. Use geometric face angles (front view/45°/profile).
+For shirtless men: describe muscle definition, chest hair, visible tattoos.
+End with "no text, no watermark". Start directly with "A..." or the subject description."""
