@@ -2298,13 +2298,9 @@ class LocalModelClient:
                     "max_new_tokens": max_tokens,
                     "num_beams": 1,  # Use greedy decoding - beam search has cache issues with newer transformers
                     "repetition_penalty": self.repetition_penalty,
+                    "use_cache": False,  # Florence-2's custom code expects old cache format, disable to avoid errors
+                    "do_sample": False,  # Florence-2 works best with greedy decoding
                 }
-                if temperature > 0:
-                    gen_kwargs["do_sample"] = True
-                    gen_kwargs["temperature"] = temperature
-                    gen_kwargs["top_p"] = self.top_p
-                else:
-                    gen_kwargs["do_sample"] = False
                 outputs = self.model.generate(**inputs, **gen_kwargs)
 
         # Decode output
