@@ -44,6 +44,36 @@ def pil_to_tensor(pil_image: Image.Image):
     return torch.from_numpy(np_image).unsqueeze(0)
 
 
+def format_emphasis(text: str, strength: float = 1.3) -> str:
+    """
+    Format enhancement text with emphasis syntax and repetition.
+
+    Input: "nude, red hair, blue eyes"
+    Output: "(nude:1.3), nude, (red hair:1.3), red hair, (blue eyes:1.3), blue eyes"
+
+    This provides double emphasis:
+    1. Weight syntax (keyword:strength) for SD/SDXL/ComfyUI
+    2. Repetition for natural language models (Z-Image, Flux)
+    """
+    if not text or not text.strip():
+        return ""
+
+    # Split by comma and clean up
+    keywords = [k.strip() for k in text.split(",") if k.strip()]
+
+    if not keywords:
+        return ""
+
+    # Format each keyword with emphasis + repetition
+    formatted_parts = []
+    for keyword in keywords:
+        # Add weighted version and plain repetition
+        formatted_parts.append(f"({keyword}:{strength})")
+        formatted_parts.append(keyword)
+
+    return ", ".join(formatted_parts)
+
+
 # =============================================================================
 # Main Node Class
 # =============================================================================
@@ -131,7 +161,17 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                     default="",
                     multiline=True,
                     optional=True,
-                    tooltip="Optional: Additional text to append to the generated prompt (e.g., clothing changes, nudity, style modifications)"
+                    tooltip="Optional: Keywords to emphasize (comma-separated). Integrated by LLM + added with emphasis syntax at end"
+                ),
+                io.Float.Input(
+                    "emphasis_strength",
+                    default=1.3,
+                    min=1.0,
+                    max=2.0,
+                    step=0.1,
+                    round=0.1,
+                    display_mode=io.NumberDisplay.slider,
+                    tooltip="Emphasis weight for prompt_enhance keywords (1.0=normal, 1.3=default, 2.0=max)"
                 ),
             ],
             outputs=[
@@ -154,6 +194,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         seed: int,
         prompt_override: str = "",
         prompt_enhance: str = "",
+        emphasis_strength: float = 1.3,
     ):
         """Execute prompt generation using core module."""
         import random
@@ -162,10 +203,11 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         if prompt_override and prompt_override.strip():
             print("[SID Prompt Generator] Using prompt override - skipping generation")
             final_prompt = prompt_override.strip()
-            # Still apply enhancement to override if provided
+            # Still apply emphasis layer to override if provided
             if prompt_enhance and prompt_enhance.strip():
-                final_prompt = final_prompt + " " + prompt_enhance.strip()
-                print(f"[SID Prompt Generator] Applied enhancement to override")
+                emphasis_text = format_emphasis(prompt_enhance.strip(), emphasis_strength)
+                final_prompt = final_prompt + ", " + emphasis_text
+                print(f"[SID Prompt Generator] Applied emphasis to override: {emphasis_text[:60]}...")
             return io.NodeOutput(final_prompt, "", "")
 
         # Set seed for reproducibility
@@ -224,12 +266,14 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         print(f"\n[Seed: {seed}, Temperature: {temperature}, Mode: {analysis_mode}, Style: {prompt_style}, Reasoning: {reasoning_str}, NSFW: {nsfw_str}]")
         print(result.get_metadata_str())
 
-        # For Quick mode only: append enhancement (since there's no synthesis step)
-        # Standard/Detailed modes integrate enhancement in synthesis
+        # Apply emphasis layer for ALL modes
+        # This adds (keyword:weight) syntax + repetition for extra emphasis
+        # LLM already integrated enhancement naturally, this is an additional emphasis layer
         final_prompt = result.prompt
-        if enhance_text and analysis_mode == "quick":
-            final_prompt = final_prompt + " " + enhance_text
-            print(f"[SID Prompt Generator] Quick mode - appended enhancement: {enhance_text[:50]}...")
+        if enhance_text:
+            emphasis_text = format_emphasis(enhance_text, emphasis_strength)
+            final_prompt = final_prompt + ", " + emphasis_text
+            print(f"[SID Prompt Generator] Applied emphasis layer: {emphasis_text[:60]}...")
 
         return io.NodeOutput(final_prompt, result.negative, result.caption)
 
