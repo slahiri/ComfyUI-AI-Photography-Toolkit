@@ -115,23 +115,14 @@ Output ONLY the description. Start directly - no introduction."""
 # =============================================================================
 
 [user.scene_only.quick]
-prompt = """Describe this scene briefly (30-60 words). NO people in this image.
+prompt = """Describe this scene in a detailed paragraph for AI image generation. No people in this image.
 
-FIRST identify the main subject type:
+Combine the main subject, environment, lighting, and atmosphere into 2-3 cohesive sentences. Focus on accurate visual details - describe what you see.
 
-IF ANIMAL/WILDLIFE:
-- Species (be specific: reticulated giraffe, Bengal tiger, bald eagle)
-- Age, view angle, eye contact, distinctive features
-- Background/environment briefly
+If animal: include species, age, pose, distinctive features, and background.
+If landscape: include terrain type, colors, lighting, and atmosphere.
 
-IF LANDSCAPE/SCENE:
-- MOUNTAINS: peak shape, count, rock type, snow coverage
-- WATER: type, exact color, surface texture
-- VEGETATION: species, color, density
-- DESERT: dune shapes, sand color
-- COASTAL: beach type, wave conditions
-
-End with "no text, no watermark". Start directly:"""
+End with "no text, no watermark"."""
 
 [user.scene_only.standard]
 prompt = """Describe this scene for AI image generation (80-150 words). NO people.
@@ -386,14 +377,12 @@ End with: "no text, no watermark"
 Output ONLY the description. Start directly - no introduction."""
 
 [user.human_with_subject.quick]
-prompt = """Describe this image showing a human with another subject (30-60 words).
+prompt = """Describe this image in a detailed paragraph for AI image generation.
 
-Give EQUAL attention to:
-- The human (appearance, clothing, pose)
-- The other subject (pet/vehicle/landscape/object details)
-- Their interaction or positioning
+Combine the human subject and the other element (pet, vehicle, object) into 2-3 cohesive sentences. Focus on visible details only.
 
-End with "no text, no watermark". Start directly:"""
+Include: both subjects' appearance, their interaction or positioning, lighting, and background.
+End with "no text, no watermark"."""
 
 [user.human_with_subject.standard]
 prompt = """Describe this image for AI generation (80-150 words).

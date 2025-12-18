@@ -123,20 +123,12 @@ Start directly with "A..." - write complete sentences."""
 # =============================================================================
 
 [user.advanced.quick]
-prompt = """Generate a brief Z-Image prompt (30-60 words).
+prompt = """Generate a detailed paragraph describing this image for AI image generation.
 
-MANDATORY (must include):
-1. FRAMING: "portrait framing" / "close-up" / "medium shot" / "full body"
-2. POSE: "facing camera" / "three-quarter view" / "side profile"
-3. EXPRESSION: brief description (smiling, serious, intense gaze)
+Combine the subject's appearance, clothing, environment, lighting, and mood into 2-3 cohesive sentences. Focus on accurate visual details only - describe what you see, not interpretations.
 
-ALSO INCLUDE:
-- Skin tone (warm ivory, olive, golden tan, deep brown)
-- Hair (style first, then color)
-- Clothing (one line: type, color, material)
-- Lighting keyword (soft diffused/Rembrandt/rim light/golden hour) - pick ONE
-
-End with "no text, no watermark". Write as flowing sentences."""
+Include: shot framing, skin tone, hair, clothing details, lighting quality, and background.
+End with "no text, no watermark"."""
 
 [user.advanced.standard]
 prompt = """Generate a Z-Image prompt (80-150 words). ONLY describe VISIBLE features.
@@ -311,12 +303,11 @@ Write as comprehensive flowing narrative, NOT comma tags."""
 # =============================================================================
 
 [user.standard.quick]
-prompt = """Describe this image in 30-60 words for Z-Image:
-MANDATORY: Include framing (portrait/close-up/medium shot), pose (facing camera/three-quarter view), expression
-- Shot type and angle
-- Subject appearance
-- Clothing (brief)
-- Lighting style (pick ONE - don't mix warm and cool)
+prompt = """Describe this image in a detailed paragraph for AI image generation.
+
+Combine subject, clothing, environment, lighting, and mood into 2-3 flowing sentences. Focus on visible details only.
+
+Include: shot type, skin tone, hair, clothing, lighting, background.
 End with "no text, no watermark"."""
 
 [user.standard.standard]
@@ -416,22 +407,12 @@ Write the most detailed description possible. End with "correct human anatomy, n
 # =============================================================================
 
 [user.basic.quick]
-prompt = """Write 3-4 SHORT SENTENCES describing THIS IMAGE for AI generation.
+prompt = """Describe this image in a detailed paragraph for AI image generation.
 
-CRITICAL: Write SEPARATE SENTENCES, not comma-separated keywords. Each sentence = ONE aspect.
+Combine subject, clothing, environment, and lighting into 2-3 flowing sentences. Focus on visible details only - describe what you see.
 
-SENTENCE 1 - Subject: "A [age] [gender] with [skin tone] and [expression]."
-SENTENCE 2 - Hair/Face: "[Hair texture: straight/wavy/curly] [color] hair [style]. [Makeup if visible]."
-SENTENCE 3 - Clothing: "Wearing [garment] in [color]."
-SENTENCE 4 - Setting: "[Lighting type], [background]. No text, no watermark."
-
-HAIR TEXTURE (pick one): silky straight, wavy, loose waves, tight curls, curly with bangs
-MAKEUP (if visible): natural makeup, bold smoky eyes, red lipstick, nude lips
-
-Example output (4 sentences):
-"A young woman in her twenties with olive skin and a confident expression. Long wavy dark brown hair with side-swept bangs, bold smoky eye makeup and red lipstick. Wearing a fitted black crop top with thin straps. Soft studio lighting against a dark backdrop. No text, no watermark."
-
-Now describe THIS image in 3-4 sentences:"""
+Include: subject appearance, skin tone, hair, clothing, lighting, and background.
+End with "no text, no watermark"."""
 
 [user.basic.standard]
 prompt = """Write 4-5 SEPARATE SENTENCES describing THIS IMAGE for Z-Image AI generation.
