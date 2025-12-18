@@ -115,17 +115,18 @@ Output ONLY the description. Start directly - no introduction."""
 # =============================================================================
 
 [user.scene_only.quick]
-prompt = """Describe this scene in a detailed paragraph for AI image generation. No people in this image.
+prompt = """Generate a detailed paragraph for Z-Image realistic, photorealistic image generation. No people in this image.
 
-Combine the main subject, environment, lighting, and atmosphere into 2-3 cohesive sentences. Focus on accurate visual details - describe what you see.
+Combine the main subject, environment, lighting, and atmosphere into 2-3 cohesive sentences. Focus on photorealistic visual details - describe what you see accurately.
 
 If animal: include species, age, pose, distinctive features, and background.
 If landscape: include terrain type, colors, lighting, and atmosphere.
 
+Output must generate a realistic, photorealistic result.
 End with "no text, no watermark"."""
 
 [user.scene_only.standard]
-prompt = """Describe this scene for AI image generation (80-150 words). NO people.
+prompt = """Generate a Z-Image prompt for realistic, photorealistic image generation (80-150 words). NO people.
 
 FIRST: Identify if this is an ANIMAL subject or LANDSCAPE:
 
@@ -170,7 +171,7 @@ FIRST: Identify if this is an ANIMAL subject or LANDSCAPE:
 End with "no text, no watermark":"""
 
 [user.scene_only.detailed]
-prompt = """Write a comprehensive description of this scene (150-200 words). NO people.
+prompt = """Generate a comprehensive Z-Image prompt for realistic, photorealistic image generation (150-200 words). NO people.
 
 FIRST: Identify if this is an ANIMAL subject or LANDSCAPE/SCENE:
 
@@ -241,7 +242,7 @@ DESCRIBE IN LAYERS: FOREGROUND → MIDGROUND → BACKGROUND
 End with "no text, no watermark":"""
 
 [user.scene_only.extreme]
-prompt = """Write the most detailed description possible (200-300 words). NO people.
+prompt = """Generate the most detailed Z-Image prompt for realistic, photorealistic image generation (200-300 words). NO people.
 
 CRITICAL: Identify if this is an ANIMAL subject or LANDSCAPE first. Use PRECISE vocabulary.
 
@@ -377,15 +378,16 @@ End with: "no text, no watermark"
 Output ONLY the description. Start directly - no introduction."""
 
 [user.human_with_subject.quick]
-prompt = """Describe this image in a detailed paragraph for AI image generation.
+prompt = """Generate a detailed paragraph for Z-Image realistic, photorealistic image generation.
 
-Combine the human subject and the other element (pet, vehicle, object) into 2-3 cohesive sentences. Focus on visible details only.
+Combine the human subject and the other element (pet, vehicle, object) into 2-3 cohesive sentences. Focus on photorealistic visual details - describe what you see accurately.
 
 Include: both subjects' appearance, their interaction or positioning, lighting, and background.
+Output must generate a realistic, photorealistic result.
 End with "no text, no watermark"."""
 
 [user.human_with_subject.standard]
-prompt = """Describe this image for AI generation (80-150 words).
+prompt = """Generate a Z-Image prompt for realistic, photorealistic image generation (80-150 words).
 
 This image has BOTH a human AND another subject - describe BOTH equally:
 
@@ -412,7 +414,7 @@ Examples:
 End with "no text, no watermark". Start directly:"""
 
 [user.human_with_subject.detailed]
-prompt = """Write a comprehensive description of this image for AI generation.
+prompt = """Generate a comprehensive Z-Image prompt for realistic, photorealistic image generation.
 
 This image contains BOTH a human AND another subject - give EQUAL detail to both:
 
@@ -445,7 +447,7 @@ ENVIRONMENT:
 End with "no text, no watermark". Write as one flowing paragraph:"""
 
 [user.human_with_subject.extreme]
-prompt = """Write the most detailed description possible of this image.
+prompt = """Generate the most detailed Z-Image prompt for realistic, photorealistic image generation.
 
 This image contains BOTH a human AND another subject - describe BOTH with maximum detail:
 

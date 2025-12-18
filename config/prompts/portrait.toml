@@ -123,15 +123,16 @@ Start directly with "A..." - write complete sentences."""
 # =============================================================================
 
 [user.advanced.quick]
-prompt = """Generate a detailed paragraph describing this image for AI image generation.
+prompt = """Generate a detailed paragraph for Z-Image realistic image generation.
 
-Combine the subject's appearance, clothing, environment, lighting, and mood into 2-3 cohesive sentences. Focus on accurate visual details only - describe what you see, not interpretations.
+Combine the subject's appearance, clothing, environment, lighting, and mood into 2-3 cohesive sentences. Focus on photorealistic visual details - describe what you see accurately.
 
 Include: shot framing, skin tone, hair, clothing details, lighting quality, and background.
+Output must generate a realistic, photorealistic result.
 End with "no text, no watermark"."""
 
 [user.advanced.standard]
-prompt = """Generate a Z-Image prompt (80-150 words). ONLY describe VISIBLE features.
+prompt = """Generate a Z-Image prompt for realistic, photorealistic image generation (80-150 words). ONLY describe VISIBLE features.
 
 STRUCTURE - Write exactly 5-6 SENTENCES:
 1. Subject + framing: "Close-up portrait of a [age] [gender] with [skin tone], [pose]."
@@ -166,7 +167,7 @@ DETAILS TO INCLUDE:
 Write as flowing sentences, NOT comma-separated tags."""
 
 [user.advanced.detailed]
-prompt = """Generate a COMPREHENSIVE Z-Image prompt (150-250 words). ONLY VISIBLE features.
+prompt = """Generate a COMPREHENSIVE Z-Image prompt for realistic, photorealistic image generation (150-250 words). ONLY VISIBLE features.
 
 MANDATORY FIRST (include ALL):
 1. FRAMING: "portrait framing" / "close-up" / "medium shot" / "full body" - REQUIRED
@@ -303,15 +304,16 @@ Write as comprehensive flowing narrative, NOT comma tags."""
 # =============================================================================
 
 [user.standard.quick]
-prompt = """Describe this image in a detailed paragraph for AI image generation.
+prompt = """Generate a detailed paragraph for Z-Image realistic image generation.
 
-Combine subject, clothing, environment, lighting, and mood into 2-3 flowing sentences. Focus on visible details only.
+Combine subject, clothing, environment, lighting, and mood into 2-3 flowing sentences. Focus on photorealistic visual details - describe what you see accurately.
 
 Include: shot type, skin tone, hair, clothing, lighting, background.
+Output must generate a realistic, photorealistic result.
 End with "no text, no watermark"."""
 
 [user.standard.standard]
-prompt = """Describe this image for Z-Image in 5-6 SENTENCES:
+prompt = """Generate a Z-Image prompt for realistic, photorealistic image generation in 5-6 SENTENCES:
 
 SENTENCE STRUCTURE:
 1. Subject + framing: "Close-up portrait of [person] with [skin tone], [pose]."
@@ -337,7 +339,7 @@ Use IMPORTANT: for unique hair/poses. Use CRITICAL: for patterns/details.
 Write as sentences, NOT comma lists. End with "no text, no watermark"."""
 
 [user.standard.detailed]
-prompt = """Describe this image in detail for Z-Image:
+prompt = """Generate a detailed Z-Image prompt for realistic, photorealistic image generation:
 
 MANDATORY FIRST (include ALL):
 1. Framing: "portrait framing" / "close-up" / "medium shot" / "full body" - REQUIRED
@@ -407,15 +409,16 @@ Write the most detailed description possible. End with "correct human anatomy, n
 # =============================================================================
 
 [user.basic.quick]
-prompt = """Describe this image in a detailed paragraph for AI image generation.
+prompt = """Generate a detailed paragraph for Z-Image realistic image generation.
 
-Combine subject, clothing, environment, and lighting into 2-3 flowing sentences. Focus on visible details only - describe what you see.
+Combine subject, clothing, environment, and lighting into 2-3 flowing sentences. Focus on photorealistic visual details - describe what you see accurately.
 
 Include: subject appearance, skin tone, hair, clothing, lighting, and background.
+Output must generate a realistic, photorealistic result.
 End with "no text, no watermark"."""
 
 [user.basic.standard]
-prompt = """Write 4-5 SEPARATE SENTENCES describing THIS IMAGE for Z-Image AI generation.
+prompt = """Write 4-5 SEPARATE SENTENCES for Z-Image realistic, photorealistic image generation.
 
 CRITICAL RULES:
 - Write SEPARATE SENTENCES with periods, NOT comma-separated keywords
@@ -454,7 +457,7 @@ Example output (5 sentences):
 Now describe THIS image in 4-5 separate sentences:"""
 
 [user.basic.detailed]
-prompt = """Write 5-6 SEPARATE SENTENCES describing THIS IMAGE in detail for Z-Image AI generation.
+prompt = """Write 5-6 SEPARATE SENTENCES for Z-Image realistic, photorealistic image generation.
 
 CRITICAL RULES:
 - Write SEPARATE SENTENCES with periods - NOT comma-separated keywords
