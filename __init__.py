@@ -321,7 +321,7 @@ def print_welcome_message():
     print("    - SID_LLM_API   Cloud APIs (Anthropic, OpenAI, Gemini, Grok, Ollama, LM Studio)")
     print("    - SID_LLM_Local Local models (Florence-2, Moondream, SmolVLM, Phi-3.5, QwenVL)")
     print("")
-    print("  Prompt Generator:")
+    print("  Prompt Tools:")
     print("    - SID_ZImagePromptGenerator  Z-Image prompts (CV detection + Vision LLM)")
     print("                                 Fast YOLO/MediaPipe detection, Z-Image optimized")
 

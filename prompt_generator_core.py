@@ -1147,8 +1147,19 @@ class LLMClient:
                     num_beams=extra.get("num_beams", 1),
                     use_torch_compile=extra.get("use_torch_compile", False),
                 )
-                result = text_client.generate_text(user_prompt, system_prompt, max_tokens=max_tokens, temperature=temp)
-                return result.strip() if result else ""
+                try:
+                    result = text_client.generate_text(user_prompt, system_prompt, max_tokens=max_tokens, temperature=temp)
+                    return result.strip() if result else ""
+                finally:
+                    # Clean up text client after use
+                    try:
+                        del text_client
+                        gc.collect()
+                        import torch
+                        if torch.cuda.is_available():
+                            torch.cuda.empty_cache()
+                    except:
+                        pass
 
             elif provider == "anthropic":
                 temp = getattr(self.config, 'temperature', 0.7)

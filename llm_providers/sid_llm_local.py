@@ -8,17 +8,8 @@ Supports multiple model families with automatic VRAM management.
 Supported Vision Model Families:
 - QwenVL: Qwen3-VL, Qwen2.5-VL (2B-32B) - Best overall quality
 - LLaVA: LLaVA 1.5/1.6 (7B-13B) - Popular VLM
-- InternVL2: InternVL2 (2B-8B) - OpenGVLab
-- MiniCPM-V: MiniCPM-V 2.6 - Efficient multi-modal
-- PaliGemma: Google PaliGemma (3B) - Google VLM
-- Llama-Vision: Llama 3.2 Vision (11B) - Meta VLM
-- Pixtral: Mistral Pixtral (12B) - Mistral VLM
-- Molmo: Allen AI Molmo (7B) - Allen AI VLM
-- Idefics2: HuggingFace Idefics2 (8B) - HuggingFace VLM
 - Florence-2: Microsoft Florence-2 (0.2B-0.7B) - Fast captioning
-- Moondream2: Lightweight VLM (1.8B) - Efficient
 - SmolVLM: HuggingFace SmolVLM (0.25B-2B) - Ultra-efficient
-- Phi-3.5-Vision: Microsoft Phi-3.5 (4.2B) - High quality
 
 Text-Only Models (for prompt generation):
 - Qwen3 Text: Qwen3 text models (0.6B-8B)
@@ -520,21 +511,6 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
     ),
 
     # =========================================================================
-    # Moondream2 - Vision Only
-    # =========================================================================
-    "Moondream2": LocalModelInfo(
-        name="Moondream2 (Vision) | 2K | 1.5GB",
-        repo_id="vikhyatk/moondream2",
-        family=ModelFamily.MOONDREAM2,
-        vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
-        model_type=ModelType.VISION,
-        max_output_tokens=2048,
-        description="Efficient VLM",
-        model_class="AutoModelForCausalLM",
-        target_image_size=320
-    ),
-
-    # =========================================================================
     # LLaVA Series (HuggingFace) - Vision Only
     # =========================================================================
     "LLaVA-1.5-7B": LocalModelInfo(
@@ -594,166 +570,6 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
     ),
 
     # =========================================================================
-    # InternVL2 Series (OpenGVLab) - Vision Only
-    # =========================================================================
-    "InternVL2-2B": LocalModelInfo(
-        name="InternVL2 2B (Vision) | 4K | 2GB",
-        repo_id="OpenGVLab/InternVL2-2B",
-        family=ModelFamily.INTERNVL,
-        vram_fp16=4.5, vram_8bit=3.0, vram_4bit=2.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="Fast InternVL2",
-        model_class="AutoModel",
-        target_image_size=320
-    ),
-    "InternVL2-4B": LocalModelInfo(
-        name="InternVL2 4B (Vision) | 4K | 4GB",
-        repo_id="OpenGVLab/InternVL2-4B",
-        family=ModelFamily.INTERNVL,
-        vram_fp16=8.0, vram_8bit=5.0, vram_4bit=3.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="Balanced InternVL2",
-        model_class="AutoModel",
-        target_image_size=384
-    ),
-    "InternVL2-8B": LocalModelInfo(
-        name="InternVL2 8B (Vision) | 4K | 8GB",
-        repo_id="OpenGVLab/InternVL2-8B",
-        family=ModelFamily.INTERNVL,
-        vram_fp16=16.0, vram_8bit=10.0, vram_4bit=6.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="High quality InternVL2",
-        model_class="AutoModel",
-        target_image_size=448
-    ),
-
-    # =========================================================================
-    # MiniCPM-V Series (OpenBMB) - Vision Only
-    # =========================================================================
-    "MiniCPM-V-2.6": LocalModelInfo(
-        name="MiniCPM-V 2.6 (Vision) | 4K | 8GB",
-        repo_id="openbmb/MiniCPM-V-2_6",
-        family=ModelFamily.MINICPM,
-        vram_fp16=16.0, vram_8bit=10.0, vram_4bit=6.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="Efficient multi-modal model",
-        model_class="AutoModel",
-        target_image_size=384
-    ),
-
-    # =========================================================================
-    # PaliGemma Series (Google) - Vision Only
-    # =========================================================================
-    "PaliGemma-3B": LocalModelInfo(
-        name="PaliGemma 3B (Vision) | 4K | 3GB",
-        repo_id="google/paligemma-3b-mix-448",
-        family=ModelFamily.PALIGEMMA,
-        vram_fp16=7.0, vram_8bit=4.5, vram_4bit=3.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="Google PaliGemma 3B",
-        model_class="PaliGemmaForConditionalGeneration",
-        target_image_size=448
-    ),
-    "PaliGemma2-3B": LocalModelInfo(
-        name="PaliGemma2 3B (Vision) | 4K | 3GB",
-        repo_id="google/paligemma2-3b-pt-448",
-        family=ModelFamily.PALIGEMMA,
-        vram_fp16=7.0, vram_8bit=4.5, vram_4bit=3.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="Google PaliGemma2 3B",
-        model_class="PaliGemmaForConditionalGeneration",
-        target_image_size=448
-    ),
-
-    # =========================================================================
-    # Llama 3.2 Vision (Meta) - Vision Only
-    # =========================================================================
-    "Llama-3.2-11B-Vision": LocalModelInfo(
-        name="Llama 3.2 11B Vision (Vision) | 4K | 11GB",
-        repo_id="meta-llama/Llama-3.2-11B-Vision-Instruct",
-        family=ModelFamily.LLAMA_VISION,
-        vram_fp16=22.0, vram_8bit=13.0, vram_4bit=8.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="Meta Llama 3.2 Vision",
-        model_class="MllamaForConditionalGeneration",
-        target_image_size=448
-    ),
-
-    # =========================================================================
-    # Pixtral (Mistral AI) - Vision Only
-    # =========================================================================
-    "Pixtral-12B": LocalModelInfo(
-        name="Pixtral 12B (Vision) | 4K | 12GB",
-        repo_id="mistralai/Pixtral-12B-2409",
-        family=ModelFamily.PIXTRAL,
-        vram_fp16=24.0, vram_8bit=14.0, vram_4bit=9.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="Mistral Pixtral 12B",
-        model_class="LlavaForConditionalGeneration",
-        target_image_size=448
-    ),
-
-    # =========================================================================
-    # Molmo (Allen AI) - Vision Only
-    # =========================================================================
-    "Molmo-7B-D": LocalModelInfo(
-        name="Molmo 7B-D (Vision) | 4K | 7GB",
-        repo_id="allenai/Molmo-7B-D-0924",
-        family=ModelFamily.MOLMO,
-        vram_fp16=14.0, vram_8bit=8.0, vram_4bit=5.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="Allen AI Molmo 7B",
-        model_class="AutoModelForCausalLM",
-        target_image_size=384
-    ),
-    "Molmo-7B-O": LocalModelInfo(
-        name="Molmo 7B-O (Vision) | 4K | 7GB",
-        repo_id="allenai/Molmo-7B-O-0924",
-        family=ModelFamily.MOLMO,
-        vram_fp16=14.0, vram_8bit=8.0, vram_4bit=5.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="Allen AI Molmo 7B OpenAI-style",
-        model_class="AutoModelForCausalLM",
-        target_image_size=384
-    ),
-
-    # =========================================================================
-    # Idefics2 (HuggingFace) - Vision Only
-    # =========================================================================
-    "Idefics2-8B": LocalModelInfo(
-        name="Idefics2 8B (Vision) | 4K | 8GB",
-        repo_id="HuggingFaceM4/idefics2-8b",
-        family=ModelFamily.IDEFICS,
-        vram_fp16=16.0, vram_8bit=10.0, vram_4bit=6.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="HuggingFace Idefics2 8B",
-        model_class="Idefics2ForConditionalGeneration",
-        target_image_size=416
-    ),
-    "Idefics2-8B-Chatty": LocalModelInfo(
-        name="Idefics2 8B Chatty (Vision) | 4K | 8GB",
-        repo_id="HuggingFaceM4/idefics2-8b-chatty",
-        family=ModelFamily.IDEFICS,
-        vram_fp16=16.0, vram_8bit=10.0, vram_4bit=6.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="HuggingFace Idefics2 8B Chatty",
-        model_class="Idefics2ForConditionalGeneration",
-        target_image_size=416
-    ),
-
-    # =========================================================================
     # SmolVLM Series (HuggingFace) - Vision Only
     # =========================================================================
     "SmolVLM-256M": LocalModelInfo(
@@ -788,21 +604,6 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         description="Best SmolVLM",
         model_class="AutoModelForVision2Seq",
         target_image_size=320
-    ),
-
-    # =========================================================================
-    # Phi-3.5-Vision (Microsoft) - Vision Only
-    # =========================================================================
-    "Phi-3.5-Vision": LocalModelInfo(
-        name="Phi-3.5 Vision (Vision) | 4K | 3GB",
-        repo_id="microsoft/Phi-3.5-vision-instruct",
-        family=ModelFamily.PHI35_VISION,
-        vram_fp16=8.5, vram_8bit=5.0, vram_4bit=3.0,
-        model_type=ModelType.VISION,
-        max_output_tokens=4096,
-        description="High quality vision",
-        model_class="AutoModelForCausalLM",
-        target_image_size=384
     ),
 
     # =========================================================================
@@ -842,9 +643,10 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
     ),
 
     # Qwen3 Text Models - Latest generation, optimized for prompt generation
-    "Qwen3-0.6B-Instruct": LocalModelInfo(
+    # Note: Qwen3 base models are instruction-tuned (no separate -Instruct versions)
+    "Qwen3-0.6B": LocalModelInfo(
         name="Qwen3 0.6B (Text) | 32K | 0.5GB [Ultra-Fast]",
-        repo_id="Qwen/Qwen3-0.6B-Instruct",
+        repo_id="Qwen/Qwen3-0.6B",
         family=ModelFamily.QWEN3_TEXT,
         vram_fp16=1.2, vram_8bit=0.8, vram_4bit=0.5,
         model_type=ModelType.TEXT,
@@ -852,9 +654,9 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         description="Ultra-fast prompt generation",
         model_class="AutoModelForCausalLM"
     ),
-    "Qwen3-1.7B-Instruct": LocalModelInfo(
+    "Qwen3-1.7B": LocalModelInfo(
         name="Qwen3 1.7B (Text) | 32K | 1.4GB [Fast]",
-        repo_id="Qwen/Qwen3-1.7B-Instruct",
+        repo_id="Qwen/Qwen3-1.7B",
         family=ModelFamily.QWEN3_TEXT,
         vram_fp16=3.5, vram_8bit=2.2, vram_4bit=1.4,
         model_type=ModelType.TEXT,
@@ -862,9 +664,9 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         description="Fast prompt generation",
         model_class="AutoModelForCausalLM"
     ),
-    "Qwen3-4B-Instruct": LocalModelInfo(
+    "Qwen3-4B": LocalModelInfo(
         name="Qwen3 4B (Text) | 32K | 3GB [Balanced]",
-        repo_id="Qwen/Qwen3-4B-Instruct",
+        repo_id="Qwen/Qwen3-4B",
         family=ModelFamily.QWEN3_TEXT,
         vram_fp16=8.0, vram_8bit=5.0, vram_4bit=3.0,
         model_type=ModelType.TEXT,
@@ -872,9 +674,9 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         description="Balanced prompt generation",
         model_class="AutoModelForCausalLM"
     ),
-    "Qwen3-8B-Instruct": LocalModelInfo(
+    "Qwen3-8B": LocalModelInfo(
         name="Qwen3 8B (Text) | 32K | 6GB [Quality]",
-        repo_id="Qwen/Qwen3-8B-Instruct",
+        repo_id="Qwen/Qwen3-8B",
         family=ModelFamily.QWEN3_TEXT,
         vram_fp16=16.0, vram_8bit=10.0, vram_4bit=6.0,
         model_type=ModelType.TEXT,
@@ -1259,16 +1061,39 @@ class LocalModelClient:
     def unload_model(cls):
         """Force unload the cached model to free VRAM for other nodes."""
         if cls._cached_model is not None:
-            # Delete model references
-            del cls._cached_model
+            print("[LocalModel] Force unloading model from VRAM...")
+            # Delete model references explicitly
+            try:
+                # Move model to CPU first to free VRAM faster
+                if hasattr(cls._cached_model, 'to'):
+                    cls._cached_model.to('cpu')
+            except:
+                pass
+            try:
+                del cls._cached_model
+            except:
+                pass
+            try:
+                del cls._cached_processor
+            except:
+                pass
+            try:
+                del cls._cached_tokenizer
+            except:
+                pass
             cls._cached_model = None
             cls._cached_processor = None
             cls._cached_tokenizer = None
             cls._cached_signature = None
             cls._compiled_generate = None
             cls._image_cache.clear()
+            # Force immediate garbage collection - run multiple times
+            gc.collect()
+            gc.collect()
+            gc.collect()
             # Aggressively clear memory
             clear_memory()
+            print("[LocalModel] Model unloaded successfully")
             return True
         return False
 
@@ -1359,13 +1184,31 @@ class LocalModelClient:
             self.tokenizer = LocalModelClient._cached_tokenizer
             return
 
-        # Clear memory before loading new model
+        # Clear memory before loading new model - CRITICAL for preventing memory leaks
         if LocalModelClient._cached_model is not None:
+            print("[LocalModel] Unloading previous model before loading new one...")
+            # Delete references explicitly
+            try:
+                del LocalModelClient._cached_model
+            except:
+                pass
+            try:
+                del LocalModelClient._cached_processor
+            except:
+                pass
+            try:
+                del LocalModelClient._cached_tokenizer
+            except:
+                pass
             LocalModelClient._cached_model = None
             LocalModelClient._cached_processor = None
             LocalModelClient._cached_tokenizer = None
             LocalModelClient._cached_signature = None
             LocalModelClient._compiled_generate = None
+            LocalModelClient._image_cache.clear()
+            # Force immediate garbage collection
+            gc.collect()
+            gc.collect()  # Run twice to catch cyclic references
             clear_memory()
 
         if not self.model_info:
@@ -1378,7 +1221,22 @@ class LocalModelClient:
         os.makedirs(family_dir, exist_ok=True)
         model_path = os.path.join(family_dir, self.model_name)
 
-        if not os.path.exists(model_path):
+        # Check if model files actually exist (not just empty folder from failed download)
+        def has_model_files(path):
+            if not os.path.exists(path):
+                return False
+            for f in os.listdir(path):
+                if f.endswith(('.safetensors', '.bin', '.pt', '.pth')):
+                    return True
+            return False
+
+        if not has_model_files(model_path):
+            # Remove empty/incomplete folder if it exists
+            if os.path.exists(model_path):
+                import shutil
+                print(f"[LocalModel] Removing incomplete download at {model_path}")
+                shutil.rmtree(model_path)
+
             print(f"[LocalModel] Downloading from {self.model_info.repo_id}...")
             snapshot_download(
                 repo_id=self.model_info.repo_id,
@@ -1791,7 +1649,8 @@ class LocalModelClient:
         self.tokenizer = self.processor.tokenizer if hasattr(self.processor, 'tokenizer') else None
 
     def _load_idefics(self, model_path: str, device: str):
-        """Load Idefics2 model with quantization support."""
+        """Load Idefics2 model with quantization and attention optimizations."""
+        import importlib.metadata
         import torch
         from transformers import AutoProcessor, Idefics2ForConditionalGeneration, BitsAndBytesConfig
 
@@ -1802,12 +1661,32 @@ class LocalModelClient:
             "low_cpu_mem_usage": True,
         }
 
+        # Add attention implementation for speed
+        if device == "cuda":
+            try:
+                import flash_attn
+                importlib.metadata.version("flash_attn")
+                major, _ = torch.cuda.get_device_capability()
+                if major >= 8:
+                    load_kwargs["attn_implementation"] = "flash_attention_2"
+                    print("[Idefics2] Using Flash Attention 2")
+                else:
+                    load_kwargs["attn_implementation"] = "sdpa"
+                    print("[Idefics2] Using SDPA attention")
+            except (ImportError, importlib.metadata.PackageNotFoundError):
+                load_kwargs["attn_implementation"] = "sdpa"
+                print("[Idefics2] Using SDPA attention (flash_attn not available)")
+
         if device == "cuda":
             load_kwargs["device_map"] = "auto"
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
+                print(f"[Idefics2] Using {self.quantization} quantization")
             else:
                 load_kwargs["dtype"] = dtype or torch.bfloat16
+                print(f"[Idefics2] Using dtype: {dtype or torch.bfloat16}")
+        else:
+            print(f"[Idefics2] WARNING: Running on {device} - this will be VERY slow!")
 
         self.model = Idefics2ForConditionalGeneration.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
@@ -1817,6 +1696,10 @@ class LocalModelClient:
 
         self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
         self.tokenizer = self.processor.tokenizer if hasattr(self.processor, 'tokenizer') else None
+
+        # Log device placement
+        actual_device = next(self.model.parameters()).device
+        print(f"[Idefics2] Model loaded on: {actual_device}")
 
     def _load_smolvlm(self, model_path: str, device: str):
         """Load SmolVLM model with speed optimizations."""
@@ -2064,16 +1947,22 @@ class LocalModelClient:
         # Generate
         with InferenceProgressSpinner("Generating text"):
             with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                    top_p=self.top_p,
-                    repetition_penalty=self.repetition_penalty,
-                    pad_token_id=self.tokenizer.pad_token_id or self.tokenizer.eos_token_id,
-                    eos_token_id=self.tokenizer.eos_token_id,
-                )
+                # Build generation kwargs - only include sampling params when sampling
+                gen_kwargs = {
+                    "max_new_tokens": max_tokens,
+                    "pad_token_id": self.tokenizer.pad_token_id or self.tokenizer.eos_token_id,
+                    "eos_token_id": self.tokenizer.eos_token_id,
+                    "repetition_penalty": self.repetition_penalty,
+                }
+
+                if temperature > 0:
+                    gen_kwargs["do_sample"] = True
+                    gen_kwargs["temperature"] = temperature
+                    gen_kwargs["top_p"] = self.top_p
+                else:
+                    gen_kwargs["do_sample"] = False
+
+                outputs = self.model.generate(**inputs, **gen_kwargs)
 
         # Decode only new tokens
         generated = outputs[0][input_len:]
@@ -2109,8 +1998,19 @@ class LocalModelClient:
         import base64
         import io
 
-        if self.model is None:
-            self._load_model()
+        try:
+            if self.model is None:
+                self._load_model()
+        except Exception as e:
+            error_msg = str(e)
+            # Handle common loading errors with helpful messages
+            if "403" in error_msg or "gated" in error_msg.lower():
+                return LocalModelResponse(f"[ERROR] Model access denied. This is a gated model requiring HuggingFace approval. Please use a different model like Florence-2 or Qwen3-VL.")
+            elif "no file named" in error_msg.lower() or "safetensors" in error_msg.lower():
+                return LocalModelResponse(f"[ERROR] Model download incomplete. Please enable 'Clear Local Cache' and try again, or use a different model.")
+            else:
+                print(f"[LocalModel] Load error: {error_msg}")
+                return LocalModelResponse(f"[ERROR] Failed to load model: {error_msg[:200]}")
 
         start_time = time.time()
 
@@ -2118,73 +2018,106 @@ class LocalModelClient:
         images = []
         text_prompt = ""
 
-        for msg in messages:
-            content = msg.get("content", "")
-            if isinstance(content, str):
-                text_prompt += content + "\n"
-            elif isinstance(content, list):
-                for item in content:
-                    if isinstance(item, dict):
-                        if item.get("type") == "text":
-                            text_prompt += item.get("text", "") + "\n"
-                        elif item.get("type") == "image_url":
-                            image_url = item.get("image_url", {})
-                            url = image_url.get("url", "") if isinstance(image_url, dict) else str(image_url)
-                            if url.startswith("data:image"):
-                                _, b64data = url.split(",", 1)
-                                img_bytes = base64.b64decode(b64data)
-                                img = Image.open(io.BytesIO(img_bytes))
-                                images.append(img)
+        try:
+            for msg in messages:
+                content = msg.get("content", "")
+                if isinstance(content, str):
+                    text_prompt += content + "\n"
+                elif isinstance(content, list):
+                    for item in content:
+                        if isinstance(item, dict):
+                            if item.get("type") == "text":
+                                text_prompt += item.get("text", "") + "\n"
+                            elif item.get("type") == "image_url":
+                                image_url = item.get("image_url", {})
+                                url = image_url.get("url", "") if isinstance(image_url, dict) else str(image_url)
+                                if url.startswith("data:image"):
+                                    _, b64data = url.split(",", 1)
+                                    img_bytes = base64.b64decode(b64data)
+                                    img = Image.open(io.BytesIO(img_bytes))
+                                    images.append(img)
+        except Exception as e:
+            print(f"[LocalModel] Message parsing error: {e}")
+            return LocalModelResponse(f"[ERROR] Failed to parse input: {str(e)[:100]}")
 
         # Generate with retry logic for short responses
         response_text = ""
         retry_count = 0
         current_temp = temperature
 
-        while retry_count <= max_retries:
-            gen_start = time.time()
+        try:
+            while retry_count <= max_retries:
+                gen_start = time.time()
 
-            # Generate based on model family
-            if self.model_info.family == ModelFamily.FLORENCE2:
-                response_text = self._generate_florence2(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.MOONDREAM2:
-                response_text = self._generate_moondream2(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.SMOLVLM:
-                response_text = self._generate_smolvlm(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.PHI35_VISION:
-                response_text = self._generate_phi35_vision(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.LLAVA:
-                response_text = self._generate_llava(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.INTERNVL:
-                response_text = self._generate_internvl(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.MINICPM:
-                response_text = self._generate_minicpm(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.PALIGEMMA:
-                response_text = self._generate_paligemma(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.LLAMA_VISION:
-                response_text = self._generate_llama_vision(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.PIXTRAL:
-                response_text = self._generate_pixtral(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.MOLMO:
-                response_text = self._generate_molmo(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.IDEFICS:
-                response_text = self._generate_idefics(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.QWENVL:
-                response_text = self._generate_qwenvl(messages, images, max_tokens, current_temp)
+                # Generate based on model family
+                if self.model_info.family == ModelFamily.FLORENCE2:
+                    response_text = self._generate_florence2(images, text_prompt, max_tokens, current_temp)
+                elif self.model_info.family == ModelFamily.MOONDREAM2:
+                    response_text = self._generate_moondream2(images, text_prompt, max_tokens, current_temp)
+                elif self.model_info.family == ModelFamily.SMOLVLM:
+                    response_text = self._generate_smolvlm(images, text_prompt, max_tokens, current_temp)
+                elif self.model_info.family == ModelFamily.PHI35_VISION:
+                    response_text = self._generate_phi35_vision(images, text_prompt, max_tokens, current_temp)
+                elif self.model_info.family == ModelFamily.LLAVA:
+                    response_text = self._generate_llava(images, text_prompt, max_tokens, current_temp)
+                elif self.model_info.family == ModelFamily.INTERNVL:
+                    response_text = self._generate_internvl(images, text_prompt, max_tokens, current_temp)
+                elif self.model_info.family == ModelFamily.MINICPM:
+                    response_text = self._generate_minicpm(images, text_prompt, max_tokens, current_temp)
+                elif self.model_info.family == ModelFamily.PALIGEMMA:
+                    response_text = self._generate_paligemma(images, text_prompt, max_tokens, current_temp)
+                elif self.model_info.family == ModelFamily.LLAMA_VISION:
+                    response_text = self._generate_llama_vision(images, text_prompt, max_tokens, current_temp)
+                elif self.model_info.family == ModelFamily.PIXTRAL:
+                    response_text = self._generate_pixtral(images, text_prompt, max_tokens, current_temp)
+                elif self.model_info.family == ModelFamily.MOLMO:
+                    response_text = self._generate_molmo(images, text_prompt, max_tokens, current_temp)
+                elif self.model_info.family == ModelFamily.IDEFICS:
+                    response_text = self._generate_idefics(images, text_prompt, max_tokens, current_temp)
+                elif self.model_info.family == ModelFamily.QWENVL:
+                    response_text = self._generate_qwenvl(messages, images, max_tokens, current_temp)
+                else:
+                    return LocalModelResponse(f"[ERROR] Unknown model family: {self.model_info.family}")
+
+                gen_elapsed = time.time() - gen_start
+
+                # Validate response length
+                word_count = len(response_text.split())
+                if word_count >= min_response_words:
+                    break
+
+                # Response too short, retry with adjusted temperature
+                retry_count += 1
+                if retry_count <= max_retries:
+                    current_temp = min(1.0, temperature + 0.2 * retry_count)
+
+        except Exception as e:
+            error_msg = str(e)
+            print(f"[LocalModel] Generation error: {error_msg}")
+
+            # Always cleanup after error
+            self._cleanup_after_generation()
+
+            # Handle specific error types with helpful messages
+            if "CUDA" in error_msg or "index out of bounds" in error_msg or "scatter" in error_msg.lower():
+                # Unload the model to recover from CUDA errors
+                LocalModelClient.unload_model()
+                return LocalModelResponse(
+                    f"[ERROR] CUDA error - this model has compatibility issues with your PyTorch version. "
+                    f"Please try Florence-2 or Qwen3-VL instead. Error: {error_msg[:100]}"
+                )
+            elif "out of memory" in error_msg.lower() or "OOM" in error_msg:
+                LocalModelClient.unload_model()
+                return LocalModelResponse(
+                    f"[ERROR] Out of GPU memory. Try a smaller model or enable 4-bit quantization."
+                )
+            elif "NoneType" in error_msg:
+                return LocalModelResponse(
+                    f"[ERROR] Model initialization error - tokenizer or processor not loaded correctly. "
+                    f"Please try a different model like Florence-2 or Qwen3-VL."
+                )
             else:
-                raise ValueError(f"Unknown model family: {self.model_info.family}")
-
-            gen_elapsed = time.time() - gen_start
-
-            # Validate response length
-            word_count = len(response_text.split())
-            if word_count >= min_response_words:
-                break
-
-            # Response too short, retry with adjusted temperature
-            retry_count += 1
-            if retry_count <= max_retries:
-                current_temp = min(1.0, temperature + 0.2 * retry_count)
+                return LocalModelResponse(f"[ERROR] Generation failed: {error_msg[:200]}")
 
         elapsed = time.time() - start_time
         word_count = len(response_text.split())
@@ -2218,6 +2151,10 @@ class LocalModelClient:
             if not self.keep_model_loaded:
                 self._unload_model_instance()
 
+            # Clear image cache to prevent memory buildup
+            if len(LocalModelClient._image_cache) > LocalModelClient._image_cache_max_size:
+                LocalModelClient._image_cache.clear()
+
             if torch.cuda.is_available():
                 # Synchronize to ensure all CUDA operations are complete
                 torch.cuda.synchronize()
@@ -2227,39 +2164,86 @@ class LocalModelClient:
 
             # Force garbage collection to release any dangling references
             gc.collect()
+            gc.collect()
 
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[LocalModel] Cleanup warning: {e}")
 
     def _unload_model_instance(self):
         """Unload model from this instance to free VRAM."""
         import torch
 
         try:
-            # Delete model references
+            print("[LocalModel] Unloading model instance from VRAM...")
+
+            # Move model to CPU first before deletion (helps with VRAM release)
             if hasattr(self, 'model') and self.model is not None:
-                del self.model
+                try:
+                    if hasattr(self.model, 'to'):
+                        self.model.to('cpu')
+                except:
+                    pass
+                try:
+                    del self.model
+                except:
+                    pass
                 self.model = None
 
             if hasattr(self, 'processor') and self.processor is not None:
-                del self.processor
+                try:
+                    del self.processor
+                except:
+                    pass
                 self.processor = None
 
             if hasattr(self, 'tokenizer') and self.tokenizer is not None:
-                del self.tokenizer
+                try:
+                    del self.tokenizer
+                except:
+                    pass
                 self.tokenizer = None
 
-            # Clear class-level cache as well
+            # Clear class-level cache as well - move to CPU first
+            if LocalModelClient._cached_model is not None:
+                try:
+                    if hasattr(LocalModelClient._cached_model, 'to'):
+                        LocalModelClient._cached_model.to('cpu')
+                except:
+                    pass
+                try:
+                    del LocalModelClient._cached_model
+                except:
+                    pass
+
+            if LocalModelClient._cached_processor is not None:
+                try:
+                    del LocalModelClient._cached_processor
+                except:
+                    pass
+
+            if LocalModelClient._cached_tokenizer is not None:
+                try:
+                    del LocalModelClient._cached_tokenizer
+                except:
+                    pass
+
             LocalModelClient._cached_model = None
             LocalModelClient._cached_processor = None
             LocalModelClient._cached_tokenizer = None
             LocalModelClient._cached_signature = None
+            LocalModelClient._compiled_generate = None
 
-            # Force garbage collection
+            # Clear image cache
+            LocalModelClient._image_cache.clear()
+
+            # Force garbage collection - multiple passes for thorough cleanup
+            gc.collect()
+            gc.collect()
             gc.collect()
 
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
+                torch.cuda.synchronize()
 
             print("[LocalModel] Model unloaded from VRAM")
 
@@ -2365,10 +2349,21 @@ class LocalModelClient:
         # DynamicCache compatibility fix for transformers 4.49+
         self._patch_dynamic_cache_compat()
 
+        # SmolVLM is a small model (500M-2B) that works best with simple, direct prompts
+        # Complex multi-paragraph prompts from the prompt generator confuse it
+        # Extract or simplify the prompt to get better results
+        original_word_count = len(prompt.strip().split())
+        simplified_prompt = self._simplify_prompt_for_small_model(prompt)
+        simplified_word_count = len(simplified_prompt.split())
+
+        if original_word_count > simplified_word_count:
+            print(f"[SmolVLM] Simplified prompt from {original_word_count} to {simplified_word_count} words")
+            print(f"[SmolVLM] Using prompt: {simplified_prompt[:100]}...")
+
         messages = [{"role": "user", "content": []}]
         if images:
             messages[0]["content"].append({"type": "image"})
-        messages[0]["content"].append({"type": "text", "text": prompt.strip()})
+        messages[0]["content"].append({"type": "text", "text": simplified_prompt})
 
         text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
@@ -2745,6 +2740,20 @@ class LocalModelClient:
 
         import torch
 
+        # Resize large images for speed - Idefics2 is slow with very large images
+        processed_images = []
+        target_size = self.model_info.target_image_size if self.model_info else 416
+        for img in images:
+            if hasattr(img, 'size'):
+                w, h = img.size
+                if w > target_size * 2 or h > target_size * 2:
+                    # Resize large images to speed up processing
+                    ratio = min(target_size * 2 / w, target_size * 2 / h)
+                    new_size = (int(w * ratio), int(h * ratio))
+                    img = img.resize(new_size, resample=3)  # LANCZOS
+                    print(f"[Idefics2] Resized image from {w}x{h} to {new_size[0]}x{new_size[1]}")
+            processed_images.append(img)
+
         # Idefics2 uses chat template
         messages = [
             {
@@ -2760,7 +2769,7 @@ class LocalModelClient:
 
         inputs = self.processor(
             text=text,
-            images=images if images else None,
+            images=processed_images if processed_images else None,
             return_tensors="pt"
         )
 
@@ -2788,6 +2797,60 @@ class LocalModelClient:
 
         generated_tokens = outputs[0][input_len:]
         return self.processor.decode(generated_tokens, skip_special_tokens=True)
+
+    def _simplify_prompt_for_small_model(self, prompt: str) -> str:
+        """
+        Simplify complex prompts for small vision models like SmolVLM.
+
+        Small models (500M-2B) struggle with complex multi-paragraph prompts.
+        This extracts the core instruction or uses a simplified fallback.
+        """
+        prompt = prompt.strip()
+
+        # If prompt is already simple (under 150 words), use it directly
+        word_count = len(prompt.split())
+        if word_count <= 150:
+            return prompt
+
+        # For complex prompts, try to extract the core instruction
+        # Look for common patterns in the prompt
+
+        # Check for "describe" or "caption" requests
+        lower_prompt = prompt.lower()
+
+        # Try to find the most relevant instruction line
+        lines = prompt.split('\n')
+        relevant_lines = []
+
+        for line in lines:
+            line_stripped = line.strip()
+            line_lower = line_stripped.lower()
+
+            # Skip empty lines and very short lines
+            if len(line_stripped) < 10:
+                continue
+
+            # Prioritize lines that contain action words
+            action_words = ['describe', 'caption', 'write', 'create', 'generate', 'provide', 'detail']
+            if any(word in line_lower for word in action_words):
+                relevant_lines.append(line_stripped)
+
+        # If we found relevant instruction lines, use the first one
+        if relevant_lines:
+            simplified = relevant_lines[0]
+            # If it's still too complex, further simplify
+            if len(simplified.split()) > 100:
+                return "Describe this image in detail, including the subject, setting, lighting, colors, and any notable features."
+            return simplified
+
+        # Fallback: use a universal image description prompt
+        # This works well for most image captioning tasks
+        if 'portrait' in lower_prompt or 'person' in lower_prompt or 'woman' in lower_prompt or 'man' in lower_prompt:
+            return "Describe this portrait image in detail. Include the person's appearance, pose, expression, clothing, and the background setting."
+        elif 'scene' in lower_prompt or 'landscape' in lower_prompt:
+            return "Describe this scene in detail. Include the setting, objects, colors, lighting, and overall atmosphere."
+        else:
+            return "Describe this image in detail. Include the main subject, setting, colors, lighting, and any notable features or objects visible."
 
     def _patch_dynamic_cache_compat(self):
         """
@@ -3129,10 +3192,9 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
 
     Supports multiple model families:
     - Florence-2: Ultra-fast captioning (0.2-0.8B)
-    - Moondream2: Efficient VLM (1.8B)
     - SmolVLM: Tiny models (0.25-2B)
-    - Phi-3.5-Vision: High quality (4.2B)
-    - QwenVL: Full-featured VLM (2-8B)
+    - QwenVL: Full-featured VLM (2-32B)
+    - LLaVA: Popular VLM (7-13B)
 
     No API needed, runs locally with automatic VRAM management.
     """
@@ -3287,7 +3349,7 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                 comfy_io.Combo.Input(
                     "text_model",
                     options=text_models,
-                    default="Qwen3-0.6B-Instruct" if "Qwen3-0.6B-Instruct" in text_models else text_models[0] if text_models else "",
+                    default="Qwen3-0.6B" if "Qwen3-0.6B" in text_models else text_models[0] if text_models else "",
                     display_name="Text Model",
                     tooltip="Text model (future use)"
                 ),
@@ -3376,6 +3438,12 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     display_name="Clear Local Cache",
                     tooltip="Clear all cached model files and re-download from HuggingFace. Use if model is corrupted or outdated."
                 ),
+                comfy_io.String.Input(
+                    "hf_token",
+                    default="",
+                    display_name="HuggingFace Token",
+                    tooltip="HuggingFace token for gated models (PaliGemma, etc). Get token from huggingface.co/settings/tokens"
+                ),
                 # Analysis mode - Local supports Quick/Standard only (no Deep)
                 comfy_io.Combo.Input(
                     "analysis_mode",
@@ -3409,24 +3477,20 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
         num_beams: int,
         use_torch_compile: bool,
         clear_local_cache: bool,
+        hf_token: str,
         analysis_mode: str,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
         try:
-            # Check for unsupported models
-            if vision_model == "Moondream2":
-                raise ValueError(
-                    "Moondream2 is temporarily disabled due to compatibility issues with newer PyTorch versions. "
-                    "Please select a different model:\n"
-                    "  - Florence-2-base (fast, recommended)\n"
-                    "  - Florence-2-large (better quality)\n"
-                    "  - Qwen3-VL-4B (high quality)\n"
-                    "  - SmolVLM-500M or SmolVLM-2B (lightweight)"
-                )
-
             # Clear cache if requested
             if clear_local_cache:
                 cls._clear_all_local_cache(vision_model)
+
+            # Set HuggingFace token for gated models
+            if hf_token and hf_token.strip():
+                os.environ["HF_TOKEN"] = hf_token.strip()
+                os.environ["HUGGING_FACE_HUB_TOKEN"] = hf_token.strip()  # Legacy env var
+                print("[SID_LLM_Local] HuggingFace token set for gated model access")
 
             # Use vision_model (primary use case)
             model = vision_model
@@ -3517,6 +3581,7 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
             )
 
             print(f"[SID_LLM_Local] {model} ({quant})")
+            print(f"[SID_LLM_Local] max_tokens={max_tokens}, text_model={text_model}")
 
             return comfy_io.NodeOutput(config)
 
