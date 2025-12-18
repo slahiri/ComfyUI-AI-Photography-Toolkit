@@ -3444,12 +3444,12 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     display_name="HuggingFace Token",
                     tooltip="HuggingFace token for gated models (PaliGemma, etc). Get token from huggingface.co/settings/tokens"
                 ),
-                # Analysis mode - Local supports Quick/Standard only (no Deep)
+                # Analysis mode - matches SID_LLM_API options
                 comfy_io.Combo.Input(
                     "analysis_mode",
-                    options=["Quick", "Standard"],
+                    options=["Quick", "Standard", "Detailed"],
                     default="Standard",
-                    tooltip="Analysis depth: Quick (fast, 30-60 words), Standard (balanced, 80-150 words)"
+                    tooltip="Quick: Single-pass (1 call). Standard: Optimized multi-aspect (3-4 calls). Detailed: Falls back to Standard for local models"
                 ),
             ],
             outputs=[
@@ -3653,12 +3653,12 @@ class SID_LLM_Local_API(comfy_io.ComfyNode):
                     display_mode=comfy_io.NumberDisplay.slider,
                     tooltip="Creativity (0=deterministic, 0.3=balanced, 1+=creative)"
                 ),
-                # Analysis mode - Local API supports Quick/Standard only (no Deep)
+                # Analysis mode - matches SID_LLM_API options
                 comfy_io.Combo.Input(
                     "analysis_mode",
-                    options=["Quick", "Standard"],
+                    options=["Quick", "Standard", "Detailed"],
                     default="Standard",
-                    tooltip="Analysis depth: Quick (fast, 30-60 words), Standard (balanced, 80-150 words)"
+                    tooltip="Quick: Single-pass (1 call). Standard: Optimized multi-aspect (3-4 calls). Detailed: Falls back to Standard for local APIs"
                 ),
             ],
             outputs=[
