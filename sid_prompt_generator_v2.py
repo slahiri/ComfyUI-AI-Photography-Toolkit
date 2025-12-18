@@ -126,6 +126,13 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                     optional=True,
                     tooltip="Optional: Skip generation and use this prompt directly"
                 ),
+                io.String.Input(
+                    "prompt_enhance",
+                    default="",
+                    multiline=True,
+                    optional=True,
+                    tooltip="Optional: Additional text to append to the generated prompt (e.g., clothing changes, nudity, style modifications)"
+                ),
             ],
             outputs=[
                 io.String.Output("prompt", display_name="prompt"),
@@ -146,6 +153,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         nsfw_mode: bool,
         seed: int,
         prompt_override: str = "",
+        prompt_enhance: str = "",
     ):
         """Execute prompt generation using core module."""
         import random
@@ -153,7 +161,12 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         # Handle prompt_override - skip generation entirely if provided
         if prompt_override and prompt_override.strip():
             print("[SID Prompt Generator] Using prompt override - skipping generation")
-            return io.NodeOutput(prompt_override.strip(), "", "")
+            final_prompt = prompt_override.strip()
+            # Still apply enhancement to override if provided
+            if prompt_enhance and prompt_enhance.strip():
+                final_prompt = final_prompt + " " + prompt_enhance.strip()
+                print(f"[SID Prompt Generator] Applied enhancement to override")
+            return io.NodeOutput(final_prompt, "", "")
 
         # Set seed for reproducibility
         if seed == 0:
@@ -208,7 +221,13 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         print(f"\n[Seed: {seed}, Temperature: {temperature}, Mode: {analysis_mode}, Style: {prompt_style}, Reasoning: {reasoning_str}, NSFW: {nsfw_str}]")
         print(result.get_metadata_str())
 
-        return io.NodeOutput(result.prompt, result.negative, result.caption)
+        # Apply prompt enhancement if provided
+        final_prompt = result.prompt
+        if prompt_enhance and prompt_enhance.strip():
+            final_prompt = final_prompt + " " + prompt_enhance.strip()
+            print(f"[SID Prompt Generator] Applied enhancement: {prompt_enhance.strip()[:50]}...")
+
+        return io.NodeOutput(final_prompt, result.negative, result.caption)
 
 
 # =============================================================================
