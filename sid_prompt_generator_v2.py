@@ -150,13 +150,6 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                     tooltip="Seed for reproducibility (0 = random)"
                 ),
                 io.String.Input(
-                    "prompt_override",
-                    default="",
-                    multiline=True,
-                    optional=True,
-                    tooltip="Optional: Skip generation and use this prompt directly"
-                ),
-                io.String.Input(
                     "prompt_enhance",
                     default="",
                     multiline=True,
@@ -172,6 +165,11 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                     round=0.1,
                     display_mode=io.NumberDisplay.slider,
                     tooltip="Emphasis weight for prompt_enhance keywords (1.0=normal, 1.3=default, 2.0=max)"
+                ),
+                io.String.Input(
+                    "prompt_override",
+                    optional=True,
+                    tooltip="Optional input: Skip generation and use this prompt directly (connect from another node)"
                 ),
             ],
             outputs=[
@@ -192,15 +190,15 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         generate_caption: bool,
         nsfw_mode: bool,
         seed: int,
-        prompt_override: str = "",
         prompt_enhance: str = "",
         emphasis_strength: float = 1.3,
+        prompt_override: str = None,
     ):
         """Execute prompt generation using core module."""
         import random
 
         # Handle prompt_override - skip generation entirely if provided
-        if prompt_override and prompt_override.strip():
+        if prompt_override is not None and prompt_override.strip():
             print("[SID Prompt Generator] Using prompt override - skipping generation")
             final_prompt = prompt_override.strip()
             # Still apply emphasis layer to override if provided
