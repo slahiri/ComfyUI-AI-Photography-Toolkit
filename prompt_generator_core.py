@@ -1733,31 +1733,41 @@ Only describe elements that are ACTUALLY VISIBLE. Write 1-3 sentences."""
                 "nsfw", nsfw_system, nsfw_user, 200
             )
 
-        # Call 4: Synthesis
+        # Call 4: Synthesis - integrate enhancement naturally into the prompt
+        enhancement_instruction = ""
+        if user_guidance:
+            enhancement_instruction = f"""
+USER ENHANCEMENT (MUST integrate naturally into the prompt):
+"{user_guidance}"
+
+IMPORTANT: Integrate this enhancement INTO the description naturally - modify clothing, add/remove elements,
+or adjust the scene as specified. Do NOT append it at the end. The final prompt should read as if the
+enhancement was always part of the original description."""
+
         if self.prompt_style == "tags":
             synthesis_prompt = f"""Convert these descriptions into comma-separated booru-style tags:
 
 {json.dumps(components, indent=2)}
-
-{f'User direction: {user_guidance}' if user_guidance else ''}
+{enhancement_instruction}
 
 OUTPUT FORMAT - TAGS ONLY:
 Start with: masterpiece, best quality, highres
 Then descriptive tags using underscores for multi-word tags (long_hair, looking_at_viewer)
+{f'Include tags for: {user_guidance}' if user_guidance else ''}
 NO sentences - ONLY comma-separated tags.
 End with: no_text, no_watermark"""
         else:
             synthesis_prompt = f"""Combine these image descriptions into a single cohesive AI image generation prompt:
 
 {json.dumps(components, indent=2)}
-
-{f'User direction to incorporate: {user_guidance}' if user_guidance else ''}
+{enhancement_instruction}
 
 INSTRUCTIONS:
 - Write 4-6 flowing sentences that read naturally
 - Start with the subject, then clothing/appearance, then environment
 - Include specific details about colors, textures, lighting
-- Maintain visual accuracy - don't add details not in the descriptions
+- If enhancement is provided, weave it naturally into the description (e.g., change clothing, add elements)
+- Maintain the same prompt length (~{self.prompt_length} words) - integrate, don't append
 - End with "no text, no watermark"
 
 Write approximately {self.prompt_length} words."""
@@ -1894,18 +1904,28 @@ Write approximately {self.prompt_length} words."""
                 "Describe the environment and lighting in 2-3 sentences.", 150
             )
 
-        # Synthesis step - adjust format based on prompt style
+        # Synthesis step - integrate enhancement naturally into the prompt
+        enhancement_instruction = ""
+        if user_guidance:
+            enhancement_instruction = f"""
+USER ENHANCEMENT (MUST integrate naturally into the prompt):
+"{user_guidance}"
+
+IMPORTANT: Integrate this enhancement INTO the description naturally - modify clothing, add/remove elements,
+or adjust the scene as specified. Do NOT append it at the end. The final prompt should read as if the
+enhancement was always part of the original description."""
+
         if self.prompt_style == "tags":
             synthesis_prompt = f"""Convert these descriptions into comma-separated booru-style tags:
 
 {json.dumps(components, indent=2)}
-
-{f'User direction: {user_guidance}' if user_guidance else ''}
+{enhancement_instruction}
 
 OUTPUT FORMAT - TAGS ONLY:
 Start with: masterpiece, best quality, highres
 Then descriptive tags like: 1girl, solo, long_hair, brown_eyes, smile, dress, outdoors
 Use underscores for multi-word tags (long_hair, looking_at_viewer)
+{f'Include tags for: {user_guidance}' if user_guidance else ''}
 NO sentences or prose - ONLY comma-separated tags.
 End with: no_text, no_watermark"""
         else:
@@ -1918,10 +1938,12 @@ End with: no_text, no_watermark"""
             synthesis_prompt = f"""Component descriptions to combine:
 
 {json.dumps(components, indent=2)}
-
-{f'User direction: {user_guidance}' if user_guidance else ''}
+{enhancement_instruction}
 
 {synthesis_instructions}
+
+IMPORTANT: If enhancement is provided, weave it naturally into the description.
+Maintain the same prompt length (~{self.prompt_length} words) - integrate, don't append.
 
 Write approximately {self.prompt_length} words."""
 

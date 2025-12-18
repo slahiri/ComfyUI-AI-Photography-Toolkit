@@ -212,8 +212,11 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
             extra_params=llm_model.extra_params
         )
 
-        # Process image using core module (no user_guidance - removed)
-        result = generator.process_image(pil_image)
+        # Process image using core module
+        # For Standard/Detailed modes, prompt_enhance is integrated in synthesis
+        # For Quick mode, it will be appended after generation
+        enhance_text = prompt_enhance.strip() if prompt_enhance else ""
+        result = generator.process_image(pil_image, user_guidance=enhance_text)
 
         # Print metadata and debug log to console
         reasoning_str = "ON" if supports_reasoning else "OFF"
@@ -221,11 +224,12 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         print(f"\n[Seed: {seed}, Temperature: {temperature}, Mode: {analysis_mode}, Style: {prompt_style}, Reasoning: {reasoning_str}, NSFW: {nsfw_str}]")
         print(result.get_metadata_str())
 
-        # Apply prompt enhancement if provided
+        # For Quick mode only: append enhancement (since there's no synthesis step)
+        # Standard/Detailed modes integrate enhancement in synthesis
         final_prompt = result.prompt
-        if prompt_enhance and prompt_enhance.strip():
-            final_prompt = final_prompt + " " + prompt_enhance.strip()
-            print(f"[SID Prompt Generator] Applied enhancement: {prompt_enhance.strip()[:50]}...")
+        if enhance_text and analysis_mode == "quick":
+            final_prompt = final_prompt + " " + enhance_text
+            print(f"[SID Prompt Generator] Quick mode - appended enhancement: {enhance_text[:50]}...")
 
         return io.NodeOutput(final_prompt, result.negative, result.caption)
 
