@@ -10,11 +10,17 @@ License: MIT
 """
 
 import gc
+import json
 import numpy as np
+from pathlib import Path
+from datetime import datetime
 from PIL import Image
 from typing import Dict, Any
 
 from comfy_api.latest import io
+
+# Results storage directory
+GENERATION_RESULTS_DIR = Path(__file__).parent / "generation_results"
 
 # Local imports
 from .llm_providers import LLMModelConfig
@@ -22,6 +28,9 @@ from .llm_providers.sid_llm_api import LLM_MODEL_Type
 from .prompt_generator_core import (
     PromptGenerator,
     LLMConfig,
+    load_templates,
+    get_template_names,
+    get_template_by_name,
 )
 
 
@@ -74,6 +83,64 @@ def format_emphasis(text: str, strength: float = 1.3) -> str:
     return ", ".join(formatted_parts)
 
 
+def save_generation_result(
+    pil_image: Image.Image,
+    prompt: str,
+    negative: str,
+    caption: str,
+    metadata: Dict[str, Any]
+) -> str:
+    """
+    Save generation result to disk for review.
+
+    Args:
+        pil_image: Source image
+        prompt: Generated prompt
+        negative: Negative prompt
+        caption: Caption
+        metadata: Generation metadata (settings, timing, etc.)
+
+    Returns:
+        Session ID (folder name)
+    """
+    GENERATION_RESULTS_DIR.mkdir(exist_ok=True)
+
+    # Create session folder with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    session_id = f"gen_{timestamp}"
+    session_dir = GENERATION_RESULTS_DIR / session_id
+    session_dir.mkdir(exist_ok=True)
+
+    # Save source image
+    try:
+        image_path = session_dir / "source.jpg"
+        pil_image.save(image_path, "JPEG", quality=90)
+    except Exception as e:
+        print(f"[SID Prompt Generator] Warning: Could not save image: {e}")
+
+    # Save prompt
+    prompt_path = session_dir / "prompt.txt"
+    prompt_path.write_text(prompt, encoding="utf-8")
+
+    # Save negative prompt if exists
+    if negative:
+        negative_path = session_dir / "negative.txt"
+        negative_path.write_text(negative, encoding="utf-8")
+
+    # Save caption if exists
+    if caption:
+        caption_path = session_dir / "caption.txt"
+        caption_path.write_text(caption, encoding="utf-8")
+
+    # Save metadata
+    metadata_path = session_dir / "metadata.json"
+    with open(metadata_path, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2, ensure_ascii=False)
+
+    print(f"[SID Prompt Generator] Results saved to: {session_dir}")
+    return session_id
+
+
 # =============================================================================
 # Main Node Class
 # =============================================================================
@@ -113,9 +180,15 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                 ),
                 io.Combo.Input(
                     "prompt_style",
-                    options=["Expanded", "Tags"],
-                    default="Expanded",
-                    tooltip="Expanded: Natural flowing sentences. Tags: Comma-separated booru-style tags (better for anime/illustration models)"
+                    options=["Template", "Verbose", "Tags"],
+                    default="Verbose",
+                    tooltip="Template: Use preset prompt templates. Verbose: Natural flowing sentences. Tags: Comma-separated booru-style tags"
+                ),
+                io.Combo.Input(
+                    "template",
+                    options=lambda: get_template_names() or ["Detailed Description"],
+                    default="Detailed Description",
+                    tooltip="Select prompt template (only used when prompt_style is Template). Add templates to config/templates.toml and refresh browser"
                 ),
                 io.Int.Input(
                     "prompt_length",
@@ -171,6 +244,12 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                     optional=True,
                     tooltip="Optional input: Skip generation and use this prompt directly (connect from another node)"
                 ),
+                io.Boolean.Input(
+                    "store_results",
+                    default=False,
+                    display_name="Store Results",
+                    tooltip="Save prompt, image, and metadata locally. View at /sid/generation-results"
+                ),
             ],
             outputs=[
                 io.String.Output("prompt", display_name="prompt"),
@@ -185,6 +264,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         image,
         llm_model: LLMModelConfig,
         prompt_style: str,
+        template: str,
         prompt_length: int,
         generate_negative: bool,
         generate_caption: bool,
@@ -193,9 +273,12 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         prompt_enhance: str = "",
         emphasis_strength: float = 1.3,
         prompt_override: str = None,
+        store_results: bool = False,
     ):
         """Execute prompt generation using core module."""
         import random
+        import time
+        start_time = time.time()
 
         # Handle prompt_override - skip generation entirely if provided
         if prompt_override is not None and prompt_override.strip():
@@ -233,6 +316,25 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         temperature = getattr(llm_model, 'temperature', 0.7)
         supports_reasoning = getattr(llm_model, 'supports_reasoning', False)
 
+        # Map prompt_style to internal style
+        # Verbose -> verbose (natural sentences)
+        # Tags -> tags (comma-separated)
+        # Template -> template (uses selected template's system prompt)
+        internal_style = prompt_style.lower()
+        if internal_style == "verbose":
+            internal_style = "verbose"  # Keep as verbose
+
+        # Get template info if using Template style
+        template_prompt = None
+        if prompt_style.lower() == "template":
+            template_data = get_template_by_name(template)
+            if template_data:
+                template_prompt = template_data.get("system", "")
+                print(f"[SID Prompt Generator] Using template: {template}")
+            else:
+                print(f"[SID Prompt Generator] Template not found: {template}, falling back to Verbose")
+                internal_style = "verbose"
+
         # Create generator with LLM config from node connection
         generator = PromptGenerator(
             provider=llm_model.provider,
@@ -243,13 +345,14 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
             temperature=temperature,
             analysis_mode=analysis_mode,
             enable_reasoning=supports_reasoning,
-            prompt_style=prompt_style.lower(),  # "expanded" or "tags"
+            prompt_style=internal_style,
             prompt_length=prompt_length,
             generate_negative=generate_negative,
             generate_caption=generate_caption,
             nsfw_mode=nsfw_mode,
             verbose=True,
-            extra_params=llm_model.extra_params
+            extra_params=llm_model.extra_params,
+            template_prompt=template_prompt
         )
 
         # Process image using core module
@@ -272,6 +375,32 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
             emphasis_text = format_emphasis(enhance_text, emphasis_strength)
             final_prompt = final_prompt + ", " + emphasis_text
             print(f"[SID Prompt Generator] Applied emphasis layer: {emphasis_text[:60]}...")
+
+        # Store results if enabled
+        if store_results:
+            generation_time = time.time() - start_time
+            metadata = {
+                "timestamp": datetime.now().isoformat(),
+                "seed": seed,
+                "prompt_style": prompt_style,
+                "template": template if prompt_style.lower() == "template" else None,
+                "prompt_length": prompt_length,
+                "generate_negative": generate_negative,
+                "generate_caption": generate_caption,
+                "nsfw_mode": nsfw_mode,
+                "prompt_enhance": enhance_text,
+                "emphasis_strength": emphasis_strength,
+                "model_config": {
+                    "provider": llm_model.provider,
+                    "model": llm_model.model,
+                    "analysis_mode": analysis_mode,
+                    "temperature": temperature,
+                },
+                "timing": {
+                    "total_seconds": round(generation_time, 2)
+                }
+            }
+            save_generation_result(pil_image, final_prompt, result.negative, result.caption, metadata)
 
         return io.NodeOutput(final_prompt, result.negative, result.caption)
 

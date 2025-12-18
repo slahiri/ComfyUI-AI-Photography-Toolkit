@@ -321,6 +321,81 @@ def get_vocabulary_terms() -> Dict[str, List[str]]:
     }
 
 
+# =============================================================================
+# Template System - Dynamic loading for hot-reload
+# =============================================================================
+
+def load_templates() -> Dict[str, Dict[str, str]]:
+    """
+    Load prompt templates from TOML file.
+
+    Called dynamically each time to support hot-reload without restart.
+    Add new templates to config/templates.toml and refresh browser.
+
+    Returns:
+        Dict mapping template key to {name, system, description}
+    """
+    try:
+        import tomllib
+    except ImportError:
+        import tomli as tomllib
+
+    # Find templates.toml relative to this file
+    config_dir = Path(__file__).parent / "config"
+    templates_file = config_dir / "templates.toml"
+
+    if not templates_file.exists():
+        print(f"[PromptGen] Templates file not found: {templates_file}")
+        return {}
+
+    try:
+        with open(templates_file, "rb") as f:
+            data = tomllib.load(f)
+
+        templates = {}
+        for key, value in data.items():
+            if isinstance(value, dict) and "name" in value and "system" in value:
+                templates[key] = {
+                    "name": value.get("name", key),
+                    "system": value.get("system", ""),
+                    "description": value.get("description", "")
+                }
+        return templates
+    except Exception as e:
+        print(f"[PromptGen] Error loading templates: {e}")
+        return {}
+
+
+def get_template_names() -> List[str]:
+    """
+    Get list of template display names for dropdown.
+
+    Called dynamically to support hot-reload.
+
+    Returns:
+        List of template display names
+    """
+    templates = load_templates()
+    return [t["name"] for t in templates.values()]
+
+
+def get_template_by_name(display_name: str) -> Optional[Dict[str, str]]:
+    """
+    Get template by its display name.
+
+    Args:
+        display_name: The name shown in dropdown
+
+    Returns:
+        Template dict with {name, system, description} or None
+    """
+    templates = load_templates()
+    for template in templates.values():
+        if template["name"] == display_name:
+            return template
+    return None
+
+
 def cleanup_tags(raw_tags: str) -> str:
     """
     Clean up LLM-generated tags output.
@@ -1313,13 +1388,14 @@ class PromptGenerator:
         temperature: float = 0.7,
         analysis_mode: str = "standard",
         enable_reasoning: bool = False,
-        prompt_style: str = "expanded",
+        prompt_style: str = "verbose",
         prompt_length: int = 150,
         generate_negative: bool = False,
         generate_caption: bool = False,
         nsfw_mode: bool = False,
         verbose: bool = True,
-        extra_params: Dict[str, Any] = None
+        extra_params: Dict[str, Any] = None,
+        template_prompt: str = None
     ):
         self.config = LLMConfig(
             provider=provider,
@@ -1333,12 +1409,13 @@ class PromptGenerator:
         self.llm_client = LLMClient(self.config)
         self.analysis_mode = analysis_mode.lower()
         self.enable_reasoning = enable_reasoning
-        self.prompt_style = prompt_style.lower()  # "expanded" or "tags"
+        self.prompt_style = prompt_style.lower()  # "template", "verbose", or "tags"
         self.prompt_length = prompt_length
         self.generate_negative = generate_negative
         self.generate_caption = generate_caption
         self.nsfw_mode = nsfw_mode
         self.verbose = verbose
+        self.template_prompt = template_prompt  # Custom template system prompt
 
         # Get image sizes based on provider
         self.sizes = IMAGE_SIZES[self.config.provider_type]
@@ -1446,6 +1523,17 @@ class PromptGenerator:
 
         is_local = self.config.provider_type == "local"
 
+        # Template mode: Use custom template prompt directly (bypasses analysis modes)
+        if self.prompt_style == "template" and self.template_prompt:
+            self._log(f"[PromptGen] Using TEMPLATE mode with custom system prompt")
+            # Use template's system prompt with simple user prompt
+            template_user = "Describe this image following the system instructions."
+            if user_guidance:
+                template_user += f"\n\nAdditional guidance: {user_guidance}"
+            prompt = self.llm_client.call_vision(
+                base64_image, self.template_prompt, template_user,
+                max_tokens=self.prompt_length * 3
+            )
         # Analysis mode routing:
         # - Quick: Single vision call (fast, ~1 call) - all providers
         # - Standard: Optimized multi-aspect analysis (~3-4 calls) - all providers
@@ -1453,8 +1541,7 @@ class PromptGenerator:
         #
         # Local providers support Quick and Standard modes.
         # Detailed mode falls back to Standard for local providers.
-
-        if self.analysis_mode == "quick":
+        elif self.analysis_mode == "quick":
             # Quick mode: Single vision call
             self._log(f"[PromptGen] Using QUICK single-pass analysis")
             prompt = self.llm_client.call_vision(
@@ -1498,8 +1585,8 @@ class PromptGenerator:
         max_words = int(self.prompt_length * 1.5)
         result.prompt = zimage_clean(prompt, self.config.provider, max_words)
 
-        # Step 5b: Add Z-Image realism enhancers for portraits (only for expanded mode)
-        if has_human and self.prompt_style == "expanded":
+        # Step 5b: Add Z-Image realism enhancers for portraits (for verbose/template modes, not tags)
+        if has_human and self.prompt_style in ("expanded", "verbose", "template"):
             realism_tags = "realistic skin texture, natural skin pores, photorealistic, ultra detailed"
             result.prompt = f"{result.prompt}, {realism_tags}"
 
@@ -1611,19 +1698,29 @@ USER DIRECTION (apply this):
 "{user_guidance.strip()}"
 """
 
-        # Add tag format instruction if tags mode is selected
+        # Add style-specific instructions for Z-Image compatibility
         if self.prompt_style == "tags":
             tag_instruction = """
 
-OUTPUT FORMAT - TAGS:
-Output as comma-separated booru-style tags ONLY. NO sentences or prose.
-Start with: masterpiece, best quality, highres
+OUTPUT FORMAT - Z-IMAGE COMPATIBLE TAGS:
+Output as comma-separated tags for Z-Image realistic image generation. NO sentences or prose.
+Start with: masterpiece, best quality, highres, realistic, photorealistic
 Then add descriptive tags like: 1girl, solo, long_hair, brown_eyes, smile, dress, outdoors
 Use underscores for multi-word tags (e.g., long_hair, looking_at_viewer)
 Keep tags concise - single concepts only (e.g., "blue_eyes" not "beautiful sparkling blue eyes")
-Example output: masterpiece, best quality, highres, 1girl, solo, long_hair, blonde_hair, blue_eyes, smile, white_dress, standing, outdoors, sunlight"""
+End with: no_text, no_watermark
+Example output: masterpiece, best quality, highres, realistic, photorealistic, 1girl, solo, long_hair, blonde_hair, blue_eyes, smile, white_dress, standing, outdoors, sunlight, no_text, no_watermark"""
             system_prompt += tag_instruction
-            user_prompt += "\n\nRemember: Output ONLY comma-separated tags, not sentences."
+            user_prompt += "\n\nRemember: Output ONLY comma-separated tags for Z-Image realistic generation, not sentences."
+        else:
+            # Expanded mode - natural language for Z-Image
+            expanded_instruction = """
+
+OUTPUT FORMAT - Z-IMAGE COMPATIBLE PROMPT:
+Write natural flowing sentences optimized for Z-Image realistic, photorealistic image generation.
+Focus on visual details that produce realistic output: lighting, textures, materials, colors.
+End with: no text, no watermark"""
+            system_prompt += expanded_instruction
 
         # Add NSFW description instructions if enabled (humans only)
         if self.nsfw_mode and has_human:
@@ -1758,29 +1855,29 @@ or adjust the scene as specified. Do NOT append it at the end. The final prompt 
 enhancement was always part of the original description."""
 
         if self.prompt_style == "tags":
-            synthesis_prompt = f"""Convert these descriptions into comma-separated booru-style tags:
+            synthesis_prompt = f"""Convert these descriptions into Z-Image compatible tags for realistic image generation:
 
 {json.dumps(components, indent=2)}
 {enhancement_instruction}
 
-OUTPUT FORMAT - TAGS ONLY:
-Start with: masterpiece, best quality, highres
+OUTPUT FORMAT - Z-IMAGE COMPATIBLE TAGS:
+Start with: masterpiece, best quality, highres, realistic, photorealistic
 Then descriptive tags using underscores for multi-word tags (long_hair, looking_at_viewer)
 {f'Include tags for: {user_guidance}' if user_guidance else ''}
 NO sentences - ONLY comma-separated tags.
 End with: no_text, no_watermark"""
         else:
-            synthesis_prompt = f"""Combine these image descriptions into a single cohesive AI image generation prompt:
+            synthesis_prompt = f"""Combine these descriptions into a Z-Image prompt for realistic, photorealistic image generation:
 
 {json.dumps(components, indent=2)}
 {enhancement_instruction}
 
 INSTRUCTIONS:
-- Write 4-6 flowing sentences that read naturally
+- Write 4-6 flowing sentences optimized for Z-Image realistic output
 - Start with the subject, then clothing/appearance, then environment
-- Include specific details about colors, textures, lighting
-- If enhancement is provided, weave it naturally into the description (e.g., change clothing, add elements)
-- Maintain the same prompt length (~{self.prompt_length} words) - integrate, don't append
+- Include specific visual details: colors, textures, lighting, materials
+- If enhancement is provided, weave it naturally into the description
+- Output must generate realistic, photorealistic results
 - End with "no text, no watermark"
 
 Write approximately {self.prompt_length} words."""
@@ -1929,26 +2026,25 @@ or adjust the scene as specified. Do NOT append it at the end. The final prompt 
 enhancement was always part of the original description."""
 
         if self.prompt_style == "tags":
-            synthesis_prompt = f"""Convert these descriptions into comma-separated booru-style tags:
+            synthesis_prompt = f"""Convert these descriptions into Z-Image compatible tags for realistic image generation:
 
 {json.dumps(components, indent=2)}
 {enhancement_instruction}
 
-OUTPUT FORMAT - TAGS ONLY:
-Start with: masterpiece, best quality, highres
-Then descriptive tags like: 1girl, solo, long_hair, brown_eyes, smile, dress, outdoors
-Use underscores for multi-word tags (long_hair, looking_at_viewer)
+OUTPUT FORMAT - Z-IMAGE COMPATIBLE TAGS:
+Start with: masterpiece, best quality, highres, realistic, photorealistic
+Then descriptive tags using underscores for multi-word tags (long_hair, looking_at_viewer)
 {f'Include tags for: {user_guidance}' if user_guidance else ''}
-NO sentences or prose - ONLY comma-separated tags.
+NO sentences - ONLY comma-separated tags.
 End with: no_text, no_watermark"""
         else:
             # Get synthesis instructions from TOML (single source of truth)
             synthesis_instructions = get_component_prompt("synthesis", tier)
             if not synthesis_instructions:
                 # Minimal fallback
-                synthesis_instructions = "Combine into 4-6 flowing sentences. End with 'no text, no watermark'."
+                synthesis_instructions = "Combine into 4-6 flowing sentences for Z-Image realistic output. End with 'no text, no watermark'."
 
-            synthesis_prompt = f"""Component descriptions to combine:
+            synthesis_prompt = f"""Combine these descriptions into a Z-Image prompt for realistic, photorealistic image generation:
 
 {json.dumps(components, indent=2)}
 {enhancement_instruction}
@@ -1957,6 +2053,7 @@ End with: no_text, no_watermark"""
 
 IMPORTANT: If enhancement is provided, weave it naturally into the description.
 Maintain the same prompt length (~{self.prompt_length} words) - integrate, don't append.
+Output must generate realistic, photorealistic results.
 
 Write approximately {self.prompt_length} words."""
 

@@ -1,0 +1,250 @@
+# =============================================================================
+# Prompt Templates - Z-Image Optimized
+# =============================================================================
+# Add new templates and refresh browser (no restart needed)
+
+[tags]
+name = "Tags"
+description = "Comma-separated tags for Z-Image"
+system = """Generate comma-separated tags. Describe ONLY what is VISIBLE.
+
+Start with: masterpiece, best quality, highres, realistic, photorealistic
+
+PEOPLE: shot type, pose, skin tone, eye color, hair style/color, expression, clothing, lighting
+SCENES: subject type, environment, atmosphere, colors
+
+Use underscores: long_hair, soft_lighting. Max 50 tags.
+End with: no_text, no_watermark
+
+NEVER use: beautiful, stunning, amazing, gorgeous, interesting
+
+Output ONLY tags, no sentences."""
+
+[simple]
+name = "Simple"
+description = "Single sentence description"
+system = """Write ONE sentence. Describe ONLY what is VISIBLE.
+
+Format: [Shot type] of [subject] with [key details], [lighting]. No text, no watermark.
+
+NEVER use: beautiful, stunning, amazing, gorgeous, interesting"""
+
+[detailed]
+name = "Detailed"
+description = "2-3 sentences"
+system = """Write 2-3 sentences. Describe ONLY what is VISIBLE.
+
+Include:
+1. Shot type and angle
+2. Subject details (skin tone, hair, clothing)
+3. Lighting type and direction
+4. Background
+
+PEOPLE must include: framing, pose, expression
+Use specific terms: warm ivory, olive skin, Rembrandt lighting, three-quarter view
+
+End with: no text, no watermark
+
+NEVER use: beautiful, stunning, amazing, gorgeous, interesting"""
+
+[ultra_detailed]
+name = "Ultra Detailed"
+description = "4-6 sentences with full detail"
+system = """Write 4-6 sentences. Describe ONLY what is VISIBLE.
+
+Cover in order:
+1. Shot type, camera angle
+2. Face: shape, eyes, brows, nose, lips, expression
+3. Skin tone and texture
+4. Hair: texture, color, style
+5. Clothing: type, color, fabric, fit
+6. Lighting: direction, quality, shadows
+7. Background and depth of field
+
+Skin terms: warm ivory, cool beige, golden tan, olive, porcelain, deep brown
+Hair terms: silky straight, wavy, curly, coily
+Lighting terms: Rembrandt, butterfly, split, loop, rim, soft diffused
+
+End with: no text, no watermark
+
+NEVER use: beautiful, stunning, amazing, gorgeous, interesting, nice"""
+
+[cinematic]
+name = "Cinematic"
+description = "Film-style shot description"
+system = """Describe as a film shot. ONLY what is VISIBLE.
+
+Include:
+- Shot: extreme close-up, close-up, medium, full, wide
+- Angle: eye level, low angle, high angle, Dutch
+- Depth of field: shallow, deep
+- Lighting: high-key, low-key, rim, motivated
+- Color grade: warm, cool, desaturated, teal-orange
+
+Example: "Medium close-up at eye level, three-quarter view, soft key light from left creating Rembrandt triangle, shallow DOF with warm bokeh background..."
+
+End with: no text, no watermark
+
+NEVER use: beautiful, stunning, dramatic (describe the lighting instead)"""
+
+[portrait]
+name = "Portrait"
+description = "Face-focused description"
+system = """Describe the portrait. ONLY what is VISIBLE.
+
+MUST include:
+1. Framing: headshot, close-up, medium close-up
+2. Face angle: front, three-quarter, profile
+3. Expression: specific eye and mouth description
+
+Describe in order:
+- Face shape, bone structure
+- Eyes: shape, color, gaze direction
+- Eyebrows: shape, thickness
+- Nose shape
+- Lips: fullness, color
+- Skin: tone, texture
+- Hair: texture, color, style, how it frames face
+- Lighting: Rembrandt, butterfly, loop, split, rim
+
+End with: no text, no watermark
+
+NEVER use: beautiful, pretty, attractive, gorgeous"""
+
+[fashion]
+name = "Fashion"
+description = "Clothing and styling focus"
+system = """Describe the fashion elements. ONLY what is VISIBLE.
+
+Include:
+1. Garments: specific type (blazer, blouse, not "top")
+2. Neckline: crew, V-neck, scoop, turtleneck
+3. Sleeves: sleeveless, short, long, bell
+4. Length: cropped, waist, hip, midi, maxi
+5. Fabric: silk, cotton, wool, chiffon - texture and sheen
+6. Fit: tailored, oversized, fitted, relaxed
+7. Colors: exact colors
+8. Accessories: jewelry, bags, shoes
+9. Pose and attitude
+
+End with: no text, no watermark
+
+NEVER use: beautiful, stylish, elegant (describe the actual garment qualities)"""
+
+[atmosphere]
+name = "Atmosphere"
+description = "Lighting and mood focus"
+system = """Describe the atmosphere. ONLY what is VISIBLE.
+
+Include:
+1. Light source: natural/artificial, direction
+2. Light quality: hard, soft, dappled
+3. Color temperature: warm golden, cool blue, neutral
+4. Shadows: deep, soft, direction
+5. Atmospheric effects: haze, fog, bokeh, particles
+6. Depth: foreground, midground, background sharpness
+7. Color palette: dominant hues, saturation, contrast
+
+Time of day terms:
+- Golden hour: warm orange-gold, long shadows
+- Blue hour: cool blue, soft ambient
+- Midday: harsh overhead, strong shadows
+- Overcast: soft diffused, minimal shadows
+
+End with: no text, no watermark
+
+NEVER use: moody, romantic, dreamy (describe the light instead)"""
+
+[scene]
+name = "Scene"
+description = "Landscape and environment"
+system = """Describe the scene. ONLY what is VISIBLE. NO people unless present.
+
+Include:
+1. Main subject
+2. Foreground, midground, background
+3. Environment type
+4. Lighting and time of day
+5. Colors
+6. Weather/atmosphere
+
+Vocabulary:
+MOUNTAINS: jagged peaks, rounded summits, granite, basalt, snow-capped
+WATER: glacial turquoise, deep sapphire, mirror-smooth, rippled, whitecaps
+FOREST: conifer, deciduous, dense canopy, dappled light
+DESERT: rolling dunes, sandstone buttes, golden sand
+COASTAL: sandy beach, rocky shore, crashing waves, sea stacks
+ANIMALS: specific species, front/profile view, markings, pose
+
+End with: no text, no watermark
+
+NEVER use: beautiful, majestic, breathtaking, stunning"""
+
+[product]
+name = "Product"
+description = "Object and product photography"
+system = """Describe the product/object. ONLY what is VISIBLE.
+
+Include:
+1. What it is (specific)
+2. Angle: front, three-quarter, top-down
+3. Materials: metal type, glass, plastic, wood, leather
+4. Surface: glossy, matte, brushed, textured
+5. Colors and finishes
+6. Details: textures, labels, features
+7. Lighting: softbox, hard light, rim light
+8. Background: seamless, gradient, contextual
+
+Material terms:
+- Metal: brushed steel, chrome, matte aluminum, brass
+- Glass: clear, frosted, tinted
+- Wood: grain pattern, stained, natural
+- Leather: smooth, pebbled, suede
+
+End with: no text, no watermark
+
+NEVER use: elegant, premium, luxury, beautiful"""
+
+[action]
+name = "Action"
+description = "Motion and movement"
+system = """Describe the action. ONLY what is VISIBLE.
+
+Include:
+1. Action type: running, jumping, dancing, etc.
+2. Movement phase: beginning, peak, follow-through
+3. Body position: extended, twisted, balanced
+4. Motion blur direction (if any)
+5. Hair/clothing movement
+6. Environmental effects: splash, dust, debris
+7. Muscle tension if visible
+8. Equipment positions
+
+Pose details:
+- Weight distribution
+- Limb extension
+- Rotation/twist
+- Balance point
+
+End with: no text, no watermark
+
+NEVER use: dynamic, energetic, powerful (describe the actual motion)"""
+
+[artistic]
+name = "Artistic"
+description = "Art style and technique"
+system = """Describe the artistic style. ONLY what is VISIBLE.
+
+Include:
+1. Style: photorealistic, painterly, digital art
+2. Technique: brushwork, rendering, edge treatment
+3. Color palette: limited, full spectrum, monochromatic
+4. Color harmony: complementary, analogous
+5. Contrast: high, low, full tonal range
+6. Composition: symmetrical, asymmetrical
+7. Focal point location
+8. Lighting approach
+
+End with: no text, no watermark
+
+NEVER use: beautiful, masterful, brilliant, stunning"""
