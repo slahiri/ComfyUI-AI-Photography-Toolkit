@@ -1446,14 +1446,15 @@ class PromptGenerator:
 
         is_local = self.config.provider_type == "local"
 
-        # Analysis mode routing for API providers:
-        # - Quick: Single vision call (fast, ~1 call)
-        # - Standard: Optimized multi-aspect analysis (~3-4 calls)
-        # - Detailed: Full agentic analysis (~12-14 calls, requires reasoning)
+        # Analysis mode routing:
+        # - Quick: Single vision call (fast, ~1 call) - all providers
+        # - Standard: Optimized multi-aspect analysis (~3-4 calls) - all providers
+        # - Detailed: Full agentic analysis (~12-14 calls) - API only, requires reasoning
         #
-        # For local providers: Always use single call (Quick behavior)
+        # Local providers support Quick and Standard modes.
+        # Detailed mode falls back to Standard for local providers.
 
-        if is_local or self.analysis_mode == "quick":
+        if self.analysis_mode == "quick":
             # Quick mode: Single vision call
             self._log(f"[PromptGen] Using QUICK single-pass analysis")
             prompt = self.llm_client.call_vision(
@@ -1461,17 +1462,29 @@ class PromptGenerator:
                 max_tokens=self.prompt_length * 3
             )
         elif self.analysis_mode == "standard":
-            # Standard mode: Optimized 3-4 call approach
+            # Standard mode: Optimized 3-4 call approach (works for all providers)
             self._log(f"[PromptGen] Using STANDARD optimized analysis (3-4 calls)")
             prompt = self._optimized_generate(base64_image, has_human, cv_analysis, user_guidance)
-        elif self.analysis_mode == "detailed" and self.enable_reasoning:
-            # Detailed mode: Full agentic analysis (requires reasoning enabled)
-            self._log(f"[PromptGen] Using DETAILED agentic analysis (12+ calls)")
-            prompt = self._agentic_generate(base64_image, has_human, cv_analysis, user_guidance)
+        elif self.analysis_mode == "detailed":
+            # Detailed mode: Full agentic analysis (API only, requires reasoning)
+            if is_local:
+                # Local providers fall back to Standard (too many calls for local)
+                self._log(f"[PromptGen] Using STANDARD optimized analysis (detailed not supported for local)")
+                prompt = self._optimized_generate(base64_image, has_human, cv_analysis, user_guidance)
+            elif self.enable_reasoning:
+                self._log(f"[PromptGen] Using DETAILED agentic analysis (12+ calls)")
+                prompt = self._agentic_generate(base64_image, has_human, cv_analysis, user_guidance)
+            else:
+                # Detailed without reasoning: Fall back to Standard
+                self._log(f"[PromptGen] Using STANDARD optimized analysis (detailed requires reasoning)")
+                prompt = self._optimized_generate(base64_image, has_human, cv_analysis, user_guidance)
         else:
-            # Detailed without reasoning: Fall back to standard optimized
-            self._log(f"[PromptGen] Using STANDARD optimized analysis (detailed without reasoning)")
-            prompt = self._optimized_generate(base64_image, has_human, cv_analysis, user_guidance)
+            # Unknown mode: Fall back to Quick
+            self._log(f"[PromptGen] Using QUICK single-pass analysis (unknown mode: {self.analysis_mode})")
+            prompt = self.llm_client.call_vision(
+                base64_image, system_prompt, user_prompt,
+                max_tokens=self.prompt_length * 3
+            )
 
         result.timing["llm_time_s"] = time.time() - llm_start
 
