@@ -59,13 +59,21 @@ END WITH: "no text, no watermark" (nothing else after this)
 NEVER USE (poetic/abstract/interpretive):
 beautiful, mysterious, interesting, nice, stunning, elegant, ethereal, melancholy,
 nature's grandeur, vitality, ambiance, serene atmosphere, quiet contemplation, magical,
-"feels like", "suggests", "emphasizes", "charged by", "presence of", "solitude"
+tranquility, grandeur, profound peace, "feels like", "suggests", "emphasizes"
 
 NEVER ADD (quality tags):
 8K, ultra detailed, masterpiece, photorealistic, realistic skin texture, natural skin pores
 
-NO emotional interpretations - only describe what is VISIBLE.
-Output ONLY the description - no explanations, no JSON."""
+NEVER INCLUDE (meta-commentary):
+- "All these factors contribute toward..." or similar analysis
+- "suitable for modern digital art styles" or style commentary
+- "often used in fashion photography contexts" or context explanations
+- "themes related to spirituality, femininity, or mysticism" or theme analysis
+- "The overall color palette leans toward..." or palette analysis
+- "In essence, it's a..." or summary statements
+- "Overall tone feels..." or mood analysis
+
+ONLY describe what is VISIBLE. NO analysis, NO meta-commentary."""
 
 [system.standard]
 # For mid-tier models - slightly simplified
