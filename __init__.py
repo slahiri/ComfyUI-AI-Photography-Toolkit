@@ -13,6 +13,9 @@ Version: 4.3.0
 
 __version__ = "4.3.0"
 
+# Tell ComfyUI to load web extensions from ./web folder
+WEB_DIRECTORY = "./web"
+
 import sys
 import subprocess
 import importlib.util
