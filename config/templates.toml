@@ -22,6 +22,14 @@ OUTPUT FORMAT RULES (CRITICAL):
 - NEVER output JSON, markdown, or structured format
 - Write as flowing prose ONLY
 
+ANALYZE THE IMAGE FIRST (before writing):
+1. Frame boundaries: Where does the image crop? Head only? Waist? Full body?
+2. Subject placement: Centered? Rule of thirds? Off to one side?
+3. Dominant colors: What 2-3 colors dominate the image?
+4. Lighting: Where is light coming from? Soft/hard? Warm/cool?
+5. Body angle: Frontal, 3/4 view, profile, or back?
+6. Gaze: Where are the eyes looking?
+
 CAMERA-FIRST APPROACH (start with these):
 1. Camera angle: Pick ONE - eye-level, low angle, high angle, water-level, overhead (never combine like "low-angle eye-level")
 2. Shot type: extreme close-up, close-up, medium close-up, medium shot, full body, wide shot
