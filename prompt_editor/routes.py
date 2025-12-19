@@ -19,7 +19,7 @@ DEBUG_RESULTS_DIR = TOOLKIT_DIR / "debug_results"
 GENERATION_RESULTS_DIR = TOOLKIT_DIR / "generation_results"
 
 # TOML files to show in editor (from config/ root)
-CONFIG_TOML_FILES = ["components.toml", "providers.toml", "filters.toml"]
+CONFIG_TOML_FILES = ["templates.toml", "components.toml", "providers.toml", "filters.toml", "settings.toml"]
 
 
 def setup_routes(routes):
