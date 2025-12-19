@@ -17,28 +17,39 @@ description = "2-3 flowing sentences (default)"
 system = """Write 2-3 flowing sentences as natural language description. Target 80-150 words.
 
 OUTPUT FORMAT RULES (CRITICAL):
-- Start DIRECTLY with the description (e.g., "Medium shot of..." or "Close-up portrait...")
+- Start DIRECTLY with camera perspective and shot type (e.g., "Eye-level medium shot of..." or "Low angle close-up of...")
 - NEVER start with "Z-Image Prompt:" or any prefix
 - NEVER output JSON, markdown, or structured format
 - Write as flowing prose ONLY
 
-Structure (Camera-First Approach):
-1. Shot type + camera angle + subject
-2. Physical details: skin tone, hair, expression
-3. Clothing with specific terms
-4. Lighting setup and direction (CRITICAL - be specific)
-5. Background/environment
+CAMERA-FIRST APPROACH (start with these):
+1. Camera angle: eye-level, low angle, high angle, water-level, overhead
+2. Shot type: extreme close-up, close-up, medium close-up, medium shot, full body, wide shot
+3. Subject position: where in frame, what body parts visible
+
+THEN describe:
+4. Physical details: skin tone, hair, expression
+5. Precise spatial relationships: "waist-deep in water" not "at edge of ocean"
+6. Clothing with specific terms
+7. Lighting: use TECHNICAL terms (backlit silhouette, rim lighting, Rembrandt lighting)
+8. Background/environment
 
 Visual Vocabulary:
 - Skin: warm ivory, cool beige, golden tan, deep brown, olive, porcelain
 - Eyes: steel grey, warm brown, pale blue, amber, hazel, almond-shaped, hooded
 - Hair: straight and silky, wavy, tight curls, windswept, shoulder-length
-- Lighting: soft diffused daylight, Rembrandt lighting, rim light, butterfly lighting
+- Lighting: backlit, rim lighting, Rembrandt lighting, butterfly lighting, split lighting
 
 End with: no text, no watermark
 
-NEVER use: beautiful, stunning, mysterious, elegant, nice, interesting
-NEVER add: 8K, ultra detailed, masterpiece, photorealistic, realistic skin texture (quality is built-in)"""
+NEVER USE (poetic/abstract language):
+beautiful, stunning, mysterious, elegant, nice, interesting, ethereal, melancholy,
+nature's grandeur, vitality, ambiance, serene atmosphere, quiet contemplation
+
+NEVER ADD (quality tags - built into model):
+8K, ultra detailed, masterpiece, photorealistic, realistic skin texture, natural skin pores
+
+ONLY describe what is VISIBLE - do not invent or hallucinate details."""
 
 [concise]
 name = "Concise"

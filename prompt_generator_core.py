@@ -1135,6 +1135,20 @@ def zimage_clean(prompt: str, provider: str = "default", max_words: int = 500) -
     # Then apply config-based cleanup (example patterns, markdown, provider-specific)
     prompt = clean_llm_output(prompt, provider)
 
+    # Remove common LLM prefixes that some models add despite instructions
+    prefixes_to_remove = [
+        r'^Z-Image Prompt:\s*',
+        r'^Z-Image:\s*',
+        r'^Prompt:\s*',
+        r'^Here is (?:the|a|your) (?:prompt|description):\s*',
+        r'^Here\'s (?:the|a|your) (?:prompt|description):\s*',
+        r'^The prompt is:\s*',
+        r'^Output:\s*',
+        r'^Generated prompt:\s*',
+    ]
+    for prefix in prefixes_to_remove:
+        prompt = re.sub(prefix, '', prompt, flags=re.IGNORECASE)
+
     # Then apply Z-Image specific cleanup (meta-tags, abstract words)
     for pattern in ZIMAGE_META_TAGS:
         prompt = re.sub(pattern, '', prompt, flags=re.IGNORECASE)
@@ -1680,10 +1694,10 @@ class PromptGenerator:
         max_words = int(self.prompt_length * 1.5)
         result.prompt = zimage_clean(prompt, self.config.provider, max_words)
 
-        # Step 5b: Add Z-Image realism enhancers for portraits (for verbose/template modes, not tags)
-        if has_human and self.prompt_style in ("expanded", "verbose", "template"):
-            realism_tags = "realistic skin texture, natural skin pores, photorealistic, ultra detailed"
-            result.prompt = f"{result.prompt}, {realism_tags}"
+        # Step 5b: Z-Image realism enhancers REMOVED
+        # Based on evaluator feedback: quality meta-tags like "realistic skin texture, photorealistic,
+        # ultra detailed" are unnecessary for Z-Image/Flux models - quality is built-in.
+        # These tags were found to clutter prompts without improving output quality.
 
         # Step 5c: Clean up tags if tags mode (LLM already generates in tag format)
         if self.prompt_style == "tags":
