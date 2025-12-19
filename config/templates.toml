@@ -60,6 +60,34 @@ Visual Vocabulary:
 
 End with: no text, no watermark
 
+ANTI-DISTORTION GUIDANCE (for clean generation):
+When FULL BODY or legs visible:
+- Add: "both feet flat on ground, natural ankle position"
+- Add: "correct human anatomy, natural proportions"
+- Add: "single figure, one person only"
+
+When HANDS visible:
+- Add: "natural hand position, correct finger count"
+- Describe hand action: "hands resting at sides" or "hand holding object"
+- AVOID complex hand poses (intertwined fingers, unusual grips)
+
+When MULTIPLE LIMBS in frame:
+- Specify each limb clearly: "left arm bent, right arm straight"
+- Avoid ambiguous descriptions that could merge limbs
+
+REFLECTIONS (critical - handle carefully):
+- If floor reflection visible: describe as "subtle floor reflection" NOT as separate figure
+- NEVER describe reflection details (causes AI to generate second person)
+- If mirror in scene: "mirror showing partial reflection" - keep vague
+- Prefer: "polished floor surface" over "reflective floor showing figure"
+- Best practice: mention "matte floor" or simply omit floor reflection
+
+PROBLEM AREAS to describe explicitly:
+- Wrists (transition from sleeve to hand)
+- Ankles (transition from pants/skirt to feet)
+- Where clothing meets skin
+- Joints (elbows, knees) if visible
+
 WRITING STYLE (critical for readability):
 - Use SHORT, clear phrases - NOT run-on sentences
 - Break descriptions into scannable chunks
