@@ -27,6 +27,7 @@ from comfy_api.latest import io as comfy_io
 
 from .llm_providers.llm_model_type import LLMModelConfig
 from .llm_providers.sid_llm_api import LLM_MODEL_Type
+from .sid_prompt_generator_v2 import GENERATION_METADATA_Type, SID_PROMPT_Type
 
 
 class SID_PromptDebugAgent(comfy_io.ComfyNode):
@@ -64,13 +65,18 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
                     "output_image",
                     tooltip="Generated output image (result of the prompt)"
                 ),
-                comfy_io.String.Input(
+                SID_PROMPT_Type.Input(
                     "prompt",
                     tooltip="Connect from prompt generator output"
                 ),
                 LLM_MODEL_Type.Input(
                     "llm_model",
-                    tooltip="LLM configuration (same as prompt generator)"
+                    tooltip="LLM configuration for running debug evaluation"
+                ),
+                GENERATION_METADATA_Type.Input(
+                    "source_metadata",
+                    optional=True,
+                    tooltip="Connect from prompt generator metadata output. Stores all generation settings with debug results."
                 ),
                 comfy_io.Boolean.Input(
                     "enable_debug",
@@ -110,6 +116,7 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
         output_image,
         prompt: str,
         llm_model: LLMModelConfig,
+        source_metadata: Dict[str, Any] = None,
         enable_debug: bool = True,
     ) -> Tuple[str, float, str, str]:
         """
@@ -158,7 +165,7 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
 
         # Save results
         try:
-            cls._save_results(source_image, output_image, prompt, llm_model, evaluation)
+            cls._save_results(source_image, output_image, prompt, llm_model, evaluation, source_metadata)
         except Exception as e:
             print(f"[SID-Debug] Warning: Failed to save results: {e}")
 
@@ -441,7 +448,7 @@ Look at the SOURCE image and write a complete, improved prompt that addresses al
         return {"raw_response": response, "parse_error": "Could not parse JSON"}
 
     @classmethod
-    def _save_results(cls, source_image, output_image, prompt: str, llm_model: LLMModelConfig, evaluation: Dict[str, Any]):
+    def _save_results(cls, source_image, output_image, prompt: str, llm_model: LLMModelConfig, evaluation: Dict[str, Any], source_metadata: Dict[str, Any] = None):
         """Save evaluation results to disk."""
         from pathlib import Path
         from datetime import datetime
@@ -465,11 +472,32 @@ Look at the SOURCE image and write a complete, improved prompt that addresses al
         with open(prompt_path, "w", encoding="utf-8") as f:
             f.write(prompt)
 
-        # Save model config
-        config_path = session_dir / "model_config.json"
-        model_config = cls._extract_model_config(llm_model)
-        with open(config_path, "w", encoding="utf-8") as f:
-            json.dump(model_config, f, indent=2)
+        # Save source metadata and extract generation model config
+        generation_model_config = None
+        if source_metadata and isinstance(source_metadata, dict):
+            # Save full source metadata
+            source_meta_path = session_dir / "source_metadata.json"
+            with open(source_meta_path, "w", encoding="utf-8") as f:
+                json.dump(source_metadata, f, indent=2, ensure_ascii=False)
+            # Extract generation model config from source metadata
+            generation_model_config = source_metadata.get("model_config")
+            print(f"[SID-Debug] Source metadata saved")
+
+        # Save generation model config (from source_metadata, not llm_model which is for evaluation)
+        config_path = session_dir / "generation_model.json"
+        if generation_model_config:
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump(generation_model_config, f, indent=2, ensure_ascii=False)
+        else:
+            # Fallback: no source metadata provided, note this in the file
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump({"note": "Source metadata not connected - generation model unknown"}, f, indent=2)
+
+        # Save evaluation model config (the LLM used for debug evaluation)
+        eval_model_path = session_dir / "evaluation_model.json"
+        eval_model_config = cls._extract_model_config(llm_model)
+        with open(eval_model_path, "w", encoding="utf-8") as f:
+            json.dump(eval_model_config, f, indent=2)
 
         # Save source image
         try:

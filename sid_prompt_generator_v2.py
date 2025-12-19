@@ -19,6 +19,10 @@ from typing import Dict, Any
 
 from comfy_api.latest import io
 
+# Custom types for connecting prompt generator to other nodes
+GENERATION_METADATA_Type = io.Custom("GENERATION_METADATA")
+SID_PROMPT_Type = io.Custom("SID_PROMPT")
+
 # Results storage directory
 GENERATION_RESULTS_DIR = Path(__file__).parent / "generation_results"
 
@@ -37,6 +41,20 @@ from .prompt_generator_core import (
 # =============================================================================
 # Helper Functions
 # =============================================================================
+
+class NumpyJSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles numpy types."""
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
+        return super().default(obj)
+
 
 def tensor_to_pil(tensor) -> Image.Image:
     """Convert ComfyUI tensor to PIL Image."""
@@ -102,10 +120,10 @@ def save_generation_result(
         caption_path = session_dir / "caption.txt"
         caption_path.write_text(caption, encoding="utf-8")
 
-    # Save metadata as JSON
+    # Save metadata as JSON (use custom encoder for numpy types)
     metadata_path = session_dir / "metadata.json"
     with open(metadata_path, "w", encoding="utf-8") as f:
-        json.dump(metadata, f, indent=2, ensure_ascii=False)
+        json.dump(metadata, f, indent=2, ensure_ascii=False, cls=NumpyJSONEncoder)
 
     # Save human-readable summary
     summary_path = session_dir / "summary.txt"
@@ -367,9 +385,10 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                 ),
             ],
             outputs=[
-                io.String.Output("prompt", display_name="prompt"),
+                SID_PROMPT_Type.Output("prompt", display_name="prompt", tooltip="Generated prompt. Connect to Debug Agent or other nodes."),
                 io.String.Output("negative", display_name="negative"),
                 io.String.Output("caption", display_name="caption"),
+                GENERATION_METADATA_Type.Output("metadata", display_name="metadata", tooltip="Generation metadata (settings, model config, CV analysis, timing). Connect to Debug Agent."),
             ],
         )
 
@@ -473,72 +492,76 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         print(f"\n[Seed: {seed}, Temperature: {temperature}, Mode: {analysis_mode}, Style: {prompt_style}, Reasoning: {reasoning_str}, NSFW: {nsfw_str}]")
         print(result.get_metadata_str())
 
+        # Build metadata (always, for output and optional storage)
+        generation_time = time.time() - start_time
+        metadata = {
+            "timestamp": datetime.now().isoformat(),
+            "version": "4.3.0",
+
+            # Generation settings
+            "generation_settings": {
+                "seed": seed,
+                "prompt_style": prompt_style,
+                "template": template if prompt_style.lower() == "template" else None,
+                "prompt_length": prompt_length,
+                "generate_negative": generate_negative,
+                "generate_caption": generate_caption,
+                "nsfw_mode": nsfw_mode,
+                "prompt_enhance": enhance_text if enhance_text else None,
+            },
+
+            # Full model configuration
+            "model_config": {
+                "provider": llm_model.provider,
+                "model": llm_model.model,
+                "text_model": llm_model.text_model or None,
+                "api_url": llm_model.api_url or None,
+                "temperature": temperature,
+                "max_tokens": llm_model.max_tokens,
+                "analysis_mode": analysis_mode,
+                "supports_vision": llm_model.supports_vision,
+                "supports_reasoning": supports_reasoning,
+                "extra_params": llm_model.extra_params if llm_model.extra_params else None,
+            },
+
+            # CV analysis results
+            "cv_analysis": result.cv_analysis if result.cv_analysis else None,
+
+            # Image metadata from processing
+            "image_metadata": result.metadata if result.metadata else None,
+
+            # Timing breakdown
+            "timing": {
+                "total_seconds": round(generation_time, 2),
+                **result.timing  # Include detailed timing from generator
+            },
+
+            # Output statistics
+            "output_stats": {
+                "prompt_length": len(result.prompt),
+                "prompt_word_count": len(result.prompt.split()) if result.prompt else 0,
+                "negative_length": len(result.negative) if result.negative else 0,
+                "caption_length": len(result.caption) if result.caption else 0,
+            },
+
+            # Debug logs (if any)
+            "debug_logs": result.logs if result.logs else None,
+        }
+
+        # Remove None values for cleaner output
+        metadata = {k: v for k, v in metadata.items() if v is not None}
+        for key in ["generation_settings", "model_config", "output_stats"]:
+            if key in metadata and isinstance(metadata[key], dict):
+                metadata[key] = {k: v for k, v in metadata[key].items() if v is not None}
+
         # Store results if enabled
         if store_results:
-            generation_time = time.time() - start_time
-            metadata = {
-                "timestamp": datetime.now().isoformat(),
-                "version": "4.3.0",
-
-                # Generation settings
-                "generation_settings": {
-                    "seed": seed,
-                    "prompt_style": prompt_style,
-                    "template": template if prompt_style.lower() == "template" else None,
-                    "prompt_length": prompt_length,
-                    "generate_negative": generate_negative,
-                    "generate_caption": generate_caption,
-                    "nsfw_mode": nsfw_mode,
-                    "prompt_enhance": enhance_text if enhance_text else None,
-                },
-
-                # Full model configuration
-                "model_config": {
-                    "provider": llm_model.provider,
-                    "model": llm_model.model,
-                    "text_model": llm_model.text_model or None,
-                    "api_url": llm_model.api_url or None,
-                    "temperature": temperature,
-                    "max_tokens": llm_model.max_tokens,
-                    "analysis_mode": analysis_mode,
-                    "supports_vision": llm_model.supports_vision,
-                    "supports_reasoning": supports_reasoning,
-                    "extra_params": llm_model.extra_params if llm_model.extra_params else None,
-                },
-
-                # CV analysis results
-                "cv_analysis": result.cv_analysis if result.cv_analysis else None,
-
-                # Image metadata from processing
-                "image_metadata": result.metadata if result.metadata else None,
-
-                # Timing breakdown
-                "timing": {
-                    "total_seconds": round(generation_time, 2),
-                    **result.timing  # Include detailed timing from generator
-                },
-
-                # Output statistics
-                "output_stats": {
-                    "prompt_length": len(result.prompt),
-                    "prompt_word_count": len(result.prompt.split()) if result.prompt else 0,
-                    "negative_length": len(result.negative) if result.negative else 0,
-                    "caption_length": len(result.caption) if result.caption else 0,
-                },
-
-                # Debug logs (if any)
-                "debug_logs": result.logs if result.logs else None,
-            }
-
-            # Remove None values for cleaner output
-            metadata = {k: v for k, v in metadata.items() if v is not None}
-            for key in ["generation_settings", "model_config", "output_stats"]:
-                if key in metadata and isinstance(metadata[key], dict):
-                    metadata[key] = {k: v for k, v in metadata[key].items() if v is not None}
-
             save_generation_result(pil_image, result.prompt, result.negative, result.caption, metadata)
 
-        return io.NodeOutput(result.prompt, result.negative, result.caption)
+        # Convert numpy types to native Python types for the metadata output
+        metadata_clean = json.loads(json.dumps(metadata, cls=NumpyJSONEncoder))
+
+        return io.NodeOutput(result.prompt, result.negative, result.caption, metadata_clean)
 
 
 # =============================================================================
