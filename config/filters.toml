@@ -139,6 +139,15 @@ patterns = [
     "^(?:The photo|The photograph) (?:shows|depicts|features)\\s*",
     "^As requested,?\\s*",
     "^(?:For|As) (?:the|this|an?) AI (?:image )?(?:generation|prompt),?\\s*",
+    # Reasoning/thinking patterns that leak from models
+    "^Okay,?\\s*(?:let me|I'll|I will).*?(?:\\.|:)\\s*",
+    "^(?:Let me|I'll|I will) (?:start|begin|analyze|look|examine|understand|think).*?(?:\\.|:)\\s*",
+    "^First,?\\s*(?:I need to|let me|I'll|I will|I should).*?(?:\\.|:)\\s*",
+    "^(?:Looking at|Analyzing|Examining) (?:this|the) (?:image|photo|picture).*?(?:\\.|:)\\s*",
+    "^(?:My task|The task|I need to|I should|I will).*?(?:\\.|:)\\s*",
+    "^(?:Now|So|Then),?\\s*(?:I'll|let me|I will|I need to).*?(?:\\.|:)\\s*",
+    "^(?:To (?:do|accomplish|complete) this),?.*?(?:\\.|:)\\s*",
+    "^(?:Here'?s? (?:what|how) I).*?(?:\\.|:)\\s*",
 ]
 
 [provider_cleanup.default]

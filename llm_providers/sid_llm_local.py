@@ -3074,8 +3074,10 @@ class LocalModelClient:
         response_ids = outputs[0][input_len:]
         raw_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
 
-        # Clean thinking output for Thinking models
-        if self.model_info.is_thinking:
+        # Clean thinking/reasoning output for ALL Qwen3 models
+        # Even non-thinking Qwen3 models can output reasoning patterns
+        is_qwen3 = "Qwen3" in self.model_name or self.model_info.family == ModelFamily.QWENVL
+        if is_qwen3 or self.model_info.is_thinking:
             return self._clean_thinking_output(raw_output)
         return raw_output
 
@@ -3120,6 +3122,9 @@ class LocalModelClient:
             r'^(?:Looking at|Analyzing|Checking|Based on)',
             r'^(?:The user|The original|The prompt|Given)',
             r'^(?:Alright|Okay|OK,)',
+            r'^(?:My task|The task|To do this|In order to)',
+            r'^(?:I can see|I see|This image shows)',
+            r'^(?:Understanding|Examining|Observing)',
         ]
 
         # Check if output still looks like reasoning
@@ -3154,7 +3159,23 @@ class LocalModelClient:
                 r'(?:Output|Result|Answer|Modified prompt|Final prompt)[:\s]*\n?(.+)',
                 r'(?:Here is|Here\'s)[^:]*:\s*\n?(.+)',
                 r'(?:The final|Final)[^:]*:\s*\n?(.+)',
+                r'(?:Enhanced prompt|Generated prompt|Image prompt)[:\s]*\n?(.+)',
             ]
+
+            # Also look for visual description patterns that indicate actual prompt content
+            visual_patterns = [
+                r'(?:^|\.\s+)((?:Close-up|Medium|Full|Portrait|Headshot)[^.]*\.)',
+                r'(?:^|\.\s+)(A\s+(?:young|beautiful|elegant)?\s*(?:woman|man|person)[^.]*\.)',
+                r'(?:^|\.\s+)((?:The|A)\s+(?:subject|model|figure)[^.]*\.)',
+            ]
+            for pattern in visual_patterns:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    # Find where this match starts and take from there
+                    start_pos = match.start(1)
+                    extracted = text[start_pos:].strip()
+                    if len(extracted) > 50:
+                        return extracted
             for delimiter in delimiters:
                 match = re.search(delimiter, text, re.IGNORECASE | re.DOTALL)
                 if match:

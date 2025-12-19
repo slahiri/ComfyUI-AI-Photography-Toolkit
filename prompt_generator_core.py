@@ -1029,12 +1029,107 @@ def detect_and_fix_hallucination(prompt: str, max_words: int = 500) -> Tuple[str
     return prompt.strip(), was_hallucinating
 
 
+def strip_reasoning_output(text: str) -> str:
+    """
+    Strip reasoning/thinking text from model output.
+
+    Some models (especially Qwen3) output their reasoning process before the actual answer.
+    This function detects and removes that reasoning to get the clean prompt.
+
+    Examples of reasoning that gets stripped:
+    - "Okay, let me start by understanding what the user wants..."
+    - "First, I need to analyze the image..."
+    - "Looking at this image, I can see... Now for the prompt:"
+    """
+    if not text:
+        return text
+
+    original_text = text
+
+    # Pattern 1: Remove <think>...</think> blocks
+    text = re.sub(r'<think>[\s\S]*?</think>\s*', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'<thinking>[\s\S]*?</thinking>\s*', '', text, flags=re.IGNORECASE)
+
+    # Pattern 2: Look for explicit prompt markers and take content after them
+    prompt_markers = [
+        r'(?:^|\n)(?:Final |The |Here\'?s? (?:the )?)?[Pp]rompt[:\s]+',
+        r'(?:^|\n)(?:Final |The )?[Oo]utput[:\s]+',
+        r'(?:^|\n)(?:Here\'?s? )?(?:the )?(?:enhanced |modified |updated )?(?:image )?(?:generation )?prompt[:\s]+',
+        r'(?:^|\n)[Dd]escription[:\s]+',
+    ]
+
+    for marker in prompt_markers:
+        match = re.search(marker, text, re.IGNORECASE)
+        if match:
+            after_marker = text[match.end():].strip()
+            # Only use if there's substantial content after the marker
+            if len(after_marker) > 50:
+                text = after_marker
+                break
+
+    # Pattern 3: Detect reasoning at the start and find where actual content begins
+    reasoning_starters = [
+        r'^Okay,?\s*',
+        r'^(?:Let me|I\'ll|I will|I need to|I should)\s+',
+        r'^First,?\s*',
+        r'^(?:Looking at|Analyzing|Examining)\s+',
+        r'^(?:My task|The task|To do this)\s+',
+        r'^(?:Now|So|Then),?\s*',
+        r'^(?:Based on|According to)\s+',
+        r'^(?:The user|User)\s+(?:wants|asked|requested)\s+',
+    ]
+
+    # Check if text starts with reasoning
+    starts_with_reasoning = any(re.match(pattern, text, re.IGNORECASE) for pattern in reasoning_starters)
+
+    if starts_with_reasoning:
+        # Find where the actual prompt likely starts
+        # Look for a sentence that starts with visual description keywords
+        visual_starters = [
+            r'(?:^|\.\s+)([A-Z]?(?:close-up|medium|full|portrait|headshot|shot|photo|image|picture)\b)',
+            r'(?:^|\.\s+)(A\s+(?:young|beautiful|handsome|elegant|stunning)?\s*(?:woman|man|person|girl|boy|lady|gentleman)\b)',
+            r'(?:^|\.\s+)((?:The\s+)?(?:subject|model|person|figure)\b)',
+            r'(?:^|\.\s+)((?:Warm|Cool|Soft|Dramatic|Natural|Golden|Studio)\s+(?:light|lighting)\b)',
+        ]
+
+        for pattern in visual_starters:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                # Found visual content, extract from here
+                start_pos = match.start()
+                if text[start_pos] == '.':
+                    start_pos += 1
+                extracted = text[start_pos:].strip()
+                if len(extracted) > 50:
+                    text = extracted
+                    break
+
+    # Pattern 4: Remove trailing reasoning/meta-commentary
+    trailing_patterns = [
+        r'\s*(?:I hope this|Is there anything|Let me know|Feel free to).*$',
+        r'\s*(?:This should|This will|This prompt will).*$',
+        r'\s*\n\s*(?:Note|Explanation|Reasoning):.*$',
+    ]
+
+    for pattern in trailing_patterns:
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE | re.DOTALL)
+
+    # If we stripped too much, return original
+    if len(text.strip()) < 30 and len(original_text) > 50:
+        return original_text
+
+    return text.strip()
+
+
 def zimage_clean(prompt: str, provider: str = "default", max_words: int = 500) -> str:
     """Apply Z-Image cleanup to prompt using config patterns + built-in rules."""
     if not prompt:
         return ""
 
-    # First, detect and fix hallucination/runaway text
+    # First, strip any reasoning/thinking output
+    prompt = strip_reasoning_output(prompt)
+
+    # Then, detect and fix hallucination/runaway text
     prompt, was_hallucinating = detect_and_fix_hallucination(prompt, max_words)
 
     # Then apply config-based cleanup (example patterns, markdown, provider-specific)
