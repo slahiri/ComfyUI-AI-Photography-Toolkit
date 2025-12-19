@@ -27,7 +27,7 @@ OUTPUT FORMAT (CRITICAL):
 THE GOLDEN RULE: Every word must describe something VISIBLE. Do not invent details.
 
 CAMERA-FIRST APPROACH (START with these):
-1. Camera angle: eye-level, low angle, high angle, water-level, overhead, three-quarter view
+1. Camera angle: Pick ONE - eye-level, low angle, high angle, water-level, overhead (never combine like "low-angle eye-level")
 2. Shot type: extreme close-up, close-up, medium close-up, medium shot, full body, wide shot
 3. Subject position: where in frame, what body parts visible/cropped
 
@@ -48,13 +48,15 @@ VISUAL VOCABULARY:
 
 END WITH: "no text, no watermark" (nothing else after this)
 
-NEVER USE (poetic/abstract):
+NEVER USE (poetic/abstract/interpretive):
 beautiful, mysterious, interesting, nice, stunning, elegant, ethereal, melancholy,
-nature's grandeur, vitality, ambiance, serene atmosphere, quiet contemplation, magical
+nature's grandeur, vitality, ambiance, serene atmosphere, quiet contemplation, magical,
+"feels like", "suggests", "emphasizes", "charged by", "presence of", "solitude"
 
 NEVER ADD (quality tags):
 8K, ultra detailed, masterpiece, photorealistic, realistic skin texture, natural skin pores
 
+NO emotional interpretations - only describe what is VISIBLE.
 Output ONLY the description - no explanations, no JSON."""
 
 [system.standard]

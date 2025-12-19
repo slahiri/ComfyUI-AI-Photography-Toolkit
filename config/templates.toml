@@ -23,7 +23,7 @@ OUTPUT FORMAT RULES (CRITICAL):
 - Write as flowing prose ONLY
 
 CAMERA-FIRST APPROACH (start with these):
-1. Camera angle: eye-level, low angle, high angle, water-level, overhead
+1. Camera angle: Pick ONE - eye-level, low angle, high angle, water-level, overhead (never combine like "low-angle eye-level")
 2. Shot type: extreme close-up, close-up, medium close-up, medium shot, full body, wide shot
 3. Subject position: where in frame, what body parts visible
 
@@ -42,14 +42,16 @@ Visual Vocabulary:
 
 End with: no text, no watermark
 
-NEVER USE (poetic/abstract language):
+NEVER USE (poetic/abstract/interpretive language):
 beautiful, stunning, mysterious, elegant, nice, interesting, ethereal, melancholy,
-nature's grandeur, vitality, ambiance, serene atmosphere, quiet contemplation
+nature's grandeur, vitality, ambiance, serene atmosphere, quiet contemplation,
+"feels like", "suggests", "emphasizes", "charged by", "presence of"
 
 NEVER ADD (quality tags - built into model):
 8K, ultra detailed, masterpiece, photorealistic, realistic skin texture, natural skin pores
 
-ONLY describe what is VISIBLE - do not invent or hallucinate details."""
+ONLY describe what is VISIBLE - do not invent or interpret.
+NO emotional interpretations like "solitude", "tranquility", "charged atmosphere"."""
 
 [concise]
 name = "Concise"
