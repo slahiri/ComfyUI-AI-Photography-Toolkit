@@ -265,14 +265,6 @@ def get_user_prompt(tier: str, mode: str) -> str:
     return mode_config.get("prompt", "Describe this image.")
 
 
-def get_agentic_prompt(tier: str, prompt_type: str = "intro") -> str:
-    """Get agentic prompts (intro/synthesis) for a tier."""
-    config = _get_prompts_config()
-    agentic = config.get("agentic", {})
-    tier_config = agentic.get(tier, agentic.get("standard", {}))
-    return tier_config.get(prompt_type, "")
-
-
 def get_length_constraint(prompt_length: int) -> str:
     """
     Get the length constraint instruction for a prompt_length setting.

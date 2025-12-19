@@ -272,20 +272,6 @@ def clean_llm_output(text: str, provider: str = "default") -> str:
     return text.strip()
 
 
-def get_agentic_prompt(tier: str, prompt_type: str) -> str:
-    """Get agentic synthesis prompt from config or default."""
-    if _CONFIG_AVAILABLE and _config_loader:
-        return _config_loader.get_agentic_prompt(tier, prompt_type)
-    return ""
-
-
-def get_component_prompt(component: str, tier: str) -> str:
-    """Get component prompt for agentic analysis from config or default."""
-    if _CONFIG_AVAILABLE and _config_loader:
-        return _config_loader.get_component_prompt(component, tier)
-    return ""
-
-
 def get_image_limit(provider: str) -> int:
     """Get max image size for provider from config or default."""
     if _CONFIG_AVAILABLE and _config_loader:
