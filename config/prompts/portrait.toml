@@ -40,10 +40,15 @@ CRITICAL - FRAMING ACCURACY (must match source EXACTLY):
 - Be explicit about crop: "upper body shot ending at waist" or "head and torso visible, cropped at hip"
 
 THEN DESCRIBE:
-4. POSE: body position (facing camera, three-quarter view, profile, back-turned)
-5. GAZE DIRECTION (critical): Where exactly is the subject looking? At what?
-   - "looking down at a leaf in her hand" NOT "looking ahead"
-   - "eyes directed at camera" NOT "facing forward"
+4. BODY ANGLE (critical - separate from gaze):
+   - "frontal pose facing camera directly" vs "three-quarter view with body angled"
+   - "profile view" or "back turned to camera"
+   - Body angle and gaze can differ: "three-quarter pose, eyes looking at camera"
+5. GAZE DIRECTION (critical - where are the EYES looking):
+   - "direct eye contact with camera" or "gaze directed at camera"
+   - "looking down at object in hand" or "eyes cast downward"
+   - "looking off-camera to the right/left"
+   - Note: gaze is about EYES, not body orientation
 6. EXPRESSION: facial expression (direct gaze, gentle smile, confident look)
 7. MAKEUP (always note if visible):
    - "bold red lipstick, winged eyeliner" NOT "faint traces of lipstick"

@@ -36,29 +36,33 @@ CRITICAL - FRAMING ACCURACY (must match source exactly):
 - State the crop point: "frame ends at hip level" or "cropped below chest"
 
 THEN describe:
-4. Physical details: skin tone, hair, expression
-5. GAZE DIRECTION (critical): Where is the subject looking? At what?
-   - "looking down at a leaf in her hand" NOT "looking ahead"
-   - "gaze directed at camera" NOT "facing forward"
-6. MAKEUP (always note if visible):
+4. BODY ANGLE (critical - separate from gaze):
+   - "frontal pose facing camera" vs "three-quarter view with body angled"
+   - "profile view" or "back to camera"
+   - Body and gaze can differ: "three-quarter pose, eyes at camera"
+5. GAZE DIRECTION (where are EYES looking - not body):
+   - "direct eye contact with camera" or "looking at camera"
+   - "eyes cast downward" or "looking off-camera to the right"
+6. Physical details: skin tone, hair, expression
+7. MAKEUP (always note if visible):
    - "bold red lipstick, winged eyeliner" NOT "faint traces of lipstick"
    - "dramatic eye makeup with defined brows" - be specific
    - If makeup is minimal/natural, say so explicitly
-7. HAND POSITION (be precise):
+8. HAND POSITION (be precise):
    - "hands at hip level" or "arms relaxed at sides, hands visible"
    - "hands wrapped in white fabric extending from sleeves"
    - "fingers curled around object" - describe exactly what you see
-8. SLEEVE/CUFF DETAILS:
+9. SLEEVE/CUFF DETAILS:
    - "sleeves extend past wrists covering hands" vs "sleeves end at wrists"
    - "fitted sleeves with gathered elastic cuffs" - note construction
-9. WATER/DEPTH PRECISION (match actual depth):
-   - "chest-deep in water" or "shoulder-deep" - be accurate
-   - DON'T hallucinate motion: only "rippling" if actually visible
-10. CLOTHING (use specific terms):
+10. WATER/DEPTH PRECISION (match actual depth):
+    - "chest-deep in water" or "shoulder-deep" - be accurate
+    - DON'T hallucinate motion: only "rippling" if actually visible
+11. CLOTHING (use specific terms):
     - "dark bikini top" NOT "minimal attire" or "simple black top"
     - "high-waisted denim shorts" NOT "casual bottoms"
-11. Lighting: use TECHNICAL terms (backlit silhouette, rim lighting, Rembrandt)
-12. Background: keep simple, don't over-describe
+12. Lighting: use TECHNICAL terms (backlit silhouette, rim lighting, Rembrandt)
+13. Background: keep simple, don't over-describe
 
 Visual Vocabulary:
 - Skin: warm ivory, cool beige, golden tan, deep brown, olive, porcelain

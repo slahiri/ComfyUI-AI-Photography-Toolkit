@@ -1770,17 +1770,9 @@ OUTPUT the enhanced prompt only:"""
         tier = get_provider_tier(self.config.provider)
         length_constraint = get_length_constraint(self.prompt_length)
 
-        # Build CV hints for context
-        cv_hints = ""
-        if self.analysis_mode != "quick" and "colors" in cv_analysis:
-            cv_hints = f"""
-CV ANALYSIS (use as guidance):
-- Dominant colors: {', '.join(cv_analysis['colors']['dominant'][:5])}
-- Color temperature: {cv_analysis['colors']['temperature']}
-- Shot type: {cv_analysis.get('shot_type', 'unknown')}
-- Composition: {cv_analysis.get('composition', {}).get('type', 'unknown')}
-- Lighting: {cv_analysis.get('lighting', {}).get('brightness', 'unknown')} brightness
-"""
+        # CV hints removed - LLMs (both local and API) should analyze images directly
+        # CV analysis is only used for human detection (portrait vs scene prompt selection)
+        # CV often gives wrong info (e.g., "full_shot" when cropped at hip) that misleads the LLM
 
         if has_human:
             # Get prompts from TOML config (portrait.toml)
@@ -1795,9 +1787,7 @@ CV ANALYSIS (use as guidance):
         if length_constraint:
             system_prompt += f"\n\n{length_constraint}"
 
-        # Add CV hints to user prompt
-        if cv_hints:
-            user_prompt = f"{cv_hints}\n\n{user_prompt}"
+        # CV hints removed - LLM analyzes image directly
 
         # Add user guidance if provided
         if user_guidance and user_guidance.strip():
