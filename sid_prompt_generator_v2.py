@@ -304,9 +304,9 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                 ),
                 io.Combo.Input(
                     "prompt_style",
-                    options=["Template", "Verbose", "Tags"],
-                    default="Verbose",
-                    tooltip="Template: Use preset prompt templates. Verbose: Natural flowing sentences. Tags: Comma-separated booru-style tags"
+                    options=["Template", "Inbuilt-Prompt"],
+                    default="Inbuilt-Prompt",
+                    tooltip="Template: Use preset prompt templates. Inbuilt-Prompt: Uses built-in Z-Image optimized prompting"
                 ),
                 io.Combo.Input(
                     "template",
@@ -356,7 +356,8 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                 io.String.Input(
                     "prompt_override",
                     optional=True,
-                    tooltip="Optional input: Skip generation and use this prompt directly (connect from another node)"
+                    multiline=True,
+                    tooltip="Optional: Custom system prompt for the Vision LLM. Overrides template selection. Use to provide your own instructions for how the LLM should describe the image."
                 ),
                 io.Boolean.Input(
                     "store_results",
@@ -393,10 +394,6 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         import time
         start_time = time.time()
 
-        # Handle prompt_override - skip generation entirely if provided
-        if prompt_override is not None and prompt_override.strip():
-            print("[SID Prompt Generator] Using prompt override - skipping generation")
-            return io.NodeOutput(prompt_override.strip(), "", "")
 
         # Set seed for reproducibility
         if seed == 0:
@@ -424,22 +421,26 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         supports_reasoning = getattr(llm_model, 'supports_reasoning', False)
 
         # Map prompt_style to internal style
-        # Verbose -> verbose (natural sentences)
-        # Tags -> tags (comma-separated)
+        # Inbuilt-Prompt -> verbose (natural sentences, Z-Image optimized)
         # Template -> template (uses selected template's system prompt)
         internal_style = prompt_style.lower()
-        if internal_style == "verbose":
-            internal_style = "verbose"  # Keep as verbose
+        if internal_style == "inbuilt-prompt":
+            internal_style = "verbose"  # Maps to internal verbose style
 
-        # Get template info if using Template style
+        # Get template/system prompt for the Vision LLM
+        # Priority: prompt_override > template selection > inbuilt
         template_prompt = None
-        if prompt_style.lower() == "template":
+        if prompt_override and prompt_override.strip():
+            # Use prompt_override as custom system prompt for Vision LLM
+            template_prompt = prompt_override.strip()
+            print(f"[SID Prompt Generator] Using custom prompt override as Vision LLM instruction")
+        elif prompt_style.lower() == "template":
             template_data = get_template_by_name(template)
             if template_data:
                 template_prompt = template_data.get("system", "")
                 print(f"[SID Prompt Generator] Using template: {template}")
             else:
-                print(f"[SID Prompt Generator] Template not found: {template}, falling back to Verbose")
+                print(f"[SID Prompt Generator] Template not found: {template}, falling back to Inbuilt-Prompt")
                 internal_style = "verbose"
 
         # Create generator with LLM config from node connection
