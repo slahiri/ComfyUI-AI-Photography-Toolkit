@@ -193,6 +193,13 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                     tooltip="Seed for reproducibility (0 = random)"
                 ),
                 io.String.Input(
+                    "prompt_enhance",
+                    default="",
+                    multiline=True,
+                    optional=True,
+                    tooltip="Optional: Keywords/guidance to integrate into the prompt (e.g., 'red hair, blue eyes'). LLM will naturally incorporate these."
+                ),
+                io.String.Input(
                     "prompt_override",
                     optional=True,
                     tooltip="Optional input: Skip generation and use this prompt directly (connect from another node)"
@@ -223,6 +230,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         generate_caption: bool,
         nsfw_mode: bool,
         seed: int,
+        prompt_enhance: str = "",
         prompt_override: str = None,
         store_results: bool = False,
     ):
@@ -301,7 +309,8 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         )
 
         # Process image using core module
-        result = generator.process_image(pil_image)
+        enhance_text = prompt_enhance.strip() if prompt_enhance else ""
+        result = generator.process_image(pil_image, user_guidance=enhance_text)
 
         # Print metadata and debug log to console
         reasoning_str = "ON" if supports_reasoning else "OFF"
@@ -321,6 +330,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                 "generate_negative": generate_negative,
                 "generate_caption": generate_caption,
                 "nsfw_mode": nsfw_mode,
+                "prompt_enhance": enhance_text,
                 "model_config": {
                     "provider": llm_model.provider,
                     "model": llm_model.model,
