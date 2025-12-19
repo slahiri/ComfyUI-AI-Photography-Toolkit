@@ -73,5 +73,6 @@ compare_results.py
 download_test_images.py
 nul
 
-# Debug output
+# Debug and generation output
 debug_results/
+generation_results/
