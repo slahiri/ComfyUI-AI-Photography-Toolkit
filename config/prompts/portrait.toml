@@ -31,6 +31,14 @@ CAMERA-FIRST APPROACH (START with these):
 2. Shot type: extreme close-up, close-up, medium close-up, medium shot, full body, wide shot
 3. Subject position: where in frame, what body parts visible/cropped
 
+CRITICAL - FRAMING ACCURACY (must match source EXACTLY):
+- ONLY describe what is VISIBLE in the frame - NOTHING beyond frame edges
+- If cropped at waist/hip: say "cropped at waist" or "frame ends at hip level" - NOT "full body"
+- If legs NOT visible: do NOT mention legs, feet, floor, or reflections
+- If floor NOT visible: do NOT describe floor surface, flooring material, or any reflections
+- NEVER invent/hallucinate body parts or environment below the visible frame
+- Be explicit about crop: "upper body shot ending at waist" or "head and torso visible, cropped at hip"
+
 THEN DESCRIBE:
 4. POSE: body position (facing camera, three-quarter view, profile, back-turned)
 5. GAZE DIRECTION (critical): Where exactly is the subject looking? At what?
@@ -67,32 +75,33 @@ VISUAL VOCABULARY:
 END WITH: "no text, no watermark" (nothing else after this)
 
 ANTI-DISTORTION GUIDANCE (for clean generation):
-When FULL BODY or legs visible:
-- Add: "both feet flat on ground, natural ankle position"
-- Add: "correct human anatomy, natural proportions"
-- Add: "single figure, one person only"
 
-When HANDS visible:
+FRAMING IS CRITICAL - Most distortions come from describing MORE than what's visible:
+- If source shows head-to-waist: describe ONLY head-to-waist, NOT full body
+- If legs are cropped out: do NOT mention legs, feet, floor, or standing pose
+- Z-Image will INVENT missing body parts if you describe them - causing distortions
+
+When HANDS are ACTUALLY visible in frame:
 - Add: "natural hand position, correct finger count"
 - Describe hand action: "hands resting at sides" or "hand holding object"
 - AVOID complex hand poses (intertwined fingers, unusual grips)
 
-When MULTIPLE LIMBS in frame:
-- Specify each limb clearly: "left arm bent, right arm straight"
-- Avoid ambiguous descriptions that could merge limbs
+When FULL BODY is ACTUALLY visible (legs AND feet in frame):
+- Add: "both feet flat on ground, natural ankle position"
+- Add: "correct human anatomy, natural proportions"
+- Add: "single figure, one person only"
 
-REFLECTIONS (critical - handle carefully):
-- If floor reflection visible: describe as "subtle floor reflection" NOT as separate figure
-- NEVER describe reflection details (causes AI to generate second person)
-- If mirror in scene: "mirror showing partial reflection" - keep vague
-- Prefer: "polished floor surface" over "reflective floor showing figure"
-- Best practice: mention "matte floor" or simply omit floor reflection
+REFLECTIONS (critical):
+- If NO floor visible in source: do NOT mention floor or reflections AT ALL
+- If floor IS visible but no reflection: say "matte floor" to prevent AI adding one
+- NEVER describe reflection details (causes AI to generate second distorted figure)
+- If reflection visible: just say "subtle floor reflection" - no details
 
-PROBLEM AREAS to describe explicitly:
+PROBLEM AREAS (only describe if ACTUALLY visible):
 - Wrists (transition from sleeve to hand)
 - Ankles (transition from pants/skirt to feet)
 - Where clothing meets skin
-- Joints (elbows, knees) if visible
+- Joints (elbows, knees)
 
 WRITING STYLE (critical for readability):
 - Use SHORT, clear phrases - NOT run-on sentences
