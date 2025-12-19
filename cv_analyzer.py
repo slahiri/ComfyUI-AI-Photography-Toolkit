@@ -403,7 +403,7 @@ class CVAnalyzer:
 
         Args:
             image: RGB numpy array
-            mode: "quick" (detection only), "standard" (+ features), "detailed" (+ extras)
+            mode: "quick" (detection only), "standard" (+ features)
 
         Returns:
             Complete analysis dictionary
@@ -431,8 +431,8 @@ class CVAnalyzer:
             "prompt_type": "portrait" if detection["has_human"] else "scene_only"
         })
 
-        # Step 2: Feature extraction (standard/detailed only)
-        if mode in ["standard", "detailed"]:
+        # Step 2: Feature extraction (standard mode only)
+        if mode == "standard":
             features = cls.extract_features(image, detection)
             result.update({
                 "colors": features["colors"],

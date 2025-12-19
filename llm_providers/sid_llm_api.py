@@ -522,12 +522,12 @@ class SID_LLM_API(comfy_io.ComfyNode):
                     tooltip="Enable extended thinking for supported models (Claude 4.5, o1, o3, DeepSeek R1, etc.)"
                 ),
 
-                # Analysis mode - API supports Quick/Standard/Detailed
+                # Analysis mode - Standard or Detailed
                 comfy_io.Combo.Input(
                     "analysis_mode",
-                    options=["Quick", "Standard", "Detailed"],
-                    default="Standard",
-                    tooltip="Quick: Single-pass (1 call). Standard: Optimized multi-aspect (3-4 calls). Detailed: Full agentic analysis (12+ calls)"
+                    options=["Standard", "Detailed"],
+                    default="Detailed",
+                    tooltip="Standard: Single-pass (1 call). Detailed: Comprehensive multi-aspect analysis (3-4 calls)"
                 ),
             ],
             outputs=[

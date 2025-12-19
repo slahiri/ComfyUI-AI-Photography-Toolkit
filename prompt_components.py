@@ -790,57 +790,47 @@ Output JSON:
 }
 
 
-# Subject type to component mapping
+# Subject type to component mapping (Standard uses subset, Detailed uses full set)
 SUBJECT_COMPONENTS = {
     "WOMAN": {
-        "Standard": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "body_figure", "clothing", "lighting"],
+        "Standard": ["framing", "ethnicity", "clothing"],
         "Detailed": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
-        "Extreme": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
     },
     "MAN": {
-        "Standard": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "clothing", "lighting"],
+        "Standard": ["framing", "ethnicity", "clothing"],
         "Detailed": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "tattoos", "accessories", "lighting"],
-        "Extreme": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "tattoos", "accessories", "lighting"],
     },
     "COUPLE": {
-        "Standard": ["framing", "ethnicity", "hair", "face", "body_pose", "clothing", "lighting"],
-        "Detailed": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "clothing", "intimate_apparel", "accessories", "lighting"],
-        "Extreme": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
+        "Standard": ["framing", "clothing"],
+        "Detailed": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
     },
     "GROUP": {
-        "Standard": ["framing", "lighting"],
-        "Detailed": ["framing", "clothing", "lighting"],
-        "Extreme": ["framing", "clothing", "accessories", "lighting"],
+        "Standard": ["framing"],
+        "Detailed": ["framing", "clothing", "accessories", "lighting"],
     },
     "VEHICLE": {
-        "Standard": ["framing", "object_description", "lighting"],
+        "Standard": ["framing", "object_description"],
         "Detailed": ["framing", "object_description", "lighting"],
-        "Extreme": ["framing", "object_description", "lighting"],
     },
     "LANDSCAPE": {
-        "Standard": ["framing", "scenery_description", "lighting"],
+        "Standard": ["framing", "scenery_description"],
         "Detailed": ["framing", "scenery_description", "lighting"],
-        "Extreme": ["framing", "scenery_description", "lighting"],
     },
     "ANIMAL": {
-        "Standard": ["framing", "object_description", "lighting"],
+        "Standard": ["framing", "object_description"],
         "Detailed": ["framing", "object_description", "lighting"],
-        "Extreme": ["framing", "object_description", "lighting"],
     },
     "PRODUCT": {
-        "Standard": ["framing", "object_description", "lighting"],
+        "Standard": ["framing", "object_description"],
         "Detailed": ["framing", "object_description", "lighting"],
-        "Extreme": ["framing", "object_description", "lighting"],
     },
     "ARCHITECTURE": {
-        "Standard": ["framing", "scenery_description", "lighting"],
+        "Standard": ["framing", "scenery_description"],
         "Detailed": ["framing", "scenery_description", "lighting"],
-        "Extreme": ["framing", "scenery_description", "lighting"],
     },
     "OTHER": {
-        "Standard": ["framing", "object_description", "lighting"],
+        "Standard": ["framing", "object_description"],
         "Detailed": ["framing", "object_description", "lighting"],
-        "Extreme": ["framing", "object_description", "lighting"],
     },
 }
 
@@ -848,20 +838,13 @@ SUBJECT_COMPONENTS = {
 # Detail mode configurations
 DETAIL_MODES = {
     "Standard": {
-        "components": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "body_figure", "clothing", "lighting"],
-        "description": "Balanced analysis - main features including body proportions",
+        "components": ["framing", "ethnicity", "clothing"],
+        "description": "Fast single-call analysis",
         "include_measurements": False,
     },
     "Detailed": {
         "components": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
         "description": "Comprehensive analysis - all features including body figure, intimate apparel and tattoos",
         "include_measurements": True,
-    },
-    "Extreme": {
-        "components": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
-        "description": "Maximum detail - all components including body proportions, explicit descriptions, raw output",
-        "include_measurements": True,
-        "include_exposure": True,
-        "raw_mode": True,
     },
 }

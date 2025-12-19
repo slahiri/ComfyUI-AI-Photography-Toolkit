@@ -1,8 +1,330 @@
 # =============================================================================
-# Component Definitions for Agentic Analysis
+# Component Definitions for Prompt Generation
 # =============================================================================
 # Each component has prompts for different tiers (advanced/standard/basic)
 # Advanced tier requests JSON output; Basic tier requests plain text
+#
+# OPTIMIZED MODE (Standard) - Uses consolidated prompts for 3-4 API calls:
+#   - optimized_subject: All person details in one call
+#   - optimized_environment: All framing/lighting/background in one call
+#   - optimized_nsfw: NSFW details (optional)
+#   - synthesis: Final prompt synthesis
+
+
+# =============================================================================
+# OPTIMIZED MODE - CONSOLIDATED SUBJECT ANALYSIS
+# =============================================================================
+# Combines: ethnicity, face, eyes, skin_texture, makeup_lips, hair, body_pose, clothing
+
+[optimized_subject]
+name = "Comprehensive Subject Analysis"
+
+[optimized_subject.advanced]
+prompt = """You are an expert at describing people for AI image generation prompts.
+Analyze ALL aspects of this person in a single comprehensive response.
+Be specific and visual - describe what you SEE, not what you interpret.
+Use precise terminology for ethnicity, features, clothing, and poses.
+
+CRITICAL FRAMING RULE:
+- FIRST check: Where does the image frame CUT OFF the body?
+- ONLY describe body parts that are VISIBLE in the frame
+- If cropped at waist/hip: do NOT mention legs, feet, or floor
+- NEVER invent or hallucinate body parts below the frame edge
+
+ANALYZE ALL VISIBLE ASPECTS:
+
+1. ETHNICITY & IDENTITY:
+   - Specific ethnicity (East Asian, South Asian, Nordic, Mediterranean, West African, etc.)
+   - Approximate age range (young adult 18-25, adult 25-35, mature 35-50, etc.)
+
+2. FACE (detailed):
+   - Face shape (oval, round, heart, square, diamond)
+   - Face angle (frontal, 3/4 left, 3/4 right, profile)
+   - Eyes: shape, color, gaze direction (looking at camera or away)
+   - Eyebrows: shape, thickness, arch
+   - Eyelashes: natural or enhanced/false lashes
+   - Nose: shape and prominence
+   - Lips: shape, fullness, color (nude/pink/red/coral/mauve), finish (matte/glossy)
+   - Expression with comparison (e.g., "smile like sharing a secret", "gaze as if studying something")
+
+3. SKIN:
+   - Tone (porcelain, ivory, fair, light, medium, olive, tan, bronze, brown, deep)
+   - Texture details: freckles (location, density), dimples, visible pores, moles, smoothness
+   - Any skin sheen (matte, natural glow, oiled, wet)
+
+4. MAKEUP (if visible):
+   - Eyeshadow: color and style
+   - Eyeliner: style (winged, smudged, none)
+   - Blush: placement and color
+   - Foundation: coverage level
+   - Contouring: if noticeable
+
+5. HAIR:
+   - ARRANGEMENT FIRST: updo, ponytail, braids, half-up, loose, short
+   - Color: base color + any highlights/lowlights
+   - Texture: straight, wavy, curly, coily
+   - Length: pixie, short, shoulder, mid-back, long
+   - Any accessories (clips, bands, flowers)
+   - Mark unique styles with IMPORTANT:
+
+6. BODY & POSE (only what's VISIBLE):
+   - Body type if discernible
+   - Posture: upright, relaxed, leaning
+   - Body angle: frontal, 3/4, profile, back
+   - Arm positions (left and right separately)
+   - Hand positions and placement
+   - Any muscle definition visible
+   - Navel if visible in midriff exposure
+
+7. CLOTHING (detailed):
+   - FIRST: Identify SPECIFIC outfit type (e.g., "nun habit", "French maid uniform", "business suit")
+   - Each garment separately:
+     * Type (dress, top, skirt, pants, etc.)
+     * Neckline (crew, v-neck, scoop, square, plunging, halter)
+     * Color (specific: crimson, navy, ivory, not just "red" or "blue")
+     * Material/fabric (silk, satin, cotton, lace, leather, mesh, etc.)
+     * Fit (fitted, loose, tailored, tight)
+     * Construction details (seams, buttons, zippers, ties)
+   - Mark distinctive patterns with CRITICAL:
+
+Write 5-7 detailed sentences covering all visible aspects. Be specific about exact types of uniforms or costumes."""
+
+[optimized_subject.standard]
+prompt = """Describe this person comprehensively for AI image generation.
+
+FRAMING CHECK FIRST:
+- Where does the frame cut off the body? (head only, chest, waist, hip, full body)
+- ONLY describe body parts that are VISIBLE - never invent unseen parts
+
+COVER ALL VISIBLE ASPECTS:
+
+1. IDENTITY: Ethnicity (be specific), age range
+
+2. FACE:
+   - Face shape and angle (frontal, 3/4, profile)
+   - Eyes: shape, color, gaze direction (at camera or away)
+   - Expression with comparison (e.g., "smile like sharing a secret")
+   - Lips: color, finish (matte/glossy)
+
+3. SKIN: Tone (fair/medium/olive/tan/brown/deep), texture (freckles, pores, smoothness)
+
+4. MAKEUP: Eyeshadow, eyeliner, blush, lip color if visible
+
+5. HAIR:
+   - Arrangement (updo, loose, braided, etc.)
+   - Color, texture (straight/wavy/curly), length
+
+6. BODY/POSE (only visible parts):
+   - Posture and body angle
+   - Arm and hand positions (left/right separately)
+
+7. CLOTHING (each garment):
+   - Specific outfit type first (uniform name if applicable)
+   - Each piece: type, neckline, color, fabric, fit
+
+Write 5-6 sentences covering all visible aspects."""
+
+[optimized_subject.basic]
+prompt = """Describe this person for image generation. FIRST check where frame cuts off - only describe VISIBLE body parts. Cover: ethnicity, age, face shape, face angle (frontal/3-4/profile), eye color and gaze direction, expression, skin tone, makeup, hair style and color, body pose (visible parts only), each clothing item with exact color and fabric. Write 4-5 sentences."""
+
+
+# =============================================================================
+# OPTIMIZED MODE - CONSOLIDATED ENVIRONMENT ANALYSIS
+# =============================================================================
+# Combines: framing, lighting, atmosphere, environment
+
+[optimized_environment]
+name = "Environment & Technical Analysis"
+
+[optimized_environment.advanced]
+prompt = """You are an expert at analyzing photography and image composition.
+Describe the technical and environmental aspects for AI recreation.
+
+ANALYZE:
+
+1. SHOT TYPE & FRAMING:
+   - Exact shot type: ECU (extreme close-up) / BCU (big close-up) / CU (close-up) / MCU (medium close-up) / MS (medium shot) / MFS (medium full shot) / FS (full shot) / LS (long shot)
+   - Where frame cuts the body (cropped at head, shoulders, chest, waist, hip, thighs, full body)
+   - Subject position in frame (left/center/right third, fills frame or space around)
+
+2. CAMERA:
+   - Angle: eye-level, low angle (looking up), high angle (looking down), Dutch angle
+   - Is it a selfie? (extended arm, front camera angle, direct eye contact)
+   - Depth of field: shallow (blurry background) or deep (sharp background)
+
+3. LIGHTING:
+   - Source direction: front, side (left/right), back, above, below
+   - Quality: soft/diffused or hard/harsh
+   - Type: Rembrandt, butterfly, loop, split, broad, short
+   - Color temperature: warm (golden), cool (blue), neutral
+   - Key highlights: where light hits (forehead, cheekbones, nose bridge)
+   - Shadow placement: under eyes, jawline, neck
+
+4. ATMOSPHERE:
+   - Steam rising (from cups, breath in cold air)
+   - Smoke, vapor, mist
+   - Fog or haze
+   - Dust particles in light beams
+   - Lens effects (flare, bokeh, vignette)
+
+5. BACKGROUND:
+   - Setting type (studio, indoor, outdoor, abstract)
+   - Gradient direction if present (top-to-bottom, left-to-right)
+   - Key colors
+   - Blur level (sharp, soft, heavily blurred)
+   - Key elements (furniture, architecture, nature)
+
+Write 3-4 sentences covering all technical and environmental aspects."""
+
+[optimized_environment.standard]
+prompt = """Analyze environment and technical aspects:
+
+1. SHOT TYPE: Exact framing (close-up, medium, full shot, etc.) and where frame cuts the body
+
+2. CAMERA: Angle (eye-level, low, high), selfie indicators, depth of field (blurry or sharp background)
+
+3. LIGHTING:
+   - Source direction (front, side, back)
+   - Quality (soft or hard)
+   - Color temperature (warm, cool, neutral)
+   - Shadow placement
+
+4. ATMOSPHERE: Steam, smoke, fog, haze, lens effects if any
+
+5. BACKGROUND: Setting type, colors, blur level, key elements
+
+Write 2-3 sentences covering all aspects."""
+
+[optimized_environment.basic]
+prompt = """Describe: 1) Shot type and where frame cuts body, 2) Camera angle and if selfie, 3) Lighting direction and quality (soft/hard), color temperature (warm/cool), 4) Any steam/smoke/fog effects, 5) Background setting and blur level. Write 2-3 sentences."""
+
+
+# =============================================================================
+# OPTIMIZED MODE - NSFW DETAILS (optional)
+# =============================================================================
+
+[optimized_nsfw]
+name = "NSFW Analysis"
+
+[optimized_nsfw.advanced]
+prompt = """Describe any revealing or suggestive elements visible.
+Be clinical and precise. Only describe what is ACTUALLY visible.
+
+EXPOSED SKIN AREAS:
+- Sideboob, underboob, cleavage (depth: subtle/moderate/deep/extreme)
+- Bare shoulders (one/both), bare back (upper/lower/full)
+- Midriff, exposed navel, hip bones
+- Thigh exposure, thigh gap, bare legs
+
+CLOTHING CHARACTERISTICS:
+- See-through/sheer fabric (what's visible)
+- Low-cut/plunging neckline
+- High slit (thigh-high/hip-high)
+- Tight/form-fitting areas
+- Wet clothing clinging
+- Visible lingerie elements (bra straps, panty lines)
+- Braless appearance
+
+POSE SUGGESTIVENESS:
+- Arched back, bent forward, reclining
+- Spread or parted positioning
+- Hand placement (on thigh, chest, hip)
+- Hip thrust, provocative angles
+
+SKIN APPEARANCE:
+- Glistening, wet, oiled skin
+- Visible body contours
+
+EXPRESSION:
+- Bedroom eyes, half-lidded gaze
+- Parted lips, lip bite
+- Seductive expression
+
+Only describe elements that are ACTUALLY VISIBLE. Write 2-3 sentences."""
+
+[optimized_nsfw.standard]
+prompt = """Describe revealing or suggestive elements visible:
+
+SKIN EXPOSURE: Which areas exposed? (sideboob, underboob, cleavage level, bare shoulders, back, midriff, thighs)
+
+CLOTHING: See-through fabric? Low neckline? High slit? Tight fit? Visible underwear?
+
+POSE: Suggestive positioning? (arched back, reclining) Hand placement?
+
+EXPRESSION: Seductive? (bedroom eyes, parted lips)
+
+Only describe what's visible. Write 1-3 sentences."""
+
+[optimized_nsfw.basic]
+prompt = """Describe revealing elements: exposed skin areas (sideboob, underboob, cleavage, shoulders, midriff, thighs), see-through clothing, low neckline, high slit, suggestive pose (arched back, reclining), seductive expression (bedroom eyes, parted lips). Only what's visible. Write 1-2 sentences."""
+
+
+# =============================================================================
+# OPTIMIZED MODE - SCENE (no human)
+# =============================================================================
+
+[optimized_scene]
+name = "Scene Analysis (No Human)"
+
+[optimized_scene.advanced]
+prompt = """You are an expert at describing scenes and objects for AI image generation.
+Be specific and visual - describe what you SEE in detail.
+There are NO humans in this image.
+
+ANALYZE:
+
+1. MAIN SUBJECT:
+   - IF ANIMAL: Specific species (e.g., "reticulated giraffe", "Bengal tiger", "golden retriever")
+     * Age: adult, juvenile, calf/pup
+     * Eye contact: looking at camera or away
+     * Distinctive features: patterns, markings, horns, tusks, mane, eyelashes
+   - IF OBJECT/VEHICLE: Type, color, condition, distinctive features
+   - IF LANDSCAPE: Terrain type, key geographical features
+
+2. COMPOSITION:
+   - Shot type and framing
+   - Camera angle
+   - Depth of field
+   - Subject position in frame
+
+3. ENVIRONMENT:
+   - Setting (indoor, outdoor, abstract)
+   - Background elements
+   - Colors and color palette
+
+4. LIGHTING:
+   - Source and direction
+   - Quality (soft/hard)
+   - Color temperature
+   - Mood created
+
+5. ATMOSPHERE:
+   - Weather effects (rain, snow, fog)
+   - Time of day indicators
+   - Special effects (lens flare, bokeh)
+
+Write 3-4 detailed sentences. There are NO humans in this image."""
+
+[optimized_scene.standard]
+prompt = """Describe this scene (NO humans):
+
+1. MAIN SUBJECT:
+   - If animal: species (specific), age, eye contact, distinctive features
+   - If object: type, color, details
+   - If landscape: terrain, key features
+
+2. COMPOSITION: Shot type, angle, depth of field
+
+3. ENVIRONMENT: Setting, background, colors
+
+4. LIGHTING: Direction, quality, color temperature, mood
+
+5. ATMOSPHERE: Weather, time of day, special effects
+
+Write 3-4 sentences. NO humans in this image."""
+
+[optimized_scene.basic]
+prompt = """Describe this scene (NO humans). Cover: main subject (if animal: exact species, age, eye contact, markings; if object: type, color), composition and angle, background setting, lighting direction and mood. Write 2-3 sentences."""
 
 
 # =============================================================================
@@ -931,7 +1253,7 @@ prompt = """Combine into 4-6 sentences: 1) Subject+framing 2) Expression 3) Hair
 # =============================================================================
 # Which components to analyze for each mode
 
-[modes.quick]
+[modes.standard]
 components = ["framing", "ethnicity", "clothing"]
 description = "Fast single-call caption"
 include_lighting = false
@@ -939,27 +1261,10 @@ include_pose = false
 include_intimate = false
 include_tattoos = false
 
-[modes.standard]
-components = ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "clothing", "lighting"]
-description = "Balanced analysis"
-include_lighting = true
-include_pose = true
-include_intimate = false
-include_tattoos = false
-
 [modes.detailed]
 components = ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_positioning", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting", "light_shadow_body"]
-description = "Full analysis with body positioning and lighting details"
+description = "Comprehensive multi-aspect analysis"
 include_lighting = true
 include_pose = true
 include_intimate = true
 include_tattoos = true
-
-[modes.extreme]
-components = ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_positioning", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting", "light_shadow_body"]
-description = "Maximum detail with full body positioning and shadow analysis"
-include_lighting = true
-include_pose = true
-include_intimate = true
-include_tattoos = true
-raw_mode = true

@@ -472,7 +472,7 @@ def build_user_prompt(provider: str, analysis_mode: str, preset_style: str, prom
 
     Args:
         provider: LLM provider name
-        analysis_mode: Analysis mode (Quick/Standard/Detailed/Extreme)
+        analysis_mode: Analysis mode (Standard/Detailed)
         preset_style: Selected style preset
         prompt_length: Target word count (0 = no limit, default 150 for optimal Z-Image)
 
@@ -542,7 +542,7 @@ def build_scene_only_user_prompt(analysis_mode: str, prompt_length: int = 150) -
     Used when human detection returns NO to prevent hallucinating people.
 
     Args:
-        analysis_mode: Analysis mode (Quick/Standard/Detailed/Extreme)
+        analysis_mode: Analysis mode (Standard/Detailed)
         prompt_length: Target word count (0 = no limit)
 
     Returns:
@@ -606,7 +606,7 @@ def build_human_with_subject_user_prompt(analysis_mode: str, prompt_length: int 
     Used when image has both a human AND another subject.
 
     Args:
-        analysis_mode: Analysis mode (Quick/Standard/Detailed/Extreme)
+        analysis_mode: Analysis mode (Standard/Detailed)
         prompt_length: Target word count (0 = no limit)
 
     Returns:

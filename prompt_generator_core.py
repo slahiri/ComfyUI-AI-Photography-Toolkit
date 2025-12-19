@@ -66,7 +66,7 @@ except ImportError:
 # Configuration
 # =============================================================================
 
-ANALYSIS_MODES = ["quick", "standard", "detailed"]
+ANALYSIS_MODES = ["standard", "detailed"]
 
 IMAGE_SIZES = {
     "local": {"cv": 640, "llm": 512, "quality": 80},
@@ -820,7 +820,7 @@ class CVAnalyzerStandalone:
             "prompt_type": "portrait" if detection["has_human"] else "scene_only"
         })
 
-        if mode in ["standard", "detailed"]:
+        if mode == "standard":
             features = cls.extract_features(image, detection)
             result.update({
                 "colors": features["colors"],
@@ -1601,9 +1601,8 @@ class PromptGenerator:
 
     # Mode-based image size scaling factors
     MODE_SIZE_SCALE = {
-        "quick": 0.70,      # 30% smaller for faster processing
-        "standard": 1.00,   # Base size
-        "detailed": 1.30,   # 30% larger for more detail
+        "standard": 0.70,   # 30% smaller for faster processing
+        "detailed": 1.00,   # Base size for comprehensive analysis
     }
 
     def __init__(
@@ -1763,43 +1762,19 @@ class PromptGenerator:
                 max_tokens=self.prompt_length * 3
             )
         # Analysis mode routing:
-        # - Quick: Single vision call (fast, ~1 call) - all providers
-        # - Standard: Optimized multi-aspect analysis (~3-4 calls) - all providers
-        # - Detailed: Full agentic analysis (~12-14 calls) - API only, requires reasoning
-        #
-        # Local providers support Quick and Standard modes.
-        # Detailed mode falls back to Standard for local providers.
-        elif self.analysis_mode == "quick":
-            # Quick mode: Single vision call
-            self._log(f"[PromptGen] Using QUICK single-pass analysis")
-            prompt = self.llm_client.call_vision(
-                base64_image, system_prompt, user_prompt,
-                max_tokens=self.prompt_length * 3
-            )
+        # - Standard: Single vision call (fast, ~1 call) - all providers
+        # - Detailed: Optimized multi-aspect analysis (~3-4 calls) - all providers, uses TOML prompts
         elif self.analysis_mode == "standard":
-            # Standard mode: Optimized 3-4 call approach (works for all providers)
-            self._log(f"[PromptGen] Using STANDARD optimized analysis (3-4 calls)")
-            prompt = self._optimized_generate(base64_image, has_human, cv_analysis, user_guidance)
-        elif self.analysis_mode == "detailed":
-            # Detailed mode: Full agentic analysis (API only, requires reasoning)
-            if is_local:
-                # Local providers fall back to Standard (too many calls for local)
-                self._log(f"[PromptGen] Using STANDARD optimized analysis (detailed not supported for local)")
-                prompt = self._optimized_generate(base64_image, has_human, cv_analysis, user_guidance)
-            elif self.enable_reasoning:
-                self._log(f"[PromptGen] Using DETAILED agentic analysis (12+ calls)")
-                prompt = self._agentic_generate(base64_image, has_human, cv_analysis, user_guidance)
-            else:
-                # Detailed without reasoning: Fall back to Standard
-                self._log(f"[PromptGen] Using STANDARD optimized analysis (detailed requires reasoning)")
-                prompt = self._optimized_generate(base64_image, has_human, cv_analysis, user_guidance)
-        else:
-            # Unknown mode: Fall back to Quick
-            self._log(f"[PromptGen] Using QUICK single-pass analysis (unknown mode: {self.analysis_mode})")
+            # Standard mode: Single vision call
+            self._log(f"[PromptGen] Using STANDARD single-pass analysis")
             prompt = self.llm_client.call_vision(
                 base64_image, system_prompt, user_prompt,
                 max_tokens=self.prompt_length * 3
             )
+        else:
+            # Detailed mode (default): Optimized 3-4 call approach using TOML prompts
+            self._log(f"[PromptGen] Using DETAILED optimized analysis (3-4 calls)")
+            prompt = self._optimized_generate(base64_image, has_human, cv_analysis, user_guidance)
 
         result.timing["llm_time_s"] = time.time() - llm_start
 
@@ -1827,12 +1802,12 @@ class PromptGenerator:
         # Step 5d: Apply user guidance
         if user_guidance and user_guidance.strip():
             user_guidance = user_guidance.strip()
-            if self.analysis_mode == "quick":
-                # Quick mode: append user guidance verbatim
+            if self.analysis_mode == "standard":
+                # Standard mode: append user guidance verbatim
                 self._log(f"[PromptGen] Adding user guidance verbatim")
                 result.prompt = f"{result.prompt}, {user_guidance}"
             else:
-                # Standard/Detailed mode: use text LLM to enhance prompt based on guidance
+                # Detailed mode: use text LLM to enhance prompt based on guidance
                 self._log(f"[PromptGen] Enhancing prompt with user guidance via LLM...")
                 enhance_prompt = f"""Modify this image generation prompt based on the user's guidance.
 
@@ -1957,24 +1932,28 @@ Be specific about exactly which NSFW features are visible. Do NOT add features t
     def _optimized_generate(self, base64_image: str, has_human: bool,
                             cv_analysis: Dict, user_guidance: str) -> str:
         """
-        Optimized multi-aspect generation (3-4 calls).
+        Optimized multi-aspect generation (3-4 calls) using TOML prompts.
 
-        Consolidates the 12+ call agentic approach into 3-4 efficient calls:
+        Consolidates analysis into 3-4 efficient calls:
         1. Subject Analysis - person details (ethnicity, face, skin, hair, body, clothing)
         2. Environment Analysis - framing, lighting, atmosphere, background
         3. NSFW Details (optional) - revealing elements if nsfw_mode enabled
         4. Synthesis - combine into final prompt
 
-        This is ideal for advanced models (Claude, GPT-4o, Gemini) that can handle
-        complex multi-aspect prompts in a single call.
+        Prompts are loaded from config/components.toml for easy customization.
         """
         components = {}
         component_times = {}
         tier = get_provider_tier(self.config.provider)
 
-        def timed_vision_call(name: str, system_prompt: str, user_instruction: str, max_tokens: int):
-            """Call vision API with timing."""
+        def timed_vision_call(name: str, component_key: str, user_instruction: str, max_tokens: int):
+            """Call vision API with prompt from TOML config."""
             start = time.time()
+            # Get system prompt from TOML
+            system_prompt = get_component_prompt(component_key, tier)
+            if not system_prompt:
+                self._log(f"[Optimized] Warning: No prompt found for {component_key}.{tier}")
+                return ""
             result = self.llm_client.call_vision(base64_image, system_prompt, user_instruction, max_tokens)
             elapsed = time.time() - start
             component_times[name] = elapsed
@@ -1982,81 +1961,34 @@ Be specific about exactly which NSFW features are visible. Do NOT add features t
             return result
 
         if has_human:
-            # Call 1: Comprehensive Subject Analysis
-            subject_system = """You are an expert at describing people for AI image generation prompts.
-Analyze ALL aspects of this person in a single comprehensive response.
-Be specific and visual - describe what you SEE, not what you interpret.
-Use precise terminology for ethnicity, features, clothing, and poses."""
-
-            subject_user = """Describe this person comprehensively, covering ALL these aspects in flowing prose:
-
-1. IDENTITY: Ethnicity/ancestry (be specific: East Asian, South Asian, Nordic, Mediterranean, etc.), approximate age range
-2. FACE: Facial structure, eye shape/color, eyebrows, eyelashes, nose, lips, expression
-3. SKIN: Skin tone (use specific terms: porcelain, ivory, olive, tan, bronze, etc.), texture, any visible details
-4. MAKEUP: If visible - foundation, eye makeup, lip color, blush, etc.
-5. HAIR: Style, length, color, texture (straight/wavy/curly), any accessories
-6. BODY: Visible body type, pose, posture, any muscle definition
-7. CLOTHING: Identify the SPECIFIC uniform/outfit type first (e.g., "Roman Catholic nun habit", "French maid outfit", "Japanese sailor fuku"), then describe each garment's color, fabric, fit, and details
-
-Write 4-6 detailed sentences covering all visible aspects. Be specific about the exact type of any uniform or costume."""
-
+            # Call 1: Comprehensive Subject Analysis (from TOML)
             components["subject"] = timed_vision_call(
-                "subject", subject_system, subject_user, 800
+                "subject", "optimized_subject",
+                "Describe this person comprehensively following all the analysis points. Write 5-7 detailed sentences.",
+                900
             )
 
-            # Call 2: Environment & Technical Analysis
-            env_system = """You are an expert at analyzing photography and image composition.
-Describe the technical and environmental aspects of this image for AI recreation."""
-
-            env_user = """Analyze the environment and technical aspects:
-
-1. SHOT TYPE: Exact framing (extreme close-up, close-up, medium close-up, medium shot, full shot, wide shot)
-2. CAMERA: Angle (eye-level, low angle, high angle, Dutch angle), if it appears to be a selfie
-3. LIGHTING: Source direction, quality (soft/hard), color temperature, any dramatic effects
-4. ATMOSPHERE: Any fog, steam, smoke, bokeh, lens effects
-5. BACKGROUND: Setting, depth of field, key background elements, colors
-
-Write 2-3 sentences covering the environment and technical aspects."""
-
+            # Call 2: Environment & Technical Analysis (from TOML)
             components["environment"] = timed_vision_call(
-                "environment", env_system, env_user, 400
+                "environment", "optimized_environment",
+                "Analyze the framing, camera, lighting, atmosphere, and background. Write 3-4 sentences.",
+                500
             )
 
         else:
-            # Scene-only (no human)
-            scene_system = """You are an expert at describing scenes and objects for AI image generation.
-Be specific and visual - describe what you SEE in detail."""
-
-            scene_user = """Describe this scene comprehensively:
-
-1. MAIN SUBJECT: What is the primary focus? Species/type if animal, object details if still life
-2. COMPOSITION: Framing, angle, depth of field
-3. ENVIRONMENT: Setting, background elements, atmosphere
-4. LIGHTING: Source, quality, color temperature, mood
-5. COLORS: Dominant color palette, any striking color contrasts
-
-Write 3-4 detailed sentences. There are NO humans in this image."""
-
+            # Scene-only - no human (from TOML)
             components["scene"] = timed_vision_call(
-                "scene", scene_system, scene_user, 600
+                "scene", "optimized_scene",
+                "Describe this scene comprehensively. Write 3-4 detailed sentences.",
+                700
             )
 
-        # Call 3 (Optional): NSFW Details
+        # Call 3 (Optional): NSFW Details (from TOML)
         if self.nsfw_mode and has_human:
-            nsfw_system = """You describe revealing or suggestive elements in images using specific terminology.
-Be clinical and precise. Only describe what is actually visible."""
-
-            nsfw_user = """Describe any revealing or suggestive elements visible:
-
-- EXPOSURE: sideboob, underboob, cleavage, bare shoulders, bare back, midriff, thigh gap, etc.
-- CLOTHING: see-through, sheer, low-cut, high slit, tight/form-fitting, etc.
-- POSE: any suggestive positioning
-- SKIN: wet, glistening, oiled appearance
-
-Only describe elements that are ACTUALLY VISIBLE. Write 1-3 sentences."""
-
             components["nsfw"] = timed_vision_call(
-                "nsfw", nsfw_system, nsfw_user, 200
+                "nsfw", "optimized_nsfw",
+                "Describe any revealing or suggestive elements visible. Write 2-3 sentences.",
+                300
             )
 
         # Call 4: Synthesis - integrate enhancement naturally into the prompt
@@ -2069,6 +2001,11 @@ USER ENHANCEMENT (MUST integrate naturally into the prompt):
 IMPORTANT: Integrate this enhancement INTO the description naturally - modify clothing, add/remove elements,
 or adjust the scene as specified. Do NOT append it at the end. The final prompt should read as if the
 enhancement was always part of the original description."""
+
+        # Get synthesis instructions from TOML
+        synthesis_instructions = get_component_prompt("synthesis", tier)
+        if not synthesis_instructions:
+            synthesis_instructions = "Combine into 4-6 flowing sentences for Z-Image realistic output. End with 'no text, no watermark'."
 
         if self.prompt_style == "tags":
             synthesis_prompt = f"""Convert these descriptions into Z-Image compatible tags for realistic image generation:
@@ -2088,13 +2025,11 @@ End with: no_text, no_watermark"""
 {json.dumps(components, indent=2)}
 {enhancement_instruction}
 
-INSTRUCTIONS:
-- Write 4-6 flowing sentences optimized for Z-Image realistic output
-- Start with the subject, then clothing/appearance, then environment
-- Include specific visual details: colors, textures, lighting, materials
-- If enhancement is provided, weave it naturally into the description
-- Output must generate realistic, photorealistic results
-- End with "no text, no watermark"
+{synthesis_instructions}
+
+IMPORTANT: If enhancement is provided, weave it naturally into the description.
+Maintain the same prompt length (~{self.prompt_length} words) - integrate, don't append.
+Output must generate realistic, photorealistic results.
 
 Write approximately {self.prompt_length} words."""
 
@@ -2119,180 +2054,6 @@ Write approximately {self.prompt_length} words."""
             self._log(f"[Optimized]   {name}: {elapsed:.2f}s ({pct:.0f}%)")
         self._log(f"[Optimized] ─────────────────────────────────────")
         self._log(f"[Optimized] TOTAL: {total_time:.2f}s")
-
-        return result
-
-    def _agentic_generate(self, base64_image: str, has_human: bool,
-                          cv_analysis: Dict, user_guidance: str) -> str:
-        """Agentic multi-step generation using component prompts from TOML."""
-        components = {}
-        component_times = {}  # Track timing for each component
-        tier = get_provider_tier(self.config.provider)
-
-        def timed_vision_call(name: str, component_key: str, user_instruction: str, max_tokens: int):
-            """Call vision API with prompt from TOML config."""
-            start = time.time()
-            # Get system prompt from TOML components.toml
-            system_prompt = get_component_prompt(component_key, tier)
-            if not system_prompt:
-                self._log(f"[Agentic] Warning: No prompt found for {component_key}.{tier}")
-                return ""
-            result = self.llm_client.call_vision(base64_image, system_prompt, user_instruction, max_tokens)
-            elapsed = time.time() - start
-            component_times[name] = elapsed
-            self._log(f"[Agentic] {name}: {elapsed:.2f}s")
-            return result
-
-        if has_human:
-            # Core components (always run)
-            components["ethnicity"] = timed_vision_call(
-                "ethnicity", "ethnicity",
-                "Identify ethnicity specifically in 1-2 sentences.", 80
-            )
-            components["shot_framing"] = timed_vision_call(
-                "shot_framing", "framing",
-                "State exact shot type and where frame cuts off in 1 sentence.", 60
-            )
-            components["selfie_check"] = timed_vision_call(
-                "selfie_check", "selfie_check",
-                "Identify if selfie in 1 sentence.", 40
-            )
-
-            if self.analysis_mode == "detailed":
-                # Detailed mode: separate components for each aspect
-                components["face"] = timed_vision_call(
-                    "face", "face",
-                    "Describe the face with extreme eye, eyelash, and eyebrow detail in 3-4 sentences.", 250
-                )
-                components["skin_texture"] = timed_vision_call(
-                    "skin_texture", "skin_texture",
-                    "Describe skin tone and texture details in 2-3 sentences.", 150
-                )
-                components["makeup_lips"] = timed_vision_call(
-                    "makeup_lips", "makeup_lips",
-                    "Describe makeup and lip details in 2-3 sentences.", 180
-                )
-                components["hair"] = timed_vision_call(
-                    "hair", "hair",
-                    "Describe the hairstyle in detail in 2-3 sentences.", 150
-                )
-                components["body"] = timed_vision_call(
-                    "body", "body_pose",
-                    "Describe the body, muscle definition, and navel in 2-3 sentences.", 180
-                )
-                components["clothing"] = timed_vision_call(
-                    "clothing", "clothing",
-                    "Name the specific uniform type, then describe EACH garment with exact color, fabric, texture, and construction in 4-5 sentences.", 300
-                )
-            else:
-                # Standard mode: combined subject description
-                components["subject"] = timed_vision_call(
-                    "subject", "subject_detection",
-                    "Describe the person in 5-6 sentences with specific uniform type, exact garment colors, fabrics, and construction.", 550
-                )
-
-            # Common components for all human images
-            components["lighting"] = timed_vision_call(
-                "lighting", "lighting",
-                "Describe the lighting source and quality in 2-3 sentences.", 150
-            )
-            components["atmosphere"] = timed_vision_call(
-                "atmosphere", "atmosphere",
-                "Describe any steam, smoke, or vapor effects in 1-2 sentences.", 100
-            )
-            components["environment"] = timed_vision_call(
-                "environment", "environment",
-                "Describe the background and any beverages with their colors in 2-3 sentences.", 150
-            )
-
-            # NSFW details component (only when enabled)
-            if self.nsfw_mode:
-                components["nsfw_details"] = timed_vision_call(
-                    "nsfw_details", "nsfw_details",
-                    "Describe any revealing/suggestive elements: exposed skin areas, clothing sheerness, pose suggestiveness in 2-4 sentences. Use specific terms like sideboob, underboob, cleavage, bare_shoulders, see-through, etc.", 200
-                )
-        else:
-            # Scene-only components (no human)
-            components["shot_framing"] = timed_vision_call(
-                "shot_framing", "framing",
-                "State the exact shot type and angle in 1 sentence.", 50
-            )
-            components["subject"] = timed_vision_call(
-                "subject", "scene_subject",
-                "Describe the main subject with species and features in 2-3 sentences.", 180
-            )
-            components["atmosphere"] = timed_vision_call(
-                "atmosphere", "atmosphere",
-                "Describe any steam, smoke, or vapor effects in 1-2 sentences.", 100
-            )
-            components["environment"] = timed_vision_call(
-                "environment", "environment",
-                "Describe the environment and lighting in 2-3 sentences.", 150
-            )
-
-        # Synthesis step - integrate enhancement naturally into the prompt
-        enhancement_instruction = ""
-        if user_guidance:
-            enhancement_instruction = f"""
-USER ENHANCEMENT (MUST integrate naturally into the prompt):
-"{user_guidance}"
-
-IMPORTANT: Integrate this enhancement INTO the description naturally - modify clothing, add/remove elements,
-or adjust the scene as specified. Do NOT append it at the end. The final prompt should read as if the
-enhancement was always part of the original description."""
-
-        if self.prompt_style == "tags":
-            synthesis_prompt = f"""Convert these descriptions into Z-Image compatible tags for realistic image generation:
-
-{json.dumps(components, indent=2)}
-{enhancement_instruction}
-
-OUTPUT FORMAT - Z-IMAGE COMPATIBLE TAGS:
-Start with: masterpiece, best quality, highres, realistic, photorealistic
-Then descriptive tags using underscores for multi-word tags (long_hair, looking_at_viewer)
-{f'Include tags for: {user_guidance}' if user_guidance else ''}
-NO sentences - ONLY comma-separated tags.
-End with: no_text, no_watermark"""
-        else:
-            # Get synthesis instructions from TOML (single source of truth)
-            synthesis_instructions = get_component_prompt("synthesis", tier)
-            if not synthesis_instructions:
-                # Minimal fallback
-                synthesis_instructions = "Combine into 4-6 flowing sentences for Z-Image realistic output. End with 'no text, no watermark'."
-
-            synthesis_prompt = f"""Combine these descriptions into a Z-Image prompt for realistic, photorealistic image generation:
-
-{json.dumps(components, indent=2)}
-{enhancement_instruction}
-
-{synthesis_instructions}
-
-IMPORTANT: If enhancement is provided, weave it naturally into the description.
-Maintain the same prompt length (~{self.prompt_length} words) - integrate, don't append.
-Output must generate realistic, photorealistic results.
-
-Write approximately {self.prompt_length} words."""
-
-        synthesis_start = time.time()
-        result = self.llm_client.call_text(
-            "You write prompts for AI image generation.",
-            synthesis_prompt, self.prompt_length * 2
-        )
-        component_times["synthesis"] = time.time() - synthesis_start
-        self._log(f"[Agentic] synthesis: {component_times['synthesis']:.2f}s")
-
-        # Store component times for later access
-        self._last_component_times = component_times
-
-        # Print timing summary
-        total_agentic = sum(component_times.values())
-        self._log(f"[Agentic] ─────────────────────────────────────")
-        self._log(f"[Agentic] TIMING SUMMARY ({len(component_times)} components)")
-        for name, elapsed in component_times.items():
-            pct = (elapsed / total_agentic * 100) if total_agentic > 0 else 0
-            self._log(f"[Agentic]   {name}: {elapsed:.2f}s ({pct:.0f}%)")
-        self._log(f"[Agentic] ─────────────────────────────────────")
-        self._log(f"[Agentic] TOTAL: {total_agentic:.2f}s")
 
         return result
 

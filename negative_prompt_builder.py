@@ -113,21 +113,11 @@ STYLE_NEGATIVES: Dict[PromptStyle, List[str]] = {
 
 # Detail level additions
 DETAIL_LEVEL_EXTRAS: Dict[str, List[str]] = {
-    "Quick": [],  # Minimal negatives
-    "Standard": [
-        "amateur", "poorly drawn", "bad art",
-    ],
+    "Standard": [],  # Minimal negatives for fast mode
     "Detailed": [
         "amateur", "poorly drawn", "bad art",
         "worst quality", "low quality", "normal quality",
         "ugly", "duplicate", "morbid", "mutilated",
-    ],
-    "Extreme": [
-        "amateur", "poorly drawn", "bad art",
-        "worst quality", "low quality", "normal quality",
-        "ugly", "duplicate", "morbid", "mutilated",
-        "error", "bad", "wrong", "mistake",
-        "worst", "terrible", "horrible", "disgusting",
     ],
 }
 
@@ -232,7 +222,7 @@ def build_negative_prompt(
 
     Args:
         positive_prompt: The positive prompt to analyze
-        detail_level: Quick, Standard, Detailed, or Extreme
+        detail_level: Standard or Detailed
         include_quality: Include quality-related negatives
         include_anatomy: Include anatomy-related negatives (for humans)
         include_composition: Include composition-related negatives
@@ -251,8 +241,8 @@ def build_negative_prompt(
 
     # Add quality negatives (always recommended)
     if include_quality:
-        # For Quick mode, use minimal set
-        if detail_level == "Quick":
+        # For Standard mode, use minimal set
+        if detail_level == "Standard":
             negatives.extend(QUALITY_NEGATIVES[:8])  # First 8 most important
         else:
             negatives.extend(QUALITY_NEGATIVES)
@@ -260,7 +250,7 @@ def build_negative_prompt(
 
     # Add anatomy negatives only if human subjects detected
     if include_anatomy and has_human:
-        if detail_level == "Quick":
+        if detail_level == "Standard":
             # Minimal anatomy negatives
             negatives.extend([
                 "extra fingers", "deformed hands", "bad anatomy",
@@ -272,7 +262,7 @@ def build_negative_prompt(
 
     # Add composition negatives
     if include_composition:
-        if detail_level != "Quick":
+        if detail_level != "Standard":
             negatives.extend(COMPOSITION_NEGATIVES)
             categories_used.append("composition")
 
@@ -280,7 +270,7 @@ def build_negative_prompt(
     if include_style:
         style_negs = STYLE_NEGATIVES.get(detected_style, [])
         if style_negs:
-            if detail_level == "Quick":
+            if detail_level == "Standard":
                 negatives.extend(style_negs[:5])  # First 5
             else:
                 negatives.extend(style_negs)

@@ -229,7 +229,7 @@ LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
 # =============================================================================
 
 ANALYSIS_MODES = {
-    "Quick": {
+    "Standard": {
         "components": ["framing", "ethnicity", "clothing"],
         "description": "Fast single-call caption (~3s)",
         "include_lighting": False,
@@ -237,30 +237,13 @@ ANALYSIS_MODES = {
         "include_intimate": False,
         "include_tattoos": False,
     },
-    "Standard": {
-        "components": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "body_figure", "clothing", "lighting"],
-        "description": "Balanced analysis with body proportions (~12s)",
-        "include_lighting": True,
-        "include_pose": True,
-        "include_intimate": False,
-        "include_tattoos": False,
-    },
     "Detailed": {
-        "components": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
-        "description": "Full analysis with body figure/intimate/tattoos (~25s)",
+        "components": ["framing", "ethnicity", "hair", "face", "eyes", "body_pose", "body_figure", "clothing", "lighting"],
+        "description": "Comprehensive multi-aspect analysis (~8s)",
         "include_lighting": True,
         "include_pose": True,
         "include_intimate": True,
         "include_tattoos": True,
-    },
-    "Extreme": {
-        "components": ["framing", "ethnicity", "hair", "face", "eyes", "nose_lips", "body_pose", "body_figure", "clothing", "intimate_apparel", "tattoos", "accessories", "lighting"],
-        "description": "Maximum detail with body figure, raw output (~30s)",
-        "include_lighting": True,
-        "include_pose": True,
-        "include_intimate": True,
-        "include_tattoos": True,
-        "raw_mode": True,
     },
 }
 
@@ -630,7 +613,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
     Inputs:
     - image: Image to analyze
     - llm_model: Connect SID_LLM_API or SID_LLM_Local
-    - analysis_mode: Quick/Standard/Detailed/Extreme
+    - analysis_mode: Standard/Detailed
     - preset_style: Auto-Detect/Portrait/Fashion/Artistic/NSFW
     - user_guidance: Optional custom instructions
     - seed: Random seed
@@ -655,9 +638,9 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 ),
                 comfy_io.Combo.Input(
                     "analysis_mode",
-                    options=["Quick", "Standard", "Detailed", "Extreme"],
-                    default="Standard",
-                    tooltip="Quick=fast, Standard=balanced, Detailed=full, Extreme=maximum"
+                    options=["Standard", "Detailed"],
+                    default="Detailed",
+                    tooltip="Standard=fast single-pass (1 call), Detailed=comprehensive multi-aspect (3-4 calls)"
                 ),
                 comfy_io.Combo.Input(
                     "preset_style",
@@ -898,14 +881,14 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 log("-" * 60)
                 log("Generating negative prompt...")
 
-                # Quick/Standard: Use Python template-based generation (NO LLM)
-                if analysis_mode in ["Quick", "Standard"]:
+                # Standard: Use Python template-based generation (NO LLM)
+                if analysis_mode == "Standard":
                     log(f"Using Python negative builder ({analysis_mode} mode)...")
                     negative_prompt = generate_negative(prompt, analysis_mode)
                     neg_word_count = len(negative_prompt.split())
                     log(f"Python negative prompt: {neg_word_count} words")
                 else:
-                    # Detailed/Extreme: Use LLM for more comprehensive negatives
+                    # Detailed: Use LLM for more comprehensive negatives
                     negative_prompt = cls._generate_negative_prompt(
                         prompt, llm_model, analysis_mode, seed
                     )
@@ -2574,23 +2557,16 @@ Sometimes the best shots are the ones that find you. This image captures a fleet
         print(f"[SID-Prompt] Generating negative prompt (seed: {seed})...")
 
         # Build system prompt based on analysis mode
-        if analysis_mode == "Quick":
+        if analysis_mode == "Standard":
             system_prompt = """You are an expert at creating negative prompts for AI image generation.
 Generate a concise negative prompt that avoids common image quality issues.
 Output ONLY the negative prompt - no explanations, no markdown, no quotes."""
 
-        elif analysis_mode == "Standard":
-            system_prompt = """You are an expert at creating negative prompts for AI image generation.
-Based on the positive prompt, generate a negative prompt that:
-1. Avoids quality issues (blur, noise, artifacts, distortion)
-2. Excludes anatomical errors (extra limbs, deformed features)
-3. Prevents style conflicts with the intended aesthetic
-Output ONLY the negative prompt - no explanations, no markdown, no quotes."""
-
-        elif analysis_mode in ["Detailed", "Extreme"]:
+        else:
+            # Detailed mode (default) - comprehensive negative prompt
             system_prompt = """You are an expert at creating comprehensive negative prompts for AI image generation.
 
-Based on the positive prompt, generate a detailed negative prompt that addresses:
+Based on the positive prompt, generate a negative prompt that addresses:
 
 ## QUALITY ISSUES
 - Image artifacts, blur, noise, pixelation, compression artifacts
@@ -2611,9 +2587,6 @@ Based on the positive prompt, generate a detailed negative prompt that addresses
 - Cluttered backgrounds, distracting elements
 
 Output ONLY the negative prompt as a comma-separated list - no explanations, no markdown, no quotes."""
-
-        else:
-            system_prompt = """Generate a negative prompt for AI image generation. Output ONLY the negative prompt."""
 
         user_prompt = f"""Based on this positive prompt, generate an appropriate negative prompt:
 
@@ -2709,13 +2682,10 @@ Generate a negative prompt that will help avoid quality issues and errors while 
     @classmethod
     def _get_default_negative_prompt(cls, analysis_mode: str) -> str:
         """Return a sensible default negative prompt based on analysis mode."""
-        if analysis_mode == "Quick":
+        if analysis_mode == "Standard":
             return "blur, low quality, distorted"
-
-        elif analysis_mode == "Standard":
-            return "blur, noise, artifacts, distortion, low quality, deformed, extra limbs, bad anatomy"
-
-        else:  # Detailed or Extreme
+        else:
+            # Detailed mode (default) - comprehensive negative prompt
             return ("blur, noise, artifacts, distortion, low quality, pixelated, watermark, text, signature, "
                     "deformed, extra limbs, missing limbs, extra fingers, mutated hands, bad anatomy, "
                     "asymmetric eyes, distorted face, unnatural proportions, floating limbs, "
