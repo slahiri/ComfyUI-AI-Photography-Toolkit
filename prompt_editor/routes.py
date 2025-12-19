@@ -325,6 +325,17 @@ def setup_routes(routes):
                             has_source = (session_dir / "source.jpg").exists() or (session_dir / "source.png").exists()
                             has_output = (session_dir / "output.jpg").exists() or (session_dir / "output.png").exists()
 
+                            # Check if excluded from learning
+                            excluded = False
+                            excluded_file = session_dir / "excluded.json"
+                            if excluded_file.exists():
+                                try:
+                                    with open(excluded_file, 'r', encoding='utf-8') as f:
+                                        excluded_data = json.load(f)
+                                        excluded = excluded_data.get("excluded", False)
+                                except Exception:
+                                    pass
+
                             sessions.append({
                                 "id": session_dir.name,
                                 "timestamp": timestamp,
@@ -333,10 +344,45 @@ def setup_routes(routes):
                                 "model": model,
                                 "has_source": has_source,
                                 "has_output": has_output,
+                                "excluded": excluded,
                             })
                         except Exception:
                             pass
         return web.json_response({"sessions": sessions})
+
+    @routes.post("/sid/debug-results/api/session/{session_id}/exclude")
+    async def toggle_debug_excluded(request):
+        """Toggle the excluded status of a debug session."""
+        session_id = request.match_info["session_id"]
+
+        # Security: validate session_id format
+        if not session_id or ".." in session_id or "/" in session_id or "\\" in session_id:
+            return web.json_response({"error": "Invalid session ID"}, status=400)
+
+        session_dir = DEBUG_RESULTS_DIR / session_id
+        if not session_dir.exists():
+            return web.json_response({"error": "Session not found"}, status=404)
+
+        excluded_file = session_dir / "excluded.json"
+
+        # Read current state
+        excluded = False
+        if excluded_file.exists():
+            try:
+                with open(excluded_file, 'r', encoding='utf-8') as f:
+                    excluded_data = json.load(f)
+                    excluded = excluded_data.get("excluded", False)
+            except Exception:
+                pass
+
+        # Toggle
+        new_excluded = not excluded
+
+        # Save new state
+        with open(excluded_file, 'w', encoding='utf-8') as f:
+            json.dump({"excluded": new_excluded}, f)
+
+        return web.json_response({"success": True, "excluded": new_excluded})
 
     @routes.get("/sid/debug-results/api/session/{session_id}")
     async def get_debug_session(request):
@@ -1118,8 +1164,20 @@ def get_debug_viewer_html():
         }
         .session-item:hover { background: #2a2d2e; }
         .session-item.active { background: #37373d; }
-        .session-id { font-weight: 600; color: #fff; margin-bottom: 4px; }
-        .session-meta { color: #888; font-size: 11px; }
+        .session-item.excluded { opacity: 0.5; }
+        .session-item.excluded .session-meta { text-decoration: line-through; }
+        .session-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .exclude-checkbox {
+            width: 16px;
+            height: 16px;
+            min-width: 16px;
+            cursor: pointer;
+            accent-color: #b89500;
+            margin: 0;
+            flex-shrink: 0;
+        }
+        .session-id { font-weight: 600; color: #fff; flex: 1; cursor: pointer; }
+        .session-meta { color: #888; font-size: 11px; cursor: pointer; }
         .session-score {
             display: inline-block;
             padding: 2px 8px;
@@ -1355,17 +1413,47 @@ def get_debug_viewer_html():
                     const shortModel = s.model.replace('claude-', '').replace('-20250929', '').replace('-20241022', '');
                     const scoreClass = s.overall_score >= 7 ? 'score-good' : s.overall_score >= 5 ? 'score-ok' : 'score-bad';
                     const imgIndicator = (s.has_source || s.has_output) ? '🖼️ ' : '';
+                    const excludedClass = s.excluded ? 'excluded' : '';
+                    const excludedChecked = s.excluded ? 'checked' : '';
                     return `
-                        <div class="session-item" data-id="${s.id}" onclick="loadSession('${s.id}')">
-                            <div class="session-id">${imgIndicator}${dateStr}</div>
-                            <div class="session-meta">${s.provider} / ${shortModel}</div>
-                            <span class="session-score ${scoreClass}">${s.overall_score.toFixed(1)}</span>
+                        <div class="session-item ${excludedClass}" data-id="${s.id}">
+                            <div class="session-header">
+                                <input type="checkbox" class="exclude-checkbox" ${excludedChecked}
+                                    onclick="toggleExclude(event, '${s.id}')"
+                                    title="Exclude from learning">
+                                <div class="session-id" onclick="loadSession('${s.id}')">${imgIndicator}${dateStr}</div>
+                                <span class="session-score ${scoreClass}">${s.overall_score.toFixed(1)}</span>
+                            </div>
+                            <div class="session-meta" onclick="loadSession('${s.id}')">${s.provider} / ${shortModel}</div>
                         </div>
                     `;
                 }).join('');
             } catch (e) {
                 document.getElementById('sessionList').innerHTML =
                     '<div class="empty-state">Error loading sessions</div>';
+            }
+        }
+
+        async function toggleExclude(event, sessionId) {
+            event.stopPropagation(); // Don't trigger loadSession
+            const checkbox = event.target;
+            const sessionItem = checkbox.closest('.session-item');
+
+            try {
+                const res = await fetch(`/sid/debug-results/api/session/${sessionId}/exclude`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    checkbox.checked = data.excluded;
+                    sessionItem.classList.toggle('excluded', data.excluded);
+                } else {
+                    checkbox.checked = !checkbox.checked;
+                }
+            } catch (e) {
+                checkbox.checked = !checkbox.checked;
+                console.error('Failed to toggle exclude:', e);
             }
         }
 
@@ -1692,10 +1780,13 @@ def get_generation_viewer_html():
         .session-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
         .session-content { cursor: pointer; }
         .exclude-checkbox {
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
+            min-width: 16px;
             cursor: pointer;
             accent-color: #b89500;
+            margin: 0;
+            flex-shrink: 0;
         }
         .session-time { font-weight: 600; color: #fff; flex: 1; }
         .session-meta { color: #888; font-size: 11px; margin-bottom: 4px; }
