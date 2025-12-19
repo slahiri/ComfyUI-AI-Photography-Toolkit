@@ -336,10 +336,12 @@ def print_welcome_message():
     if _prompt_editor_available:
         print("")
         print("  Web Tools:")
-        print("    - Prompt Editor:  http://localhost:8188/sid/prompt-editor")
-        print("                      Edit TOML prompt templates in browser")
-        print("    - Debug Viewer:   http://localhost:8188/sid/debug-results")
-        print("                      Browse prompt evaluation results")
+        print("    - Prompt Editor:      http://localhost:8188/sid/prompt-editor")
+        print("                          Edit TOML prompt templates in browser")
+        print("    - Generation Results: http://localhost:8188/sid/generation-results")
+        print("                          Browse saved prompts and metadata")
+        print("    - Debug Viewer:       http://localhost:8188/sid/debug-results")
+        print("                          Browse prompt evaluation results")
 
     print("")
     print("  Standalone CLI (batch processing for training):")
