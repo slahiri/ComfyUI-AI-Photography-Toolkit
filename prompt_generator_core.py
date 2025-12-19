@@ -1262,20 +1262,37 @@ class LLMClient:
                 return result.strip()
 
             elif provider == "anthropic":
-                response = self.client.messages.create(
-                    model=self.config.model,
-                    max_tokens=max_tokens,
-                    temperature=temp,
-                    system=system_prompt,
-                    messages=[{
-                        "role": "user",
-                        "content": [
-                            {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_image}},
-                            {"type": "text", "text": user_prompt}
-                        ]
-                    }]
-                )
-                return response.content[0].text.strip()
+                # Retry logic for Anthropic API overload (529) errors
+                max_retries = 3
+                base_delay = 5  # seconds
+                for attempt in range(max_retries):
+                    try:
+                        response = self.client.messages.create(
+                            model=self.config.model,
+                            max_tokens=max_tokens,
+                            temperature=temp,
+                            system=system_prompt,
+                            messages=[{
+                                "role": "user",
+                                "content": [
+                                    {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_image}},
+                                    {"type": "text", "text": user_prompt}
+                                ]
+                            }]
+                        )
+                        return response.content[0].text.strip()
+                    except Exception as api_error:
+                        error_str = str(api_error)
+                        # Check for overload error (529)
+                        if "529" in error_str or "overload" in error_str.lower():
+                            if attempt < max_retries - 1:
+                                delay = base_delay * (2 ** attempt)  # Exponential backoff: 5s, 10s, 20s
+                                print(f"[LLM] API overloaded, retrying in {delay}s (attempt {attempt + 1}/{max_retries})...")
+                                import time
+                                time.sleep(delay)
+                                continue
+                        # Re-raise if not overload or out of retries
+                        raise
             else:
                 messages = []
                 if system_prompt:
