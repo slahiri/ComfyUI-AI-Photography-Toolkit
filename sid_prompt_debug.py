@@ -124,7 +124,7 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
         # Skip if debug is disabled
         if not enable_debug:
             print("[SID-Debug] Debug disabled, passing through...")
-            return (
+            return comfy_io.NodeOutput(
                 json.dumps({"status": "skipped", "reason": "debug_disabled"}),
                 0.0,
                 "Debug evaluation skipped (disabled)",
@@ -147,7 +147,7 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
             print(f"[SID-Debug] {error_msg}")
             import traceback
             traceback.print_exc()
-            return (
+            return comfy_io.NodeOutput(
                 json.dumps({"error": error_msg}),
                 0.0,
                 f"Error: {error_msg}",
@@ -173,7 +173,7 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
 
         print(f"[SID-Debug] Evaluation complete in {evaluation['timing']['total_seconds']:.1f}s. Score: {quality_score:.1f}/10")
 
-        return (full_report, quality_score, quick_summary, suggested_prompt)
+        return comfy_io.NodeOutput(full_report, quality_score, quick_summary, suggested_prompt)
 
     @classmethod
     def _evaluate_two_calls(
