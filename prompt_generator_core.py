@@ -1613,7 +1613,7 @@ class PromptGenerator:
         api_key: str = "",
         api_url: str = "http://localhost:11434/v1",
         temperature: float = 0.7,
-        analysis_mode: str = "standard",
+        analysis_mode: str = "detailed",
         enable_reasoning: bool = False,
         prompt_style: str = "verbose",
         prompt_length: int = 150,
@@ -2187,9 +2187,9 @@ Examples:
                         help='API URL (default: provider default)')
 
     # Generation settings
-    parser.add_argument('--mode', type=str, default='standard',
-                        choices=['quick', 'standard', 'detailed'],
-                        help='Analysis mode (default: standard)')
+    parser.add_argument('--mode', type=str, default='detailed',
+                        choices=['standard', 'detailed'],
+                        help='Analysis mode: standard (1 call) or detailed (3-4 calls, default)')
     parser.add_argument('--length', '-l', type=int, default=150,
                         help='Target prompt length in words (default: 150)')
     parser.add_argument('--guidance', '-g', type=str, default='',

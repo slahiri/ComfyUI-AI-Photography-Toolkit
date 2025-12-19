@@ -37,7 +37,7 @@ class LLMModelConfig:
     temperature: float = 0.7         # Creativity (0.0-1.0)
 
     # Analysis mode - set by LLM provider node
-    analysis_mode: str = "standard"  # "quick", "standard", "deep" (deep only for API)
+    analysis_mode: str = "detailed"  # "standard" (1 call) or "detailed" (3-4 calls)
 
     # Capabilities
     supports_vision: bool = True     # Whether model supports image input
