@@ -246,7 +246,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                 ),
                 io.Boolean.Input(
                     "store_results",
-                    default=False,
+                    default=True,
                     display_name="Store Results",
                     tooltip="Save prompt, image, and metadata locally. View at /sid/generation-results"
                 ),
