@@ -25,6 +25,15 @@ CONFIG_TOML_FILES = ["templates.toml", "components.toml", "providers.toml", "fil
 def setup_routes(routes):
     """Register all prompt editor routes."""
 
+    # =========================================================================
+    # SID Landing Page
+    # =========================================================================
+
+    @routes.get("/sid")
+    async def serve_landing(request):
+        """Serve the SID Toolkit landing page."""
+        return web.Response(text=get_landing_html(), content_type="text/html")
+
     @routes.get("/sid/prompt-editor")
     async def serve_editor(request):
         """Serve the prompt editor HTML page."""
@@ -536,6 +545,27 @@ def get_editor_html():
             font-weight: 600;
             font-size: 14px;
         }
+        .nav-links {
+            border-top: 1px solid #3c3c3c;
+            padding: 10px 0;
+            background: #2d2d2d;
+        }
+        .nav-link {
+            display: block;
+            padding: 8px 15px;
+            color: #888;
+            text-decoration: none;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            background: #3c3c3c;
+            color: #fff;
+        }
+        .nav-link.active {
+            color: #4a9eff;
+            background: #1e1e1e;
+        }
         .file-list {
             flex: 1;
             overflow-y: auto;
@@ -644,6 +674,12 @@ def get_editor_html():
             <div class="sidebar-header">📁 Prompt Files</div>
             <div class="file-list" id="fileList">
                 <div class="loading">Loading...</div>
+            </div>
+            <div class="nav-links">
+                <a href="/sid" class="nav-link">🏠 Home</a>
+                <a href="/sid/prompt-editor" class="nav-link active">📝 Prompt Editor</a>
+                <a href="/sid/generation-results" class="nav-link">🖼️ Generation Results</a>
+                <a href="/sid/debug-results" class="nav-link">🔍 Debug Viewer</a>
             </div>
         </div>
         <div class="editor-container">
@@ -916,6 +952,27 @@ def get_debug_viewer_html():
             justify-content: space-between;
             align-items: center;
         }
+        .nav-links {
+            border-top: 1px solid #3c3c3c;
+            padding: 10px 0;
+            background: #2d2d2d;
+        }
+        .nav-link {
+            display: block;
+            padding: 8px 15px;
+            color: #888;
+            text-decoration: none;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            background: #3c3c3c;
+            color: #fff;
+        }
+        .nav-link.active {
+            color: #4a9eff;
+            background: #1e1e1e;
+        }
         .btn-refresh {
             padding: 4px 10px;
             background: #0e639c;
@@ -1130,6 +1187,12 @@ def get_debug_viewer_html():
             </div>
             <div class="session-list" id="sessionList">
                 <div class="loading">Loading...</div>
+            </div>
+            <div class="nav-links">
+                <a href="/sid" class="nav-link">🏠 Home</a>
+                <a href="/sid/prompt-editor" class="nav-link">📝 Prompt Editor</a>
+                <a href="/sid/generation-results" class="nav-link">🖼️ Generation Results</a>
+                <a href="/sid/debug-results" class="nav-link active">🔍 Debug Viewer</a>
             </div>
         </div>
         <div class="main-content">
@@ -1455,6 +1518,27 @@ def get_generation_viewer_html():
             justify-content: space-between;
             align-items: center;
         }
+        .nav-links {
+            border-top: 1px solid #3c3c3c;
+            padding: 10px 0;
+            background: #2d2d2d;
+        }
+        .nav-link {
+            display: block;
+            padding: 8px 15px;
+            color: #888;
+            text-decoration: none;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            background: #3c3c3c;
+            color: #fff;
+        }
+        .nav-link.active {
+            color: #4a9eff;
+            background: #1e1e1e;
+        }
         .btn-refresh {
             padding: 4px 10px;
             background: #0e639c;
@@ -1631,6 +1715,12 @@ def get_generation_viewer_html():
             </div>
             <div class="session-list" id="sessionList">
                 <div class="loading">Loading...</div>
+            </div>
+            <div class="nav-links">
+                <a href="/sid" class="nav-link">🏠 Home</a>
+                <a href="/sid/prompt-editor" class="nav-link">📝 Prompt Editor</a>
+                <a href="/sid/generation-results" class="nav-link active">🖼️ Generation Results</a>
+                <a href="/sid/debug-results" class="nav-link">🔍 Debug Viewer</a>
             </div>
         </div>
         <div class="main-content">
@@ -1848,5 +1938,114 @@ def get_generation_viewer_html():
             }
         }
     </script>
+</body>
+</html>'''
+
+
+def get_landing_html():
+    """Generate the SID Toolkit landing page HTML."""
+    return '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SID Photography Toolkit</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e4e4e4;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #4a9eff;
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 50px;
+            font-size: 1.1em;
+        }
+        .cards {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .card {
+            background: #16213e;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 30px;
+            width: 280px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #4a9eff;
+            box-shadow: 0 10px 40px rgba(74, 158, 255, 0.2);
+        }
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .card-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #4a9eff;
+        }
+        .card-desc {
+            color: #888;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        .footer {
+            margin-top: 50px;
+            color: #555;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SID Photography Toolkit</h1>
+        <p class="subtitle">AI-powered prompt generation for ComfyUI</p>
+
+        <div class="cards">
+            <a href="/sid/prompt-editor" class="card">
+                <div class="card-icon">📝</div>
+                <div class="card-title">Prompt Editor</div>
+                <div class="card-desc">Edit TOML configuration files for prompts, templates, and settings</div>
+            </a>
+
+            <a href="/sid/generation-results" class="card">
+                <div class="card-icon">🖼️</div>
+                <div class="card-title">Generation Results</div>
+                <div class="card-desc">Browse saved prompts, metadata, and source images</div>
+            </a>
+
+            <a href="/sid/debug-results" class="card">
+                <div class="card-icon">🔍</div>
+                <div class="card-title">Debug Viewer</div>
+                <div class="card-desc">Analyze prompt quality scores and evaluation results</div>
+            </a>
+        </div>
+
+        <div class="footer">
+            SID Photography Toolkit v4.3.0 | <a href="https://github.com/slahiri/ComfyUI-AI-Photography-Toolkit" style="color: #4a9eff;">GitHub</a>
+        </div>
+    </div>
 </body>
 </html>'''
