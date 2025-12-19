@@ -25,6 +25,7 @@ const NODE_COLORS = {
     // Prompt Generator nodes
     "SID_ZImagePromptGeneratorV2": "SID",
     "SID_ZImagePromptGenerator": "SID",  // Legacy node
+    "SID_PromptTemplate": "SID",
 
     // Debug/Testing nodes
     "SID_PromptDebugAgent": "SID",

@@ -406,13 +406,68 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
 
 
 # =============================================================================
+# Prompt Template Node
+# =============================================================================
+
+class SID_PromptTemplate(io.ComfyNode):
+    """
+    SID Prompt Template Node
+
+    Select a template from the dropdown to populate the prompt field.
+    Edit the prompt as needed, then connect to other nodes.
+    """
+
+    @classmethod
+    def define_schema(cls) -> io.Schema:
+        # Get template names and create a mapping
+        template_names = get_template_names() or ["Default"]
+
+        return io.Schema(
+            node_id="SID_PromptTemplate",
+            display_name="SID Prompt Template",
+            category="SID Photography Toolkit",
+            description="Select and edit prompt templates",
+            inputs=[
+                io.Combo.Input(
+                    "template",
+                    options=template_names,
+                    default=template_names[0] if template_names else "Default",
+                    tooltip="Select a prompt template to load"
+                ),
+                io.String.Input(
+                    "prompt",
+                    default="",
+                    multiline=True,
+                    tooltip="Edit the prompt template here. Changes are used as output."
+                ),
+            ],
+            outputs=[
+                io.String.Output("prompt", display_name="prompt"),
+            ],
+        )
+
+    @classmethod
+    def execute(cls, template: str, prompt: str):
+        """Return the prompt text."""
+        # If prompt is empty, load from template
+        if not prompt or not prompt.strip():
+            template_data = get_template_by_name(template)
+            if template_data:
+                prompt = template_data.get("system", "")
+
+        return io.NodeOutput(prompt)
+
+
+# =============================================================================
 # Node Registration
 # =============================================================================
 
 NODE_CLASS_MAPPINGS = {
     "SID_ZImagePromptGeneratorV2": SID_ZImagePromptGeneratorV2,
+    "SID_PromptTemplate": SID_PromptTemplate,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "SID_ZImagePromptGeneratorV2": "SID Z-Image Prompt Generator",
+    "SID_PromptTemplate": "SID Prompt Template",
 }

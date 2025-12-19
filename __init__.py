@@ -216,6 +216,7 @@ from .llm_providers.sid_llm_local import SID_LLM_Local, SID_LLM_Local_API
 
 # Import Z-Image Prompt Generator V2 (CV-based detection + simplified interface)
 from .sid_prompt_generator_v2 import SID_ZImagePromptGeneratorV2 as SID_ZImagePromptGenerator
+from .sid_prompt_generator_v2 import SID_PromptTemplate
 
 # Import Debug Agent (always available)
 try:
@@ -250,6 +251,7 @@ class SIDPhotographyToolkitExtension(ComfyExtension):
             SID_LLM_Local,            # Local transformers models (QwenVL, Florence, etc.)
             SID_LLM_Local_API,        # Local API providers (Ollama, LM Studio, OpenAI Compatible)
             SID_ZImagePromptGenerator,  # Z-Image prompt generator
+            SID_PromptTemplate,       # Prompt template selector
         ]
 
         # Add debug node if available (debug_mode = true)
