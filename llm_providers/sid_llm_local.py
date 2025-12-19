@@ -10,11 +10,8 @@ Supported Vision Model Families:
 
 Text-Only Models (for prompt generation):
 - Qwen3 Text: Qwen3 text models (0.6B-8B)
-- Qwen2.5 Text: Qwen2.5 text models (1.5B-7B)
 - Llama 3.2 Text: Llama 3.2 text (1B-3B)
-- Phi-3.5 Mini: Microsoft Phi-3.5-mini
 - Mistral 7B: Mistral text model
-- Gemma 2: Google Gemma 2 (2B)
 
 Features:
 - VRAM auto-downgrade with safety margin
@@ -187,12 +184,9 @@ class ModelFamily(Enum):
     """Supported model families."""
     QWENVL = "qwenvl"
     # Text-only models
-    QWEN_TEXT = "qwen_text"
     QWEN3_TEXT = "qwen3_text"  # Qwen3 text models (latest, optimized for prompts)
     LLAMA_TEXT = "llama_text"
-    PHI_TEXT = "phi_text"
     MISTRAL_TEXT = "mistral_text"
-    GEMMA_TEXT = "gemma_text"
 
 
 class ModelType(Enum):
@@ -451,38 +445,6 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
     # TEXT-ONLY MODELS - For Prompt Enhancement
     # =========================================================================
 
-    # Qwen2.5 Text Models - Excellent for prompt enhancement
-    "Qwen2.5-1.5B-Instruct": LocalModelInfo(
-        name="Qwen2.5 1.5B (Text) | 32K | 1GB [Fast]",
-        repo_id="Qwen/Qwen2.5-1.5B-Instruct",
-        family=ModelFamily.QWEN_TEXT,
-        vram_fp16=3.0, vram_8bit=2.0, vram_4bit=1.0,
-        model_type=ModelType.TEXT,
-        max_output_tokens=4096,
-        description="Ultra-fast text model",
-        model_class="AutoModelForCausalLM"
-    ),
-    "Qwen2.5-3B-Instruct": LocalModelInfo(
-        name="Qwen2.5 3B (Text) | 32K | 2GB [Recommended]",
-        repo_id="Qwen/Qwen2.5-3B-Instruct",
-        family=ModelFamily.QWEN_TEXT,
-        vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
-        model_type=ModelType.TEXT,
-        max_output_tokens=4096,
-        description="Best balance for text",
-        model_class="AutoModelForCausalLM"
-    ),
-    "Qwen2.5-7B-Instruct": LocalModelInfo(
-        name="Qwen2.5 7B (Text) | 32K | 4GB [Quality]",
-        repo_id="Qwen/Qwen2.5-7B-Instruct",
-        family=ModelFamily.QWEN_TEXT,
-        vram_fp16=14.0, vram_8bit=8.0, vram_4bit=4.0,
-        model_type=ModelType.TEXT,
-        max_output_tokens=4096,
-        description="High quality text",
-        model_class="AutoModelForCausalLM"
-    ),
-
     # Qwen3 Text Models - Latest generation, optimized for prompt generation
     # Note: Qwen3 base models are instruction-tuned (no separate -Instruct versions)
     "Qwen3-0.6B": LocalModelInfo(
@@ -558,18 +520,6 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_class="AutoModelForCausalLM"
     ),
 
-    # Phi-3.5 Mini (Text only)
-    "Phi-3.5-mini-instruct": LocalModelInfo(
-        name="Phi-3.5 Mini (Text) | 128K | 2.5GB",
-        repo_id="microsoft/Phi-3.5-mini-instruct",
-        family=ModelFamily.PHI_TEXT,
-        vram_fp16=7.5, vram_8bit=4.5, vram_4bit=2.5,
-        model_type=ModelType.TEXT,
-        max_output_tokens=4096,
-        description="Strong reasoning",
-        model_class="AutoModelForCausalLM"
-    ),
-
     # Mistral 7B (Text only)
     "Mistral-7B-Instruct-v0.3": LocalModelInfo(
         name="Mistral 7B (Text) | 32K | 4GB [Creative]",
@@ -579,18 +529,6 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.TEXT,
         max_output_tokens=4096,
         description="Creative writing",
-        model_class="AutoModelForCausalLM"
-    ),
-
-    # Gemma 2 (Text only)
-    "Gemma-2-2B-it": LocalModelInfo(
-        name="Gemma 2 2B (Text) | 8K | 1.5GB",
-        repo_id="google/gemma-2-2b-it",
-        family=ModelFamily.GEMMA_TEXT,
-        vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
-        model_type=ModelType.TEXT,
-        max_output_tokens=2048,
-        description="Efficient text model",
         model_class="AutoModelForCausalLM"
     ),
 }
@@ -635,12 +573,9 @@ def load_custom_models():
             family_str = model_info.get("family", "qwenvl").lower()
             family_map = {
                 "qwenvl": ModelFamily.QWENVL,
-                "qwen_text": ModelFamily.QWEN_TEXT,
                 "qwen3_text": ModelFamily.QWEN3_TEXT,
                 "llama_text": ModelFamily.LLAMA_TEXT,
-                "phi_text": ModelFamily.PHI_TEXT,
                 "mistral_text": ModelFamily.MISTRAL_TEXT,
-                "gemma_text": ModelFamily.GEMMA_TEXT,
             }
             family = family_map.get(family_str, ModelFamily.QWENVL)
 
@@ -1114,9 +1049,9 @@ class LocalModelClient:
         # Load based on model family
         if self.model_info.family == ModelFamily.QWENVL:
             self._load_qwenvl(model_path, device)
-        elif self.model_info.family in [ModelFamily.QWEN_TEXT, ModelFamily.QWEN3_TEXT,
-                                         ModelFamily.LLAMA_TEXT, ModelFamily.PHI_TEXT,
-                                         ModelFamily.MISTRAL_TEXT, ModelFamily.GEMMA_TEXT]:
+        elif self.model_info.family in [ModelFamily.QWEN3_TEXT,
+                                         ModelFamily.LLAMA_TEXT,
+                                         ModelFamily.MISTRAL_TEXT]:
             self._load_text_model(model_path, device)
 
         # Cache for reuse
@@ -1292,7 +1227,7 @@ class LocalModelClient:
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
     def _load_text_model(self, model_path: str, device: str):
-        """Load text-only model (Qwen2.5, Llama, Phi, Mistral, Gemma)."""
+        """Load text-only model (Qwen3, Llama 3.2, Mistral)."""
         import importlib.metadata
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -2116,7 +2051,7 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     "hf_token",
                     default="",
                     display_name="HuggingFace Token",
-                    tooltip="HuggingFace token for gated models (PaliGemma, etc). Get token from huggingface.co/settings/tokens"
+                    tooltip="HuggingFace token for gated models. Get token from huggingface.co/settings/tokens"
                 ),
                 # Analysis mode - Standard or Detailed
                 comfy_io.Combo.Input(
