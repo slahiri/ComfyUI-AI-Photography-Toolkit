@@ -1177,9 +1177,23 @@ def zimage_clean(prompt: str, provider: str = "default", max_words: int = 500) -
 class LLMClient:
     """Unified LLM client for various providers."""
 
+    # Class-level rate limiting to prevent API overload (especially for Anthropic)
+    _last_call_time = 0
+    _min_call_interval = 0.5  # Minimum 500ms between API calls
+
     def __init__(self, config: LLMConfig):
         self.config = config
         self._client = None
+
+    def _rate_limit(self):
+        """Enforce minimum interval between API calls to avoid rate limiting."""
+        import time
+        current_time = time.time()
+        elapsed = current_time - LLMClient._last_call_time
+        if elapsed < LLMClient._min_call_interval:
+            sleep_time = LLMClient._min_call_interval - elapsed
+            time.sleep(sleep_time)
+        LLMClient._last_call_time = time.time()
 
     @property
     def client(self):
@@ -1238,6 +1252,10 @@ class LLMClient:
         provider = self.config.provider.lower()
 
         try:
+            # Rate limit API calls to avoid overload errors
+            if provider != "local":
+                self._rate_limit()
+
             # Get configured temperature (default 0.7)
             temp = getattr(self.config, 'temperature', 0.7)
 
@@ -1327,6 +1345,10 @@ class LLMClient:
         text_model = self.config.get_text_model()
 
         try:
+            # Rate limit API calls to avoid overload errors
+            if provider != "local":
+                self._rate_limit()
+
             if provider == "local":
                 # For local models, use LocalModelClient with text model
                 try:
@@ -1755,9 +1777,7 @@ OUTPUT the enhanced prompt only:"""
                 )
                 if enhanced and enhanced.strip():
                     result.prompt = zimage_clean(enhanced, self.config.provider, max_words)
-                    # Re-add realism tags if human
-                    if has_human:
-                        result.prompt = f"{result.prompt}, {realism_tags}"
+                    # realism_tags removed - they were adding unwanted quality meta-tags
 
         result.metadata["word_count"] = len(result.prompt.split())
 
