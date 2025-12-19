@@ -1057,6 +1057,33 @@ class LocalModelClient:
     _image_cache_max_size = 5
     _compiled_generate = None  # For torch.compile caching
 
+    # Session management - tracks whether to unload model at end of node execution
+    _session_active = False
+    _session_keep_loaded = False  # True if any client in this session requested keep_model_loaded
+
+    @classmethod
+    def start_session(cls):
+        """Start a new session. Call at beginning of node execution."""
+        cls._session_active = True
+        cls._session_keep_loaded = False
+        print("[LocalModel] Session started")
+
+    @classmethod
+    def end_session(cls):
+        """End the session and unload model if it was loaded with keep_model_loaded=True.
+
+        Call at end of node execution to cleanup models that were kept loaded
+        for the duration of the session (across loop iterations).
+        """
+        if cls._session_active:
+            cls._session_active = False
+            if cls._session_keep_loaded and cls._cached_model is not None:
+                print("[LocalModel] Session ended - unloading session-cached model")
+                cls.unload_model()
+            else:
+                print("[LocalModel] Session ended - no model to unload")
+            cls._session_keep_loaded = False
+
     @classmethod
     def unload_model(cls):
         """Force unload the cached model to free VRAM for other nodes."""
@@ -2153,6 +2180,11 @@ class LocalModelClient:
         - Fragmented GPU memory
         - Disabled gradient computation
         - Unreleased tensor references
+
+        Session-based model management:
+        - keep_model_loaded=True: Model stays cached for the session (multiple loop iterations),
+          unloads when session ends (node execution completes)
+        - keep_model_loaded=False: Model unloads after each inference call
         """
         import torch
 
@@ -2162,8 +2194,13 @@ class LocalModelClient:
             # and VAE/other nodes may need them enabled
             torch.set_grad_enabled(True)
 
-            # If not keeping model loaded, unload it to free VRAM
-            if not self.keep_model_loaded:
+            # Session-based model management
+            if self.keep_model_loaded:
+                # Mark that this session has a model to unload at session end
+                LocalModelClient._session_keep_loaded = True
+                # Model stays cached - will be unloaded when end_session() is called
+            else:
+                # Unload immediately after this inference
                 self._unload_model_instance()
 
             # Clear image cache to prevent memory buildup
@@ -3403,7 +3440,7 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     "keep_model_loaded",
                     default=False,
                     display_name="Keep Model Loaded",
-                    tooltip="Keep model in VRAM between runs (faster repeat inference). Disabled by default to free VRAM after execution."
+                    tooltip="When checked: model stays loaded across loop iterations within one execution, unloads when node completes. When unchecked: model loads/unloads on each loop."
                 ),
                 comfy_io.Combo.Input(
                     "attention_mode",

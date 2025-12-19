@@ -763,6 +763,17 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
         except Exception:
             pass
 
+        # Start session for local model management
+        # If keep_model_loaded=True, model stays loaded across loop iterations
+        # and unloads when session ends (node execution completes)
+        is_local_provider = llm_model.provider.lower() == "local"
+        if is_local_provider:
+            try:
+                from .llm_providers.sid_llm_local import LocalModelClient
+                LocalModelClient.start_session()
+            except ImportError:
+                pass
+
         start_time = time.time()
         debug_lines = []
         global _prompt_cache
@@ -803,6 +814,14 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
 
             # Create placeholder compressed image tensor for cache hit
             empty_img = torch.zeros((1, 64, 64, 3), dtype=torch.float32)
+
+            # End session early for cache hit (no model was used)
+            if is_local_provider:
+                try:
+                    from .llm_providers.sid_llm_local import LocalModelClient
+                    LocalModelClient.end_session()
+                except ImportError:
+                    pass
 
             return comfy_io.NodeOutput(
                 cached_positive,
@@ -991,6 +1010,16 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
             import traceback
             traceback.print_exc()
             raise RuntimeError(f"[SID_ZImagePromptGenerator] {error_msg}") from e
+
+        finally:
+            # End session for local model management
+            # Unloads model if keep_model_loaded=True (session-based caching)
+            if is_local_provider:
+                try:
+                    from .llm_providers.sid_llm_local import LocalModelClient
+                    LocalModelClient.end_session()
+                except ImportError:
+                    pass
 
     # =========================================================================
     # SINGLE-SHOT PIPELINE
