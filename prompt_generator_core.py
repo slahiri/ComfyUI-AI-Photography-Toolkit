@@ -1181,6 +1181,13 @@ class LLMClient:
     _last_call_time = 0
     _min_call_interval = 0.5  # Minimum 500ms between API calls
 
+    # Class-level response cache - works for ANY LLM API
+    # Key: hash(image + system_prompt + user_prompt + model)
+    # Value: (response, timestamp)
+    _response_cache = {}
+    _cache_ttl = 1800  # Cache TTL: 30 minutes (same image/prompt = same response)
+    _cache_max_size = 100  # Maximum cache entries
+
     def __init__(self, config: LLMConfig):
         self.config = config
         self._client = None
@@ -1194,6 +1201,38 @@ class LLMClient:
             sleep_time = LLMClient._min_call_interval - elapsed
             time.sleep(sleep_time)
         LLMClient._last_call_time = time.time()
+
+    def _get_cache_key(self, image_data: str, system_prompt: str, user_prompt: str) -> str:
+        """Generate cache key from image + prompts + model."""
+        import hashlib
+        # Use first 1000 chars of image to speed up hashing (still unique enough)
+        image_hash = hashlib.md5(image_data[:1000].encode() if len(image_data) > 1000 else image_data.encode()).hexdigest()[:16]
+        prompt_hash = hashlib.md5(f"{system_prompt}{user_prompt}{self.config.model}".encode()).hexdigest()[:16]
+        return f"{image_hash}_{prompt_hash}"
+
+    def _get_cached_response(self, cache_key: str) -> str | None:
+        """Get cached response if still valid."""
+        import time
+        if cache_key in LLMClient._response_cache:
+            response, timestamp = LLMClient._response_cache[cache_key]
+            if time.time() - timestamp < LLMClient._cache_ttl:
+                return response
+            else:
+                # Expired, remove it
+                del LLMClient._response_cache[cache_key]
+        return None
+
+    def _cache_response(self, cache_key: str, response: str):
+        """Cache response with timestamp."""
+        import time
+        # Evict oldest entries if cache is full
+        if len(LLMClient._response_cache) >= LLMClient._cache_max_size:
+            # Remove oldest 20% of entries
+            sorted_keys = sorted(LLMClient._response_cache.keys(),
+                                key=lambda k: LLMClient._response_cache[k][1])
+            for key in sorted_keys[:LLMClient._cache_max_size // 5]:
+                del LLMClient._response_cache[key]
+        LLMClient._response_cache[cache_key] = (response, time.time())
 
     @property
     def client(self):
@@ -1251,6 +1290,13 @@ class LLMClient:
         """Call vision LLM with image."""
         provider = self.config.provider.lower()
 
+        # Check cache first (works for any provider)
+        cache_key = self._get_cache_key(base64_image, system_prompt, user_prompt)
+        cached = self._get_cached_response(cache_key)
+        if cached:
+            print(f"[LLM] Cache HIT - returning cached response")
+            return cached
+
         try:
             # Rate limit API calls to avoid overload errors
             if provider != "local":
@@ -1277,28 +1323,60 @@ class LLMClient:
                     temperature=temp
                 )
                 result = response.choices[0].message.content or ""
-                return result.strip()
+                result = result.strip()
+                self._cache_response(cache_key, result)
+                return result
 
             elif provider == "anthropic":
                 # Retry logic for Anthropic API overload (529) errors
                 max_retries = 3
                 base_delay = 5  # seconds
+
+                # Use Anthropic Prompt Caching for system prompt and image
+                # Cache persists for 5 minutes, reducing cost and latency for repeated calls
+                # This is especially useful in agentic mode (14+ calls with same image)
+                system_with_cache = [
+                    {
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"}
+                    }
+                ]
+
+                # Cache the image too - same image analyzed multiple times
+                messages_with_cache = [{
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_image},
+                            "cache_control": {"type": "ephemeral"}
+                        },
+                        {"type": "text", "text": user_prompt}
+                    ]
+                }]
+
                 for attempt in range(max_retries):
                     try:
                         response = self.client.messages.create(
                             model=self.config.model,
                             max_tokens=max_tokens,
                             temperature=temp,
-                            system=system_prompt,
-                            messages=[{
-                                "role": "user",
-                                "content": [
-                                    {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": base64_image}},
-                                    {"type": "text", "text": user_prompt}
-                                ]
-                            }]
+                            system=system_with_cache,
+                            messages=messages_with_cache
                         )
-                        return response.content[0].text.strip()
+                        # Log cache usage if available
+                        if hasattr(response, 'usage'):
+                            usage = response.usage
+                            cache_read = getattr(usage, 'cache_read_input_tokens', 0)
+                            cache_create = getattr(usage, 'cache_creation_input_tokens', 0)
+                            if cache_read > 0:
+                                print(f"[LLM] Anthropic cache HIT: {cache_read} tokens from API cache")
+                            elif cache_create > 0:
+                                print(f"[LLM] Anthropic cache MISS: {cache_create} tokens cached")
+                        result = response.content[0].text.strip()
+                        self._cache_response(cache_key, result)
+                        return result
                     except Exception as api_error:
                         error_str = str(api_error)
                         # Check for overload error (529)
@@ -1331,7 +1409,9 @@ class LLMClient:
                 )
                 result = response.choices[0].message.content or ""
                 result = re.sub(r'<think>.*?</think>', '', result, flags=re.DOTALL | re.IGNORECASE)
-                return result.strip()
+                result = result.strip()
+                self._cache_response(cache_key, result)
+                return result
 
         except Exception as e:
             import traceback
