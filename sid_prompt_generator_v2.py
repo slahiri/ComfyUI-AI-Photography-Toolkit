@@ -186,9 +186,9 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                 ),
                 io.Combo.Input(
                     "template",
-                    options=lambda: get_template_names() or ["Detailed Description"],
-                    default="Detailed Description",
-                    tooltip="Select prompt template (only used when prompt_style is Template). Add templates to config/templates.toml and refresh browser"
+                    options=get_template_names() or ["Detailed"],
+                    default="Detailed",
+                    tooltip="Select prompt template (only used when prompt_style is Template). Add templates to config/templates.toml and restart ComfyUI"
                 ),
                 io.Int.Input(
                     "prompt_length",
