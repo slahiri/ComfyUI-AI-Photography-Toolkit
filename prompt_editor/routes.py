@@ -258,34 +258,41 @@ def setup_routes(routes):
                             scores = data.get("scores", {})
                             overall = scores.get("overall", {}).get("score", 0)
 
-                            # Try different sources for model info
+                            # Try different sources for GENERATION model info
+                            # (the model that generated the prompt, not the evaluation model)
                             provider = "unknown"
                             model = "unknown"
                             timestamp = ""
 
-                            # 1. Check evaluator field (in evaluation.json)
-                            evaluator = data.get("evaluator", {})
-                            if evaluator:
-                                provider = evaluator.get("provider", provider)
-                                model = evaluator.get("model", model)
-
-                            # 2. Check model_config.json (newer format)
-                            model_config_file = session_dir / "model_config.json"
-                            if model_config_file.exists():
-                                with open(model_config_file, 'r', encoding='utf-8') as f:
+                            # 1. Check generation_model.json (preferred - generation model)
+                            gen_model_file = session_dir / "generation_model.json"
+                            if gen_model_file.exists():
+                                with open(gen_model_file, 'r', encoding='utf-8') as f:
                                     mc = json.load(f)
                                     provider = mc.get("provider", provider)
                                     model = mc.get("model", model)
 
-                            # 3. Check metadata.json (older format)
-                            metadata_file = session_dir / "metadata.json"
-                            if metadata_file.exists():
-                                with open(metadata_file, 'r', encoding='utf-8') as f:
-                                    meta = json.load(f)
-                                    mc = meta.get("model_config", {})
-                                    provider = mc.get("provider", provider)
-                                    model = mc.get("model", model)
-                                    timestamp = meta.get("timestamp", "")
+                            # 2. Check source_metadata.json -> model_config (fallback)
+                            if provider == "unknown":
+                                source_meta_file = session_dir / "source_metadata.json"
+                                if source_meta_file.exists():
+                                    with open(source_meta_file, 'r', encoding='utf-8') as f:
+                                        meta = json.load(f)
+                                        mc = meta.get("model_config", {})
+                                        provider = mc.get("provider", provider)
+                                        model = mc.get("model", model)
+                                        timestamp = meta.get("timestamp", "")
+
+                            # 3. Check metadata.json (older format fallback)
+                            if provider == "unknown":
+                                metadata_file = session_dir / "metadata.json"
+                                if metadata_file.exists():
+                                    with open(metadata_file, 'r', encoding='utf-8') as f:
+                                        meta = json.load(f)
+                                        mc = meta.get("model_config", {})
+                                        provider = mc.get("provider", provider)
+                                        model = mc.get("model", model)
+                                        timestamp = meta.get("timestamp", "")
 
                             # Parse timestamp from folder name if not found
                             if not timestamp:
@@ -344,16 +351,27 @@ def setup_routes(routes):
             if prompt_file.exists():
                 data["original_prompt"] = prompt_file.read_text(encoding="utf-8")
 
-            # Read model config from model_config.json or metadata.json
-            model_config_file = session_dir / "model_config.json"
+            # Read GENERATION model config (the model that generated the prompt)
+            gen_model_file = session_dir / "generation_model.json"
+            source_meta_file = session_dir / "source_metadata.json"
             metadata_file = session_dir / "metadata.json"
-            if model_config_file.exists():
-                with open(model_config_file, 'r', encoding='utf-8') as f:
-                    data["model_config"] = json.load(f)
-            elif metadata_file.exists():
+
+            if gen_model_file.exists():
+                with open(gen_model_file, 'r', encoding='utf-8') as f:
+                    data["generation_model"] = json.load(f)
+
+            if source_meta_file.exists():
+                with open(source_meta_file, 'r', encoding='utf-8') as f:
+                    data["source_metadata"] = json.load(f)
+                    # Also set model_config for backwards compatibility
+                    if "generation_model" not in data:
+                        data["generation_model"] = data["source_metadata"].get("model_config", {})
+
+            # Fallback to old metadata.json format
+            if "generation_model" not in data and metadata_file.exists():
                 with open(metadata_file, 'r', encoding='utf-8') as f:
                     meta = json.load(f)
-                    data["model_config"] = meta.get("model_config", {})
+                    data["generation_model"] = meta.get("model_config", {})
                     data["metadata"] = meta
 
             # Add parsed timestamp
@@ -1416,14 +1434,30 @@ def get_debug_viewer_html():
                 `;
             }
 
-            // Metadata (evaluator, timing, api_calls)
+            // Generation Model (the model that generated the prompt)
+            const genModel = data.generation_model || {};
+            if (genModel.provider || genModel.model) {
+                html += `
+                    <div class="analysis-section">
+                        <h3>Generation Model</h3>
+                        <div class="analysis-content" style="font-size: 12px; color: #888;">
+                            ${genModel.provider ? `<div>Provider: ${escapeHtml(genModel.provider)}</div>` : ''}
+                            ${genModel.model ? `<div>Model: ${escapeHtml(genModel.model)}</div>` : ''}
+                            ${genModel.analysis_mode ? `<div>Mode: ${escapeHtml(genModel.analysis_mode)}</div>` : ''}
+                            ${genModel.temperature ? `<div>Temperature: ${genModel.temperature}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Evaluation Metadata (the model that evaluated the prompt)
             const evaluator = data.evaluator || {};
             const timing = data.timing || {};
             const apiCalls = data.api_calls;
             if (evaluator.model || timing.total_seconds || apiCalls) {
                 html += `
                     <div class="analysis-section">
-                        <h3>Evaluation Metadata</h3>
+                        <h3>Evaluation Model</h3>
                         <div class="analysis-content" style="font-size: 12px; color: #888;">
                             ${evaluator.provider ? `<div>Provider: ${escapeHtml(evaluator.provider)}</div>` : ''}
                             ${evaluator.model ? `<div>Model: ${escapeHtml(evaluator.model)}</div>` : ''}
