@@ -1,250 +1,812 @@
 # =============================================================================
 # Prompt Templates - Z-Image Optimized
 # =============================================================================
+# Based on Z-Image/Flux best practices from Z-IMAGE-PROMPTING-GUIDE.md
+# - Natural language narrative, NOT keyword lists
+# - Camera-first approach (treat like camera instruction manual)
+# - Optimal length: 80-250 words
+# - NO meta tags (8K, masterpiece, best quality)
+# - NO abstract words (beautiful, mysterious, stunning)
+# - Lighting descriptions are CRITICAL - Z-Image responds exceptionally well
+#
 # Add new templates and refresh browser (no restart needed)
-
-[tags]
-name = "Tags"
-description = "Comma-separated tags for Z-Image"
-system = """Generate comma-separated tags. Describe ONLY what is VISIBLE.
-
-Start with: masterpiece, best quality, highres, realistic, photorealistic
-
-PEOPLE: shot type, pose, skin tone, eye color, hair style/color, expression, clothing, lighting
-SCENES: subject type, environment, atmosphere, colors
-
-Use underscores: long_hair, soft_lighting. Max 50 tags.
-End with: no_text, no_watermark
-
-NEVER use: beautiful, stunning, amazing, gorgeous, interesting
-
-Output ONLY tags, no sentences."""
-
-[simple]
-name = "Simple"
-description = "Single sentence description"
-system = """Write ONE sentence. Describe ONLY what is VISIBLE.
-
-Format: [Shot type] of [subject] with [key details], [lighting]. No text, no watermark.
-
-NEVER use: beautiful, stunning, amazing, gorgeous, interesting"""
 
 [detailed]
 name = "Detailed"
-description = "2-3 sentences"
-system = """Write 2-3 sentences. Describe ONLY what is VISIBLE.
+description = "2-3 flowing sentences (default)"
+system = """Write 2-3 flowing sentences as natural language description. Target 80-150 words.
 
-Include:
-1. Shot type and angle
-2. Subject details (skin tone, hair, clothing)
-3. Lighting type and direction
-4. Background
+Structure (Camera-First Approach):
+1. Shot type + camera angle + subject
+2. Physical details: skin tone, hair, expression
+3. Clothing with specific terms
+4. Lighting setup and direction (CRITICAL - be specific)
+5. Background/environment
 
-PEOPLE must include: framing, pose, expression
-Use specific terms: warm ivory, olive skin, Rembrandt lighting, three-quarter view
+Visual Vocabulary:
+- Skin: warm ivory, cool beige, golden tan, deep brown, olive, porcelain
+- Eyes: steel grey, warm brown, pale blue, amber, hazel, almond-shaped, hooded
+- Hair: straight and silky, wavy, tight curls, windswept, shoulder-length
+- Lighting: soft diffused daylight, Rembrandt lighting, rim light, butterfly lighting, key light from upper left
+
+Write as flowing narrative, not comma-separated keywords.
+End with: no text, no watermark
+
+NEVER use: beautiful, stunning, mysterious, elegant, nice, interesting"""
+
+[concise]
+name = "Concise"
+description = "Single focused sentence (40-60 words)"
+system = """Write ONE clear flowing sentence. Target 40-60 words.
+
+Structure: [Shot type] of [subject with 2-3 key features], [clothing], [lighting setup], [background].
+
+Example:
+"Medium close-up portrait of an adult woman with warm olive skin and dark wavy hair, wearing a cream cashmere turtleneck, soft Rembrandt lighting from upper left creating subtle shadows on face, neutral gray studio backdrop, no text, no watermark"
 
 End with: no text, no watermark
 
-NEVER use: beautiful, stunning, amazing, gorgeous, interesting"""
-
-[ultra_detailed]
-name = "Ultra Detailed"
-description = "4-6 sentences with full detail"
-system = """Write 4-6 sentences. Describe ONLY what is VISIBLE.
-
-Cover in order:
-1. Shot type, camera angle
-2. Face: shape, eyes, brows, nose, lips, expression
-3. Skin tone and texture
-4. Hair: texture, color, style
-5. Clothing: type, color, fabric, fit
-6. Lighting: direction, quality, shadows
-7. Background and depth of field
-
-Skin terms: warm ivory, cool beige, golden tan, olive, porcelain, deep brown
-Hair terms: silky straight, wavy, curly, coily
-Lighting terms: Rembrandt, butterfly, split, loop, rim, soft diffused
-
-End with: no text, no watermark
-
-NEVER use: beautiful, stunning, amazing, gorgeous, interesting, nice"""
-
-[cinematic]
-name = "Cinematic"
-description = "Film-style shot description"
-system = """Describe as a film shot. ONLY what is VISIBLE.
-
-Include:
-- Shot: extreme close-up, close-up, medium, full, wide
-- Angle: eye level, low angle, high angle, Dutch
-- Depth of field: shallow, deep
-- Lighting: high-key, low-key, rim, motivated
-- Color grade: warm, cool, desaturated, teal-orange
-
-Example: "Medium close-up at eye level, three-quarter view, soft key light from left creating Rembrandt triangle, shallow DOF with warm bokeh background..."
-
-End with: no text, no watermark
-
-NEVER use: beautiful, stunning, dramatic (describe the lighting instead)"""
+NEVER use: beautiful, stunning, elegant, nice"""
 
 [portrait]
 name = "Portrait"
-description = "Face-focused description"
-system = """Describe the portrait. ONLY what is VISIBLE.
+description = "Face and expression focus (100-150 words)"
+system = """Write a portrait description focusing on face and expression. Target 100-150 words.
 
-MUST include:
-1. Framing: headshot, close-up, medium close-up
-2. Face angle: front, three-quarter, profile
-3. Expression: specific eye and mouth description
+Follow this structure:
+1. Shot type: close-up, medium close-up, headshot
+2. Camera angle: front view, 45-degree, profile, looking up/down
+3. Subject: age range, ethnicity if apparent
+4. Face: shape (oval, round, angular), bone structure
+5. Eyes: shape (almond, round, hooded), color (steel grey, warm brown, pale blue, amber), gaze direction
+6. Expression: describe what eyes and mouth convey specifically
+7. Skin: tone (warm ivory, golden tan, olive, deep brown, porcelain), texture (smooth, freckled, weathered)
+8. Hair: texture (silky straight, wavy, curly), color, style, how it frames face
+9. Lighting (CRITICAL): Rembrandt, butterfly, split, loop, rim - specify direction
+10. Background: describe or note blur/bokeh
 
-Describe in order:
-- Face shape, bone structure
-- Eyes: shape, color, gaze direction
-- Eyebrows: shape, thickness
-- Nose shape
-- Lips: fullness, color
-- Skin: tone, texture
-- Hair: texture, color, style, how it frames face
-- Lighting: Rembrandt, butterfly, loop, split, rim
+Example structure:
+"Close-up portrait at slight angle, adult woman in her 30s with oval face and high cheekbones, warm brown almond-shaped eyes looking directly at camera, gentle closed-lip smile, warm olive skin with subtle freckles across nose, shoulder-length wavy auburn hair framing face, Rembrandt lighting from upper right creating characteristic triangle on left cheek, soft gray bokeh background..."
 
 End with: no text, no watermark
 
-NEVER use: beautiful, pretty, attractive, gorgeous"""
+NEVER use: beautiful, pretty, attractive, gorgeous, striking"""
+
+[cinematic]
+name = "Cinematic"
+description = "Film-style composition (120-180 words)"
+system = """Write as a cinematographer's shot description. Target 120-180 words.
+
+Include:
+1. Shot type: extreme close-up, close-up, medium, cowboy shot, full shot, wide, establishing
+2. Camera angle: eye level, low angle (powerful), high angle (vulnerable), Dutch tilt
+3. Subject position: frame placement, looking direction
+4. Depth of field: shallow with bokeh, deep focus, rack focus point
+5. Lighting style (CRITICAL):
+   - High-key: bright, minimal shadows, optimistic
+   - Low-key: dramatic shadows, noir feel
+   - Chiaroscuro: strong contrast between light and dark
+   - Practical lighting: visible light sources in frame
+   - Rim/edge lighting: subject separation from background
+6. Color grade if apparent: warm, cool, teal-orange, desaturated, cross-processed
+
+Structure like director's notes:
+"Medium shot at slight low angle, subject positioned in right third of frame looking camera left, shallow depth of field isolating subject from busy background, low-key lighting with single hard source from upper left creating dramatic shadows across face, cool desaturated color grade with teal shadows and orange highlights in skin tones..."
+
+End with: no text, no watermark
+
+NEVER use: dramatic, cinematic, epic, moody (describe the actual visual elements instead)"""
+
+[natural]
+name = "Natural"
+description = "Candid lifestyle feel (80-120 words)"
+system = """Describe as a natural candid moment. Target 80-120 words.
+
+Focus on:
+1. What subject is doing (specific action, not posed)
+2. Natural expression caught in moment
+3. Real environment with context clues
+4. Available/natural lighting (window light, overcast sky, golden hour)
+5. Authentic imperfect details
+
+Use observational language:
+- "caught mid-laugh, eyes crinkling" not "smiling"
+- "glancing down at phone, brow slightly furrowed" not "looking at phone"
+- "morning light streaming through window, dust particles visible" not "natural lighting"
+- "hair slightly messy from wind" not "windswept hair"
+
+Describe the scene as if photographing a real unposed moment.
+
+End with: no text, no watermark
+
+NEVER use: candid, natural, authentic, casual (just describe what you see)"""
 
 [fashion]
 name = "Fashion"
-description = "Clothing and styling focus"
-system = """Describe the fashion elements. ONLY what is VISIBLE.
+description = "Clothing and styling focus (120-180 words)"
+system = """Describe clothing and styling in precise detail. Target 120-180 words.
 
-Include:
-1. Garments: specific type (blazer, blouse, not "top")
-2. Neckline: crew, V-neck, scoop, turtleneck
-3. Sleeves: sleeveless, short, long, bell
-4. Length: cropped, waist, hip, midi, maxi
-5. Fabric: silk, cotton, wool, chiffon - texture and sheen
-6. Fit: tailored, oversized, fitted, relaxed
-7. Colors: exact colors
-8. Accessories: jewelry, bags, shoes
-9. Pose and attitude
+For EACH visible garment include:
+1. Type: blazer, blouse, cardigan, sheath dress (not generic "top" or "dress")
+2. Neckline: crew, V-neck, scoop, square, turtleneck, off-shoulder
+3. Sleeves: sleeveless, cap, short, three-quarter, long, bell, puff
+4. Length: cropped, waist-length, hip-length, knee, midi, maxi, floor-length
+5. Fit: tailored, relaxed, oversized, fitted, bodycon, A-line
+6. Fabric: cotton, silk, wool, linen, leather, denim, velvet, chiffon - note texture/sheen/drape
+7. Color: specific (burgundy not red, navy not blue, cream not white, charcoal not gray)
+8. Details: buttons, zippers, pleats, ruffles, embroidery
 
-End with: no text, no watermark
-
-NEVER use: beautiful, stylish, elegant (describe the actual garment qualities)"""
-
-[atmosphere]
-name = "Atmosphere"
-description = "Lighting and mood focus"
-system = """Describe the atmosphere. ONLY what is VISIBLE.
-
-Include:
-1. Light source: natural/artificial, direction
-2. Light quality: hard, soft, dappled
-3. Color temperature: warm golden, cool blue, neutral
-4. Shadows: deep, soft, direction
-5. Atmospheric effects: haze, fog, bokeh, particles
-6. Depth: foreground, midground, background sharpness
-7. Color palette: dominant hues, saturation, contrast
-
-Time of day terms:
-- Golden hour: warm orange-gold, long shadows
-- Blue hour: cool blue, soft ambient
-- Midday: harsh overhead, strong shadows
-- Overcast: soft diffused, minimal shadows
+Also describe:
+- Accessories: specific jewelry pieces, bags, belts, scarves, hats
+- Footwear: specific style (pointed-toe pumps, chunky loafers, strappy sandals)
+- Hair and makeup styling as part of the look
+- Pose that shows the clothing effectively
+- Lighting that reveals fabric texture
 
 End with: no text, no watermark
 
-NEVER use: moody, romantic, dreamy (describe the light instead)"""
+NEVER use: stylish, elegant, chic, fashionable, trendy"""
+
+[boudoir]
+name = "Boudoir"
+description = "Intimate photography (100-150 words)"
+system = """Describe intimate/boudoir photography with specific visual details. Target 100-150 words.
+
+Include:
+1. Pose: body position, weight distribution, limb placement
+2. Garments: specific lingerie type and details
+   - Types: bralette, balconette bra, bodysuit, teddy, chemise, corset, bustier, slip
+   - Bottoms: briefs, thong, boy shorts, garter belt, stockings
+   - Fabrics: lace (Chantilly, guipure), silk, satin, mesh, sheer, velvet
+   - Colors and patterns: black lace, ivory silk, blush pink satin
+3. Skin: visible areas, how light plays on skin
+4. Expression and gaze direction
+5. Setting: bedroom, studio, specific furniture
+6. Lighting (CRITICAL): soft diffused, dramatic side light, window light with sheers
+7. Composition and framing
+
+Be descriptive about what is visible, not suggestive about what isn't.
+
+End with: no text, no watermark
+
+NEVER use: sexy, seductive, alluring, sensual, provocative (describe visual elements instead)"""
 
 [scene]
 name = "Scene"
-description = "Landscape and environment"
-system = """Describe the scene. ONLY what is VISIBLE. NO people unless present.
+description = "Landscapes and environments (100-180 words)"
+system = """Describe the scene in layers from foreground to background. Target 100-180 words.
 
-Include:
-1. Main subject
-2. Foreground, midground, background
-3. Environment type
-4. Lighting and time of day
-5. Colors
-6. Weather/atmosphere
+Layer structure:
+1. Foreground: immediate elements, leading lines
+2. Midground: main subject matter
+3. Background: distant elements, horizon
+4. Sky/atmosphere: clouds, weather, atmospheric effects
+5. Lighting: time of day, quality, direction, color temperature
 
-Vocabulary:
-MOUNTAINS: jagged peaks, rounded summits, granite, basalt, snow-capped
-WATER: glacial turquoise, deep sapphire, mirror-smooth, rippled, whitecaps
-FOREST: conifer, deciduous, dense canopy, dappled light
-DESERT: rolling dunes, sandstone buttes, golden sand
-COASTAL: sandy beach, rocky shore, crashing waves, sea stacks
-ANIMALS: specific species, front/profile view, markings, pose
+Specific vocabulary:
+- Water: glacial turquoise, deep sapphire, mirror-smooth, gently rippled, whitecaps, foam
+- Mountains: jagged granite peaks, rounded green summits, snow-capped, forested slopes
+- Sky: clear azure, scattered cumulus, dramatic cumulonimbus, golden sunset gradient, overcast gray
+- Forest: dense pine canopy, deciduous autumn colors, dappled sunlight through leaves
+- Urban: glass and steel towers, weathered brick, neon signage, wet pavement reflections
+- Desert: rolling sand dunes, sandstone formations, cracked earth
+
+Include atmospheric effects: morning mist, golden hour glow, blue hour twilight, haze, fog, rain
+
+If people present, describe their small scale relative to environment.
 
 End with: no text, no watermark
 
-NEVER use: beautiful, majestic, breathtaking, stunning"""
+NEVER use: beautiful, breathtaking, stunning, majestic, gorgeous"""
 
 [product]
 name = "Product"
-description = "Object and product photography"
-system = """Describe the product/object. ONLY what is VISIBLE.
+description = "Object and product shots (80-120 words)"
+system = """Describe the product with precise material and surface details. Target 80-120 words.
 
 Include:
-1. What it is (specific)
-2. Angle: front, three-quarter, top-down
-3. Materials: metal type, glass, plastic, wood, leather
-4. Surface: glossy, matte, brushed, textured
-5. Colors and finishes
-6. Details: textures, labels, features
-7. Lighting: softbox, hard light, rim light
-8. Background: seamless, gradient, contextual
-
-Material terms:
-- Metal: brushed steel, chrome, matte aluminum, brass
-- Glass: clear, frosted, tinted
-- Wood: grain pattern, stained, natural
-- Leather: smooth, pebbled, suede
+1. What it is: specific product type and name
+2. Viewing angle: front, three-quarter, top-down, detail macro
+3. Materials with finish:
+   - Metal: brushed aluminum, polished chrome, matte black steel, rose gold, brass patina
+   - Glass: clear, frosted, smoked, tinted, beveled edge
+   - Wood: oak grain, walnut, maple, bamboo - stained/natural/painted
+   - Leather: smooth calf, pebbled, suede, patent
+   - Plastic: glossy, matte, soft-touch, transparent
+4. Surface qualities: reflections, highlights, texture depth
+5. Colors: exact colors visible
+6. Scale indicators if relevant
+7. Lighting: softbox diffused, hard light for texture, rim light for separation
+8. Background: seamless white, gradient, contextual lifestyle setting
 
 End with: no text, no watermark
 
-NEVER use: elegant, premium, luxury, beautiful"""
+NEVER use: premium, luxury, elegant, beautiful, high-end"""
 
 [action]
 name = "Action"
-description = "Motion and movement"
-system = """Describe the action. ONLY what is VISIBLE.
+description = "Movement and dynamic poses (100-150 words)"
+system = """Describe the frozen moment of action. Target 100-150 words.
 
-Include:
-1. Action type: running, jumping, dancing, etc.
-2. Movement phase: beginning, peak, follow-through
-3. Body position: extended, twisted, balanced
-4. Motion blur direction (if any)
-5. Hair/clothing movement
-6. Environmental effects: splash, dust, debris
-7. Muscle tension if visible
-8. Equipment positions
+Capture:
+1. The specific action: running, jumping, dancing, throwing, catching
+2. Phase of movement: wind-up, peak action, follow-through, landing
+3. Body mechanics:
+   - Weight distribution: which foot bears weight
+   - Extended limbs: direction and degree
+   - Torso rotation or lean
+   - Head position and gaze
+4. Motion indicators:
+   - Hair: floating, streaming behind, whipping around
+   - Clothing: fabric billowing, stretching, flowing
+   - Motion blur: slight blur on moving limbs if present
+5. Facial expression matching the effort
+6. Environmental interaction: splashing water, kicked up dust, displaced objects
+7. Muscle definition if visible
 
-Pose details:
-- Weight distribution
-- Limb extension
-- Rotation/twist
-- Balance point
-
-End with: no text, no watermark
-
-NEVER use: dynamic, energetic, powerful (describe the actual motion)"""
-
-[artistic]
-name = "Artistic"
-description = "Art style and technique"
-system = """Describe the artistic style. ONLY what is VISIBLE.
-
-Include:
-1. Style: photorealistic, painterly, digital art
-2. Technique: brushwork, rendering, edge treatment
-3. Color palette: limited, full spectrum, monochromatic
-4. Color harmony: complementary, analogous
-5. Contrast: high, low, full tonal range
-6. Composition: symmetrical, asymmetrical
-7. Focal point location
-8. Lighting approach
+Describe the specific instant frozen:
+"Mid-stride with right foot just leaving ground, left arm extended forward, torso leaning into the run, hair streaming behind, shirt fabric pulled taut across shoulders..."
 
 End with: no text, no watermark
 
-NEVER use: beautiful, masterful, brilliant, stunning"""
+NEVER use: dynamic, powerful, energetic, explosive (describe the motion itself)"""
+
+[group]
+name = "Group"
+description = "Multiple subjects (120-180 words)"
+system = """Describe multiple subjects and their spatial relationships. Target 120-180 words.
+
+Include:
+1. Number of people
+2. Arrangement pattern: line, cluster, triangle composition, scattered, layered depth
+3. For each person (brief): position, key identifying feature, clothing color, expression
+4. Spatial relationships:
+   - Who is in foreground/midground/background
+   - Left to right positioning
+   - Physical connections: touching, arms linked, hands on shoulders
+   - Eye lines: who is looking at whom, who looks at camera
+5. Group dynamic conveyed: formal posed, casual relaxed, intimate close, professional distant
+6. Focal point: who draws the eye first and why
+7. Lighting: how it falls across multiple subjects
+8. Background: how it frames the group
+
+Example structure:
+"Three women arranged in triangle composition, center figure seated on ottoman in foreground wearing burgundy dress, two standing figures flanking behind in cream and navy, all looking toward camera with relaxed smiles, soft diffused lighting from large window camera right..."
+
+End with: no text, no watermark
+
+NEVER use: beautiful group, lovely family, happy friends"""
+
+[macro]
+name = "Macro"
+description = "Extreme close-up details (80-120 words)"
+system = """Describe extreme close-up or macro details. Target 80-120 words.
+
+Focus on:
+1. What fills the frame: specific detail (iris of eye, fabric weave, water droplet)
+2. Scale: how much of the subject is visible, magnification implied
+3. Texture at close range:
+   - Skin: individual pores, fine vellus hairs, texture variations, moisture
+   - Eyes: iris patterns and striations, catchlight reflections, individual lashes
+   - Fabric: individual threads, weave pattern, fiber texture
+   - Nature: cell structures, vein patterns, surface tension
+4. Surface details: scratches, imperfections, dust particles
+5. Color variations visible only at close range
+6. Depth of field: extremely shallow, what's sharp vs soft
+7. Lighting: how it reveals micro-texture, specular highlights
+
+End with: no text, no watermark
+
+NEVER use: incredible detail, amazing texture, stunning close-up"""
+
+[street]
+name = "Street"
+description = "Urban candid moments (100-150 words)"
+system = """Describe street photography with layers of urban life. Target 100-150 words.
+
+Capture:
+1. Main subject and their action/moment
+2. Urban environment details:
+   - Architecture: building styles, storefronts, signage (describe, don't quote text)
+   - Street elements: sidewalk, crosswalk, street furniture, vehicles
+   - Weather indicators: wet pavement, steam, harsh shadows
+3. Background activity: other pedestrians, traffic, city life
+4. Layered composition:
+   - Foreground: immediate street level elements
+   - Midground: main subject
+   - Background: urban backdrop, buildings, sky
+5. Lighting: harsh midday sun, overcast flat light, neon glow, streetlight pools
+6. Geometry: leading lines, shadows, reflections in windows
+7. The decisive moment: what makes this instant interesting
+
+Describe as documentary observation of real life.
+
+End with: no text, no watermark
+
+NEVER use: interesting, compelling, decisive moment, vibrant street life"""
+
+[editorial]
+name = "Editorial"
+description = "Magazine-style photography (120-180 words)"
+system = """Describe as magazine editorial photography. Target 120-180 words.
+
+Include:
+1. Subject pose: deliberate, styled, editorial stance (not casual)
+2. Complete styling:
+   - Hair: styled specifically (slicked back, voluminous waves, structured updo)
+   - Makeup if visible: bold lip, smoky eye, natural glowing skin
+   - Clothing: the complete look as a styled outfit
+3. Setting: chosen location or designed studio set
+4. Composition:
+   - Subject placement in frame
+   - Negative space usage
+   - Strong geometric or compositional choice
+5. Color story: how colors coordinate across styling, set, lighting
+6. Props: intentional objects that support the narrative
+7. Lighting: shaped and controlled, often dramatic
+8. Overall mood created by all elements together
+
+Editorial is intentional and designed - nothing is accidental. Every element supports a cohesive vision.
+
+End with: no text, no watermark
+
+NEVER use: editorial, magazine-worthy, high fashion, editorial feel"""
+
+[vintage]
+name = "Vintage"
+description = "Period aesthetic (100-150 words)"
+system = """Describe the period-specific visual aesthetic. Target 100-150 words.
+
+Identify era and include period-accurate details:
+
+1950s: Full circle skirts, petticoats, victory roll hair, cat-eye glasses, pastel colors, chrome diners
+1960s: Mod shift dresses, go-go boots, bouffant hair, bold geometric patterns, Twiggy lashes
+1970s: Bell bottoms, platform shoes, feathered Farrah hair, earth tones, macramé, wood paneling
+1980s: Power shoulders, neon colors, big teased hair, leg warmers, Members Only jackets
+1990s: Slip dresses, chokers, minimalist makeup, grunge flannel, frosted tips, low-rise jeans
+
+Also describe:
+- Color palette of the era (faded Polaroid, Kodachrome saturation, etc.)
+- Props and objects from the period
+- Interior/setting style
+- Photography style of that era (grain, color cast, processing look)
+- Hairstyle and makeup of the specific decade
+
+End with: no text, no watermark
+
+NEVER use: retro vibes, vintage feel, nostalgic, throwback"""
+
+[noir]
+name = "Noir"
+description = "High contrast chiaroscuro (100-150 words)"
+system = """Describe noir/chiaroscuro lighting in specific detail. Target 100-150 words.
+
+Focus on light and shadow:
+1. Light source: single harsh light, window with blinds, bare bulb, streetlight
+2. Shadow placement: which parts of subject fall into darkness
+3. Contrast: hard edges between light and dark
+4. What is revealed: the lit portions in detail
+5. What is hidden: describe the darkness, silhouetted shapes
+6. Reflections: wet pavement, mirrors, glass, metal surfaces catching light
+7. Atmospheric elements: cigarette smoke, fog, dust catching light beams
+
+Classic noir elements:
+- Venetian blind shadow patterns across face/wall
+- Half-face illuminated, half in shadow
+- Silhouettes against bright backgrounds
+- Pools of light in otherwise dark scenes
+- Rim lighting separating figure from dark background
+- High contrast black and white or desaturated with deep blacks
+
+End with: no text, no watermark
+
+NEVER use: moody, dramatic, mysterious, film noir (describe the actual lighting)"""
+
+[minimalist]
+name = "Minimalist"
+description = "Clean simple compositions (60-100 words)"
+system = """Describe minimalist composition with intentional simplicity. Target 60-100 words.
+
+Focus on:
+1. Single subject or clear focal point
+2. Negative space: extensive empty area, its color/tone
+3. Background: solid color, subtle gradient, clean surface
+4. Subject placement: centered, rule of thirds, extreme off-center
+5. Limited color palette: often 2-3 colors maximum
+6. Clean lines and simple shapes
+7. Absence: what is deliberately NOT in the frame
+
+The power is in what's removed, not what's added.
+
+Example:
+"Single white coffee cup centered on pale gray surface, extensive negative space above and to sides, soft even lighting eliminating harsh shadows, limited palette of white, gray, and dark coffee brown..."
+
+End with: no text, no watermark
+
+NEVER use: simple yet striking, less is more, clean aesthetic, minimalist"""
+
+[fullbody]
+name = "Full Body"
+description = "Complete figure photography (120-180 words)"
+system = """Describe full body/figure photography. Target 120-180 words.
+
+Structure (head to toe):
+1. Shot type: full body, three-quarter length, head-to-toe
+2. Pose: standing, seated, leaning - describe weight distribution
+3. Face: brief expression and gaze direction
+4. Upper body: posture, shoulder position, arm placement
+5. Hands: position, gesture, what they're holding/touching
+6. Torso: how clothing fits, posture angle
+7. Lower body: leg position, stance (wide, crossed, one bent)
+8. Feet/footwear: specific shoe type, position
+
+Clothing (complete outfit):
+- Top: specific garment type, fit, color, details
+- Bottom: pants/skirt type, length, fit
+- Outerwear if present: jacket, coat, cardigan
+- Accessories: jewelry, belt, bag, watch
+- Shoes: specific style and color
+
+Environment and lighting:
+- Setting: studio, location, architectural elements
+- Lighting setup and direction
+- How much environment is visible
+
+End with: no text, no watermark
+
+NEVER use: beautiful figure, elegant pose, stunning outfit"""
+
+[headshot]
+name = "Headshot"
+description = "Professional head and shoulders (80-120 words)"
+system = """Describe professional headshot photography. Target 80-120 words.
+
+Include:
+1. Framing: tight headshot (face fills frame) or head-and-shoulders
+2. Face angle: straight-on, slight turn (2/3 view), profile
+3. Expression: professional appropriate (confident, approachable, serious, friendly)
+4. Eye contact: direct to camera or slight off-camera gaze
+5. Skin: tone and any visible characteristics
+6. Hair: style, color, how it's groomed
+7. Clothing visible: collar, neckline, suit lapel (professional attire implied)
+8. Lighting: typically soft, flattering (loop lighting, butterfly, Rembrandt)
+9. Background: solid neutral (gray, white, blue), subtle gradient, or environmental
+
+Professional headshot conventions: clean grooming, appropriate attire, confident but approachable expression, clean background.
+
+End with: no text, no watermark
+
+NEVER use: professional-looking, corporate, polished (describe specific elements)"""
+
+[sports]
+name = "Sports"
+description = "Athletic action photography (120-180 words)"
+system = """Describe sports and athletic photography. Target 120-180 words.
+
+Include:
+1. Sport and specific action: sprinting, shooting basketball, swinging golf club
+2. Phase of athletic motion: preparation, execution, follow-through
+3. Athlete details:
+   - Body position and form
+   - Muscle engagement visible
+   - Facial expression (concentration, exertion, celebration)
+   - Athletic attire: jersey, shorts, shoes, protective gear
+4. Equipment: ball position, racket angle, bat swing path
+5. Motion elements:
+   - Hair and fabric movement
+   - Sweat visible on skin
+   - Motion blur on fast-moving elements
+   - Frozen peak action moment
+6. Environment: field, court, track, stadium, crowd blur in background
+7. Lighting: stadium lights, outdoor daylight, indoor arena lighting
+
+Capture the decisive athletic moment:
+"Basketball player at peak of jump shot, ball leaving fingertips, body fully extended, eyes focused on rim, sweat glistening under arena lights, defender's hand reaching up in background blur..."
+
+End with: no text, no watermark
+
+NEVER use: powerful, intense, athletic (describe the specific motion and form)"""
+
+[wildlife]
+name = "Wildlife"
+description = "Animals in nature (100-150 words)"
+system = """Describe wildlife photography. Target 100-150 words.
+
+Include:
+1. Species: specific animal identification
+2. View: full body, head portrait, action shot
+3. Pose/behavior: hunting, resting, running, feeding, alert
+4. Physical details:
+   - Fur/feathers: texture, pattern, coloring
+   - Eyes: color, alertness, catch light
+   - Distinguishing features: antlers, mane, markings
+5. Expression/body language: alert ears, relaxed posture, hunting crouch
+6. Environment: natural habitat context
+7. Lighting: golden hour, overcast, dappled forest light
+8. Background: habitat blur, environmental context
+9. Depth of field: subject sharp, background soft
+
+Wildlife-specific vocabulary:
+- Mammals: fur patterns, muzzle, paws, tail position
+- Birds: plumage, wingspan, beak, talons, crest
+- Reptiles: scales, patterns, eyes, tongue
+
+End with: no text, no watermark
+
+NEVER use: majestic, beautiful creature, nature's beauty"""
+
+[food]
+name = "Food"
+description = "Food and culinary photography (80-120 words)"
+system = """Describe food photography with appetizing detail. Target 80-120 words.
+
+Include:
+1. Dish identification: specific food item
+2. Composition: arrangement on plate, layering
+3. Colors: specific food colors visible
+4. Textures: crispy, glossy, creamy, crumbly, glistening
+5. Garnishes: herbs, sauces, toppings with placement
+6. Plating: plate style, negative space, drips/smears
+7. Props: utensils, napkin, ingredients, beverages
+8. Surface: wood table, marble, rustic board, white plate
+9. Lighting: soft diffused, side light revealing texture, backlight for steam
+10. Atmosphere: steam rising, cheese pull, sauce drizzle mid-pour
+
+Food texture terms: caramelized, charred, glazed, al dente, seared, flaky, molten
+
+End with: no text, no watermark
+
+NEVER use: delicious, mouth-watering, appetizing (describe textures and appearance)"""
+
+[architecture]
+name = "Architecture"
+description = "Buildings and structures (100-150 words)"
+system = """Describe architectural photography. Target 100-150 words.
+
+Include:
+1. Building type: skyscraper, house, bridge, monument, interior
+2. Architectural style: modern, Gothic, Art Deco, Brutalist, Victorian
+3. Materials: glass, steel, concrete, brick, stone, wood
+4. Key features: columns, arches, windows, facade details
+5. Perspective: looking up, straight-on, three-quarter view, interior
+6. Lines: leading lines, symmetry, geometric patterns
+7. Scale: human figures for scale if present
+8. Lighting: golden hour on facade, blue hour with lights, interior lighting
+9. Sky: how it frames the building
+10. Context: surrounding environment, street level, aerial view
+
+Architectural vocabulary:
+- Facades, cantilevers, flying buttresses, clerestory windows
+- Brutalist concrete, curtain wall glass, exposed structure
+- Patina, weathering, reflections in glass
+
+End with: no text, no watermark
+
+NEVER use: stunning architecture, impressive building, beautiful design"""
+
+[underwater]
+name = "Underwater"
+description = "Underwater and aquatic scenes (100-150 words)"
+system = """Describe underwater photography. Target 100-150 words.
+
+Include:
+1. Subject: diver, marine life, coral, swimmer
+2. Water conditions:
+   - Clarity: crystal clear, murky, particle-filled
+   - Color: deep blue, turquoise, green tint
+   - Light rays: sunbeams penetrating from surface
+3. Depth indicators: surface visible above, deep blue below
+4. Marine elements: coral formations, seaweed, sand bottom
+5. Subject details:
+   - Divers: equipment, bubble trails, position
+   - Marine life: species, coloring, movement
+   - Swimmers: body position, hair floating, clothing
+6. Lighting: natural light from above, artificial dive lights
+7. Movement: floating hair, fabric billowing, fish swimming
+8. Bubbles: trails, clusters, catching light
+
+Underwater-specific: light absorption (reds fade at depth), caustic light patterns, suspension particles
+
+End with: no text, no watermark
+
+NEVER use: magical underwater world, beautiful ocean"""
+
+[night]
+name = "Night"
+description = "Nighttime and low light (100-150 words)"
+system = """Describe nighttime and low-light photography. Target 100-150 words.
+
+Include:
+1. Primary light sources: streetlights, neon signs, moon, car headlights, windows
+2. Light quality: pools of light, harsh sodium orange, cool LED, warm incandescent
+3. Shadows: deep black areas, where darkness dominates
+4. Sky: starry, light pollution glow, moon phase, cloud cover
+5. Reflections: wet surfaces, puddles, windows, cars
+6. Subject illumination: how light falls on main subject
+7. Color temperature: warm artificial vs cool ambient
+8. Atmosphere: fog catching light, breath visible, rain in light beams
+9. Long exposure effects if applicable: light trails, star trails, motion blur
+
+Urban night vocabulary: neon glow, sodium vapor orange, LED cool white, bokeh circles
+Natural night: moonlight silver, starlight, campfire warm, blue hour remnants
+
+End with: no text, no watermark
+
+NEVER use: magical night, beautiful lights, stunning nightscape"""
+
+[aerial]
+name = "Aerial"
+description = "Drone and bird's eye views (80-120 words)"
+system = """Describe aerial/drone photography. Target 80-120 words.
+
+Include:
+1. Altitude perspective: directly overhead, angled down, oblique
+2. Subject: landscape feature, building, crowd, pattern
+3. Patterns visible from above: roads, fields, coastlines, urban grid
+4. Scale indicators: vehicles, people, buildings for reference
+5. Geometric shapes: circles, lines, grids revealed from above
+6. Color contrasts: land vs water, urban vs green, crop patterns
+7. Shadows: long shadows revealing time of day, 3D effect
+8. Lighting: direct sun, golden hour long shadows, overcast flat
+9. Texture: forest canopy, ocean waves, agricultural patterns
+
+Aerial vocabulary: bird's eye, top-down, oblique angle, revealing patterns invisible from ground level
+
+End with: no text, no watermark
+
+NEVER use: breathtaking view, stunning aerial, amazing perspective"""
+
+[weather]
+name = "Weather"
+description = "Weather and atmospheric conditions (80-120 words)"
+system = """Describe weather and atmospheric phenomena. Target 80-120 words.
+
+Include specific weather elements:
+1. Precipitation: rain drops, snow flakes, hail, sleet - size and density
+2. Clouds: type (cumulus, stratus, cirrus), color, coverage
+3. Storms: lightning bolts, dark clouds, wall clouds, rain curtains
+4. Fog/mist: density, how it obscures elements, light diffusion
+5. Wind indicators: bent trees, blowing debris, fabric movement
+6. Rainbow: position, intensity, double rainbow
+7. Sun phenomena: sunbeams, lens flare, sun dogs, sunset colors
+8. How weather affects the scene: wet surfaces, snow accumulation, puddles
+
+Weather lighting: overcast diffused, storm dramatic, golden hour, blue hour
+
+End with: no text, no watermark
+
+NEVER use: beautiful weather, dramatic storm, magical atmosphere"""
+
+[reflection]
+name = "Reflection"
+description = "Mirror and water reflections (80-120 words)"
+system = """Describe reflection photography. Target 80-120 words.
+
+Include:
+1. Reflecting surface: still water, puddle, mirror, glass, polished floor
+2. What is reflected: subject, sky, buildings, lights
+3. Reflection quality: perfect mirror, rippled distortion, partial
+4. Symmetry: how reflection relates to original
+5. Water surface: glass-smooth, gentle ripples, broken reflection
+6. Light interaction: how light plays on reflecting surface
+7. Composition: subject and reflection relationship, where frame divides
+8. Distortions: ripple effects, curved surfaces, fragmented reflections
+9. Colors: how colors appear in reflection vs original
+
+Reflection-specific: inverted image, symmetry axis, surface tension, specular highlights
+
+End with: no text, no watermark
+
+NEVER use: beautiful reflection, mirror image, perfect symmetry"""
+
+[silhouette]
+name = "Silhouette"
+description = "Backlit silhouette photography (60-100 words)"
+system = """Describe silhouette photography. Target 60-100 words.
+
+Include:
+1. Subject: identifiable shape/outline
+2. Pose/form: distinctive silhouette shape
+3. Background light source: sunset, window, artificial light
+4. Sky/background colors: gradient colors, light intensity
+5. Edge definition: crisp outline or soft glow
+6. Rim lighting: any edge illumination
+7. Recognizable features: profile, gesture, objects held
+8. Background elements: other silhouettes, clouds, horizon
+
+Silhouette essentials: subject completely dark, background bright, shape tells the story, recognizable outline
+
+End with: no text, no watermark
+
+NEVER use: dramatic silhouette, beautiful contrast"""
+
+[texture]
+name = "Texture"
+description = "Surface and material textures (60-100 words)"
+system = """Describe texture-focused photography. Target 60-100 words.
+
+Include:
+1. Material: wood grain, fabric weave, stone, metal, skin, bark
+2. Surface quality: rough, smooth, porous, ridged, cracked
+3. Pattern: regular, irregular, organic, geometric
+4. Scale: macro detail, full surface view
+5. Lighting: raking side light to reveal texture depth
+6. Color variations within texture
+7. Weathering/age: patina, wear patterns, erosion
+8. Tactile quality conveyed: would it feel rough, soft, cold, warm
+
+Texture vocabulary: grain, weave, pores, ridges, cracks, striations, knots, veins
+
+End with: no text, no watermark
+
+NEVER use: interesting texture, beautiful surface, amazing detail"""
+
+[couple]
+name = "Couple"
+description = "Two people together (100-150 words)"
+system = """Describe couple photography. Target 100-150 words.
+
+Include:
+1. Relationship conveyed: romantic, friendly, professional, familial
+2. Physical connection: how they touch, lean, face each other
+3. Individual descriptions: brief for each person
+4. Eye contact: with each other, with camera, looking away together
+5. Pose: standing, seated, walking, embracing
+6. Spacing: intimate close, comfortable casual, formal distance
+7. Clothing coordination: complementary colors, matching formality
+8. Expressions: matching mood, interaction moment
+9. Environment: setting that contextualizes relationship
+10. Lighting: how it falls on both subjects
+
+Couple dynamics: mirrored poses, protective stance, playful interaction, quiet intimacy, formal portrait
+
+End with: no text, no watermark
+
+NEVER use: beautiful couple, lovely pair, perfect together"""
+
+[baby]
+name = "Baby"
+description = "Infant and newborn photography (80-120 words)"
+system = """Describe baby and newborn photography. Target 80-120 words.
+
+Include:
+1. Age indicators: newborn (wrinkled, curled), infant (alert, grabbing)
+2. Pose: sleeping curled, on back, tummy time, held by parent
+3. Physical details: skin tone, hair (if any), fingers, toes
+4. Expression: sleeping peaceful, alert curious, crying, smiling
+5. Wraps/clothing: swaddle, onesie, naked with strategic coverage
+6. Props: basket, blanket texture, stuffed toy, parent's hands
+7. Setting: studio setup, lifestyle home, outdoor
+8. Lighting: very soft diffused, window light, no harsh shadows
+9. Parent interaction if present: hands holding, face nearby
+
+Newborn-specific: vernix, umbilical area, natural curled position, tiny scale
+
+End with: no text, no watermark
+
+NEVER use: adorable, precious, cute baby"""
+
+[pet]
+name = "Pet"
+description = "Domestic animal portraits (80-120 words)"
+system = """Describe pet photography. Target 80-120 words.
+
+Include:
+1. Animal type and breed if identifiable
+2. Pose: sitting, lying, playing, running, portrait
+3. Physical details:
+   - Dogs: coat color/pattern, ear position, tail, tongue out
+   - Cats: fur pattern, ear position, whiskers, eye color
+   - Others: species-specific features
+4. Expression: alert, relaxed, playful, curious, sleepy
+5. Eye contact: looking at camera, looking away, mid-blink
+6. Action if any: catching, running, jumping, yawning
+7. Setting: studio, home, outdoor, with owner
+8. Lighting: catch lights in eyes essential, soft flattering light
+9. Props: toys, beds, treats, owner's hands
+
+Pet photography: eye-level perspective, patience for expressions, action moments
+
+End with: no text, no watermark
+
+NEVER use: cute pet, adorable animal, good boy/girl"""
