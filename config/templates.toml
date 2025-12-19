@@ -32,15 +32,25 @@ THEN describe:
 5. GAZE DIRECTION (critical): Where is the subject looking? At what?
    - "looking down at a leaf in her hand" NOT "looking ahead"
    - "gaze directed at camera" NOT "facing forward"
-6. WATER/DEPTH PRECISION (match actual depth):
+6. MAKEUP (always note if visible):
+   - "bold red lipstick, winged eyeliner" NOT "faint traces of lipstick"
+   - "dramatic eye makeup with defined brows" - be specific
+   - If makeup is minimal/natural, say so explicitly
+7. HAND POSITION (be precise):
+   - "hands at hip level" or "arms relaxed at sides, hands visible"
+   - "hands wrapped in white fabric extending from sleeves"
+   - "fingers curled around object" - describe exactly what you see
+8. SLEEVE/CUFF DETAILS:
+   - "sleeves extend past wrists covering hands" vs "sleeves end at wrists"
+   - "fitted sleeves with gathered elastic cuffs" - note construction
+9. WATER/DEPTH PRECISION (match actual depth):
    - "chest-deep in water" or "shoulder-deep" - be accurate
-   - Describe composition: "water line at chest level creating horizontal split"
    - DON'T hallucinate motion: only "rippling" if actually visible
-7. CLOTHING (use specific terms):
-   - "dark bikini top" NOT "minimal attire" or "simple black top"
-   - "high-waisted denim shorts" NOT "casual bottoms"
-8. Lighting: use TECHNICAL terms (backlit silhouette, rim lighting, Rembrandt)
-9. Background: keep simple, don't over-describe
+10. CLOTHING (use specific terms):
+    - "dark bikini top" NOT "minimal attire" or "simple black top"
+    - "high-waisted denim shorts" NOT "casual bottoms"
+11. Lighting: use TECHNICAL terms (backlit silhouette, rim lighting, Rembrandt)
+12. Background: keep simple, don't over-describe
 
 Visual Vocabulary:
 - Skin: warm ivory, cool beige, golden tan, deep brown, olive, porcelain
@@ -50,10 +60,24 @@ Visual Vocabulary:
 
 End with: no text, no watermark
 
+WRITING STYLE (critical for readability):
+- Use SHORT, clear phrases - NOT run-on sentences
+- Break descriptions into scannable chunks
+- "Black veil, white wimple framing face, bold red lipstick" NOT "She wears a black veil that gracefully drapes..."
+- Maximum 2 clauses per sentence
+
 NEVER USE (poetic/abstract/interpretive language):
 beautiful, stunning, mysterious, elegant, nice, interesting, ethereal, melancholy,
 nature's grandeur, vitality, ambiance, serene atmosphere, quiet contemplation,
-tranquility, grandeur, profound peace, "feels like", "suggests", "emphasizes"
+tranquility, grandeur, profound peace, "feels like", "suggests", "emphasizes",
+strikingly, gracefully, exudes, porcelain-toned, sun-kissed hue, refined elegance,
+ethereal beauty, quiet authority, "vibrant, lifelike", "subtle glow emanating"
+
+NEVER SPECULATE ON:
+- Ethnicity (unless clearly visible cultural attire)
+- Fabric properties you can't see ("silk feels smooth", "subtle translucency")
+- Subject's intentions or emotions beyond visible expression
+- Elements not visible in frame
 
 NEVER ADD (quality tags - built into model):
 8K, ultra detailed, masterpiece, photorealistic, realistic skin texture, natural skin pores
