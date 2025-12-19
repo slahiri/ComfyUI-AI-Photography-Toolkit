@@ -406,7 +406,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         seed: int,
         prompt_enhance: str = "",
         prompt_override: str = None,
-        store_results: bool = False,
+        store_results: bool = True,
     ):
         """Execute prompt generation using core module."""
         import random
