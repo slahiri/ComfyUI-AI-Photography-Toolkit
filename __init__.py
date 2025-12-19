@@ -323,12 +323,13 @@ def print_welcome_message():
     print("  Available Nodes:")
     print("")
     print("  LLM Providers:")
-    print("    - SID_LLM_API   Cloud APIs (Anthropic, OpenAI, Gemini, Grok, Ollama, LM Studio)")
-    print("    - SID_LLM_Local Local models (Florence-2, Moondream, SmolVLM, Phi-3.5, QwenVL)")
+    print("    - SID_LLM_API       Cloud APIs (Anthropic, OpenAI, Gemini, Grok)")
+    print("    - SID_LLM_Local     Local models (Florence-2, Moondream, SmolVLM, Phi-3.5, QwenVL)")
+    print("    - SID_LLM_Local_API Local API providers (Ollama, LM Studio, OpenAI Compatible)")
     print("")
     print("  Prompt Tools:")
     print("    - SID_ZImagePromptGenerator  Z-Image prompts (CV detection + Vision LLM)")
-    print("                                 Fast YOLO/MediaPipe detection, Z-Image optimized")
+    print("    - SID_PromptTemplate         Select and edit prompt templates")
 
     # Debug/Testing tools
     if SID_PromptDebugAgent is not None:
