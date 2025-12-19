@@ -441,6 +441,7 @@ def setup_routes(routes):
                 if session_dir.is_dir() and session_dir.name.startswith("gen_"):
                     metadata_file = session_dir / "metadata.json"
                     prompt_file = session_dir / "prompt.txt"
+                    excluded_file = session_dir / "excluded.json"
                     if metadata_file.exists():
                         try:
                             with open(metadata_file, 'r', encoding='utf-8') as f:
@@ -451,6 +452,16 @@ def setup_routes(routes):
                             if prompt_file.exists():
                                 prompt_text = prompt_file.read_text(encoding='utf-8')
                                 prompt_preview = prompt_text[:100] + "..." if len(prompt_text) > 100 else prompt_text
+
+                            # Check if excluded from learning
+                            excluded = False
+                            if excluded_file.exists():
+                                try:
+                                    with open(excluded_file, 'r', encoding='utf-8') as f:
+                                        excluded_data = json.load(f)
+                                        excluded = excluded_data.get("excluded", False)
+                                except Exception:
+                                    pass
 
                             model_config = meta.get("model_config", {})
                             sessions.append({
@@ -464,10 +475,45 @@ def setup_routes(routes):
                                 "prompt_preview": prompt_preview,
                                 "has_image": (session_dir / "source.jpg").exists(),
                                 "timing": meta.get("timing", {}).get("total_seconds", 0),
+                                "excluded": excluded,
                             })
                         except Exception:
                             pass
         return web.json_response({"sessions": sessions})
+
+    @routes.post("/sid/generation-results/api/session/{session_id}/exclude")
+    async def toggle_generation_excluded(request):
+        """Toggle the excluded status of a generation session."""
+        session_id = request.match_info["session_id"]
+
+        # Security: validate session_id format
+        if not session_id or ".." in session_id or "/" in session_id or "\\" in session_id:
+            return web.json_response({"error": "Invalid session ID"}, status=400)
+
+        session_dir = GENERATION_RESULTS_DIR / session_id
+        if not session_dir.exists():
+            return web.json_response({"error": "Session not found"}, status=404)
+
+        excluded_file = session_dir / "excluded.json"
+
+        # Read current state
+        excluded = False
+        if excluded_file.exists():
+            try:
+                with open(excluded_file, 'r', encoding='utf-8') as f:
+                    excluded_data = json.load(f)
+                    excluded = excluded_data.get("excluded", False)
+            except Exception:
+                pass
+
+        # Toggle
+        new_excluded = not excluded
+
+        # Save new state
+        with open(excluded_file, 'w', encoding='utf-8') as f:
+            json.dump({"excluded": new_excluded}, f)
+
+        return web.json_response({"success": True, "excluded": new_excluded})
 
     @routes.get("/sid/generation-results/api/session/{session_id}")
     async def get_generation_session(request):
@@ -1641,7 +1687,17 @@ def get_generation_viewer_html():
         }
         .session-item:hover { background: #2a2d2e; }
         .session-item.active { background: #37373d; }
-        .session-time { font-weight: 600; color: #fff; margin-bottom: 4px; }
+        .session-item.excluded { opacity: 0.5; }
+        .session-item.excluded .session-preview { text-decoration: line-through; }
+        .session-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .session-content { cursor: pointer; }
+        .exclude-checkbox {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: #b89500;
+        }
+        .session-time { font-weight: 600; color: #fff; flex: 1; }
         .session-meta { color: #888; font-size: 11px; margin-bottom: 4px; }
         .session-preview { color: #aaa; font-size: 11px; font-style: italic; }
         .session-badge {
@@ -1850,15 +1906,24 @@ def get_generation_viewer_html():
                     }
                     const imgIcon = s.has_image ? '🖼️ ' : '';
                     const styleText = s.template || s.prompt_style || '';
+                    const excludedClass = s.excluded ? 'excluded' : '';
+                    const excludedChecked = s.excluded ? 'checked' : '';
                     return `
-                        <div class="session-item" data-id="${s.id}" onclick="loadSession('${s.id}')">
-                            <div class="session-time">${imgIcon}${dateStr}</div>
-                            <div class="session-meta">
-                                <span class="session-badge badge-style">${styleText}</span>
-                                <span class="session-badge badge-time">${s.timing.toFixed(1)}s</span>
-                                ${s.provider}/${s.model.split('/').pop()}
+                        <div class="session-item ${excludedClass}" data-id="${s.id}">
+                            <div class="session-header">
+                                <input type="checkbox" class="exclude-checkbox" ${excludedChecked}
+                                    onclick="toggleExclude(event, '${s.id}')"
+                                    title="Exclude from learning">
+                                <div class="session-time" onclick="loadSession('${s.id}')">${imgIcon}${dateStr}</div>
                             </div>
-                            <div class="session-preview">${escapeHtml(s.prompt_preview)}</div>
+                            <div class="session-content" onclick="loadSession('${s.id}')">
+                                <div class="session-meta">
+                                    <span class="session-badge badge-style">${styleText}</span>
+                                    <span class="session-badge badge-time">${s.timing.toFixed(1)}s</span>
+                                    ${s.provider}/${s.model.split('/').pop()}
+                                </div>
+                                <div class="session-preview">${escapeHtml(s.prompt_preview)}</div>
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -1893,6 +1958,31 @@ def get_generation_viewer_html():
                 document.getElementById('copyBtn').disabled = !currentPrompt;
             } catch (e) {
                 document.getElementById('contentArea').innerHTML = '<div class="empty-state">Error loading session</div>';
+            }
+        }
+
+        async function toggleExclude(event, sessionId) {
+            event.stopPropagation(); // Don't trigger loadSession
+            const checkbox = event.target;
+            const sessionItem = checkbox.closest('.session-item');
+
+            try {
+                const res = await fetch(`/sid/generation-results/api/session/${sessionId}/exclude`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    checkbox.checked = data.excluded;
+                    sessionItem.classList.toggle('excluded', data.excluded);
+                } else {
+                    // Revert checkbox on error
+                    checkbox.checked = !checkbox.checked;
+                }
+            } catch (e) {
+                // Revert checkbox on error
+                checkbox.checked = !checkbox.checked;
+                console.error('Failed to toggle exclude:', e);
             }
         }
 
