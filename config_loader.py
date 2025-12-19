@@ -41,9 +41,44 @@ _CONFIG_DIR = Path(__file__).parent / "config"
 _PROMPTS_DIR = _CONFIG_DIR / "prompts"
 
 
-def _load_toml(filename: str) -> Dict[str, Any]:
-    """Load a TOML file from the config directory with caching."""
-    if filename in _config_cache:
+def clear_config_cache(filename: str = None):
+    """
+    Clear the configuration cache to force reload from disk.
+
+    Args:
+        filename: Specific file to clear, or None to clear all.
+
+    Usage:
+        clear_config_cache()  # Clear all
+        clear_config_cache("templates.toml")  # Clear specific file
+        clear_config_cache("_modular_prompts")  # Clear modular prompts cache
+    """
+    global _config_cache
+    if filename:
+        if filename in _config_cache:
+            del _config_cache[filename]
+            print(f"[SID-Config] Cleared cache for: {filename}")
+    else:
+        _config_cache.clear()
+        print("[SID-Config] Cleared all config cache - files will reload on next access")
+
+
+def reload_all_configs():
+    """Clear cache and force reload of all config files."""
+    clear_config_cache()
+    # Trigger reload of commonly used configs
+    check_config_files()
+    print("[SID-Config] All configs reloaded from disk")
+
+
+def _load_toml(filename: str, force_reload: bool = False) -> Dict[str, Any]:
+    """Load a TOML file from the config directory with caching.
+
+    Args:
+        filename: Name of the TOML file to load
+        force_reload: If True, bypass cache and reload from disk
+    """
+    if not force_reload and filename in _config_cache:
         return _config_cache[filename]
 
     if tomllib is None:
@@ -76,13 +111,16 @@ def _deep_merge(base: Dict, override: Dict) -> Dict:
     return result
 
 
-def _load_modular_prompts() -> Dict[str, Any]:
+def _load_modular_prompts(force_reload: bool = False) -> Dict[str, Any]:
     """
     Load prompts from modular structure in config/prompts/ directory.
     Falls back to single prompts.toml if modular structure doesn't exist.
+
+    Args:
+        force_reload: If True, bypass cache and reload from disk
     """
     cache_key = "_modular_prompts"
-    if cache_key in _config_cache:
+    if not force_reload and cache_key in _config_cache:
         return _config_cache[cache_key]
 
     if tomllib is None:

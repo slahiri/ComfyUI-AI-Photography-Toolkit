@@ -218,6 +218,29 @@ def setup_routes(routes):
             return web.json_response({"error": str(e)}, status=500)
 
     # =========================================================================
+    # Config Reload API
+    # =========================================================================
+
+    @routes.post("/sid/api/reload-configs")
+    async def reload_configs(request):
+        """
+        Reload all TOML configuration files from disk.
+        This clears the config cache so changes take effect without restart.
+
+        Usage: POST /sid/api/reload-configs
+        Response: {"success": true, "message": "..."}
+        """
+        try:
+            from ..config_loader import clear_config_cache, reload_all_configs
+            reload_all_configs()
+            return web.json_response({
+                "success": True,
+                "message": "All TOML configs reloaded from disk. Changes will take effect on next prompt generation."
+            })
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=500)
+
+    # =========================================================================
     # Debug Results Viewer Routes
     # =========================================================================
 
@@ -648,6 +671,11 @@ def get_editor_html():
             color: #d4d4d4;
         }
         .btn-secondary:hover { background: #4c4c4c; }
+        .btn-warning {
+            background: #b89500;
+            color: white;
+        }
+        .btn-warning:hover { background: #d4aa00; }
         .editor-wrapper {
             flex: 1;
             overflow: hidden;
@@ -703,6 +731,7 @@ def get_editor_html():
         <div class="editor-container">
             <div class="toolbar">
                 <div class="toolbar-title" id="toolbarTitle">Select a file to edit</div>
+                <button class="btn btn-warning" id="reloadBtn" onclick="reloadConfigs()" title="Reload all TOML configs from disk (no restart needed)">🔄 Reload Configs</button>
                 <button class="btn btn-secondary" id="resetBtn" disabled onclick="resetFile()">Reset to Default</button>
                 <button class="btn btn-primary" id="saveBtn" disabled onclick="saveFile()">Save (Ctrl+S)</button>
             </div>
@@ -867,6 +896,22 @@ def get_editor_html():
                 setTimeout(() => setStatus('Ready', ''), 2000);
             } catch (e) {
                 setStatus('Error saving: ' + e.message, 'error');
+            }
+        }
+
+        async function reloadConfigs() {
+            setStatus('Reloading configs...', '');
+            try {
+                const res = await fetch('/sid/api/reload-configs', { method: 'POST' });
+                const data = await res.json();
+                if (data.error) {
+                    setStatus('Error: ' + data.error, 'error');
+                    return;
+                }
+                setStatus(data.message, 'success');
+                setTimeout(() => setStatus('Ready', ''), 3000);
+            } catch (e) {
+                setStatus('Error reloading: ' + e.message, 'error');
             }
         }
 
