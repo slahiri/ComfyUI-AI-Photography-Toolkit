@@ -1781,13 +1781,27 @@ class LocalModelClient:
         import torch
         from transformers import AutoModelForVision2Seq, AutoProcessor, AutoTokenizer
 
-        quant_config, dtype = self._get_quantization_config(device)
+        # Check if this is an FP8 pre-quantized model
+        is_fp8_model = "FP8" in self.model_name or "fp8" in model_path.lower()
+
+        # FP8 models don't need additional quantization
+        if is_fp8_model:
+            quant_config, dtype = None, None
+            print(f"[LocalModel] FP8 pre-quantized model detected, skipping quantization")
+        else:
+            quant_config, dtype = self._get_quantization_config(device)
 
         load_kwargs = {
             "trust_remote_code": True,
-            "low_cpu_mem_usage": True,
             "use_safetensors": True,
         }
+
+        # FP8 models need different loading strategy to avoid meta tensor issues
+        if is_fp8_model:
+            # Don't use low_cpu_mem_usage with FP8 - causes meta tensor errors
+            load_kwargs["low_cpu_mem_usage"] = False
+        else:
+            load_kwargs["low_cpu_mem_usage"] = True
 
         # Select optimal attention implementation
         actual_attention_mode = self.attention_mode
@@ -1813,7 +1827,8 @@ class LocalModelClient:
             load_kwargs["device_map"] = {"": 0}
             if quant_config:
                 load_kwargs["quantization_config"] = quant_config
-            else:
+            elif not is_fp8_model:
+                # Only set dtype for non-FP8 models
                 load_kwargs["dtype"] = dtype or torch.float16
 
         self.model = AutoModelForVision2Seq.from_pretrained(model_path, **load_kwargs)
