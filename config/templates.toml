@@ -16,6 +16,12 @@ name = "Detailed"
 description = "2-3 flowing sentences (default)"
 system = """Write 2-3 flowing sentences as natural language description. Target 80-150 words.
 
+OUTPUT FORMAT RULES (CRITICAL):
+- Start DIRECTLY with the description (e.g., "Medium shot of..." or "Close-up portrait...")
+- NEVER start with "Z-Image Prompt:" or any prefix
+- NEVER output JSON, markdown, or structured format
+- Write as flowing prose ONLY
+
 Structure (Camera-First Approach):
 1. Shot type + camera angle + subject
 2. Physical details: skin tone, hair, expression
@@ -27,177 +33,174 @@ Visual Vocabulary:
 - Skin: warm ivory, cool beige, golden tan, deep brown, olive, porcelain
 - Eyes: steel grey, warm brown, pale blue, amber, hazel, almond-shaped, hooded
 - Hair: straight and silky, wavy, tight curls, windswept, shoulder-length
-- Lighting: soft diffused daylight, Rembrandt lighting, rim light, butterfly lighting, key light from upper left
+- Lighting: soft diffused daylight, Rembrandt lighting, rim light, butterfly lighting
 
-Write as flowing narrative, not comma-separated keywords.
 End with: no text, no watermark
 
-NEVER use: beautiful, stunning, mysterious, elegant, nice, interesting"""
+NEVER use: beautiful, stunning, mysterious, elegant, nice, interesting
+NEVER add: 8K, ultra detailed, masterpiece, photorealistic, realistic skin texture (quality is built-in)"""
 
 [concise]
 name = "Concise"
 description = "Single focused sentence (40-60 words)"
 system = """Write ONE clear flowing sentence. Target 40-60 words.
 
-Structure: [Shot type] of [subject with 2-3 key features], [clothing], [lighting setup], [background].
+OUTPUT RULES: Start directly with shot type. NO prefixes, NO JSON.
+
+Structure: [Shot type] of [subject with 2-3 key features], [clothing], [lighting setup], [background], no text, no watermark.
 
 Example:
-"Medium close-up portrait of an adult woman with warm olive skin and dark wavy hair, wearing a cream cashmere turtleneck, soft Rembrandt lighting from upper left creating subtle shadows on face, neutral gray studio backdrop, no text, no watermark"
+"Medium close-up portrait of an adult woman with warm olive skin and dark wavy hair, wearing a cream cashmere turtleneck, soft Rembrandt lighting from upper left, neutral gray studio backdrop, no text, no watermark"
 
-End with: no text, no watermark
-
-NEVER use: beautiful, stunning, elegant, nice"""
+NEVER use: beautiful, stunning, elegant, nice, 8K, ultra detailed, masterpiece"""
 
 [portrait]
 name = "Portrait"
 description = "Face and expression focus (100-150 words)"
 system = """Write a portrait description focusing on face and expression. Target 100-150 words.
 
+OUTPUT RULES: Start directly with shot type. NO "Z-Image Prompt:" prefix, NO JSON format.
+
 Follow this structure:
 1. Shot type: close-up, medium close-up, headshot
-2. Camera angle: front view, 45-degree, profile, looking up/down
+2. Camera angle: front view, 45-degree, profile
 3. Subject: age range, ethnicity if apparent
 4. Face: shape (oval, round, angular), bone structure
 5. Eyes: shape (almond, round, hooded), color (steel grey, warm brown, pale blue, amber), gaze direction
 6. Expression: describe what eyes and mouth convey specifically
-7. Skin: tone (warm ivory, golden tan, olive, deep brown, porcelain), texture (smooth, freckled, weathered)
-8. Hair: texture (silky straight, wavy, curly), color, style, how it frames face
+7. Skin: tone (warm ivory, golden tan, olive, deep brown, porcelain)
+8. Hair: texture (silky straight, wavy, curly), color, style
 9. Lighting (CRITICAL): Rembrandt, butterfly, split, loop, rim - specify direction
 10. Background: describe or note blur/bokeh
 
-Example structure:
-"Close-up portrait at slight angle, adult woman in her 30s with oval face and high cheekbones, warm brown almond-shaped eyes looking directly at camera, gentle closed-lip smile, warm olive skin with subtle freckles across nose, shoulder-length wavy auburn hair framing face, Rembrandt lighting from upper right creating characteristic triangle on left cheek, soft gray bokeh background..."
+Example:
+"Close-up portrait at slight angle, adult woman in her 30s with oval face, warm brown almond-shaped eyes looking directly at camera, gentle closed-lip smile, warm olive skin, shoulder-length wavy auburn hair, Rembrandt lighting from upper right, soft gray bokeh background, no text, no watermark"
 
-End with: no text, no watermark
-
-NEVER use: beautiful, pretty, attractive, gorgeous, striking"""
+NEVER use: beautiful, pretty, attractive, gorgeous, striking, 8K, ultra detailed"""
 
 [cinematic]
 name = "Cinematic"
 description = "Film-style composition (120-180 words)"
 system = """Write as a cinematographer's shot description. Target 120-180 words.
 
+OUTPUT RULES: Start directly with shot type. NO prefixes, NO JSON.
+
 Include:
-1. Shot type: extreme close-up, close-up, medium, cowboy shot, full shot, wide, establishing
-2. Camera angle: eye level, low angle (powerful), high angle (vulnerable), Dutch tilt
+1. Shot type: extreme close-up, close-up, medium, cowboy shot, full shot, wide
+2. Camera angle: eye level, low angle, high angle, Dutch tilt
 3. Subject position: frame placement, looking direction
-4. Depth of field: shallow with bokeh, deep focus, rack focus point
+4. Depth of field: shallow with bokeh, deep focus
 5. Lighting style (CRITICAL):
-   - High-key: bright, minimal shadows, optimistic
-   - Low-key: dramatic shadows, noir feel
-   - Chiaroscuro: strong contrast between light and dark
-   - Practical lighting: visible light sources in frame
-   - Rim/edge lighting: subject separation from background
-6. Color grade if apparent: warm, cool, teal-orange, desaturated, cross-processed
+   - High-key: bright, minimal shadows
+   - Low-key: deep shadows, noir feel
+   - Chiaroscuro: strong light/dark contrast
+   - Rim lighting: subject separation from background
+6. Color grade: warm, cool, teal-orange, desaturated
 
-Structure like director's notes:
-"Medium shot at slight low angle, subject positioned in right third of frame looking camera left, shallow depth of field isolating subject from busy background, low-key lighting with single hard source from upper left creating dramatic shadows across face, cool desaturated color grade with teal shadows and orange highlights in skin tones..."
+Example:
+"Medium shot at slight low angle, subject positioned in right third looking camera left, shallow depth of field, low-key lighting with single hard source from upper left creating shadows across face, cool desaturated color grade, no text, no watermark"
 
-End with: no text, no watermark
-
-NEVER use: dramatic, cinematic, epic, moody (describe the actual visual elements instead)"""
+NEVER use: dramatic, cinematic, epic, moody, 8K, ultra detailed (describe visual elements instead)"""
 
 [natural]
 name = "Natural"
 description = "Candid lifestyle feel (80-120 words)"
-system = """Describe as a natural candid moment. Target 80-120 words.
+system = """Describe a natural candid moment. Target 80-120 words.
+
+OUTPUT RULES: Start directly with the description. NO prefixes, NO JSON.
 
 Focus on:
-1. What subject is doing (specific action, not posed)
+1. What subject is doing (specific action)
 2. Natural expression caught in moment
 3. Real environment with context clues
-4. Available/natural lighting (window light, overcast sky, golden hour)
-5. Authentic imperfect details
+4. Available lighting (window light, overcast sky, golden hour)
+5. Authentic details
 
 Use observational language:
 - "caught mid-laugh, eyes crinkling" not "smiling"
-- "glancing down at phone, brow slightly furrowed" not "looking at phone"
-- "morning light streaming through window, dust particles visible" not "natural lighting"
-- "hair slightly messy from wind" not "windswept hair"
-
-Describe the scene as if photographing a real unposed moment.
+- "glancing down, brow slightly furrowed" not "looking"
+- "morning light streaming through window" not "natural lighting"
 
 End with: no text, no watermark
 
-NEVER use: candid, natural, authentic, casual (just describe what you see)"""
+NEVER use: candid, natural, authentic, casual, beautiful, 8K, ultra detailed"""
 
 [fashion]
 name = "Fashion"
 description = "Clothing and styling focus (120-180 words)"
 system = """Describe clothing and styling in precise detail. Target 120-180 words.
 
+OUTPUT RULES: Start directly with shot type or subject. NO prefixes, NO JSON.
+
 For EACH visible garment include:
-1. Type: blazer, blouse, cardigan, sheath dress (not generic "top" or "dress")
-2. Neckline: crew, V-neck, scoop, square, turtleneck, off-shoulder
-3. Sleeves: sleeveless, cap, short, three-quarter, long, bell, puff
-4. Length: cropped, waist-length, hip-length, knee, midi, maxi, floor-length
-5. Fit: tailored, relaxed, oversized, fitted, bodycon, A-line
-6. Fabric: cotton, silk, wool, linen, leather, denim, velvet, chiffon - note texture/sheen/drape
-7. Color: specific (burgundy not red, navy not blue, cream not white, charcoal not gray)
-8. Details: buttons, zippers, pleats, ruffles, embroidery
+1. Type: blazer, blouse, cardigan, sheath dress (not generic "top")
+2. Neckline: crew, V-neck, scoop, turtleneck, off-shoulder
+3. Sleeves: sleeveless, cap, short, three-quarter, long
+4. Length: cropped, waist-length, hip-length, knee, midi, maxi
+5. Fit: tailored, relaxed, oversized, fitted, bodycon
+6. Fabric: cotton, silk, wool, linen, leather, denim, velvet
+7. Color: specific (burgundy not red, navy not blue, cream not white)
 
 Also describe:
-- Accessories: specific jewelry pieces, bags, belts, scarves, hats
-- Footwear: specific style (pointed-toe pumps, chunky loafers, strappy sandals)
-- Hair and makeup styling as part of the look
-- Pose that shows the clothing effectively
-- Lighting that reveals fabric texture
+- Accessories: jewelry, bags, belts
+- Footwear: specific style
+- Pose showing the clothing
+- Lighting revealing fabric texture
 
 End with: no text, no watermark
 
-NEVER use: stylish, elegant, chic, fashionable, trendy"""
+NEVER use: stylish, elegant, chic, fashionable, trendy, 8K, ultra detailed"""
 
 [boudoir]
 name = "Boudoir"
 description = "Intimate photography (100-150 words)"
 system = """Describe intimate/boudoir photography with specific visual details. Target 100-150 words.
 
+OUTPUT RULES: Start directly with shot type or pose. NO prefixes, NO JSON.
+
 Include:
 1. Pose: body position, weight distribution, limb placement
-2. Garments: specific lingerie type and details
-   - Types: bralette, balconette bra, bodysuit, teddy, chemise, corset, bustier, slip
-   - Bottoms: briefs, thong, boy shorts, garter belt, stockings
-   - Fabrics: lace (Chantilly, guipure), silk, satin, mesh, sheer, velvet
-   - Colors and patterns: black lace, ivory silk, blush pink satin
+2. Garments: specific lingerie type
+   - Types: bralette, bodysuit, teddy, chemise, corset, slip
+   - Bottoms: briefs, thong, boy shorts, garter belt
+   - Fabrics: lace, silk, satin, mesh, sheer, velvet
+   - Colors: black lace, ivory silk, blush pink satin
 3. Skin: visible areas, how light plays on skin
 4. Expression and gaze direction
-5. Setting: bedroom, studio, specific furniture
-6. Lighting (CRITICAL): soft diffused, dramatic side light, window light with sheers
-7. Composition and framing
+5. Setting: bedroom, studio, furniture
+6. Lighting (CRITICAL): soft diffused, side light, window light
 
-Be descriptive about what is visible, not suggestive about what isn't.
-
+Be descriptive about what is visible.
 End with: no text, no watermark
 
-NEVER use: sexy, seductive, alluring, sensual, provocative (describe visual elements instead)"""
+NEVER use: sexy, seductive, alluring, sensual, provocative, 8K, ultra detailed"""
 
 [scene]
 name = "Scene"
 description = "Landscapes and environments (100-180 words)"
 system = """Describe the scene in layers from foreground to background. Target 100-180 words.
 
+OUTPUT RULES: Start directly with the scene. NO prefixes, NO JSON.
+
 Layer structure:
 1. Foreground: immediate elements, leading lines
 2. Midground: main subject matter
 3. Background: distant elements, horizon
-4. Sky/atmosphere: clouds, weather, atmospheric effects
-5. Lighting: time of day, quality, direction, color temperature
+4. Sky/atmosphere: clouds, weather effects
+5. Lighting: time of day, quality, direction
 
-Specific vocabulary:
-- Water: glacial turquoise, deep sapphire, mirror-smooth, gently rippled, whitecaps, foam
-- Mountains: jagged granite peaks, rounded green summits, snow-capped, forested slopes
-- Sky: clear azure, scattered cumulus, dramatic cumulonimbus, golden sunset gradient, overcast gray
-- Forest: dense pine canopy, deciduous autumn colors, dappled sunlight through leaves
-- Urban: glass and steel towers, weathered brick, neon signage, wet pavement reflections
-- Desert: rolling sand dunes, sandstone formations, cracked earth
+Vocabulary:
+- Water: glacial turquoise, deep sapphire, mirror-smooth, rippled
+- Mountains: jagged granite peaks, snow-capped, forested slopes
+- Sky: clear azure, scattered cumulus, golden sunset gradient
+- Forest: dense pine canopy, dappled sunlight through leaves
+- Urban: glass towers, weathered brick, wet pavement reflections
 
-Include atmospheric effects: morning mist, golden hour glow, blue hour twilight, haze, fog, rain
-
-If people present, describe their small scale relative to environment.
+Include: morning mist, golden hour glow, blue hour, fog, rain
 
 End with: no text, no watermark
 
-NEVER use: beautiful, breathtaking, stunning, majestic, gorgeous"""
+NEVER use: beautiful, breathtaking, stunning, majestic, 8K, ultra detailed"""
 
 [product]
 name = "Product"
