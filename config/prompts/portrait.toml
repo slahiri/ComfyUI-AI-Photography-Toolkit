@@ -76,46 +76,13 @@ AVOID: "beautiful", "mysterious", conflicting lighting terms.
 Write flowing sentences, not tags. Output only the description."""
 
 [system.basic]
-# For local models like LLaVA, Moondream, Ollama, Qwen - direct single-shot prompts
-base = """You are an image description assistant creating prompts for AI image generation.
+# For local models like LLaVA, Moondream, Ollama, Qwen - simple direct prompts
+# Small 2B-8B models work better with minimal instructions
+base = """Describe this image for AI image generation. Write natural flowing sentences.
 
-OUTPUT FORMAT - CRITICAL:
-- Write 4-6 SEPARATE SENTENCES with periods
-- Each sentence describes ONE aspect only
-- NEVER write comma-separated keyword lists
-- Follow this order: Subject → Hair/Makeup → Clothing → Pose → Lighting/Background
-
-ACCURACY RULES:
-- Describe ONLY what is VISIBLE - zero hallucination
-- Do NOT invent people, objects, or details not present
-- Be PRECISE about hair texture: straight vs wavy vs curly (these are different!)
-- Include makeup details if visible (eye makeup, lip color)
-
-SENTENCE STRUCTURE:
-1. Subject: "A [shot type] of a [age] [gender] with [skin tone] skin and [expression]."
-2. Hair/Makeup: "[Texture] [color] hair [style]. [Makeup description if visible]."
-3. Clothing: "Wearing [garment details with color and coverage]."
-4. Pose: "[Position] in [view] view, [arm/body details]."
-5. Setting: "[Lighting type], [background]. No text, no watermark."
-
-HAIR TEXTURE - BE ACCURATE:
-- Straight: silky straight, pin-straight
-- Wavy: wavy, loose waves, soft waves
-- Curly: curly, tight curls, ringlets
-- Include bangs if present: "with bangs", "with side-swept fringe"
-
-MAKEUP (describe if visible):
-- Eyes: natural, smoky eyes, winged liner, bold shadow
-- Lips: nude, pink, red lipstick, berry
-
-LIGHTING (pick ONE, don't mix warm and cool):
-- Soft studio lighting, dramatic side lighting
-- Natural window light, golden hour warmth
-- High-key bright, low-key moody
-
-End every description with: "no text, no watermark"
-
-Start directly with "A..." - write complete sentences."""
+Focus on: subject appearance, clothing, pose, lighting, background.
+Be accurate - describe only what you see.
+End with: no text, no watermark"""
 
 
 # =============================================================================
@@ -409,13 +376,7 @@ Write the most detailed description possible. End with "correct human anatomy, n
 # =============================================================================
 
 [user.basic.quick]
-prompt = """Generate a detailed paragraph for Z-Image realistic image generation.
-
-Combine subject, clothing, environment, and lighting into 2-3 flowing sentences. Focus on photorealistic visual details - describe what you see accurately.
-
-Include: subject appearance, skin tone, hair, clothing, lighting, and background.
-Output must generate a realistic, photorealistic result.
-End with "no text, no watermark"."""
+prompt = """Generate a detailed paragraph combining subject, clothing, environment, lighting, and mood into 2-3 cohesive sentences. Focus on accurate visual details. End with "no text, no watermark"."""
 
 [user.basic.standard]
 prompt = """Write 4-5 SEPARATE SENTENCES for Z-Image realistic, photorealistic image generation.
