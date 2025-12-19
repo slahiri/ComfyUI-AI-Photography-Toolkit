@@ -225,14 +225,14 @@ except ImportError as e:
     SID_PromptDebugAgent = None
     print(f"[SID-Toolkit] Debug Agent not available: {e}")
 
-# Import Prompt Editor routes
+# Import PromptServer for API routes
 try:
     from server import PromptServer
-    from .prompt_editor import setup_routes as setup_prompt_editor_routes
-    _prompt_editor_available = True
+    from aiohttp import web
+    _server_available = True
 except ImportError as e:
-    _prompt_editor_available = False
-    print(f"[SID-Toolkit] Prompt Editor not available: {e}")
+    _server_available = False
+    print(f"[SID-Toolkit] Server not available: {e}")
 
 
 class SIDPhotographyToolkitExtension(ComfyExtension):
@@ -339,11 +339,9 @@ def print_welcome_message():
         print("                            Compares source/output, scores against best practices")
 
     # Web Tools
-    if _prompt_editor_available:
+    if _server_available:
         print("")
         print("  Web Tools:")
-        print("    - Prompt Editor:      http://localhost:8188/sid/prompt-editor")
-        print("                          Edit TOML prompt templates in browser")
         print("    - Generation Results: http://localhost:8188/sid/generation-results")
         print("                          Browse saved prompts and metadata")
         print("    - Debug Viewer:       http://localhost:8188/sid/debug-results")
@@ -357,18 +355,49 @@ def print_welcome_message():
     print("")
 
 
+def setup_api_routes(routes):
+    """Setup API routes for SID Toolkit."""
+    from .prompt_generator_core import get_template_by_name, get_template_names
+
+    @routes.get("/sid/api/templates")
+    async def get_templates(request):
+        """Get list of all template names."""
+        try:
+            names = get_template_names() or []
+            return web.json_response({"templates": names})
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=500)
+
+    @routes.get("/sid/api/template/{name}")
+    async def get_template(request):
+        """Get template content by name."""
+        try:
+            name = request.match_info.get("name", "")
+            template = get_template_by_name(name)
+            if template:
+                return web.json_response({
+                    "name": template.get("name", name),
+                    "system": template.get("system", ""),
+                    "description": template.get("description", "")
+                })
+            else:
+                return web.json_response({"error": f"Template not found: {name}"}, status=404)
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=500)
+
+
 async def comfy_entrypoint() -> SIDPhotographyToolkitExtension:
     """
     ComfyUI calls this function to load the extension and its nodes.
     This is the entry point for the custom node package.
     """
-    # Register Prompt Editor web routes
-    if _prompt_editor_available:
+    # Register API routes
+    if _server_available:
         try:
-            setup_prompt_editor_routes(PromptServer.instance.routes)
-            print("[SID-Toolkit] Prompt Editor available at: http://localhost:8188/sid/prompt-editor")
+            setup_api_routes(PromptServer.instance.routes)
+            print("[SID-Toolkit] API routes registered")
         except Exception as e:
-            print(f"[SID-Toolkit] Failed to register Prompt Editor routes: {e}")
+            print(f"[SID-Toolkit] Failed to register API routes: {e}")
 
     print_welcome_message()
     return SIDPhotographyToolkitExtension()

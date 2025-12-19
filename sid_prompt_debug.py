@@ -26,10 +26,7 @@ from PIL import Image
 from comfy_api.latest import io as comfy_io
 
 from .llm_providers.llm_model_type import LLMModelConfig
-
-
-# Custom type for LLM model input
-LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
+from .llm_providers.sid_llm_api import LLM_MODEL_Type
 
 
 class SID_PromptDebugAgent(comfy_io.ComfyNode):

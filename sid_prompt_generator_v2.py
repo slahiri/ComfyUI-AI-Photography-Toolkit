@@ -102,10 +102,157 @@ def save_generation_result(
         caption_path = session_dir / "caption.txt"
         caption_path.write_text(caption, encoding="utf-8")
 
-    # Save metadata
+    # Save metadata as JSON
     metadata_path = session_dir / "metadata.json"
     with open(metadata_path, "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2, ensure_ascii=False)
+
+    # Save human-readable summary
+    summary_path = session_dir / "summary.txt"
+    summary_lines = [
+        "=" * 70,
+        "SID PROMPT GENERATION SUMMARY",
+        "=" * 70,
+        "",
+        f"Timestamp: {metadata.get('timestamp', 'N/A')}",
+        f"Version: {metadata.get('version', 'N/A')}",
+        "",
+        "-" * 70,
+        "MODEL CONFIGURATION",
+        "-" * 70,
+    ]
+
+    model_config = metadata.get("model_config", {})
+    summary_lines.extend([
+        f"Provider: {model_config.get('provider', 'N/A')}",
+        f"Model: {model_config.get('model', 'N/A')}",
+        f"Text Model: {model_config.get('text_model', 'N/A')}",
+        f"Temperature: {model_config.get('temperature', 'N/A')}",
+        f"Max Tokens: {model_config.get('max_tokens', 'N/A')}",
+        f"Analysis Mode: {model_config.get('analysis_mode', 'N/A')}",
+        f"Supports Vision: {model_config.get('supports_vision', 'N/A')}",
+        f"Supports Reasoning: {model_config.get('supports_reasoning', 'N/A')}",
+    ])
+
+    if model_config.get("api_url"):
+        summary_lines.append(f"API URL: {model_config.get('api_url')}")
+
+    if model_config.get("extra_params"):
+        summary_lines.append(f"Extra Params: {model_config.get('extra_params')}")
+
+    summary_lines.extend([
+        "",
+        "-" * 70,
+        "GENERATION SETTINGS",
+        "-" * 70,
+    ])
+
+    gen_settings = metadata.get("generation_settings", {})
+    summary_lines.extend([
+        f"Seed: {gen_settings.get('seed', 'N/A')}",
+        f"Prompt Style: {gen_settings.get('prompt_style', 'N/A')}",
+        f"Template: {gen_settings.get('template', 'N/A')}",
+        f"Target Length: {gen_settings.get('prompt_length', 'N/A')} words",
+        f"Generate Negative: {gen_settings.get('generate_negative', 'N/A')}",
+        f"Generate Caption: {gen_settings.get('generate_caption', 'N/A')}",
+        f"NSFW Mode: {gen_settings.get('nsfw_mode', 'N/A')}",
+    ])
+
+    if gen_settings.get("prompt_enhance"):
+        summary_lines.append(f"Prompt Enhance: {gen_settings.get('prompt_enhance')}")
+
+    # CV Analysis
+    cv_analysis = metadata.get("cv_analysis", {})
+    if cv_analysis:
+        summary_lines.extend([
+            "",
+            "-" * 70,
+            "CV ANALYSIS",
+            "-" * 70,
+            f"Has Human: {cv_analysis.get('has_human', 'N/A')}",
+            f"Human Count: {cv_analysis.get('human_count', 'N/A')}",
+            f"Shot Type: {cv_analysis.get('shot_type', 'N/A')}",
+        ])
+        if cv_analysis.get("composition"):
+            comp = cv_analysis.get("composition", {})
+            summary_lines.append(f"Composition: {comp.get('type', 'N/A')}")
+
+    # Image metadata
+    img_meta = metadata.get("image_metadata", {})
+    if img_meta:
+        summary_lines.extend([
+            "",
+            "-" * 70,
+            "IMAGE METADATA",
+            "-" * 70,
+        ])
+        if img_meta.get("original_size"):
+            summary_lines.append(f"Original Size: {img_meta.get('original_size')}")
+        if img_meta.get("compressed_size"):
+            summary_lines.append(f"Compressed Size: {img_meta.get('compressed_size')}")
+        if img_meta.get("file_size_kb"):
+            summary_lines.append(f"File Size: {img_meta.get('file_size_kb'):.1f} KB")
+
+    # Output stats
+    output_stats = metadata.get("output_stats", {})
+    if output_stats:
+        summary_lines.extend([
+            "",
+            "-" * 70,
+            "OUTPUT STATISTICS",
+            "-" * 70,
+            f"Prompt Length: {output_stats.get('prompt_length', 0)} chars",
+            f"Prompt Word Count: {output_stats.get('prompt_word_count', 0)} words",
+            f"Negative Length: {output_stats.get('negative_length', 0)} chars",
+            f"Caption Length: {output_stats.get('caption_length', 0)} chars",
+        ])
+
+    # Timing
+    timing = metadata.get("timing", {})
+    if timing:
+        summary_lines.extend([
+            "",
+            "-" * 70,
+            "TIMING",
+            "-" * 70,
+            f"Total Time: {timing.get('total_seconds', 0):.2f}s",
+        ])
+        for key, value in timing.items():
+            if key != "total_seconds" and isinstance(value, (int, float)):
+                summary_lines.append(f"  {key}: {value:.2f}s")
+
+    # Generated prompt
+    summary_lines.extend([
+        "",
+        "=" * 70,
+        "GENERATED PROMPT",
+        "=" * 70,
+        "",
+        prompt,
+    ])
+
+    if negative:
+        summary_lines.extend([
+            "",
+            "=" * 70,
+            "NEGATIVE PROMPT",
+            "=" * 70,
+            "",
+            negative,
+        ])
+
+    if caption:
+        summary_lines.extend([
+            "",
+            "=" * 70,
+            "CAPTION",
+            "=" * 70,
+            "",
+            caption,
+        ])
+
+    summary_lines.append("")
+    summary_path.write_text("\n".join(summary_lines), encoding="utf-8")
 
     print(f"[SID Prompt Generator] Results saved to: {session_dir}")
     return session_id
@@ -133,6 +280,13 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
 
     @classmethod
     def define_schema(cls) -> io.Schema:
+        # Get template names with robust error handling
+        try:
+            template_names = get_template_names() or ["Detailed"]
+        except Exception as e:
+            print(f"[SID_ZImagePromptGenerator] Error loading templates: {e}")
+            template_names = ["Detailed"]
+
         return io.Schema(
             node_id="SID_ZImagePromptGeneratorV2",
             display_name="SID Z-Image Prompt Generator",
@@ -156,8 +310,8 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                 ),
                 io.Combo.Input(
                     "template",
-                    options=get_template_names() or ["Detailed"],
-                    default="Detailed",
+                    options=template_names,
+                    default=template_names[0] if template_names else "Detailed",
                     tooltip="Select prompt template (only used when prompt_style is Template). Add templates to config/templates.toml and restart ComfyUI"
                 ),
                 io.Int.Input(
@@ -323,24 +477,64 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
             generation_time = time.time() - start_time
             metadata = {
                 "timestamp": datetime.now().isoformat(),
-                "seed": seed,
-                "prompt_style": prompt_style,
-                "template": template if prompt_style.lower() == "template" else None,
-                "prompt_length": prompt_length,
-                "generate_negative": generate_negative,
-                "generate_caption": generate_caption,
-                "nsfw_mode": nsfw_mode,
-                "prompt_enhance": enhance_text,
+                "version": "4.3.0",
+
+                # Generation settings
+                "generation_settings": {
+                    "seed": seed,
+                    "prompt_style": prompt_style,
+                    "template": template if prompt_style.lower() == "template" else None,
+                    "prompt_length": prompt_length,
+                    "generate_negative": generate_negative,
+                    "generate_caption": generate_caption,
+                    "nsfw_mode": nsfw_mode,
+                    "prompt_enhance": enhance_text if enhance_text else None,
+                },
+
+                # Full model configuration
                 "model_config": {
                     "provider": llm_model.provider,
                     "model": llm_model.model,
-                    "analysis_mode": analysis_mode,
+                    "text_model": llm_model.text_model or None,
+                    "api_url": llm_model.api_url or None,
                     "temperature": temperature,
+                    "max_tokens": llm_model.max_tokens,
+                    "analysis_mode": analysis_mode,
+                    "supports_vision": llm_model.supports_vision,
+                    "supports_reasoning": supports_reasoning,
+                    "extra_params": llm_model.extra_params if llm_model.extra_params else None,
                 },
+
+                # CV analysis results
+                "cv_analysis": result.cv_analysis if result.cv_analysis else None,
+
+                # Image metadata from processing
+                "image_metadata": result.metadata if result.metadata else None,
+
+                # Timing breakdown
                 "timing": {
-                    "total_seconds": round(generation_time, 2)
-                }
+                    "total_seconds": round(generation_time, 2),
+                    **result.timing  # Include detailed timing from generator
+                },
+
+                # Output statistics
+                "output_stats": {
+                    "prompt_length": len(result.prompt),
+                    "prompt_word_count": len(result.prompt.split()) if result.prompt else 0,
+                    "negative_length": len(result.negative) if result.negative else 0,
+                    "caption_length": len(result.caption) if result.caption else 0,
+                },
+
+                # Debug logs (if any)
+                "debug_logs": result.logs if result.logs else None,
             }
+
+            # Remove None values for cleaner output
+            metadata = {k: v for k, v in metadata.items() if v is not None}
+            for key in ["generation_settings", "model_config", "output_stats"]:
+                if key in metadata and isinstance(metadata[key], dict):
+                    metadata[key] = {k: v for k, v in metadata[key].items() if v is not None}
+
             save_generation_result(pil_image, result.prompt, result.negative, result.caption, metadata)
 
         return io.NodeOutput(result.prompt, result.negative, result.caption)
@@ -360,8 +554,12 @@ class SID_PromptTemplate(io.ComfyNode):
 
     @classmethod
     def define_schema(cls) -> io.Schema:
-        # Get template names and create a mapping
-        template_names = get_template_names() or ["Default"]
+        # Get template names with robust error handling
+        try:
+            template_names = get_template_names() or ["Default"]
+        except Exception as e:
+            print(f"[SID_PromptTemplate] Error loading templates: {e}")
+            template_names = ["Default"]
 
         return io.Schema(
             node_id="SID_PromptTemplate",
@@ -376,9 +574,10 @@ class SID_PromptTemplate(io.ComfyNode):
                     tooltip="Select a prompt template to load"
                 ),
                 io.String.Input(
-                    "prompt",
+                    "prompt_text",
                     default="",
                     multiline=True,
+                    display_name="prompt",
                     tooltip="Edit the prompt template here. Changes are used as output."
                 ),
             ],
@@ -388,27 +587,12 @@ class SID_PromptTemplate(io.ComfyNode):
         )
 
     @classmethod
-    def execute(cls, template: str, prompt: str):
+    def execute(cls, template: str, prompt_text: str):
         """Return the prompt text."""
-        # If prompt is empty, load from template
-        if not prompt or not prompt.strip():
+        # If prompt_text is empty, load from template
+        if not prompt_text or not prompt_text.strip():
             template_data = get_template_by_name(template)
             if template_data:
-                prompt = template_data.get("system", "")
+                prompt_text = template_data.get("system", "")
 
-        return io.NodeOutput(prompt)
-
-
-# =============================================================================
-# Node Registration
-# =============================================================================
-
-NODE_CLASS_MAPPINGS = {
-    "SID_ZImagePromptGeneratorV2": SID_ZImagePromptGeneratorV2,
-    "SID_PromptTemplate": SID_PromptTemplate,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "SID_ZImagePromptGeneratorV2": "SID Z-Image Prompt Generator",
-    "SID_PromptTemplate": "SID Prompt Template",
-}
+        return io.NodeOutput(prompt_text)
