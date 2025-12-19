@@ -53,36 +53,6 @@ def pil_to_tensor(pil_image: Image.Image):
     return torch.from_numpy(np_image).unsqueeze(0)
 
 
-def format_emphasis(text: str, strength: float = 1.3) -> str:
-    """
-    Format enhancement text with emphasis syntax and repetition.
-
-    Input: "nude, red hair, blue eyes"
-    Output: "(nude:1.3), nude, (red hair:1.3), red hair, (blue eyes:1.3), blue eyes"
-
-    This provides double emphasis:
-    1. Weight syntax (keyword:strength) for SD/SDXL/ComfyUI
-    2. Repetition for natural language models (Z-Image, Flux)
-    """
-    if not text or not text.strip():
-        return ""
-
-    # Split by comma and clean up
-    keywords = [k.strip() for k in text.split(",") if k.strip()]
-
-    if not keywords:
-        return ""
-
-    # Format each keyword with emphasis + repetition
-    formatted_parts = []
-    for keyword in keywords:
-        # Add weighted version and plain repetition
-        formatted_parts.append(f"({keyword}:{strength})")
-        formatted_parts.append(keyword)
-
-    return ", ".join(formatted_parts)
-
-
 def save_generation_result(
     pil_image: Image.Image,
     prompt: str,
@@ -223,23 +193,6 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                     tooltip="Seed for reproducibility (0 = random)"
                 ),
                 io.String.Input(
-                    "prompt_enhance",
-                    default="",
-                    multiline=True,
-                    optional=True,
-                    tooltip="Optional: Keywords to emphasize (comma-separated). Integrated by LLM + added with emphasis syntax at end"
-                ),
-                io.Float.Input(
-                    "emphasis_strength",
-                    default=1.3,
-                    min=1.0,
-                    max=2.0,
-                    step=0.1,
-                    round=0.1,
-                    display_mode=io.NumberDisplay.slider,
-                    tooltip="Emphasis weight for prompt_enhance keywords (1.0=normal, 1.3=default, 2.0=max)"
-                ),
-                io.String.Input(
                     "prompt_override",
                     optional=True,
                     tooltip="Optional input: Skip generation and use this prompt directly (connect from another node)"
@@ -270,8 +223,6 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         generate_caption: bool,
         nsfw_mode: bool,
         seed: int,
-        prompt_enhance: str = "",
-        emphasis_strength: float = 1.3,
         prompt_override: str = None,
         store_results: bool = False,
     ):
@@ -283,13 +234,7 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         # Handle prompt_override - skip generation entirely if provided
         if prompt_override is not None and prompt_override.strip():
             print("[SID Prompt Generator] Using prompt override - skipping generation")
-            final_prompt = prompt_override.strip()
-            # Still apply emphasis layer to override if provided
-            if prompt_enhance and prompt_enhance.strip():
-                emphasis_text = format_emphasis(prompt_enhance.strip(), emphasis_strength)
-                final_prompt = final_prompt + ", " + emphasis_text
-                print(f"[SID Prompt Generator] Applied emphasis to override: {emphasis_text[:60]}...")
-            return io.NodeOutput(final_prompt, "", "")
+            return io.NodeOutput(prompt_override.strip(), "", "")
 
         # Set seed for reproducibility
         if seed == 0:
@@ -356,25 +301,13 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
         )
 
         # Process image using core module
-        # For Standard/Detailed modes, prompt_enhance is integrated in synthesis
-        # For Quick mode, it will be appended after generation
-        enhance_text = prompt_enhance.strip() if prompt_enhance else ""
-        result = generator.process_image(pil_image, user_guidance=enhance_text)
+        result = generator.process_image(pil_image)
 
         # Print metadata and debug log to console
         reasoning_str = "ON" if supports_reasoning else "OFF"
         nsfw_str = "ON" if nsfw_mode else "OFF"
         print(f"\n[Seed: {seed}, Temperature: {temperature}, Mode: {analysis_mode}, Style: {prompt_style}, Reasoning: {reasoning_str}, NSFW: {nsfw_str}]")
         print(result.get_metadata_str())
-
-        # Apply emphasis layer for ALL modes
-        # This adds (keyword:weight) syntax + repetition for extra emphasis
-        # LLM already integrated enhancement naturally, this is an additional emphasis layer
-        final_prompt = result.prompt
-        if enhance_text:
-            emphasis_text = format_emphasis(enhance_text, emphasis_strength)
-            final_prompt = final_prompt + ", " + emphasis_text
-            print(f"[SID Prompt Generator] Applied emphasis layer: {emphasis_text[:60]}...")
 
         # Store results if enabled
         if store_results:
@@ -388,8 +321,6 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                 "generate_negative": generate_negative,
                 "generate_caption": generate_caption,
                 "nsfw_mode": nsfw_mode,
-                "prompt_enhance": enhance_text,
-                "emphasis_strength": emphasis_strength,
                 "model_config": {
                     "provider": llm_model.provider,
                     "model": llm_model.model,
@@ -400,9 +331,9 @@ class SID_ZImagePromptGeneratorV2(io.ComfyNode):
                     "total_seconds": round(generation_time, 2)
                 }
             }
-            save_generation_result(pil_image, final_prompt, result.negative, result.caption, metadata)
+            save_generation_result(pil_image, result.prompt, result.negative, result.caption, metadata)
 
-        return io.NodeOutput(final_prompt, result.negative, result.caption)
+        return io.NodeOutput(result.prompt, result.negative, result.caption)
 
 
 # =============================================================================
