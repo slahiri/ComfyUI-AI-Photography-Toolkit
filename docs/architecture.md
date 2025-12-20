@@ -8,12 +8,11 @@ Clean, modular captioning toolkit with Qwen-focused model lineup.
 
 ---
 
-## Nodes (3 Total)
+## Nodes (2 Total)
 
 | Node | Purpose | Required |
 |------|---------|----------|
-| **SID_Caption** | Core captioning | Yes |
-| **SID_CaptionAdvanced** | Model selection within tier | No |
+| **SID_Caption** | Core captioning with model selection | Yes |
 | **SID_CaptionOptions** | Customization options | No |
 
 **Note:** WD14 tagging is embedded in the pipeline (Balanced/Detailed tiers), not a separate node.
@@ -22,7 +21,7 @@ Clean, modular captioning toolkit with Qwen-focused model lineup.
 
 ## Node Specifications
 
-### SID_Caption (Simple)
+### SID_Caption
 
 ```
 ┌─────────────────────────────────────────┐
@@ -36,50 +35,6 @@ Clean, modular captioning toolkit with Qwen-focused model lineup.
 │            ├─ Fast (single pass)        │
 │            ├─ Balanced (double pass)    │
 │            └─ Detailed (double pass+)   │
-│                                         │
-│ Style      [▼ Natural             ]     │
-│            ├─ Natural                   │
-│            ├─ Tags                      │
-│            └─ Hybrid                    │
-│                                         │
-│ Length     [▼ Medium              ]     │
-│            ├─ Short (~50 words)         │
-│            ├─ Medium (~120 words)       │
-│            └─ Long (~250 words)         │
-│                                         │
-├─────────────────────────────────────────┤
-│ caption ●───────────────────────────    │
-└─────────────────────────────────────────┘
-```
-
-**Inputs:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| image | IMAGE | Yes | Input image |
-| tags | STRING | No | External tags (auto-generated in Balanced/Detailed) |
-| options | SID_OPTIONS | No | From SID_CaptionOptions |
-| quality | dropdown | Yes | Fast/Balanced/Detailed |
-| style | dropdown | Yes | Natural/Tags/Hybrid |
-| length | dropdown | Yes | Short/Medium/Long |
-
-**Outputs:**
-| Name | Type | Description |
-|------|------|-------------|
-| caption | STRING | Generated caption |
-
----
-
-### SID_CaptionAdvanced (Power Users)
-
-```
-┌─────────────────────────────────────────┐
-│  SID_CaptionAdvanced                    │
-├─────────────────────────────────────────┤
-│ image ●─────────────────────────────    │
-│ tags ●ₒₚₜ ──────────────────────────    │
-│ options ●ₒₚₜ ───────────────────────    │
-│                                         │
-│ Quality    [▼ Balanced            ]     │
 │                                         │
 │ Model      [▼ Qwen-7B-Captioner   ]     │
 │            ├─ ── Fast ──                │
@@ -100,7 +55,14 @@ Clean, modular captioning toolkit with Qwen-focused model lineup.
 │              └─ F16 (full precision)    │
 │                                         │
 │ Style      [▼ Natural             ]     │
+│            ├─ Natural                   │
+│            ├─ Tags                      │
+│            └─ Hybrid                    │
+│                                         │
 │ Length     [▼ Medium              ]     │
+│            ├─ Short (~50 words)         │
+│            ├─ Medium (~120 words)       │
+│            └─ Long (~250 words)         │
 │                                         │
 ├─────────────────────────────────────────┤
 │ caption ●───────────────────────────    │
@@ -108,15 +70,22 @@ Clean, modular captioning toolkit with Qwen-focused model lineup.
 └─────────────────────────────────────────┘
 ```
 
-**Additional Inputs:**
-| Name | Type | Description |
-|------|------|-------------|
-| model | dropdown | Specific model within tier |
-| quantization | dropdown | Q4/Q8/F16 |
+**Inputs:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| image | IMAGE | Yes | Input image |
+| tags | STRING | No | External tags (auto-generated in Balanced/Detailed) |
+| options | SID_OPTIONS | No | From SID_CaptionOptions |
+| quality | dropdown | Yes | Fast/Balanced/Detailed |
+| model | dropdown | Yes | Specific model within tier |
+| quantization | dropdown | Yes | Q4/Q8/F16 |
+| style | dropdown | Yes | Natural/Tags/Hybrid |
+| length | dropdown | Yes | Short/Medium/Long |
 
-**Additional Outputs:**
+**Outputs:**
 | Name | Type | Description |
 |------|------|-------------|
+| caption | STRING | Generated caption |
 | tags_used | STRING | Tags used in context |
 
 ---
@@ -258,7 +227,7 @@ ComfyUI-AI-Photography-Toolkit/
 │
 ├── nodes/
 │   ├── __init__.py
-│   ├── caption.py              # SID_Caption, SID_CaptionAdvanced
+│   ├── caption.py              # SID_Caption
 │   └── options.py              # SID_CaptionOptions
 │
 ├── core/
@@ -403,7 +372,7 @@ Image ──► SID_Caption
 ```
 SID_CaptionOptions ─────────────┐
                                 │
-Image ──► SID_CaptionAdvanced ◄─┘
+Image ──► SID_Caption ◄─────────┘
            (Quality: Detailed)
            (Model: Qwen-7B-Captioner-F16)
            (Quant: F16)
