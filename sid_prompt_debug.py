@@ -84,6 +84,24 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
                     display_name="Enable Debug",
                     tooltip="Enable/disable debug evaluation (when off, passes through without evaluation)"
                 ),
+                comfy_io.Boolean.Input(
+                    "analyze_template",
+                    default=True,
+                    display_name="Template Effectiveness",
+                    tooltip="Analyze template effectiveness and provide improvement suggestions. Disable for faster analysis."
+                ),
+                comfy_io.Boolean.Input(
+                    "generate_improved",
+                    default=True,
+                    display_name="Improved Prompt",
+                    tooltip="Generate an improved version of the prompt. Disable for faster analysis."
+                ),
+                comfy_io.Boolean.Input(
+                    "print_to_console",
+                    default=False,
+                    display_name="Print to Console",
+                    tooltip="Print detailed analysis results to the console/terminal."
+                ),
             ],
             outputs=[
                 comfy_io.String.Output(
@@ -106,6 +124,16 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
                     display_name="suggested_prompt",
                     tooltip="Improved prompt based on evaluation"
                 ),
+                comfy_io.Float.Output(
+                    "template_score",
+                    display_name="template_score",
+                    tooltip="Template effectiveness score (0-10)"
+                ),
+                comfy_io.String.Output(
+                    "template_suggestions",
+                    display_name="template_suggestions",
+                    tooltip="Suggestions for improving the TOML template"
+                ),
             ],
         )
 
@@ -118,12 +146,21 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
         llm_model: LLMModelConfig,
         source_metadata: Dict[str, Any] = None,
         enable_debug: bool = True,
-    ) -> Tuple[str, float, str, str]:
+        analyze_template: bool = True,
+        generate_improved: bool = True,
+        print_to_console: bool = False,
+    ) -> Tuple[str, float, str, str, float, str]:
         """
-        Execute the debug evaluation.
+        Execute the intelligent debug evaluation.
+
+        Args:
+            analyze_template: If True, analyze template effectiveness (Phase 2)
+            generate_improved: If True, generate improved prompt (Phase 3)
+            print_to_console: If True, print detailed analysis to console
+            If both analyze_template and generate_improved are False, only deep image analysis is performed (Phase 1)
 
         Returns:
-            Tuple of (full_report, quality_score, quick_summary, suggested_prompt)
+            Tuple of (full_report, quality_score, quick_summary, suggested_prompt, template_score, template_suggestions)
         """
         # Skip if debug is disabled
         if not enable_debug:
@@ -132,19 +169,75 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
                 json.dumps({"status": "skipped", "reason": "debug_disabled"}),
                 0.0,
                 "Debug evaluation skipped (disabled)",
-                prompt
+                prompt,
+                0.0,
+                "Debug disabled - no template analysis performed"
             )
 
-        print("[SID-Debug] Starting prompt evaluation...")
+        # =================================================================
+        # VALIDATION: Require API-based reasoning models for intelligent debug
+        # =================================================================
+        provider = llm_model.provider.lower()
+        model_name = getattr(llm_model, 'model', 'Unknown')
+
+        # Check 1: Must be API-based (not local transformers without API endpoint)
+        if provider == "local" and not llm_model.api_url:
+            raise ValueError(
+                f"INTELLIGENT DEBUG requires an API-based LLM model.\n\n"
+                f"Local transformers models cannot perform multi-image comparison needed for thorough debug.\n\n"
+                f"Recommended API providers:\n"
+                f"  - Anthropic: Claude with extended thinking\n"
+                f"  - OpenAI: o1, o3 series (reasoning models)\n"
+                f"  - Google: Gemini 2.0 Flash Thinking\n"
+                f"  - Ollama/LM Studio: Via API endpoint\n\n"
+                f"Connect an API-based LLM node to the debug agent."
+            )
+
+        # Check 2: Must support reasoning for thorough analysis
+        supports_reasoning = getattr(llm_model, 'supports_reasoning', False)
+        if not supports_reasoning:
+            raise ValueError(
+                f"INTELLIGENT DEBUG requires a reasoning-capable model.\n\n"
+                f"Model '{model_name}' does not support extended thinking/reasoning.\n"
+                f"Reasoning enables thorough, multi-step analysis of prompts and templates.\n\n"
+                f"Recommended reasoning models:\n"
+                f"  - Anthropic: Claude with extended thinking enabled\n"
+                f"  - OpenAI: o1, o1-pro, o3, o3-mini\n"
+                f"  - Google: Gemini 2.0 Flash Thinking\n"
+                f"  - Local: Qwen3-VL-*-Thinking variants (via Ollama)\n\n"
+                f"Select a reasoning-capable model in your LLM node."
+            )
+
+        # Determine analysis mode
+        if not analyze_template and not generate_improved:
+            mode_str = "Deep Analysis Only (Phase 1)"
+            phases = 1
+        elif analyze_template and not generate_improved:
+            mode_str = "Analysis + Template Evaluation (Phases 1-2)"
+            phases = 2
+        elif not analyze_template and generate_improved:
+            mode_str = "Analysis + Improved Prompt (Phases 1,3)"
+            phases = 2
+        else:
+            mode_str = "Full Evaluation (Phases 1-3)"
+            phases = 3
+
+        print(f"[SID-Debug] Using reasoning model: {provider}/{model_name}")
+        print(f"[SID-Debug] Mode: {mode_str}")
+        print("[SID-Debug] Starting intelligent prompt evaluation...")
         start_time = time.time()
 
-        # Run two-call evaluation (1: analysis, 2: improved prompt)
+        # Run evaluation with specified phases
         try:
-            evaluation = cls._evaluate_two_calls(
+            evaluation = cls._evaluate_with_phases(
                 source_image=source_image,
                 output_image=output_image,
                 prompt=prompt,
                 llm_model=llm_model,
+                source_metadata=source_metadata,
+                analyze_template=analyze_template,
+                generate_improved=generate_improved,
+                print_to_console=print_to_console,
             )
         except Exception as e:
             error_msg = f"Evaluation failed: {e}"
@@ -155,12 +248,20 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
                 json.dumps({"error": error_msg}),
                 0.0,
                 f"Error: {error_msg}",
-                prompt
+                prompt,
+                0.0,
+                f"Error during evaluation: {error_msg}"
             )
 
-        # Add timing
+        # Add timing and mode info
         evaluation["timing"] = {
             "total_seconds": round(time.time() - start_time, 2)
+        }
+        evaluation["mode"] = {
+            "analyze_template": analyze_template,
+            "generate_improved": generate_improved,
+            "phases_run": phases,
+            "description": mode_str,
         }
 
         # Save results
@@ -173,22 +274,53 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
         full_report = json.dumps(evaluation, indent=2, ensure_ascii=False)
         quality_score = cls._extract_score(evaluation)
         quick_summary = cls._generate_summary(evaluation, quality_score)
-        suggested_prompt = cls._extract_improved_prompt(evaluation, prompt)
+        suggested_prompt = cls._extract_improved_prompt(evaluation, prompt) if generate_improved else prompt
 
-        print(f"[SID-Debug] Evaluation complete in {evaluation['timing']['total_seconds']:.1f}s. Score: {quality_score:.1f}/10")
+        # Extract template-specific results
+        template_score = cls._extract_template_score(evaluation) if analyze_template else 0.0
+        template_suggestions = cls._format_template_suggestions(evaluation) if analyze_template else "Template analysis disabled"
 
-        return comfy_io.NodeOutput(full_report, quality_score, quick_summary, suggested_prompt)
+        print(f"[SID-Debug] Evaluation complete in {evaluation['timing']['total_seconds']:.1f}s.")
+        if analyze_template:
+            print(f"[SID-Debug] Prompt Score: {quality_score:.1f}/10, Template Score: {template_score:.1f}/10")
+        else:
+            print(f"[SID-Debug] Quality Score: {quality_score:.1f}/10")
+
+        return comfy_io.NodeOutput(
+            full_report,
+            quality_score,
+            quick_summary,
+            suggested_prompt,
+            template_score,
+            template_suggestions
+        )
 
     @classmethod
-    def _evaluate_two_calls(
+    def _evaluate_with_phases(
         cls,
         source_image,
         output_image,
         prompt: str,
         llm_model: LLMModelConfig,
+        source_metadata: Dict[str, Any] = None,
+        analyze_template: bool = True,
+        generate_improved: bool = True,
+        print_to_console: bool = False,
     ) -> Dict[str, Any]:
-        """Run evaluation with two API calls: 1) Analysis, 2) Improved prompt."""
+        """
+        Run intelligent evaluation with configurable phases.
 
+        Phase 1: Deep Image Analysis (always runs)
+        Phase 2: Template & Prompt Evaluation (if analyze_template=True)
+        Phase 3: Generate Improvements (if generate_improved=True)
+
+        Args:
+            analyze_template: Run template effectiveness analysis
+            generate_improved: Generate improved prompt
+            print_to_console: Print detailed results to console
+
+        Returns comprehensive evaluation based on enabled phases.
+        """
         # Convert images to base64
         source_b64 = cls._image_to_base64(source_image)
         output_b64 = cls._image_to_base64(output_image)
@@ -199,112 +331,460 @@ class SID_PromptDebugAgent(comfy_io.ComfyNode):
         model = llm_model.model
         api_url = llm_model.api_url
 
-        print(f"[SID-Debug] Using {provider}/{model} for evaluation...")
+        # Extract template info from source metadata
+        template_info = None
+        if source_metadata:
+            gen_settings = source_metadata.get("generation_settings", {})
+            template_info = gen_settings.get("template_info", {})
 
-        # === CALL 1: Analysis ===
-        print("[SID-Debug] Step 1/2: Analyzing prompt quality...")
+        if template_info:
+            print(f"[SID-Debug] Template: {template_info.get('name', 'Unknown')} ({template_info.get('path', 'N/A')})")
 
-        analysis_system = """You are an expert prompt evaluator for Z-Image/Flux image generation.
+        # Determine total phases for progress display
+        total_phases = 1 + (1 if analyze_template else 0) + (1 if generate_improved else 0)
+        current_phase = 0
 
-Analyze the given prompt by comparing the SOURCE image (what was analyzed) with the OUTPUT image (what was generated).
+        # === PHASE 1: Deep Image Analysis (always runs) ===
+        current_phase += 1
+        print(f"[SID-Debug] Phase {current_phase}/{total_phases}: Deep image analysis with reasoning...")
 
-Score these aspects (0-10):
-1. **Source Alignment**: How well does the prompt describe what's in the source image?
-2. **Output Quality**: How well did the output match the prompt intent?
-3. **Structure**: Is the prompt well-structured (subject, setting, lighting, style)?
-4. **Specificity**: Does it use concrete visual terms instead of vague words?
+        phase1_system = """You are an expert visual analyst with deep reasoning capability.
 
-Z-Image Best Practices:
-- Start with subject and framing (e.g., "close-up portrait of...")
-- Include pose, expression, lighting, and camera angle
-- Use specific visual vocabulary (not abstract words like "beautiful")
-- End with "no text, no watermark"
+Use your extended thinking to thoroughly analyze both images before responding.
 
-Respond ONLY with this JSON structure:
+Your task: Analyze the SOURCE image (first) and OUTPUT image (second) in detail.
+
+REASONING PROCESS (think through this carefully):
+1. Identify EVERY visible element in the SOURCE image
+2. Note the exact framing, crop, and composition
+3. Catalog all visual details: subject, clothing, pose, expression, lighting, background
+4. Compare element-by-element with the OUTPUT image
+5. Note: preservation quality, distortions, additions, omissions
+
+After thorough analysis, respond with this JSON:
 {
-  "scores": {
-    "source_alignment": {"score": 8, "reason": "brief reason"},
-    "output_quality": {"score": 7, "reason": "brief reason"},
-    "structure": {"score": 8, "reason": "brief reason"},
-    "specificity": {"score": 7, "reason": "brief reason"},
-    "overall": {"score": 7.5, "reason": "brief summary"}
+  "source_analysis": {
+    "framing": "describe exact frame boundaries and crop",
+    "subject": "detailed subject description",
+    "clothing": ["item 1 with details", "item 2"],
+    "pose_expression": "body angle, gaze direction, expression",
+    "lighting": "lighting type, direction, quality",
+    "background": "background description",
+    "notable_details": ["specific detail 1", "specific detail 2"]
   },
-  "issues": ["issue 1", "issue 2"],
-  "recommendations": ["recommendation 1", "recommendation 2"],
-  "missing_elements": ["element visible in source but not in prompt"],
-  "hallucinated_elements": ["element in prompt but not in source"]
+  "output_analysis": {
+    "framing": "how output framing compares",
+    "subject_preservation": "how well subject was preserved",
+    "differences": ["difference 1", "difference 2"],
+    "distortions": ["any anatomical or visual distortions"],
+    "quality_assessment": "overall quality notes"
+  },
+  "comparison": {
+    "preserved_elements": ["elements that transferred well"],
+    "lost_elements": ["elements missing in output"],
+    "added_elements": ["elements not in source but in output"],
+    "transformation_quality": "0-10 score with reason"
+  }
 }"""
 
-        analysis_user = f"""Analyze this prompt:
+        phase1_user = """Analyze both images thoroughly.
+First image: SOURCE (the original that was analyzed to create a prompt)
+Second image: OUTPUT (the result generated from that prompt)
 
-PROMPT TO EVALUATE:
+Take your time to identify every detail before responding."""
+
+        # Make Phase 1 call with reasoning
+        phase1_result = cls._call_llm_with_reasoning(
+            provider, api_key, api_url, model,
+            phase1_system, phase1_user,
+            source_b64, output_b64,
+            reasoning_budget=8000
+        )
+        image_analysis = cls._parse_json_response(phase1_result)
+
+        # Console output for Phase 1
+        if print_to_console:
+            print("\n" + "="*80)
+            print("PHASE 1: DEEP IMAGE ANALYSIS")
+            print("="*80)
+            source_analysis = image_analysis.get("source_analysis", {})
+            print(f"\n[SOURCE IMAGE]")
+            print(f"  Framing: {source_analysis.get('framing', 'N/A')}")
+            print(f"  Subject: {source_analysis.get('subject', 'N/A')}")
+            print(f"  Clothing: {', '.join(source_analysis.get('clothing', []))}")
+            print(f"  Pose/Expression: {source_analysis.get('pose_expression', 'N/A')}")
+            print(f"  Lighting: {source_analysis.get('lighting', 'N/A')}")
+            print(f"  Background: {source_analysis.get('background', 'N/A')}")
+            if source_analysis.get('notable_details'):
+                print(f"  Notable Details: {', '.join(source_analysis.get('notable_details', []))}")
+
+            comparison = image_analysis.get("comparison", {})
+            print(f"\n[COMPARISON]")
+            print(f"  Transformation Quality: {comparison.get('transformation_quality', 'N/A')}")
+            if comparison.get('preserved_elements'):
+                print(f"  Preserved: {', '.join(comparison.get('preserved_elements', []))}")
+            if comparison.get('lost_elements'):
+                print(f"  Lost: {', '.join(comparison.get('lost_elements', []))}")
+            if comparison.get('added_elements'):
+                print(f"  Added: {', '.join(comparison.get('added_elements', []))}")
+
+        # Initialize evaluation results
+        evaluation = {}
+        improvements = {}
+        api_calls = 1
+
+        # === PHASE 2: Template & Prompt Evaluation (if enabled) ===
+        if analyze_template:
+            current_phase += 1
+            print(f"[SID-Debug] Phase {current_phase}/{total_phases}: Evaluating prompt and template effectiveness...")
+
+            # Build template context
+            template_context = ""
+            if template_info and template_info.get("system_prompt"):
+                template_context = f"""
+TEMPLATE USED FOR GENERATION:
+- Name: {template_info.get('name', 'Unknown')}
+- Path: {template_info.get('path', 'N/A')}
+- Category: {template_info.get('category', 'unknown')}
+- Model Size Variant: {template_info.get('model_size_used', 'large')}
+
+TEMPLATE SYSTEM PROMPT:
+{template_info.get('system_prompt', 'Not available')[:2000]}
+
+TEMPLATE USER PROMPT:
+{template_info.get('user_prompt', 'Not available')[:500]}
+"""
+            else:
+                template_context = "\nTEMPLATE: Not available (custom override or detailed mode used)"
+
+            phase2_system = """You are an expert prompt and template evaluator with deep reasoning capability.
+
+Use extended thinking to thoroughly evaluate both the generated prompt AND the template that produced it.
+
+REASONING PROCESS:
+1. Read the PROMPT that was generated
+2. Compare it against your IMAGE ANALYSIS findings
+3. Evaluate against Z-Image best practices
+4. If TEMPLATE is provided, evaluate how well the template guided the generation
+5. Identify specific gaps in both prompt AND template
+
+Z-Image Best Practices for reference:
+- Start with camera angle + shot type + subject
+- Include pose (body angle separate from gaze)
+- Include expression for humans
+- Use specific visual vocabulary (skin tones, hair descriptors, lighting terms)
+- Describe clothing with specificity and length markers
+- End with "no text, no watermark"
+- AVOID: abstract words (beautiful, elegant), meta tags (8K, masterpiece)
+
+Respond with this JSON:
+{
+  "scores": {
+    "source_alignment": {"score": 0, "reason": "how well prompt describes source"},
+    "output_quality": {"score": 0, "reason": "how well output matched intent"},
+    "structure": {"score": 0, "reason": "prompt organization quality"},
+    "specificity": {"score": 0, "reason": "concrete vs vague vocabulary"},
+    "overall": {"score": 0, "reason": "overall prompt quality"},
+    "template_effectiveness": {"score": 0, "reason": "how well template guided generation"}
+  },
+  "prompt_analysis": {
+    "strengths": ["what the prompt does well"],
+    "issues": ["specific issues in the prompt"],
+    "missing_elements": ["visible in source, not in prompt"],
+    "hallucinated_elements": ["in prompt, not in source"],
+    "vocabulary_issues": ["vague or problematic word choices"]
+  },
+  "template_analysis": {
+    "template_strengths": ["what template does well"],
+    "effectiveness_issues": ["gaps in template guidance"],
+    "missing_instructions": ["guidance template should include"],
+    "unclear_instructions": ["confusing or vague template parts"],
+    "model_size_appropriateness": "is the template well-suited for this model size?"
+  }
+}"""
+
+            phase2_user = f"""Evaluate this prompt against the source image analysis and template.
+
+GENERATED PROMPT TO EVALUATE:
 {prompt}
 
-The first image is the SOURCE (original input), the second is the OUTPUT (generated result).
-Identify what's good, what's missing, and what needs improvement."""
+IMAGE ANALYSIS FINDINGS:
+{json.dumps(image_analysis, indent=2)}
+{template_context}
 
-        # Make analysis call
-        analysis_result = cls._call_llm(provider, api_key, api_url, model, analysis_system, analysis_user, source_b64, output_b64)
-        analysis = cls._parse_json_response(analysis_result)
+Score the prompt quality AND template effectiveness (0-10 scale).
+Identify specific issues in both."""
 
-        # === CALL 2: Generate Improved Prompt ===
-        print("[SID-Debug] Step 2/2: Generating improved prompt...")
+            phase2_result = cls._call_llm_with_reasoning(
+                provider, api_key, api_url, model,
+                phase2_system, phase2_user,
+                source_b64, output_b64,
+                reasoning_budget=10000
+            )
+            evaluation = cls._parse_json_response(phase2_result)
+            api_calls += 1
 
-        # Build context from analysis
-        issues_text = "\n".join(f"- {issue}" for issue in analysis.get("issues", []))
-        recommendations_text = "\n".join(f"- {rec}" for rec in analysis.get("recommendations", []))
-        missing_text = "\n".join(f"- {elem}" for elem in analysis.get("missing_elements", []))
+            # Console output for Phase 2
+            if print_to_console:
+                print("\n" + "="*80)
+                print("PHASE 2: PROMPT & TEMPLATE EVALUATION")
+                print("="*80)
+                scores = evaluation.get("scores", {})
+                print(f"\n[SCORES]")
+                for key, val in scores.items():
+                    score = val.get("score", 0) if isinstance(val, dict) else val
+                    reason = val.get("reason", "") if isinstance(val, dict) else ""
+                    print(f"  {key}: {score}/10 - {reason}")
 
-        improve_system = """You are an expert Z-Image prompt writer. Your task is to write an improved version of a prompt based on analysis feedback.
+                prompt_analysis = evaluation.get("prompt_analysis", {})
+                print(f"\n[PROMPT ANALYSIS]")
+                if prompt_analysis.get("strengths"):
+                    print(f"  Strengths: {', '.join(prompt_analysis.get('strengths', []))}")
+                if prompt_analysis.get("issues"):
+                    print(f"  Issues: {', '.join(prompt_analysis.get('issues', []))}")
+                if prompt_analysis.get("missing_elements"):
+                    print(f"  Missing: {', '.join(prompt_analysis.get('missing_elements', []))}")
 
-Z-Image Best Practices:
-- ALWAYS start with framing and subject (e.g., "medium shot portrait of a...")
-- ALWAYS include pose (facing camera, three-quarter view, etc.)
-- ALWAYS include expression for humans
-- Use specific visual vocabulary: skin tones (warm ivory, golden tan), hair (styled back, wavy auburn), lighting (golden hour, Rembrandt lighting)
-- Describe clothing with length (jacket ending at waist, dress extending to knees)
-- Identify accessories precisely (ornate silver pendant, leather messenger bag)
-- End with "no text, no watermark"
-- Do NOT use abstract words like "beautiful", "stunning", "elegant"
-- Do NOT include meta tags like "8K", "masterpiece", "best quality"
+                template_analysis = evaluation.get("template_analysis", {})
+                print(f"\n[TEMPLATE ANALYSIS]")
+                if template_analysis.get("effectiveness_issues"):
+                    print(f"  Issues: {', '.join(template_analysis.get('effectiveness_issues', []))}")
+                if template_analysis.get("missing_instructions"):
+                    print(f"  Missing: {', '.join(template_analysis.get('missing_instructions', []))}")
 
-Output ONLY the improved prompt text, nothing else. No explanations, no JSON, just the prompt."""
+        # === PHASE 3: Generate Improvements (if enabled) ===
+        improved_prompt = prompt  # Default to original
+        if generate_improved:
+            current_phase += 1
+            print(f"[SID-Debug] Phase {current_phase}/{total_phases}: Generating improved prompt...")
 
-        improve_user = f"""Write an improved version of this prompt based on the analysis.
+            # Build context from Phase 2 results (or use image analysis if Phase 2 skipped)
+            if analyze_template and evaluation:
+                prompt_issues = evaluation.get("prompt_analysis", {}).get("issues", [])
+                template_issues = evaluation.get("template_analysis", {}).get("effectiveness_issues", [])
+                missing_elements = evaluation.get("prompt_analysis", {}).get("missing_elements", [])
+            else:
+                # Use image analysis comparison to identify issues
+                comparison = image_analysis.get("comparison", {})
+                prompt_issues = []
+                template_issues = []
+                missing_elements = comparison.get("lost_elements", [])
+
+            issues_text = "\n".join(f"- {i}" for i in prompt_issues) if prompt_issues else "None identified"
+            template_issues_text = "\n".join(f"- {i}" for i in template_issues) if template_issues else "None identified"
+            missing_text = "\n".join(f"- {m}" for m in missing_elements) if missing_elements else "None identified"
+
+            phase3_system = """You are an expert prompt writer with reasoning capability.
+
+Use extended thinking to craft an IMPROVED PROMPT that addresses all identified issues.
+
+For the IMPROVED PROMPT:
+- ALWAYS start with camera angle + shot type + subject
+- Include pose, expression, lighting with specific vocabulary
+- Address all missing elements from the source image
+- Remove any hallucinated elements
+- Use Z-Image best practices
+- 80-200 words, end with "no text, no watermark"
+
+Respond with this JSON:
+{
+  "improved_prompt": "your complete rewritten prompt here",
+  "changes_made": ["list of key changes from original"],
+  "summary": "brief 1-2 sentence summary of improvements"
+}"""
+
+            phase3_user = f"""Generate an improved prompt based on the analysis.
 
 ORIGINAL PROMPT:
 {prompt}
 
-ISSUES FOUND:
-{issues_text if issues_text else "None identified"}
+ISSUES TO FIX:
+{issues_text}
 
-RECOMMENDATIONS:
-{recommendations_text if recommendations_text else "None"}
+MISSING FROM SOURCE:
+{missing_text}
 
-MISSING ELEMENTS (visible in source but not described):
-{missing_text if missing_text else "None identified"}
+SOURCE IMAGE ANALYSIS:
+{json.dumps(image_analysis.get('source_analysis', {}), indent=2)}
 
-Look at the SOURCE image and write a complete, improved prompt that addresses all issues. The prompt should be 80-200 words and follow Z-Image best practices."""
+Look at the SOURCE image and write a complete improved prompt."""
 
-        # Make improvement call (with images for reference)
-        improved_prompt = cls._call_llm(provider, api_key, api_url, model, improve_system, improve_user, source_b64, output_b64)
+            phase3_result = cls._call_llm_with_reasoning(
+                provider, api_key, api_url, model,
+                phase3_system, phase3_user,
+                source_b64, output_b64,
+                reasoning_budget=8000
+            )
+            improvements = cls._parse_json_response(phase3_result)
+            api_calls += 1
 
-        # Clean up the improved prompt (remove any JSON wrapper or quotes)
-        improved_prompt = improved_prompt.strip()
-        if improved_prompt.startswith('"') and improved_prompt.endswith('"'):
-            improved_prompt = improved_prompt[1:-1]
-        if improved_prompt.startswith("```"):
-            # Remove code blocks
-            lines = improved_prompt.split("\n")
-            improved_prompt = "\n".join(line for line in lines if not line.startswith("```"))
+            # Clean up improved prompt
+            improved_prompt = improvements.get("improved_prompt", prompt)
+            if isinstance(improved_prompt, str):
+                improved_prompt = improved_prompt.strip()
+                if improved_prompt.startswith('"') and improved_prompt.endswith('"'):
+                    improved_prompt = improved_prompt[1:-1]
+                if improved_prompt.startswith("```"):
+                    lines = improved_prompt.split("\n")
+                    improved_prompt = "\n".join(line for line in lines if not line.startswith("```"))
 
-        # Combine results
-        evaluation = analysis.copy()
-        evaluation["improved_prompt"] = improved_prompt.strip()
-        evaluation["evaluator"] = {"provider": provider, "model": model}
-        evaluation["api_calls"] = 2
+            # Console output for Phase 3
+            if print_to_console:
+                print("\n" + "="*80)
+                print("PHASE 3: IMPROVED PROMPT")
+                print("="*80)
+                print(f"\n{improved_prompt}")
+                if improvements.get("changes_made"):
+                    print(f"\n[CHANGES MADE]")
+                    for change in improvements.get("changes_made", []):
+                        print(f"  - {change}")
 
-        return evaluation
+        # Build final evaluation based on which phases ran
+        final_evaluation = {
+            "image_analysis": image_analysis,
+            "original_prompt": prompt,
+            "evaluator": {
+                "provider": provider,
+                "model": model,
+                "reasoning_enabled": True,
+            },
+            "api_calls": api_calls,
+        }
+
+        # Add Phase 2 results if it ran
+        if analyze_template and evaluation:
+            final_evaluation["scores"] = evaluation.get("scores", {})
+            final_evaluation["prompt_analysis"] = evaluation.get("prompt_analysis", {})
+            final_evaluation["template_analysis"] = {
+                "template_used": {
+                    "name": template_info.get("name") if template_info else None,
+                    "path": template_info.get("path") if template_info else None,
+                    "category": template_info.get("category") if template_info else None,
+                    "model_size": template_info.get("model_size_used") if template_info else None,
+                },
+                **evaluation.get("template_analysis", {}),
+            }
+
+        # Add Phase 3 results if it ran
+        if generate_improved:
+            final_evaluation["improved_prompt"] = improved_prompt
+            final_evaluation["template_suggestions"] = improvements.get("template_suggestions", {})
+            final_evaluation["improvement_summary"] = improvements.get("summary", "")
+        else:
+            final_evaluation["improved_prompt"] = prompt
+
+        # Console summary
+        if print_to_console:
+            print("\n" + "="*80)
+            print("EVALUATION COMPLETE")
+            print("="*80)
+            print(f"  API Calls: {api_calls}")
+            if analyze_template and evaluation:
+                overall = evaluation.get("scores", {}).get("overall", {})
+                score = overall.get("score", 0) if isinstance(overall, dict) else overall
+                print(f"  Overall Score: {score}/10")
+            print("")
+
+        return final_evaluation
+
+    @classmethod
+    def _call_llm_with_reasoning(
+        cls,
+        provider: str,
+        api_key: str,
+        api_url: str,
+        model: str,
+        system: str,
+        user: str,
+        img1_b64: str,
+        img2_b64: str,
+        reasoning_budget: int = 8000
+    ) -> str:
+        """Call LLM with reasoning/extended thinking enabled."""
+        if provider == "anthropic":
+            return cls._call_anthropic_with_reasoning(api_key, model, system, user, img1_b64, img2_b64, reasoning_budget)
+        elif provider in ["openai", "groq", "together", "fireworks", "openrouter", "gemini", "mistral", "deepseek", "cerebras", "xai"]:
+            # OpenAI o1/o3 models have built-in reasoning
+            return cls._call_openai_compatible_reasoning(api_key, api_url, model, system, user, img1_b64, img2_b64)
+        elif provider in ["ollama", "lmstudio"]:
+            return cls._call_local_api(api_url, model, system, user, img1_b64, img2_b64)
+        elif provider == "local" and api_url:
+            return cls._call_local_api(api_url, model, system, user, img1_b64, img2_b64)
+        else:
+            raise ValueError(f"Unsupported provider for reasoning debug: {provider}")
+
+    @classmethod
+    def _call_anthropic_with_reasoning(
+        cls,
+        api_key: str,
+        model: str,
+        system: str,
+        user: str,
+        img1_b64: str,
+        img2_b64: str,
+        reasoning_budget: int = 8000
+    ) -> str:
+        """Call Anthropic API with extended thinking enabled."""
+        import anthropic
+
+        client = anthropic.Anthropic(api_key=api_key)
+
+        # Use extended thinking for thorough analysis
+        response = client.messages.create(
+            model=model,
+            max_tokens=16000,  # Higher for reasoning + output
+            thinking={
+                "type": "enabled",
+                "budget_tokens": reasoning_budget
+            },
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": f"System instructions: {system}\n\n{user}"},
+                    {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": img1_b64}},
+                    {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": img2_b64}},
+                ]
+            }]
+        )
+
+        # Extract the text response (not the thinking blocks)
+        for block in response.content:
+            if block.type == "text":
+                return block.text
+
+        return str(response.content)
+
+    @classmethod
+    def _call_openai_compatible_reasoning(
+        cls,
+        api_key: str,
+        api_url: str,
+        model: str,
+        system: str,
+        user: str,
+        img1_b64: str,
+        img2_b64: str
+    ) -> str:
+        """Call OpenAI-compatible API (o1/o3 have built-in reasoning)."""
+        import openai
+
+        client = openai.OpenAI(api_key=api_key, base_url=api_url if api_url else None)
+
+        # o1/o3 models handle reasoning internally
+        response = client.chat.completions.create(
+            model=model,
+            max_completion_tokens=8192,  # Higher limit for reasoning models
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": [
+                    {"type": "text", "text": user},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img1_b64}"}},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img2_b64}"}},
+                ]}
+            ]
+        )
+
+        return response.choices[0].message.content
 
     @classmethod
     def _call_llm(cls, provider: str, api_key: str, api_url: str, model: str, system: str, user: str, img1_b64: str, img2_b64: str) -> str:
@@ -472,8 +952,9 @@ Look at the SOURCE image and write a complete, improved prompt that addresses al
         with open(prompt_path, "w", encoding="utf-8") as f:
             f.write(prompt)
 
-        # Save source metadata and extract generation model config
+        # Save source metadata and extract generation model config + template info
         generation_model_config = None
+        template_info = None
         if source_metadata and isinstance(source_metadata, dict):
             # Save full source metadata
             source_meta_path = session_dir / "source_metadata.json"
@@ -481,6 +962,9 @@ Look at the SOURCE image and write a complete, improved prompt that addresses al
                 json.dump(source_metadata, f, indent=2, ensure_ascii=False)
             # Extract generation model config from source metadata
             generation_model_config = source_metadata.get("model_config")
+            # Extract template info from generation_settings
+            gen_settings = source_metadata.get("generation_settings", {})
+            template_info = gen_settings.get("template_info")
             print(f"[SID-Debug] Source metadata saved")
 
         # Save generation model config (from source_metadata, not llm_model which is for evaluation)
@@ -492,6 +976,16 @@ Look at the SOURCE image and write a complete, improved prompt that addresses al
             # Fallback: no source metadata provided, note this in the file
             with open(config_path, "w", encoding="utf-8") as f:
                 json.dump({"note": "Source metadata not connected - generation model unknown"}, f, indent=2)
+
+        # Save template info separately for easy access
+        template_path = session_dir / "template_info.json"
+        if template_info:
+            with open(template_path, "w", encoding="utf-8") as f:
+                json.dump(template_info, f, indent=2, ensure_ascii=False)
+            print(f"[SID-Debug] Template info saved: {template_info.get('name', 'Unknown')}")
+        else:
+            with open(template_path, "w", encoding="utf-8") as f:
+                json.dump({"note": "Template info not available (custom override or metadata not connected)"}, f, indent=2)
 
         # Save evaluation model config (the LLM used for debug evaluation)
         eval_model_path = session_dir / "evaluation_model.json"
@@ -684,3 +1178,109 @@ Look at the SOURCE image and write a complete, improved prompt that addresses al
 
         # Return original if no improvement found
         return original
+
+    @classmethod
+    def _extract_template_score(cls, evaluation: Dict[str, Any]) -> float:
+        """Extract template effectiveness score from evaluation."""
+        # Try different paths where template score might be stored
+        score_paths = [
+            ["scores", "template_effectiveness", "score"],
+            ["scores", "template_effectiveness"],
+            ["template_analysis", "score"],
+            ["template_score"],
+        ]
+
+        for path in score_paths:
+            current = evaluation
+            try:
+                for key in path:
+                    current = current[key]
+                if isinstance(current, (int, float)):
+                    return float(current)
+                if isinstance(current, dict) and "score" in current:
+                    return float(current["score"])
+            except (KeyError, TypeError):
+                continue
+
+        # Default score if not found
+        return 5.0
+
+    @classmethod
+    def _format_template_suggestions(cls, evaluation: Dict[str, Any]) -> str:
+        """Format template suggestions as human-readable text."""
+        lines = []
+
+        # Get template info
+        template_analysis = evaluation.get("template_analysis", {})
+        template_used = template_analysis.get("template_used", {})
+
+        if template_used and template_used.get("name"):
+            lines.append(f"Template: {template_used.get('name')} ({template_used.get('path', 'N/A')})")
+            lines.append(f"Category: {template_used.get('category', 'unknown')}")
+            lines.append(f"Model Size: {template_used.get('model_size', 'unknown')}")
+            lines.append("")
+
+        # Get suggestions from evaluation
+        suggestions = evaluation.get("template_suggestions", {})
+
+        # Priority additions
+        priority_additions = suggestions.get("priority_additions", [])
+        if priority_additions:
+            lines.append("PRIORITY ADDITIONS:")
+            for item in priority_additions[:5]:
+                if isinstance(item, dict):
+                    instruction = item.get("instruction", str(item))
+                    reason = item.get("reason", "")
+                    lines.append(f"  + {instruction}")
+                    if reason:
+                        lines.append(f"    Reason: {reason}")
+                elif isinstance(item, str):
+                    lines.append(f"  + {item}")
+            lines.append("")
+
+        # Clarifications needed
+        clarifications = suggestions.get("clarifications_needed", [])
+        if clarifications:
+            lines.append("CLARIFICATIONS NEEDED:")
+            for item in clarifications[:3]:
+                if isinstance(item, dict):
+                    current = item.get("current", "")
+                    suggested = item.get("suggested", "")
+                    lines.append(f"  Current: {current[:100]}...")
+                    lines.append(f"  Suggested: {suggested[:100]}...")
+                    lines.append("")
+                elif isinstance(item, str):
+                    lines.append(f"  - {item}")
+            lines.append("")
+
+        # Structure improvements
+        structure = suggestions.get("structure_improvements", "")
+        if structure:
+            lines.append("STRUCTURE IMPROVEMENTS:")
+            lines.append(f"  {structure[:300]}...")
+            lines.append("")
+
+        # Model size notes
+        model_notes = suggestions.get("model_size_notes", "")
+        if model_notes:
+            lines.append("MODEL SIZE NOTES:")
+            lines.append(f"  {model_notes[:200]}...")
+            lines.append("")
+
+        # Improvement summary
+        summary = evaluation.get("improvement_summary", "")
+        if summary:
+            lines.append("SUMMARY:")
+            lines.append(f"  {summary}")
+
+        # Effectiveness issues from template_analysis
+        effectiveness_issues = template_analysis.get("effectiveness_issues", [])
+        if effectiveness_issues and not lines:
+            lines.append("TEMPLATE EFFECTIVENESS ISSUES:")
+            for issue in effectiveness_issues[:5]:
+                lines.append(f"  - {issue}")
+
+        if not lines:
+            return "No template suggestions available (template info not provided or no issues found)"
+
+        return "\n".join(lines)

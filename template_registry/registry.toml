@@ -1,0 +1,49 @@
+# Template Registry
+# This file manages all prompt templates for the SID Photography Toolkit
+# Templates are organized into: core (read-only), community (synced), custom (user-created)
+
+[registry]
+version = "1.0"
+last_sync = ""
+github_repo = "sidlahiri/ComfyUI-AI-Photography-Toolkit"
+github_branch = "main"
+github_path = "template_registry/community"
+
+# Auto-detection mapping for Simple mode
+# Maps CV detection results to template files
+[auto_detect]
+human = "core/portrait.toml"      # Used when has_human=true
+default = "core/general.toml"     # Fallback for non-human images
+# Future expansions (uncomment when detection is added):
+# product = "core/product.toml"
+# landscape = "core/landscape.toml"
+# animal = "core/animal.toml"
+
+# Core templates (built-in, editable)
+# These are optimized templates that ship with the toolkit
+# Users can customize these based on debug feedback
+[core.portrait]
+path = "core/portrait.toml"
+readonly = false
+description = "Optimized for human subjects - faces, portraits, people"
+
+[core.general]
+path = "core/general.toml"
+readonly = false
+description = "Optimized for non-human subjects - landscapes, objects, scenes"
+
+# Community templates (synced from GitHub)
+# These are contributed by the community and synced via the template editor
+[community]
+# Example:
+# [community.cinematic]
+# path = "community/cinematic.toml"
+# readonly = false
+
+# Custom templates (user-created locally)
+# These are created by the user via the template editor
+[custom]
+# Example:
+# [custom.my_style]
+# path = "custom/my_style.toml"
+# readonly = false

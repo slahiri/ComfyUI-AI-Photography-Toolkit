@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Prompt Editor - Web UI for editing TOML prompt files.
+SID Photography Toolkit - Web UI Module
 
-Simple file browser + TOML editor interface.
-Access at: http://localhost:8188/sid/prompt-editor
+Web interface for managing templates and viewing results.
+Access at: http://localhost:8188/sid
 """
 
 from .routes import setup_routes

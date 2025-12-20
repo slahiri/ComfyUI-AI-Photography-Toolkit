@@ -1191,8 +1191,15 @@ class LLMClient:
     def _get_cache_key(self, image_data: str, system_prompt: str, user_prompt: str) -> str:
         """Generate cache key from image + prompts + model."""
         import hashlib
-        # Use first 1000 chars of image to speed up hashing (still unique enough)
-        image_hash = hashlib.md5(image_data[:1000].encode() if len(image_data) > 1000 else image_data.encode()).hexdigest()[:16]
+        # Sample from start, middle, and end of image data for better uniqueness
+        # First 1000 chars alone causes collisions (similar JPEG headers)
+        data_len = len(image_data)
+        if data_len > 3000:
+            # Sample: first 1000 + middle 1000 + last 1000 chars
+            sample = image_data[:1000] + image_data[data_len//2 - 500:data_len//2 + 500] + image_data[-1000:]
+        else:
+            sample = image_data
+        image_hash = hashlib.md5(sample.encode()).hexdigest()[:16]
         prompt_hash = hashlib.md5(f"{system_prompt}{user_prompt}{self.config.model}".encode()).hexdigest()[:16]
         return f"{image_hash}_{prompt_hash}"
 
@@ -1272,16 +1279,33 @@ class LLMClient:
             )
 
     def call_vision(self, base64_image: str, system_prompt: str,
-                    user_prompt: str, max_tokens: int = 1000) -> str:
+                    user_prompt: str, max_tokens: int = 1000,
+                    skip_cache: bool = False) -> str:
         """Call vision LLM with image."""
         provider = self.config.provider.lower()
 
-        # Check cache first (works for any provider)
-        cache_key = self._get_cache_key(base64_image, system_prompt, user_prompt)
-        cached = self._get_cached_response(cache_key)
-        if cached:
-            print(f"[LLM] Cache HIT - returning cached response")
-            return cached
+        # Check cache first (works for any provider) - skip if requested
+        # Debug: show image hash to verify different images are being sent
+        import hashlib
+        # Sample from start, middle and end for better uniqueness
+        img_len = len(base64_image)
+        sample = base64_image[:500] + base64_image[img_len//2:img_len//2+500] + base64_image[-500:]
+        img_hash = hashlib.md5(sample.encode()).hexdigest()[:12]
+        print(f"[LLM] Image hash: {img_hash} (len={img_len})")
+
+        if not skip_cache:
+            cache_key = self._get_cache_key(base64_image, system_prompt, user_prompt)
+            cached = self._get_cached_response(cache_key)
+            if cached:
+                print(f"[LLM] Cache HIT - returning cached response")
+                return cached
+        else:
+            cache_key = None
+            # Clear entire cache when skip_cache is True (raw_output mode)
+            if LLMClient._response_cache:
+                print(f"[LLM] Clearing {len(LLMClient._response_cache)} cached entries")
+                LLMClient._response_cache.clear()
+            print(f"[LLM] Cache DISABLED - always calling LLM")
 
         try:
             # Rate limit API calls to avoid overload errors
@@ -1310,7 +1334,8 @@ class LLMClient:
                 )
                 result = response.choices[0].message.content or ""
                 result = result.strip()
-                self._cache_response(cache_key, result)
+                if cache_key:
+                    self._cache_response(cache_key, result)
                 return result
 
             elif provider == "anthropic":
@@ -1361,7 +1386,8 @@ class LLMClient:
                             elif cache_create > 0:
                                 print(f"[LLM] Anthropic cache MISS: {cache_create} tokens cached")
                         result = response.content[0].text.strip()
-                        self._cache_response(cache_key, result)
+                        if cache_key:
+                            self._cache_response(cache_key, result)
                         return result
                     except Exception as api_error:
                         error_str = str(api_error)
@@ -1396,7 +1422,8 @@ class LLMClient:
                 result = response.choices[0].message.content or ""
                 result = re.sub(r'<think>.*?</think>', '', result, flags=re.DOTALL | re.IGNORECASE)
                 result = result.strip()
-                self._cache_response(cache_key, result)
+                if cache_key:
+                    self._cache_response(cache_key, result)
                 return result
 
         except Exception as e:
@@ -1608,7 +1635,9 @@ class PromptGenerator:
         nsfw_mode: bool = False,
         verbose: bool = True,
         extra_params: Dict[str, Any] = None,
-        template_prompt: str = None
+        template_prompt: str = None,
+        template_user_prompt: str = None,
+        raw_output: bool = False
     ):
         self.config = LLMConfig(
             provider=provider,
@@ -1629,6 +1658,8 @@ class PromptGenerator:
         self.nsfw_mode = nsfw_mode
         self.verbose = verbose
         self.template_prompt = template_prompt  # Custom template system prompt
+        self.template_user_prompt = template_user_prompt  # Custom template user prompt
+        self.raw_output = raw_output  # Skip all post-processing cleanup
 
         # Get image sizes based on provider
         self.sizes = IMAGE_SIZES[self.config.provider_type]
@@ -1705,26 +1736,47 @@ class PromptGenerator:
         human_str = 'Yes' if has_human else 'No'
         self._log(f"[PromptGen] CV done in {result.timing['cv_detection_ms']:.0f}ms | Image: {original_size[0]}x{original_size[1]} | Human: {human_str}")
 
-        # Step 2: Prepare image for LLM with mode-based sizing
+        # Step 2: Prepare image for LLM
         self._log(f"[PromptGen] Step 2: Preparing image for LLM...")
-        mode_scale = self.MODE_SIZE_SCALE.get(self.analysis_mode, 1.0)
-        target_llm_size = int(self.model_target_size * mode_scale)
 
-        # Ensure minimum size of 224 and cap at provider limit
-        provider_limit = get_image_limit(self.config.provider)
-        target_llm_size = max(224, min(target_llm_size, provider_limit))
+        if self.raw_output:
+            # RAW OUTPUT MODE: Use image as-is, no resizing
+            self._log(f"[PromptGen] Raw output mode - using image as-is (no resize)")
+            import io
+            import base64
+            buffer = io.BytesIO()
+            # Save as JPEG with high quality
+            if pil_image.mode in ('RGBA', 'P'):
+                pil_image = pil_image.convert('RGB')
+            pil_image.save(buffer, format='JPEG', quality=95)
+            base64_image = base64.b64encode(buffer.getvalue()).decode('utf-8')
+            file_size_kb = len(buffer.getvalue()) / 1024
+            result.metadata["original_size"] = pil_image.size
+            result.metadata["compressed_size"] = pil_image.size  # Same as original
+            result.metadata["file_size_kb"] = file_size_kb
+            result.metadata["target_size"] = max(pil_image.size)
+            result.metadata["mode_scale"] = 1.0
+            self._log(f"[PromptGen] Image: {pil_image.size[0]}x{pil_image.size[1]} ({file_size_kb:.0f}KB)")
+        else:
+            # Standard mode: resize based on mode and provider limits
+            mode_scale = self.MODE_SIZE_SCALE.get(self.analysis_mode, 1.0)
+            target_llm_size = int(self.model_target_size * mode_scale)
 
-        base64_image, resize_info, _ = auto_resize_image(
-            pil_image, target_llm_size, self.sizes["quality"]
-        )
-        result.metadata["compressed_size"] = resize_info["compressed_size"]
-        result.metadata["file_size_kb"] = resize_info["file_size_kb"]
-        result.metadata["target_size"] = target_llm_size
-        result.metadata["mode_scale"] = mode_scale
+            # Ensure minimum size of 224 and cap at provider limit
+            provider_limit = get_image_limit(self.config.provider)
+            target_llm_size = max(224, min(target_llm_size, provider_limit))
 
-        # Log compressed size
-        compressed_w, compressed_h = resize_info["compressed_size"]
-        self._log(f"[PromptGen] Compressed: {compressed_w}x{compressed_h} ({resize_info['file_size_kb']:.0f}KB)")
+            base64_image, resize_info, _ = auto_resize_image(
+                pil_image, target_llm_size, self.sizes["quality"]
+            )
+            result.metadata["compressed_size"] = resize_info["compressed_size"]
+            result.metadata["file_size_kb"] = resize_info["file_size_kb"]
+            result.metadata["target_size"] = target_llm_size
+            result.metadata["mode_scale"] = mode_scale
+
+            # Log compressed size
+            compressed_w, compressed_h = resize_info["compressed_size"]
+            self._log(f"[PromptGen] Compressed: {compressed_w}x{compressed_h} ({resize_info['file_size_kb']:.0f}KB)")
 
         # Step 3: Build prompts
         self._log(f"[PromptGen] Step 3: Building prompts...")
@@ -1739,13 +1791,14 @@ class PromptGenerator:
         # Template mode: Use custom template prompt directly (bypasses analysis modes)
         if self.prompt_style == "template" and self.template_prompt:
             self._log(f"[PromptGen] Using TEMPLATE mode with custom system prompt")
-            # Use template's system prompt with simple user prompt
-            template_user = "Describe this image following the system instructions."
+            # Use template's system prompt with custom or default user prompt
+            template_user = self.template_user_prompt or "Describe this image following the system instructions."
             if user_guidance:
                 template_user += f"\n\nAdditional guidance: {user_guidance}"
             prompt = self.llm_client.call_vision(
                 base64_image, self.template_prompt, template_user,
-                max_tokens=self.prompt_length * 3
+                max_tokens=self.prompt_length * 3,
+                skip_cache=self.raw_output
             )
         # Analysis mode routing:
         # - Standard: Single vision call (fast, ~1 call) - all providers
@@ -1755,7 +1808,8 @@ class PromptGenerator:
             self._log(f"[PromptGen] Using STANDARD single-pass analysis")
             prompt = self.llm_client.call_vision(
                 base64_image, system_prompt, user_prompt,
-                max_tokens=self.prompt_length * 3
+                max_tokens=self.prompt_length * 3,
+                skip_cache=self.raw_output
             )
         else:
             # Detailed mode (default): Optimized 3-4 call approach using TOML prompts
@@ -1769,33 +1823,39 @@ class PromptGenerator:
             result.timing["components"] = self._last_component_times.copy()
             self._last_component_times = None  # Clear after capturing
 
-        # Step 5: Z-Image cleanup (uses config patterns + built-in rules)
-        # Use prompt_length + 50% buffer as max words to allow some flexibility
-        max_words = int(self.prompt_length * 1.5)
-        result.prompt = zimage_clean(prompt, self.config.provider, max_words)
+        # Step 5: Post-processing
+        if self.raw_output:
+            # RAW OUTPUT MODE: Skip all cleanup, pass through exactly as LLM returned
+            self._log(f"[PromptGen] Raw output mode - skipping all post-processing")
+            result.prompt = prompt.strip() if prompt else ""
+        else:
+            # Z-Image cleanup (uses config patterns + built-in rules)
+            # Use prompt_length + 50% buffer as max words to allow some flexibility
+            max_words = int(self.prompt_length * 1.5)
+            result.prompt = zimage_clean(prompt, self.config.provider, max_words)
 
-        # Step 5b: Z-Image realism enhancers REMOVED
-        # Based on evaluator feedback: quality meta-tags like "realistic skin texture, photorealistic,
-        # ultra detailed" are unnecessary for Z-Image/Flux models - quality is built-in.
-        # These tags were found to clutter prompts without improving output quality.
+            # Step 5b: Z-Image realism enhancers REMOVED
+            # Based on evaluator feedback: quality meta-tags like "realistic skin texture, photorealistic,
+            # ultra detailed" are unnecessary for Z-Image/Flux models - quality is built-in.
+            # These tags were found to clutter prompts without improving output quality.
 
-        # Step 5c: Clean up tags if tags mode (LLM already generates in tag format)
-        if self.prompt_style == "tags":
-            self._log(f"[PromptGen] Cleaning up LLM-generated tags...")
-            result.prompt = cleanup_tags(result.prompt)
-            self._log(f"[PromptGen] Generated {len(result.prompt.split(','))} tags")
+            # Step 5c: Clean up tags if tags mode (LLM already generates in tag format)
+            if self.prompt_style == "tags":
+                self._log(f"[PromptGen] Cleaning up LLM-generated tags...")
+                result.prompt = cleanup_tags(result.prompt)
+                self._log(f"[PromptGen] Generated {len(result.prompt.split(','))} tags")
 
-        # Step 5d: Apply user guidance
-        if user_guidance and user_guidance.strip():
-            user_guidance = user_guidance.strip()
-            if self.analysis_mode == "standard":
-                # Standard mode: append user guidance verbatim
-                self._log(f"[PromptGen] Adding user guidance verbatim")
-                result.prompt = f"{result.prompt}, {user_guidance}"
-            else:
-                # Detailed mode: use text LLM to enhance prompt based on guidance
-                self._log(f"[PromptGen] Enhancing prompt with user guidance via LLM...")
-                enhance_prompt = f"""Modify this image generation prompt based on the user's guidance.
+            # Step 5d: Apply user guidance
+            if user_guidance and user_guidance.strip():
+                user_guidance = user_guidance.strip()
+                if self.analysis_mode == "standard":
+                    # Standard mode: append user guidance verbatim
+                    self._log(f"[PromptGen] Adding user guidance verbatim")
+                    result.prompt = f"{result.prompt}, {user_guidance}"
+                else:
+                    # Detailed mode: use text LLM to enhance prompt based on guidance
+                    self._log(f"[PromptGen] Enhancing prompt with user guidance via LLM...")
+                    enhance_prompt = f"""Modify this image generation prompt based on the user's guidance.
 
 CURRENT PROMPT:
 {result.prompt}
@@ -1811,14 +1871,14 @@ INSTRUCTIONS:
 
 OUTPUT the enhanced prompt only:"""
 
-                enhanced = self.llm_client.call_text(
-                    "You enhance image generation prompts based on user guidance.",
-                    enhance_prompt,
-                    max_tokens=self.prompt_length * 3
-                )
-                if enhanced and enhanced.strip():
-                    result.prompt = zimage_clean(enhanced, self.config.provider, max_words)
-                    # realism_tags removed - they were adding unwanted quality meta-tags
+                    enhanced = self.llm_client.call_text(
+                        "You enhance image generation prompts based on user guidance.",
+                        enhance_prompt,
+                        max_tokens=self.prompt_length * 3
+                    )
+                    if enhanced and enhanced.strip():
+                        result.prompt = zimage_clean(enhanced, self.config.provider, max_words)
+                        # realism_tags removed - they were adding unwanted quality meta-tags
 
         result.metadata["word_count"] = len(result.prompt.split())
 
@@ -1940,7 +2000,7 @@ Be specific about exactly which NSFW features are visible. Do NOT add features t
             if not system_prompt:
                 self._log(f"[Optimized] Warning: No prompt found for {component_key}.{tier}")
                 return ""
-            result = self.llm_client.call_vision(base64_image, system_prompt, user_instruction, max_tokens)
+            result = self.llm_client.call_vision(base64_image, system_prompt, user_instruction, max_tokens, skip_cache=self.raw_output)
             elapsed = time.time() - start
             component_times[name] = elapsed
             self._log(f"[Optimized] {name}: {elapsed:.2f}s")

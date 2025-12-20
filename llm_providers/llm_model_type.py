@@ -36,13 +36,13 @@ class LLMModelConfig:
     max_tokens: int = 1024          # Maximum output tokens
     temperature: float = 0.7         # Creativity (0.0-1.0)
 
-    # Analysis mode - set by LLM provider node
-    analysis_mode: str = "detailed"  # "standard" (1 call) or "detailed" (3-4 calls)
-
     # Capabilities
     supports_vision: bool = True     # Whether model supports image input
     supports_system_prompt: bool = True  # Whether model supports system prompts
     supports_reasoning: bool = False  # Whether model supports extended thinking/reasoning mode
+
+    # Model size category for prompt template selection
+    model_size: str = "large"        # "small" (2B-6B), "medium" (7B-13B), "large" (13B+)
 
     # Provider-specific parameters
     extra_params: Dict[str, Any] = field(default_factory=dict)
@@ -68,10 +68,10 @@ class LLMModelConfig:
             "api_url": self.api_url,
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
-            "analysis_mode": self.analysis_mode,
             "supports_vision": self.supports_vision,
             "supports_system_prompt": self.supports_system_prompt,
             "supports_reasoning": self.supports_reasoning,
+            "model_size": self.model_size,
             "extra_params": self.extra_params,
         }
 
@@ -86,10 +86,10 @@ class LLMModelConfig:
             api_url=data.get("api_url", ""),
             max_tokens=data.get("max_tokens", 1024),
             temperature=data.get("temperature", 0.7),
-            analysis_mode=data.get("analysis_mode", "standard"),
             supports_vision=data.get("supports_vision", True),
             supports_system_prompt=data.get("supports_system_prompt", True),
             supports_reasoning=data.get("supports_reasoning", False),
+            model_size=data.get("model_size", "large"),
             extra_params=data.get("extra_params", {}),
         )
 

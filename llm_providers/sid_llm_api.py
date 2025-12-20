@@ -248,119 +248,176 @@ PROVIDERS = {
 }
 
 # Model metadata for all providers
+# size: "small" (2B-6B), "medium" (7B-13B), "large" (13B+)
 MODEL_METADATA = {
     # =========================================================================
-    # Anthropic models
+    # Anthropic models (all large)
     # =========================================================================
-    "claude-sonnet-4-5-20250929": {"supports_reasoning": True, "max_output_tokens": 64000},
-    "claude-haiku-4-5-20251001": {"supports_reasoning": False, "max_output_tokens": 64000},
-    "claude-opus-4-1-20250805": {"supports_reasoning": True, "max_output_tokens": 64000},
-    "claude-3-5-sonnet-20241022": {"supports_reasoning": True, "max_output_tokens": 8192},
-    "claude-3-5-haiku-20241022": {"supports_reasoning": False, "max_output_tokens": 8192},
+    "claude-sonnet-4-5-20250929": {"supports_reasoning": True, "max_output_tokens": 64000, "size": "large"},
+    "claude-haiku-4-5-20251001": {"supports_reasoning": False, "max_output_tokens": 64000, "size": "large"},
+    "claude-opus-4-5-20251101": {"supports_reasoning": True, "max_output_tokens": 64000, "size": "large"},
+    "claude-sonnet-4-20250514": {"supports_reasoning": True, "max_output_tokens": 64000, "size": "large"},
+    "claude-3-5-sonnet-20241022": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
 
     # =========================================================================
-    # OpenAI models
+    # OpenAI models (all large, nano is medium)
     # =========================================================================
-    "gpt-4o": {"supports_reasoning": False, "max_output_tokens": 16384},
-    "gpt-4o-mini": {"supports_reasoning": False, "max_output_tokens": 16384},
-    "gpt-4.1": {"supports_reasoning": False, "max_output_tokens": 32768},
-    "gpt-4.1-mini": {"supports_reasoning": False, "max_output_tokens": 32768},
-    "gpt-4.1-nano": {"supports_reasoning": False, "max_output_tokens": 16384},
-    "gpt-4-turbo": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "o1": {"supports_reasoning": True, "max_output_tokens": 100000},
-    "o1-mini": {"supports_reasoning": True, "max_output_tokens": 65536},
-    "o1-preview": {"supports_reasoning": True, "max_output_tokens": 32768},
-    "o3": {"supports_reasoning": True, "max_output_tokens": 100000},
-    "o3-mini": {"supports_reasoning": True, "max_output_tokens": 65536},
-    "o4-mini": {"supports_reasoning": True, "max_output_tokens": 100000},
+    "gpt-4o": {"supports_reasoning": False, "max_output_tokens": 16384, "size": "large"},
+    "gpt-4o-mini": {"supports_reasoning": False, "max_output_tokens": 16384, "size": "large"},
+    "gpt-4.1": {"supports_reasoning": False, "max_output_tokens": 32768, "size": "large"},
+    "gpt-4.1-mini": {"supports_reasoning": False, "max_output_tokens": 32768, "size": "large"},
+    "gpt-4.1-nano": {"supports_reasoning": False, "max_output_tokens": 16384, "size": "medium"},
+    "gpt-4-turbo": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "large"},
+    "o1": {"supports_reasoning": True, "max_output_tokens": 100000, "size": "large"},
+    "o1-mini": {"supports_reasoning": True, "max_output_tokens": 65536, "size": "large"},
+    "o1-preview": {"supports_reasoning": True, "max_output_tokens": 32768, "size": "large"},
+    "o3": {"supports_reasoning": True, "max_output_tokens": 100000, "size": "large"},
+    "o3-mini": {"supports_reasoning": True, "max_output_tokens": 65536, "size": "large"},
+    "o4-mini": {"supports_reasoning": True, "max_output_tokens": 100000, "size": "large"},
 
     # =========================================================================
-    # Gemini models
+    # Gemini models (all large, 8b is medium)
     # =========================================================================
-    "gemini-2.0-flash": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "gemini-2.0-flash-lite": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "gemini-1.5-pro": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "gemini-1.5-flash": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "gemini-1.5-flash-8b": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "gemini-2.5-pro-preview-06-05": {"supports_reasoning": True, "max_output_tokens": 65536},
-    "gemini-2.5-flash-preview-05-20": {"supports_reasoning": True, "max_output_tokens": 65536},
+    "gemini-2.5-flash": {"supports_reasoning": True, "max_output_tokens": 65536, "size": "large"},
+    "gemini-2.5-pro": {"supports_reasoning": True, "max_output_tokens": 65536, "size": "large"},
+    "gemini-2.0-flash": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "gemini-2.0-flash-lite": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "medium"},
+    "gemini-1.5-pro": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "gemini-1.5-flash": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "gemini-1.5-flash-8b": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "medium"},
 
     # =========================================================================
-    # Grok models
+    # Grok models (all large)
     # =========================================================================
-    "grok-2-vision-1212": {"supports_reasoning": False, "max_output_tokens": 32768},
-    "grok-vision-beta": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "grok-3": {"supports_reasoning": True, "max_output_tokens": 131072},
-    "grok-3-mini": {"supports_reasoning": True, "max_output_tokens": 131072},
+    "grok-2-vision-1212": {"supports_reasoning": False, "max_output_tokens": 32768, "size": "large"},
+    "grok-vision-beta": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "grok-3": {"supports_reasoning": True, "max_output_tokens": 131072, "size": "large"},
+    "grok-3-mini": {"supports_reasoning": True, "max_output_tokens": 131072, "size": "large"},
 
     # =========================================================================
     # Mistral models
     # =========================================================================
-    "pixtral-large-latest": {"supports_reasoning": False, "max_output_tokens": 16384},
-    "pixtral-12b-2409": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "mistral-large-latest": {"supports_reasoning": False, "max_output_tokens": 16384},
-    "mistral-medium-latest": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "mistral-small-latest": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "codestral-latest": {"supports_reasoning": False, "max_output_tokens": 16384},
-    "open-mistral-nemo": {"supports_reasoning": False, "max_output_tokens": 8192},
+    "pixtral-large-latest": {"supports_reasoning": False, "max_output_tokens": 16384, "size": "large"},
+    "pixtral-12b-2409": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "medium"},
+    "mistral-large-latest": {"supports_reasoning": False, "max_output_tokens": 16384, "size": "large"},
+    "mistral-medium-latest": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "mistral-small-latest": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "medium"},
+    "codestral-latest": {"supports_reasoning": False, "max_output_tokens": 16384, "size": "large"},
+    "open-mistral-nemo": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "medium"},
 
     # =========================================================================
-    # DeepSeek models
+    # DeepSeek models (all large)
     # =========================================================================
-    "deepseek-chat": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "deepseek-reasoner": {"supports_reasoning": True, "max_output_tokens": 16384},
+    "deepseek-chat": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "deepseek-reasoner": {"supports_reasoning": True, "max_output_tokens": 16384, "size": "large"},
 
     # =========================================================================
     # Groq models (free tier, very fast)
     # =========================================================================
-    "llama-3.3-70b-versatile": {"supports_reasoning": False, "max_output_tokens": 32768},
-    "llama-3.1-70b-versatile": {"supports_reasoning": False, "max_output_tokens": 32768},
-    "llama-3.1-8b-instant": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "llama-3.2-90b-vision-preview": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "llama-3.2-11b-vision-preview": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "llama-3.2-3b-preview": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "llama-3.2-1b-preview": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "mixtral-8x7b-32768": {"supports_reasoning": False, "max_output_tokens": 32768},
-    "gemma2-9b-it": {"supports_reasoning": False, "max_output_tokens": 8192},
+    "meta-llama/llama-4-scout-17b-16e-instruct": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "meta-llama/llama-4-maverick-17b-128e-instruct": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "llama-3.3-70b-versatile": {"supports_reasoning": False, "max_output_tokens": 32768, "size": "large"},
+    "llama-3.1-70b-versatile": {"supports_reasoning": False, "max_output_tokens": 32768, "size": "large"},
+    "llama-3.1-8b-instant": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "medium"},
+    "llama-3.2-90b-vision-preview": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "llama-3.2-11b-vision-preview": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "medium"},
+    "llama-3.2-3b-preview": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "small"},
+    "llama-3.2-1b-preview": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "small"},
+    "mixtral-8x7b-32768": {"supports_reasoning": False, "max_output_tokens": 32768, "size": "large"},
+    "gemma2-9b-it": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "medium"},
 
     # =========================================================================
     # Together AI models
     # =========================================================================
-    "meta-llama/Llama-Vision-Free": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "Qwen/Qwen2.5-72B-Instruct-Turbo": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "Qwen/QwQ-32B-Preview": {"supports_reasoning": True, "max_output_tokens": 16384},
-    "mistralai/Mixtral-8x7B-Instruct-v0.1": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free": {"supports_reasoning": True, "max_output_tokens": 8192},
+    "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "meta-llama/Llama-4-Scout-17B-16E-Instruct": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "Qwen/Qwen2.5-VL-72B-Instruct": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "meta-llama/Llama-Vision-Free": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "medium"},
+    "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "medium"},
+    "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "large"},
+    "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "large"},
+    "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "medium"},
+    "Qwen/Qwen2.5-72B-Instruct-Turbo": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "large"},
+    "Qwen/QwQ-32B-Preview": {"supports_reasoning": True, "max_output_tokens": 16384, "size": "large"},
+    "mistralai/Mixtral-8x7B-Instruct-v0.1": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "large"},
+    "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free": {"supports_reasoning": True, "max_output_tokens": 8192, "size": "large"},
 
     # =========================================================================
     # OpenRouter models (free tier)
     # =========================================================================
-    "meta-llama/llama-3.2-90b-vision-instruct:free": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "meta-llama/llama-3.2-11b-vision-instruct:free": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "qwen/qwen-2-vl-7b-instruct:free": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "google/gemini-2.0-flash-exp:free": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "deepseek/deepseek-r1:free": {"supports_reasoning": True, "max_output_tokens": 8192},
-    "deepseek/deepseek-chat:free": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "meta-llama/llama-3.3-70b-instruct:free": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "microsoft/phi-3-medium-128k-instruct:free": {"supports_reasoning": False, "max_output_tokens": 4096},
-    "mistralai/mistral-7b-instruct:free": {"supports_reasoning": False, "max_output_tokens": 4096},
+    "nvidia/nemotron-nano-12b-v2-vl:free": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "medium"},
+    "google/gemma-3-27b-it:free": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "google/gemma-3-12b-it:free": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "medium"},
+    "amazon/nova-2-lite-v1:free": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "medium"},
+    "meta-llama/llama-3.2-90b-vision-instruct:free": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "large"},
+    "meta-llama/llama-3.2-11b-vision-instruct:free": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "medium"},
+    "qwen/qwen-2-vl-7b-instruct:free": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "medium"},
+    "google/gemini-2.0-flash-exp:free": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "deepseek/deepseek-r1:free": {"supports_reasoning": True, "max_output_tokens": 8192, "size": "large"},
+    "deepseek/deepseek-chat:free": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "meta-llama/llama-3.3-70b-instruct:free": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "large"},
+    "microsoft/phi-3-medium-128k-instruct:free": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "medium"},
+    "mistralai/mistral-7b-instruct:free": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "medium"},
+
+    # =========================================================================
+    # Fireworks AI models
+    # =========================================================================
+    "accounts/fireworks/models/llama4-maverick-instruct-basic": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "accounts/fireworks/models/llama4-scout-instruct-basic": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "accounts/fireworks/models/llama-v3p2-90b-vision-instruct": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "large"},
+    "accounts/fireworks/models/llama-v3p2-11b-vision-instruct": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "medium"},
+    "accounts/fireworks/models/qwen2p5-vl-32b-instruct": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "large"},
+    "accounts/fireworks/models/phi-3-vision-128k-instruct": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "small"},
+
+    # =========================================================================
+    # HuggingFace models
+    # =========================================================================
+    "meta-llama/Llama-3.2-11B-Vision-Instruct": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "medium"},
+    "meta-llama/Llama-3.2-90B-Vision-Instruct": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "large"},
+    "Qwen/Qwen2-VL-7B-Instruct": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "medium"},
 
     # =========================================================================
     # Cerebras models (free tier, very fast)
     # =========================================================================
-    "llama3.1-70b": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "llama3.1-8b": {"supports_reasoning": False, "max_output_tokens": 8192},
-    "llama-3.3-70b": {"supports_reasoning": False, "max_output_tokens": 8192},
+    "llama3.1-70b": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
+    "llama3.1-8b": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "medium"},
+    "llama-3.3-70b": {"supports_reasoning": False, "max_output_tokens": 8192, "size": "large"},
 
     # =========================================================================
-    # Default for unknown/local models
+    # Default for unknown/local models (assume large for best quality)
     # =========================================================================
-    "_default": {"supports_reasoning": False, "max_output_tokens": 4096},
+    "_default": {"supports_reasoning": False, "max_output_tokens": 4096, "size": "large"},
 }
+
+
+def load_custom_api_models():
+    """Load custom API models from custom_api_models.json and merge into MODEL_METADATA."""
+    import json
+    from pathlib import Path
+
+    custom_path = Path(__file__).parent.parent / "custom_api_models.json"
+    if not custom_path.exists():
+        return
+
+    try:
+        with open(custom_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        for model_id, meta in data.get("models", {}).items():
+            MODEL_METADATA[model_id] = {
+                "supports_reasoning": meta.get("reasoning", False),
+                "max_output_tokens": meta.get("max_tokens", 4096),
+                "size": meta.get("size", "large"),
+                "provider": meta.get("provider", "custom"),
+                "vision": meta.get("vision", True),
+            }
+            print(f"[SID_LLM_API] Loaded custom model: {model_id}")
+    except Exception as e:
+        print(f"[SID_LLM_API] Error loading custom API models: {e}")
+
+
+# Load custom models on module import
+load_custom_api_models()
 
 
 def get_provider_models(provider_name: str, config: Dict) -> List[str]:
@@ -513,22 +570,6 @@ class SID_LLM_API(comfy_io.ComfyNode):
                     display_mode=comfy_io.NumberDisplay.slider,
                     tooltip="Creativity level (0=deterministic, 0.3=balanced, 1+=creative)"
                 ),
-
-                # Reasoning toggle
-                comfy_io.Boolean.Input(
-                    "enable_reasoning",
-                    default=True,
-                    display_name="Enable Reasoning",
-                    tooltip="Enable extended thinking for supported models (Claude 4.5, o1, o3, DeepSeek R1, etc.)"
-                ),
-
-                # Analysis mode - Standard or Detailed
-                comfy_io.Combo.Input(
-                    "analysis_mode",
-                    options=["Standard", "Detailed"],
-                    default="Detailed",
-                    tooltip="Standard: Single-pass (1 call). Detailed: Comprehensive multi-aspect analysis (3-4 calls)"
-                ),
             ],
             outputs=[
                 LLM_MODEL_Type.Output(
@@ -546,8 +587,6 @@ class SID_LLM_API(comfy_io.ComfyNode):
         api_key: str,
         model: str,
         temperature: float,
-        enable_reasoning: bool,
-        analysis_mode: str,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
         try:
@@ -579,22 +618,16 @@ class SID_LLM_API(comfy_io.ComfyNode):
 
             # Get model metadata
             metadata = get_model_metadata(model_name)
-            model_supports_reasoning = metadata["supports_reasoning"]
+            supports_reasoning = metadata["supports_reasoning"]
             model_max_tokens = metadata["max_output_tokens"]
+            model_size = metadata.get("size", "large")
 
             # Validate temperature
             if temperature < 0 or temperature > 2:
                 raise ValueError(f"Temperature must be between 0 and 2, got {temperature}")
 
-            # Determine if reasoning should be enabled
-            # Auto-disable reasoning for models that don't support it
-            actual_reasoning = model_supports_reasoning and enable_reasoning
-
-            # Inform user if reasoning was requested but not supported
-            if enable_reasoning and not model_supports_reasoning:
-                print(f"[SID_LLM_API] Note: Reasoning disabled - {model_name} does not support it")
-
             # Create configuration (use model's max tokens as capability)
+            # Reasoning auto-enabled based on model metadata
             config = LLMModelConfig(
                 provider=provider_name,
                 model=model_name,
@@ -602,20 +635,19 @@ class SID_LLM_API(comfy_io.ComfyNode):
                 api_url=actual_url,
                 max_tokens=model_max_tokens,
                 temperature=temperature,
-                analysis_mode=analysis_mode.lower(),
                 supports_vision=True,
                 supports_system_prompt=True,
-                supports_reasoning=actual_reasoning,
+                supports_reasoning=supports_reasoning,
+                model_size=model_size,
                 extra_params={
                     "original_provider": provider,
                     "requires_key": requires_key,
-                    "reasoning_supported": model_supports_reasoning,
                 },
             )
 
-            reasoning_status = "ON" if actual_reasoning else ("OFF (not supported)" if not model_supports_reasoning else "OFF")
+            reasoning_status = "ON" if supports_reasoning else "OFF"
             print(f"[SID_LLM_API] {provider}: {model_name}")
-            print(f"  temp={temperature}, reasoning={reasoning_status}")
+            print(f"  temp={temperature}, reasoning={reasoning_status}, size={model_size}")
 
             return comfy_io.NodeOutput(config)
 

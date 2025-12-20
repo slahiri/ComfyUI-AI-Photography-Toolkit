@@ -212,6 +212,44 @@ class LocalModelInfo:
     description: str = ""
     model_class: str = ""  # HuggingFace model class
     target_image_size: int = 384  # Target image size for Standard mode (pixels)
+    size: str = "large"  # Model size category: "small" (2B-6B), "medium" (7B-13B), "large" (13B+)
+
+
+def infer_model_size(model_name: str) -> str:
+    """
+    Infer model size category from model name.
+
+    Returns:
+        "small" for 2B-6B parameter models
+        "medium" for 7B-13B parameter models
+        "large" for 13B+ parameter models
+    """
+    import re
+    model_lower = model_name.lower()
+
+    # Look for parameter size patterns like "2b", "7b", "70b", etc.
+    match = re.search(r'(\d+)b', model_lower)
+    if match:
+        param_size = int(match.group(1))
+        if param_size <= 6:
+            return "small"
+        elif param_size <= 13:
+            return "medium"
+        else:
+            return "large"
+
+    # Check for known small model patterns
+    small_patterns = ["moondream", "smolvlm", "nano", "tiny", "phi-3-vision", "florence"]
+    if any(p in model_lower for p in small_patterns):
+        return "small"
+
+    # Check for known medium model patterns
+    medium_patterns = ["pixtral-12b", "nemotron-nano-12b"]
+    if any(p in model_lower for p in medium_patterns):
+        return "medium"
+
+    # Default to large for unknown models
+    return "large"
 
 
 # =============================================================================
@@ -231,7 +269,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Fast vision model",
         model_class="AutoModelForVision2Seq",
-        target_image_size=320
+        target_image_size=320,
+        size="small"
     ),
     "Qwen3-VL-4B-Instruct": LocalModelInfo(
         name="Qwen3-VL 4B (Vision) | 4K | 2GB [Recommended]",
@@ -242,7 +281,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Best balance for vision",
         model_class="AutoModelForVision2Seq",
-        target_image_size=384
+        target_image_size=384,
+        size="small"
     ),
     "Qwen3-VL-8B-Instruct": LocalModelInfo(
         name="Qwen3-VL 8B (Vision) | 4K | 4.5GB",
@@ -253,7 +293,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="High quality vision",
         model_class="AutoModelForVision2Seq",
-        target_image_size=448
+        target_image_size=448,
+        size="medium"
     ),
     "Qwen3-VL-2B-Thinking": LocalModelInfo(
         name="Qwen3-VL 2B Thinking (Vision) | 4K | 1.5GB",
@@ -265,7 +306,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Fast reasoning vision",
         model_class="AutoModelForVision2Seq",
-        target_image_size=320
+        target_image_size=320,
+        size="small"
     ),
     "Qwen3-VL-4B-Thinking": LocalModelInfo(
         name="Qwen3-VL 4B Thinking (Vision) | 4K | 2GB",
@@ -277,7 +319,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Balanced reasoning vision",
         model_class="AutoModelForVision2Seq",
-        target_image_size=384
+        target_image_size=384,
+        size="small"
     ),
     "Qwen3-VL-8B-Thinking": LocalModelInfo(
         name="Qwen3-VL 8B Thinking (Vision) | 4K | 4.5GB",
@@ -289,7 +332,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Best reasoning vision",
         model_class="AutoModelForVision2Seq",
-        target_image_size=448
+        target_image_size=448,
+        size="medium"
     ),
     "Qwen2.5-VL-3B-Instruct": LocalModelInfo(
         name="Qwen2.5-VL 3B (Vision) | 4K | 2GB",
@@ -300,7 +344,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Compact vision model",
         model_class="AutoModelForVision2Seq",
-        target_image_size=352
+        target_image_size=352,
+        size="small"
     ),
     "Qwen2.5-VL-7B-Instruct": LocalModelInfo(
         name="Qwen2.5-VL 7B (Vision) | 4K | 4GB",
@@ -311,7 +356,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Stable quality vision",
         model_class="AutoModelForVision2Seq",
-        target_image_size=416
+        target_image_size=416,
+        size="medium"
     ),
 
     # QwenVL FP8 Pre-quantized Models
@@ -325,7 +371,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Pre-quantized FP8",
         model_class="AutoModelForVision2Seq",
-        target_image_size=320
+        target_image_size=320,
+        size="small"
     ),
     "Qwen3-VL-2B-Thinking-FP8": LocalModelInfo(
         name="Qwen3-VL 2B Thinking FP8 (Vision) | 4K | 2.5GB",
@@ -338,7 +385,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Pre-quantized FP8 reasoning",
         model_class="AutoModelForVision2Seq",
-        target_image_size=320
+        target_image_size=320,
+        size="small"
     ),
     "Qwen3-VL-4B-Instruct-FP8": LocalModelInfo(
         name="Qwen3-VL 4B FP8 (Vision) | 4K | 2.5GB",
@@ -350,7 +398,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Pre-quantized FP8",
         model_class="AutoModelForVision2Seq",
-        target_image_size=384
+        target_image_size=384,
+        size="small"
     ),
     "Qwen3-VL-4B-Thinking-FP8": LocalModelInfo(
         name="Qwen3-VL 4B Thinking FP8 (Vision) | 4K | 2.5GB",
@@ -363,7 +412,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Pre-quantized FP8 reasoning",
         model_class="AutoModelForVision2Seq",
-        target_image_size=384
+        target_image_size=384,
+        size="small"
     ),
     "Qwen3-VL-8B-Instruct-FP8": LocalModelInfo(
         name="Qwen3-VL 8B FP8 (Vision) | 4K | 7.5GB",
@@ -375,7 +425,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Pre-quantized FP8",
         model_class="AutoModelForVision2Seq",
-        target_image_size=448
+        target_image_size=448,
+        size="medium"
     ),
     "Qwen3-VL-8B-Thinking-FP8": LocalModelInfo(
         name="Qwen3-VL 8B Thinking FP8 (Vision) | 4K | 7.5GB",
@@ -388,7 +439,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Pre-quantized FP8 reasoning",
         model_class="AutoModelForVision2Seq",
-        target_image_size=448
+        target_image_size=448,
+        size="medium"
     ),
 
     # QwenVL 32B Models (Large)
@@ -401,7 +453,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Largest Qwen3-VL",
         model_class="AutoModelForVision2Seq",
-        target_image_size=512
+        target_image_size=512,
+        size="large"
     ),
     "Qwen3-VL-32B-Thinking": LocalModelInfo(
         name="Qwen3-VL 32B Thinking (Vision) | 4K | 8.5GB",
@@ -413,7 +466,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Best reasoning vision",
         model_class="AutoModelForVision2Seq",
-        target_image_size=512
+        target_image_size=512,
+        size="large"
     ),
     "Qwen3-VL-32B-Instruct-FP8": LocalModelInfo(
         name="Qwen3-VL 32B FP8 (Vision) | 4K | 24GB",
@@ -425,7 +479,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Pre-quantized FP8 large",
         model_class="AutoModelForVision2Seq",
-        target_image_size=512
+        target_image_size=512,
+        size="large"
     ),
     "Qwen3-VL-32B-Thinking-FP8": LocalModelInfo(
         name="Qwen3-VL 32B Thinking FP8 (Vision) | 4K | 24GB",
@@ -438,7 +493,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         description="Pre-quantized FP8 reasoning large",
         model_class="AutoModelForVision2Seq",
-        target_image_size=512
+        target_image_size=512,
+        size="large"
     ),
 
     # =========================================================================
@@ -455,7 +511,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.TEXT,
         max_output_tokens=4096,
         description="Ultra-fast prompt generation",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        size="small"
     ),
     "Qwen3-1.7B": LocalModelInfo(
         name="Qwen3 1.7B (Text) | 32K | 1.4GB [Fast]",
@@ -465,7 +522,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.TEXT,
         max_output_tokens=4096,
         description="Fast prompt generation",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        size="small"
     ),
     "Qwen3-4B": LocalModelInfo(
         name="Qwen3 4B (Text) | 32K | 3GB [Balanced]",
@@ -475,7 +533,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.TEXT,
         max_output_tokens=4096,
         description="Balanced prompt generation",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        size="small"
     ),
     "Qwen3-8B": LocalModelInfo(
         name="Qwen3 8B (Text) | 32K | 6GB [Quality]",
@@ -485,7 +544,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.TEXT,
         max_output_tokens=4096,
         description="High quality prompts",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        size="medium"
     ),
     "Qwen3-4B-Instruct-2507": LocalModelInfo(
         name="Qwen3 4B 2507 (Text) | 32K | 3GB [Latest]",
@@ -495,7 +555,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.TEXT,
         max_output_tokens=4096,
         description="Latest Qwen3 (Aug 2025)",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        size="small"
     ),
 
     # Llama 3.2 Text Models
@@ -507,7 +568,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.TEXT,
         max_output_tokens=4096,
         description="Smallest Llama, very fast",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        size="small"
     ),
     "Llama-3.2-3B-Instruct": LocalModelInfo(
         name="Llama 3.2 3B (Text) | 128K | 2GB",
@@ -517,7 +579,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.TEXT,
         max_output_tokens=4096,
         description="Fast with huge context",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        size="small"
     ),
 
     # Mistral 7B (Text only)
@@ -529,7 +592,8 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         model_type=ModelType.TEXT,
         max_output_tokens=4096,
         description="Creative writing",
-        model_class="AutoModelForCausalLM"
+        model_class="AutoModelForCausalLM",
+        size="medium"
     ),
 }
 
@@ -591,6 +655,11 @@ def load_custom_models():
             # Parse VRAM requirements
             vram = model_info.get("vram_requirement", {})
 
+            # Get size from config or infer from model name
+            size = model_info.get("size", None)
+            if not size:
+                size = infer_model_size(model_name)
+
             # Create LocalModelInfo
             LOCAL_MODELS[model_name] = LocalModelInfo(
                 name=f"{model_name} (Custom)",
@@ -605,6 +674,7 @@ def load_custom_models():
                 max_output_tokens=model_info.get("max_output_tokens", 4096),
                 description=model_info.get("description", "Custom model"),
                 model_class=model_info.get("model_class", "AutoModelForVision2Seq"),
+                size=size,
             )
             count += 1
 
@@ -1407,6 +1477,10 @@ class LocalModelClient:
                                     img_bytes = base64.b64decode(b64data)
                                     img = Image.open(io.BytesIO(img_bytes))
                                     images.append(img)
+                                    # Debug: print image hash to verify correct image
+                                    import hashlib
+                                    img_hash = hashlib.md5(img_bytes[:2000] + img_bytes[-2000:]).hexdigest()[:12]
+                                    print(f"[LocalModel] Image decoded: {img.size}, hash={img_hash}")
         except Exception as e:
             print(f"[LocalModel] Message parsing error: {e}")
             return LocalModelResponse(f"[ERROR] Failed to parse input: {str(e)[:100]}")
@@ -1513,14 +1587,11 @@ class LocalModelClient:
                 LocalModelClient._image_cache.clear()
 
             if torch.cuda.is_available():
-                # Synchronize to ensure all CUDA operations are complete
-                torch.cuda.synchronize()
-
                 # Clear CUDA cache to free up memory for VAE
+                # Note: Don't synchronize() here - it creates a barrier that slows KSampler
                 torch.cuda.empty_cache()
 
             # Force garbage collection to release any dangling references
-            gc.collect()
             gc.collect()
 
         except Exception as e:
@@ -1593,14 +1664,14 @@ class LocalModelClient:
             # Clear image cache
             LocalModelClient._image_cache.clear()
 
-            # Force garbage collection - multiple passes for thorough cleanup
-            gc.collect()
-            gc.collect()
+            # Force garbage collection
             gc.collect()
 
             if torch.cuda.is_available():
-                torch.cuda.empty_cache()
+                # Synchronize needed here - model.to('cpu') is async, must complete
+                # before KSampler can use GPU safely
                 torch.cuda.synchronize()
+                torch.cuda.empty_cache()
 
             print("[LocalModel] Model unloaded from VRAM")
 
@@ -1614,6 +1685,11 @@ class LocalModelClient:
         check_interrupted()
 
         import torch
+
+        # Debug: verify images passed to generator
+        print(f"[QwenVL] Generating with {len(images)} image(s)")
+        if images:
+            print(f"[QwenVL] First image size: {images[0].size}")
 
         # Build QwenVL conversation format
         conversation = []
@@ -2053,13 +2129,6 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     display_name="HuggingFace Token",
                     tooltip="HuggingFace token for gated models. Get token from huggingface.co/settings/tokens"
                 ),
-                # Analysis mode - Standard or Detailed
-                comfy_io.Combo.Input(
-                    "analysis_mode",
-                    options=["Standard", "Detailed"],
-                    default="Detailed",
-                    tooltip="Standard: Single-pass (1 call). Detailed: Comprehensive multi-aspect analysis (3-4 calls)"
-                ),
             ],
             outputs=[
                 LLM_MODEL_Type.Output(
@@ -2087,7 +2156,6 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
         use_torch_compile: bool,
         clear_local_cache: bool,
         hf_token: str,
-        analysis_mode: str,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
         try:
@@ -2148,13 +2216,16 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
             if max_tokens > model_max_tokens:
                 max_tokens = model_max_tokens
 
-            # Reasoning is permanently disabled for local models
-            # Local models output chain-of-thought mixed with results, breaking JSON parsing
-            reasoning_enabled = False
+            # Check if model supports reasoning/thinking
+            # Note: Output is cleaned in _clean_thinking_output() to remove chain-of-thought
+            reasoning_enabled = model_info.is_thinking
 
             # Determine model capabilities based on model_type
             supports_vision_cap = model_info.model_type in [ModelType.VISION, ModelType.BOTH]
             supports_text_cap = model_info.model_type in [ModelType.TEXT, ModelType.BOTH]
+
+            # Get model size from catalogue (fallback to inference for custom models)
+            model_size = model_info.size
 
             config = LLMModelConfig(
                 provider=cls.PROVIDER_NAME,
@@ -2164,10 +2235,10 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                 api_url="",
                 max_tokens=max_tokens,
                 temperature=temperature,
-                analysis_mode=analysis_mode.lower(),
                 supports_vision=supports_vision_cap,
                 supports_system_prompt=True,
                 supports_reasoning=reasoning_enabled,
+                model_size=model_size,
                 extra_params={
                     "quantization": quant,
                     "device": device,
@@ -2190,7 +2261,7 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
             )
 
             print(f"[SID_LLM_Local] {model} ({quant})")
-            print(f"[SID_LLM_Local] max_tokens={max_tokens}, text_model={text_model}")
+            print(f"[SID_LLM_Local] max_tokens={max_tokens}, text_model={text_model}, size={model_size}, reasoning={reasoning_enabled}")
 
             return comfy_io.NodeOutput(config)
 
@@ -2262,13 +2333,6 @@ class SID_LLM_Local_API(comfy_io.ComfyNode):
                     display_mode=comfy_io.NumberDisplay.slider,
                     tooltip="Creativity (0=deterministic, 0.3=balanced, 1+=creative)"
                 ),
-                # Analysis mode - Standard or Detailed
-                comfy_io.Combo.Input(
-                    "analysis_mode",
-                    options=["Standard", "Detailed"],
-                    default="Detailed",
-                    tooltip="Standard: Single-pass (1 call). Detailed: Comprehensive multi-aspect analysis (3-4 calls)"
-                ),
             ],
             outputs=[
                 LLM_MODEL_Type.Output(
@@ -2287,7 +2351,6 @@ class SID_LLM_Local_API(comfy_io.ComfyNode):
         text_model: str,
         api_url: str,
         temperature: float,
-        analysis_mode: str,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
         try:
@@ -2313,6 +2376,9 @@ class SID_LLM_Local_API(comfy_io.ComfyNode):
             if not actual_url.endswith("/v1"):
                 actual_url = f"{actual_url}/v1"
 
+            # Infer model size from vision model name
+            model_size = infer_model_size(vision_model_name)
+
             # Create configuration (use reasonable default for local APIs)
             config = LLMModelConfig(
                 provider=provider_name,
@@ -2322,10 +2388,10 @@ class SID_LLM_Local_API(comfy_io.ComfyNode):
                 api_url=actual_url,
                 max_tokens=4096,  # Default for local API providers
                 temperature=temperature,
-                analysis_mode=analysis_mode.lower(),
                 supports_vision=True,
                 supports_system_prompt=True,
                 supports_reasoning=False,
+                model_size=model_size,
                 extra_params={
                     "target_image_size": 512,
                 },
@@ -2334,7 +2400,7 @@ class SID_LLM_Local_API(comfy_io.ComfyNode):
             print(f"[SID_LLM_Local_API] {provider}")
             print(f"  Vision: {vision_model_name}")
             print(f"  Text: {text_model_name}")
-            print(f"  URL: {actual_url}")
+            print(f"  URL: {actual_url}, size={model_size}")
 
             return comfy_io.NodeOutput(config)
 
