@@ -1,0 +1,23 @@
+{
+  "name": "MiniCPM-V-2.6",
+  "description": "MiniCPM-V 2.6 - High performance multimodal model from OpenBMB",
+  "model_id": "openbmb/MiniCPM-V-2_6",
+  "model_type": "minicpm",
+  "dtype": "bf16",
+  "trust_remote_code": true,
+  "prompts": {
+    "detailed": "Describe this image in detail. Focus on the subject, composition, lighting, colors, mood, and artistic style.",
+    "short": "Describe this image briefly in one sentence.",
+    "tags": "List descriptive tags for this image, separated by commas.",
+    "analyze": "Analyze this image's composition, lighting, color palette, and artistic style."
+  },
+  "generation": {
+    "max_tokens": 512,
+    "do_sample": true,
+    "temperature": 0.7
+  },
+  "download": {
+    "use_symlinks": false,
+    "subfolder": "LLM"
+  }
+}

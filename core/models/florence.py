@@ -12,9 +12,9 @@ from PIL import Image
 from transformers import AutoProcessor
 from transformers.dynamic_module_utils import get_imports
 
-from .base import BaseCaptionModel, CaptionMode, GenerationConfig
+from .base import BaseCaptionModel, CaptionMode, GenerationConfig, get_dtype, get_quantization_config
 from ..config import get_model_config, get_prompt
-from ..platform import cleanup_memory, isolated_execution
+from ..platform import isolated_execution
 
 # ComfyUI imports
 import comfy.model_management as mm
@@ -106,40 +106,34 @@ def _load_florence_model(local_path: Path, dtype: torch.dtype, trust_remote: boo
         )
 
 
-def _get_dtype(dtype_str: str) -> torch.dtype:
-    """Convert dtype string to torch dtype."""
-    dtype_map = {
-        "float16": torch.float16,
-        "fp16": torch.float16,
-        "float32": torch.float32,
-        "fp32": torch.float32,
-        "bfloat16": torch.bfloat16,
-        "bf16": torch.bfloat16,
-    }
-    return dtype_map.get(dtype_str, torch.float16)
-
-
 class FlorenceModel(BaseCaptionModel):
     """
     Florence-2 PromptGen model for image captioning.
 
     Optimized for generating prompts for image generation models.
-    All configuration loaded from config/florence.json
+    Configuration loaded from config files.
     """
 
     CONFIG_NAME = "florence"
 
-    def __init__(self, model_id: Optional[str] = None):
+    def __init__(self, model_id: Optional[str] = None, precision: str = "auto", config_name: Optional[str] = None):
+        # Use provided config_name or default
+        self._config_name = config_name or self.CONFIG_NAME
+
         # Load all config from file
-        self._config = get_model_config(self.CONFIG_NAME)
+        self._config = get_model_config(self._config_name)
 
         # Use provided model_id or fall back to config
         default_model = self._config.get("model_id")
-        super().__init__(model_id or default_model)
+        super().__init__(model_id or default_model, precision=precision)
 
-        # Get dtype from config
+        # Get dtype from config (used for auto/fp16 modes)
         dtype_str = self._config.get("dtype", "float16")
-        self._dtype = _get_dtype(dtype_str)
+        self._dtype = get_dtype(dtype_str)
+
+        # Override dtype based on precision
+        if precision == "fp16":
+            self._dtype = torch.float16
 
     def _get_local_path(self) -> Path:
         """Get local model path, downloading if needed."""
@@ -183,12 +177,21 @@ class FlorenceModel(BaseCaptionModel):
         # Get model loading config
         trust_remote = self._config.get("trust_remote_code", True)
 
-        print(f"[SID-Toolkit] Loading Florence-2 (transformers {transformers.__version__})")
+        # Get quantization config if needed
+        quant_config = get_quantization_config(self.precision)
 
-        # Load model with appropriate method based on transformers version
+        precision_label = self.precision.upper() if self.precision != "auto" else "FP16"
+        print(f"[SID-Toolkit] Loading Florence-2 ({precision_label}, transformers {transformers.__version__})")
+
+        # Load model - Florence-2 doesn't support quantization well due to custom model code
+        if quant_config is not None:
+            print(f"[SID-Toolkit] Warning: Florence-2 doesn't support {self.precision} quantization, using FP16")
+
+        # Standard loading for Florence-2 (already small ~1.5GB model)
         self._model = _load_florence_model(
             local_path, self._dtype, trust_remote
         ).to(offload_device)
+        self._quantized = False
 
         self._processor = AutoProcessor.from_pretrained(
             local_path,
@@ -197,6 +200,8 @@ class FlorenceModel(BaseCaptionModel):
 
         self._device = device
         self._offload_device = offload_device
+
+        print(f"[SID-Toolkit] Florence-2 loaded successfully ({precision_label})")
 
     def generate(
         self,
@@ -208,20 +213,21 @@ class FlorenceModel(BaseCaptionModel):
         if not self.is_loaded:
             self.load()
 
-        # Get generation config from file or use provided
-        gen_config = self._config.get("generation", {})
-        config = config or GenerationConfig(
-            max_tokens=gen_config.get("max_tokens", 1024),
-            num_beams=gen_config.get("num_beams", 4),
-            do_sample=gen_config.get("do_sample", False),
-        )
+        # Use provided config or fall back to defaults from file
+        if config is None:
+            gen_config = self._config.get("generation", {})
+            config = GenerationConfig(
+                max_tokens=gen_config.get("max_tokens", 1024),
+                num_beams=gen_config.get("num_beams", 4),
+                do_sample=gen_config.get("do_sample", False),
+            )
 
         # Get prompt from config file
-        prompt = get_prompt(self.CONFIG_NAME, mode.value)
+        prompt = get_prompt(self._config_name, mode.value)
 
         with isolated_execution():
             # Move model to compute device
-            self._model.to(self._device)
+            self._move_to_device()
 
             # Prepare inputs
             inputs = self._processor(
@@ -229,7 +235,7 @@ class FlorenceModel(BaseCaptionModel):
                 images=image,
                 return_tensors="pt",
                 do_rescale=False,
-            ).to(self._dtype).to(self._device)
+            ).to(self._dtype).to(self.target_device)
 
             # Generate (use_cache=False required for bundled Florence2 model)
             generated_ids = self._model.generate(
@@ -238,12 +244,13 @@ class FlorenceModel(BaseCaptionModel):
                 max_new_tokens=config.max_tokens,
                 num_beams=config.num_beams,
                 do_sample=config.do_sample,
-                early_stopping=gen_config.get("early_stopping", False),
+                temperature=config.temperature if config.do_sample else None,
+                early_stopping=False,
                 use_cache=False,
             )
 
             # Move model back to offload device
-            self._model.to(self._offload_device)
+            self._move_to_offload()
 
             # Decode
             generated_text = self._processor.batch_decode(
@@ -262,12 +269,4 @@ class FlorenceModel(BaseCaptionModel):
 
     def unload(self) -> None:
         """Release model from memory."""
-        if self._model is not None:
-            del self._model
-            self._model = None
-
-        if self._processor is not None:
-            del self._processor
-            self._processor = None
-
-        cleanup_memory()
+        self._cleanup()

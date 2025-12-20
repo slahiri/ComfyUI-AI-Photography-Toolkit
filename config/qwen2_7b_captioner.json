@@ -1,0 +1,23 @@
+{
+  "name": "Qwen2-VL-7B-Captioner",
+  "description": "Qwen2-VL 7B fine-tuned for text-to-image prompt generation",
+  "model_id": "Ertugrul/Qwen2-VL-7B-Captioner-Relaxed",
+  "model_type": "qwen2",
+  "dtype": "bf16",
+  "trust_remote_code": true,
+  "prompts": {
+    "detailed": "Describe this image in detail for use as a text-to-image prompt. Focus on the subject, composition, lighting, colors, mood, style, and any notable elements that would be useful for recreating this image.",
+    "short": "Describe this image briefly in one or two sentences.",
+    "tags": "List descriptive tags for this image, separated by commas. Include subject, style, mood, colors, and composition.",
+    "analyze": "Analyze this image's composition, lighting, color palette, and artistic style."
+  },
+  "generation": {
+    "max_tokens": 512,
+    "do_sample": false,
+    "temperature": 0.7
+  },
+  "download": {
+    "use_symlinks": false,
+    "subfolder": "LLM"
+  }
+}

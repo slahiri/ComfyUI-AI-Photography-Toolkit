@@ -1,0 +1,24 @@
+{
+  "name": "JoyCaption-Beta-One",
+  "description": "JoyCaption Beta One - LLaVA-based image captioning model, trained on 2.4M samples",
+  "model_id": "fancyfeast/llama-joycaption-beta-one-hf-llava",
+  "model_type": "joycaption",
+  "dtype": "bf16",
+  "trust_remote_code": true,
+  "prompts": {
+    "detailed": "Write a detailed description of this image, focusing on the subject, composition, lighting, colors, mood, and artistic style.",
+    "short": "Write a brief one-sentence caption for this image.",
+    "tags": "List descriptive tags for this image, separated by commas. Include subject, style, mood, colors, and composition.",
+    "analyze": "Analyze this image's composition, lighting, color palette, and artistic style. What makes this image visually interesting?"
+  },
+  "system_prompt": "You are a helpful image captioner.",
+  "generation": {
+    "max_tokens": 512,
+    "do_sample": true,
+    "temperature": 0.6
+  },
+  "download": {
+    "use_symlinks": false,
+    "subfolder": "LLM"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "JoyCaption-Alpha-Two",
+  "description": "JoyCaption Alpha Two - LLaVA-based image captioning model",
+  "model_id": "fancyfeast/llama-joycaption-alpha-two-hf-llava",
+  "model_type": "joycaption",
+  "dtype": "bf16",
+  "trust_remote_code": true,
+  "prompts": {
+    "detailed": "Write a descriptive caption for this image in a formal tone.",
+    "short": "Write a brief one-sentence caption for this image.",
+    "tags": "Write a stable diffusion prompt for this image.",
+    "analyze": "Analyze this image's composition, lighting, color palette, and artistic style."
+  },
+  "system_prompt": "You are a helpful image captioner.",
+  "generation": {
+    "max_tokens": 512,
+    "do_sample": true,
+    "temperature": 0.6
+  },
+  "download": {
+    "use_symlinks": false,
+    "subfolder": "LLM"
+  }
+}

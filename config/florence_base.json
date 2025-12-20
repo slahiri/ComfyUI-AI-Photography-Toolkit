@@ -1,0 +1,25 @@
+{
+  "name": "Florence-2-base-PromptGen",
+  "description": "Smaller Florence-2 base model, fastest inference",
+  "model_id": "MiaoshouAI/Florence-2-base-PromptGen-v1.5",
+  "model_type": "florence",
+  "dtype": "fp16",
+  "attention": "sdpa",
+  "trust_remote_code": true,
+  "prompts": {
+    "tags": "<GENERATE_TAGS>",
+    "short": "<CAPTION>",
+    "detailed": "<MORE_DETAILED_CAPTION>",
+    "analyze": "<DETAILED_CAPTION>"
+  },
+  "generation": {
+    "max_tokens": 1024,
+    "num_beams": 4,
+    "do_sample": false,
+    "early_stopping": false
+  },
+  "download": {
+    "use_symlinks": false,
+    "subfolder": "LLM"
+  }
+}

@@ -70,13 +70,32 @@ def get_device() -> str:
 # Memory Management
 # =============================================================================
 
-def cleanup_memory() -> None:
-    """Aggressive memory cleanup. Call after model unload."""
-    gc.collect()
+def cleanup_memory(aggressive: bool = False) -> None:
+    """
+    Memory cleanup. Call after model unload or inference.
+
+    Args:
+        aggressive: If True, run multiple GC passes and sync CUDA
+    """
+    if aggressive:
+        # Multiple GC passes to catch circular references
+        for _ in range(3):
+            gc.collect()
+    else:
+        gc.collect()
 
     if torch.cuda.is_available():
+        if aggressive:
+            torch.cuda.synchronize()
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
+
+        # Try to use ComfyUI's soft_empty_cache if available
+        try:
+            import comfy.model_management as mm
+            mm.soft_empty_cache()
+        except (ImportError, AttributeError):
+            pass
 
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         torch.mps.empty_cache()
@@ -150,5 +169,5 @@ def isolated_execution() -> Generator[None, None, None]:
         # Always restore original state
         _restore_torch_state(original_state)
 
-        # Clean up any leftover tensors
-        cleanup_memory()
+        # Aggressive cleanup after VLM inference
+        cleanup_memory(aggressive=True)

@@ -1,0 +1,23 @@
+{
+  "name": "Qwen2.5-VL-3B-Caption",
+  "description": "Qwen2.5-VL 3B fine-tuned for detailed image captioning",
+  "model_id": "prithivMLmods/Qwen2.5-VL-3B-Abliterated-Caption-it",
+  "model_type": "qwen25",
+  "dtype": "bf16",
+  "trust_remote_code": true,
+  "prompts": {
+    "detailed": "Describe this image in detail. Focus on the subject, composition, lighting, colors, mood, and any notable elements.",
+    "short": "Describe this image briefly in one or two sentences.",
+    "tags": "List descriptive tags for this image, separated by commas. Include subject, style, mood, colors, and composition.",
+    "analyze": "Analyze this image's composition, lighting, color palette, and artistic style."
+  },
+  "generation": {
+    "max_tokens": 512,
+    "do_sample": false,
+    "temperature": 0.7
+  },
+  "download": {
+    "use_symlinks": false,
+    "subfolder": "LLM"
+  }
+}

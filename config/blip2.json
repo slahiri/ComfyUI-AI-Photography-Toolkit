@@ -1,0 +1,23 @@
+{
+  "name": "BLIP-2",
+  "description": "BLIP-2 vision-language model for fast image captioning",
+  "model_id": "Salesforce/blip2-opt-2.7b",
+  "model_type": "blip2",
+  "dtype": "fp16",
+  "trust_remote_code": false,
+  "prompts": {
+    "detailed": "Describe this image in detail.",
+    "short": "A photo of",
+    "tags": "Tags:",
+    "analyze": "Analyze the composition and style of this image."
+  },
+  "generation": {
+    "max_tokens": 256,
+    "do_sample": false,
+    "temperature": 1.0
+  },
+  "download": {
+    "use_symlinks": false,
+    "subfolder": "LLM"
+  }
+}
