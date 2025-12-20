@@ -1,0 +1,26 @@
+{
+  "name": "Florence-2 PromptGen",
+  "description": "Optimized for generating image generation prompts",
+  "model_id": "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
+  "model_type": "florence",
+  "dtype": "fp16",
+  "attention": "sdpa",
+  "trust_remote_code": true,
+  "prompts": {
+    "tags": "<GENERATE_TAGS>",
+    "short": "<CAPTION>",
+    "detailed": "<MORE_DETAILED_CAPTION>",
+    "analyze": "<ANALYZE>",
+    "mixed": "<MIX_CAPTION_PLUS>"
+  },
+  "generation": {
+    "max_tokens": 1024,
+    "num_beams": 4,
+    "do_sample": false,
+    "early_stopping": false
+  },
+  "download": {
+    "use_symlinks": false,
+    "subfolder": "LLM"
+  }
+}

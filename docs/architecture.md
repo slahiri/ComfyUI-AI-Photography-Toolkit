@@ -226,46 +226,63 @@ DETAILED (Double Pass+):
 
 ---
 
+## Design Decisions
+
+### No Pipeline Framework (KISS Principle)
+
+**Decision:** Skip DAG/flow-based frameworks. Use simple, direct code.
+
+**Rationale:**
+- Fast mode: `Image → Model → Caption` (3 lines of logic)
+- Balanced mode: `Image → Tagger → Model → Caption` (linear, no branching)
+- No parallelism, no complex dependencies
+- Framework overhead > benefit for this use case
+
+**Trade-off:** Less flexibility, but ~300 lines instead of ~1000. Add abstraction later only if needed.
+
+### Plug-and-Play via Model Abstraction
+
+The "swappable" architecture comes from the model layer, not a pipeline:
+- `BaseCaptionModel` - Abstract interface
+- `ModelFactory.get(name)` - Instantiation
+- Models are self-contained, no external orchestration
+
+---
+
 ## File Structure
 
 ```
 ComfyUI-AI-Photography-Toolkit/
 ├── __init__.py                 # Extension entry point
 ├── requirements.txt
-├── pyproject.toml
 │
 ├── nodes/
 │   ├── __init__.py
-│   ├── caption.py              # SID_Caption + SID_CaptionAdvanced
+│   ├── caption.py              # SID_Caption, SID_CaptionAdvanced
 │   └── options.py              # SID_CaptionOptions
 │
 ├── core/
 │   ├── __init__.py
-│   ├── pipeline.py             # CaptionPipeline (orchestration)
 │   ├── platform.py             # GPU/platform detection
-│   ├── prompts.py              # Prompt building
-│   ├── output.py               # Output cleaning
+│   ├── output.py               # Caption cleaning
 │   │
 │   └── models/
 │       ├── __init__.py
+│       ├── base.py             # BaseCaptionModel (ABC)
 │       ├── factory.py          # ModelFactory
-│       ├── base.py             # BaseCaptionModel
-│       ├── qwen.py             # QwenVLModel
-│       ├── joycaption.py       # JoyCaptionModel
 │       ├── florence.py         # FlorenceModel
-│       └── tagger.py           # WD14Tagger (embedded, used by pipeline)
-│
-├── config/
-│   ├── models.json             # Model definitions
-│   ├── styles.json             # Style templates
-│   └── options.json            # Option definitions
+│       ├── qwen.py             # QwenVLModel (future)
+│       ├── joycaption.py       # JoyCaptionModel (future)
+│       └── tagger.py           # WD14Tagger (future)
 │
 └── docs/
-    ├── architecture.md         # This file
-    ├── models.md               # Model reference
-    ├── research.md             # Existing nodes research
-    └── history.md              # Version history analysis
+    ├── architecture.md
+    ├── mvp.md
+    ├── research.md
+    └── history.md
 ```
+
+**~300 lines total for MVP** (Florence-2 + SID_Caption)
 
 ---
 

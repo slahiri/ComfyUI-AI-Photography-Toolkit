@@ -1,34 +1,39 @@
 # -*- coding: utf-8 -*-
 """
-ComfyUI-AI-Photography-Toolkit
+SID Photography Toolkit v5.0
 
-Re-architecture branch - Clean slate.
+AI-powered image captioning for ComfyUI.
+Clean, modular architecture with plug-and-play models.
 
 Author: Siddhartha Lahiri
 License: MIT
-Version: 5.0.0-dev
 """
 
-__version__ = "5.0.0-dev"
+__version__ = "5.0.0"
 
-from typing_extensions import override
-from comfy_api.latest import ComfyExtension, io
+# Import nodes
+from .nodes import SID_Caption
 
+# V1 API registration
+NODE_CLASS_MAPPINGS = {
+    "SID_Caption": SID_Caption,
+}
 
-class SIDPhotographyToolkitExtension(ComfyExtension):
-    """
-    Extension class for SID Photography Toolkit.
-    """
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "SID_Caption": "SID Caption",
+}
 
-    @override
-    async def get_node_list(self) -> list[type[io.ComfyNode]]:
-        """Return list of all nodes in this extension."""
-        nodes = []
-        return nodes
+__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
 
+# Startup message
+def _print_startup():
+    try:
+        from .core.platform import get_system_info
+        info = get_system_info()
+        print(f"\n[SID-Toolkit] v{__version__} loaded")
+        print(f"[SID-Toolkit] Device: {info.device_name}")
+        print(f"[SID-Toolkit] Quantization: {', '.join(info.available_quants)}\n")
+    except Exception as e:
+        print(f"\n[SID-Toolkit] v{__version__} loaded (device detection failed: {e})\n")
 
-async def comfy_entrypoint() -> SIDPhotographyToolkitExtension:
-    """ComfyUI entry point."""
-    print("\n[SID-Toolkit] v5.0.0-dev - Re-architecture branch")
-    print("[SID-Toolkit] No nodes registered yet\n")
-    return SIDPhotographyToolkitExtension()
+_print_startup()

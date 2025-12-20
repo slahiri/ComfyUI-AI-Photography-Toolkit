@@ -51,11 +51,12 @@ api_keys.txt
 .coverage
 htmlcov/
 
-# ComfyUI specific
+# ComfyUI specific - model weights
 *.safetensors
 *.ckpt
 *.pt
-models/
+/models/
+!core/models/
 
 # Prompt cache
 cache/
