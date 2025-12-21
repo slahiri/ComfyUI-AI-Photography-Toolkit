@@ -1,5 +1,17 @@
 # ComfyUI-AI-Photography-Toolkit Dependencies
-# Version 5.0.0-dev - Clean slate
+# Install: pip install -r requirements.txt
 
-# Extended typing support (required for ComfyExtension)
-typing-extensions>=4.0.0
+# Core
+huggingface_hub
+safetensors
+transformers>=4.46.0
+
+# Taggers
+onnxruntime-gpu
+timm
+nudenet
+pyiqa
+ultralytics
+mediapipe
+opencv-contrib-python
+scipy
