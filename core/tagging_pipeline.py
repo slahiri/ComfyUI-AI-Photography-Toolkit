@@ -6,7 +6,7 @@ from PIL import Image
 import json
 
 from .taggers import WD14Tagger, PhotographyTagger, TagItem, TaggerResult
-from .taggers import RAMPlusTagger, JoyTagTagger
+from .taggers import JoyTagTagger
 from .taggers import NudeNetTagger
 from .taggers import IQATagger, CADBCompositionTagger, SaliencyTagger
 from .taggers.wd14 import set_verbose as set_wd14_verbose
@@ -85,13 +85,6 @@ class TaggingPipeline:
                 character_threshold=tagger_config.get("character_threshold", 0.85),
                 replace_underscore=tagger_config.get("replace_underscore", True),
                 exclude_tags=tagger_config.get("exclude_tags", ""),
-            )
-            self._taggers[name] = tagger
-            return tagger
-
-        elif name == "ram_plus":
-            tagger = RAMPlusTagger(
-                threshold=tagger_config.get("threshold", 0.5),
             )
             self._taggers[name] = tagger
             return tagger
@@ -312,7 +305,7 @@ class TaggingPipeline:
         failed_taggers: dict[str, str] = None,
     ) -> str:
         """
-        Build JSON-formatted output per tagger with confidence scores.
+        Build JSON-formatted output per tagger.
 
         Args:
             tagger_results: Dict of tagger name -> TaggerResult
@@ -320,46 +313,39 @@ class TaggingPipeline:
             failed_taggers: Dict of tagger name -> error message
 
         Returns:
-            JSON string with { tagger: { tags: [{tag, confidence}], metadata } }
+            JSON string with { module: { tags: [...], attributes: {...} } }
         """
         skipped_taggers = skipped_taggers or []
         failed_taggers = failed_taggers or {}
 
         output = {}
 
-        # Add results from each tagger (even if no tags)
+        # Add results from each tagger
         for tagger_name, result in tagger_results.items():
-            # Build tag list with confidence scores
-            tag_list = []
-            for tag in result.tags:
-                tag_list.append({
-                    "tag": tag.text,
-                    "confidence": round(tag.confidence, 3),
-                    "category": tag.category
-                })
+            # Build simple tag list (just strings)
+            tags = [tag.text for tag in result.tags]
+
+            # Build attributes from metadata
+            attributes = result.metadata.copy() if result.metadata else {}
+            attributes["count"] = len(tags)
 
             output[tagger_name] = {
-                "tags": tag_list,
-                "count": len(tag_list),
-                "metadata": result.metadata or {}
+                "tags": tags,
+                "attributes": attributes
             }
 
         # Add skipped taggers
         for tagger_name in skipped_taggers:
             output[tagger_name] = {
-                "skipped": True,
-                "reason": "no human detected",
                 "tags": [],
-                "count": 0
+                "attributes": {"skipped": True, "reason": "no human detected"}
             }
 
         # Add failed taggers
         for tagger_name, error_msg in failed_taggers.items():
             output[tagger_name] = {
-                "failed": True,
-                "error": error_msg,
                 "tags": [],
-                "count": 0
+                "attributes": {"failed": True, "error": error_msg}
             }
 
         return json.dumps(output, indent=2, ensure_ascii=False)

@@ -38,10 +38,8 @@ VERSION_DEPENDENCIES = [
     ("transformers", "transformers>=4.46.0", "4.46.0", "Florence2, ijepa, FashionCLIP"),
 ]
 
-# Special packages that need git install
-GIT_DEPENDENCIES = [
-    ("ram", "git+https://github.com/xinyu1205/recognize-anything.git", "RAM++ (6400+ tags)"),
-]
+# Special packages that need git install (none currently)
+GIT_DEPENDENCIES = []
 
 
 def _install_package(package: str, description: str) -> bool:
@@ -172,7 +170,7 @@ def _print_status_banner(installed: list, failed: list):
     print("")
     print("  Taggers:")
     print("  ---------")
-    print("    General:     WD14 | RAM++ (6400+) | JoyTag (5000+)")
+    print("    General:     WD14 | JoyTag (5000+)")
     print("    NSFW:        NudeNet v2 (16 classes)")
     print("    Quality:     NIMA | MUSIQ | BRISQUE | CLIPIQA")
     print("    Composition: CADB (13 types) | Saliency | Elements")
@@ -189,7 +187,6 @@ def _print_status_banner(installed: list, failed: list):
         ("onnxruntime", "WD14"),
         ("transformers", "Transformers"),
         ("torch", "PyTorch"),
-        ("ram", "RAM++"),
         ("timm", "JoyTag"),
         ("nudenet", "NudeNet"),
         ("pyiqa", "IQA"),
@@ -232,7 +229,6 @@ _check_and_install_dependencies()
 from .base import BaseTagger, TagItem, TaggerResult
 from .wd14 import WD14Tagger, WD14_MODELS, DEFAULT_MODEL as WD14_DEFAULT_MODEL
 from .instant import ColorAnalyzer, BlurDetector, PhotographyTagger
-from .ram_plus import RAMPlusTagger, RAMPlusTaggerHF
 from .joytag import JoyTagTagger
 from .nudenet import NudeNetTagger, NudeNetONNXTagger
 from .iqa import IQATagger
@@ -250,8 +246,6 @@ __all__ = [
     "WD14Tagger",
     "WD14_MODELS",
     "WD14_DEFAULT_MODEL",
-    "RAMPlusTagger",
-    "RAMPlusTaggerHF",
     "JoyTagTagger",
     "NudeNetTagger",
     "NudeNetONNXTagger",

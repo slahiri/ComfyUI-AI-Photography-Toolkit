@@ -54,18 +54,6 @@ class SID_TaggerConfig:
                     "default": True,
                     "tooltip": "Replace underscores with spaces"
                 }),
-                # RAM++ (Recognize Anything Plus)
-                "ram_plus_enabled": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "RAM++ 6,400+ categories - Best general-purpose tagger"
-                }),
-                "ram_plus_threshold": ("FLOAT", {
-                    "default": 0.5,
-                    "min": 0.1,
-                    "max": 0.9,
-                    "step": 0.05,
-                    "tooltip": "Confidence threshold for RAM++ tags"
-                }),
                 # JoyTag
                 "joytag_enabled": ("BOOLEAN", {
                     "default": True,
@@ -238,9 +226,6 @@ class SID_TaggerConfig:
         wd14_character_threshold: float = 0.85,
         wd14_exclude_tags: str = "",
         wd14_replace_underscore: bool = True,
-        # RAM++
-        ram_plus_enabled: bool = True,
-        ram_plus_threshold: float = 0.5,
         # JoyTag
         joytag_enabled: bool = True,
         joytag_threshold: float = 0.4,
@@ -296,13 +281,6 @@ class SID_TaggerConfig:
             "exclude_tags": wd14_exclude_tags,
             "replace_underscore": wd14_replace_underscore,
         }
-
-        # RAM++ (6,400+ categories, best general-purpose)
-        if ram_plus_enabled:
-            config["taggers"]["ram_plus"] = {
-                "enabled": True,
-                "threshold": ram_plus_threshold,
-            }
 
         # JoyTag (photo-friendly Danbooru tags)
         if joytag_enabled:
