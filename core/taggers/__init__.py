@@ -15,11 +15,11 @@ __version__ = "5.0.0"
 __author__ = "SID Photography Toolkit"
 
 # Package dependencies: (import_name, pip_package, description)
+# NOTE: torch/torchvision are NOT included - they must be installed by user
+# with correct CUDA version (e.g., pip install torch --index-url .../cu126)
 DEPENDENCIES = [
     # Core (required)
     ("onnxruntime", "onnxruntime-gpu", "WD14 tagger"),
-    ("torch", "torch", "Deep learning framework"),
-    ("torchvision", "torchvision", "Vision models"),
     ("huggingface_hub", "huggingface_hub", "Model downloads"),
     ("safetensors", "safetensors", "Model loading"),
     # Taggers
