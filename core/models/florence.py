@@ -111,6 +111,48 @@ def _load_kijai_florence_class():
     return model_module.Florence2ForConditionalGeneration
 
 
+def _register_processor_from_model(local_path: Path):
+    """
+    Load and register Florence2Processor from the model's local files.
+    This is needed because kijai's implementation doesn't include the processor.
+    """
+    import importlib.util
+    from types import ModuleType
+
+    processing_file = local_path / "processing_florence2.py"
+    if not processing_file.exists():
+        return  # No local processor file
+
+    package_name = "comfyui_florence2_bundled"
+
+    # Load the processing module from model's local files
+    proc_spec = importlib.util.spec_from_file_location(
+        f"{package_name}.processing_florence2",
+        processing_file,
+        submodule_search_locations=[str(local_path)]
+    )
+    proc_module = importlib.util.module_from_spec(proc_spec)
+    proc_module.__package__ = package_name
+    sys.modules[f"{package_name}.processing_florence2"] = proc_module
+
+    try:
+        proc_spec.loader.exec_module(proc_module)
+    except Exception as e:
+        print(f"[SID-Toolkit] Warning: Failed to load processor module: {e}")
+        return
+
+    # Add processor class to the mock transformers.models.florence2 module
+    if "transformers.models.florence2" in sys.modules:
+        mock_florence2 = sys.modules["transformers.models.florence2"]
+        for name in dir(proc_module):
+            if not name.startswith("_") and "Processor" in name:
+                setattr(mock_florence2, name, getattr(proc_module, name))
+
+    # Also register the processing submodule
+    if "transformers.models.florence2.processing_florence2" not in sys.modules:
+        sys.modules["transformers.models.florence2.processing_florence2"] = proc_module
+
+
 def _load_florence_model(local_path: Path, dtype: torch.dtype, trust_remote: bool):
     """
     Load Florence model using the best available method.
@@ -227,7 +269,9 @@ class FlorenceModel(BaseCaptionModel):
         ).to(offload_device)
         self._quantized = False
 
-        # Load processor - also needs the mock module registered
+        # Load processor - need to register processor class from model's local files
+        # kijai's implementation doesn't include the processor, so we load it from
+        # the model's bundled processing_florence2.py
         kijai_path = _get_kijai_path()
         if kijai_path.exists():
             # Ensure mock module is set up before loading processor
@@ -235,6 +279,9 @@ class FlorenceModel(BaseCaptionModel):
                 _load_kijai_florence_class()
             except Exception:
                 pass  # Already loaded or will be handled
+
+            # Register processor class from model's local files
+            _register_processor_from_model(local_path)
 
         self._processor = AutoProcessor.from_pretrained(
             local_path,
