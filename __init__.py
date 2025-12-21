@@ -12,15 +12,17 @@ License: MIT
 __version__ = "5.0.0"
 
 # Import nodes
-from .nodes import SID_Caption
+from .nodes import SID_ZImagePromptGenerator, SID_TaggerConfig
 
 # V1 API registration
 NODE_CLASS_MAPPINGS = {
-    "SID_Caption": SID_Caption,
+    "SID_ZImagePromptGenerator": SID_ZImagePromptGenerator,
+    "SID_TaggerConfig": SID_TaggerConfig,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "SID_Caption": "SID Caption",
+    "SID_ZImagePromptGenerator": "SID Z-Image Prompt Generator",
+    "SID_TaggerConfig": "SID Tagger Config",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

@@ -14,16 +14,41 @@ from transformers.dynamic_module_utils import get_imports
 
 from .base import BaseCaptionModel, CaptionMode, GenerationConfig, get_dtype, get_quantization_config
 from ..config import get_model_config, get_prompt
+from ..download import download_model
 from ..platform import isolated_execution
 
 # ComfyUI imports
 import comfy.model_management as mm
 import folder_paths
 
+# Global verbose flag
+_verbose = False
+
+
+def set_verbose(verbose: bool) -> None:
+    """Set verbose logging flag."""
+    global _verbose
+    _verbose = verbose
+
+
+def _log(message: str) -> None:
+    """Print message if verbose is enabled."""
+    if _verbose:
+        print(f"[SID-Florence] {message}")
+
 _MODELS_DIR = Path(folder_paths.models_dir) / "LLM"
 
-# Check if we need to use bundled Florence model (transformers >= 4.51.0)
-_USE_BUNDLED_FLORENCE = transformers.__version__ >= "4.51.0"
+# Check if we need to use bundled Florence model (transformers >= 4.50.0)
+# After 4.50, PreTrainedModel no longer inherits from GenerationMixin
+def _parse_version(version_str: str) -> tuple:
+    """Parse version string to tuple for comparison."""
+    try:
+        parts = version_str.split(".")[:3]
+        return tuple(int(p.split("+")[0].split("a")[0].split("b")[0].split("rc")[0]) for p in parts)
+    except (ValueError, IndexError):
+        return (0, 0, 0)
+
+_USE_BUNDLED_FLORENCE = _parse_version(transformers.__version__) >= (4, 50, 0)
 
 
 # Workaround for unnecessary flash_attn requirement in Florence-2
@@ -37,9 +62,13 @@ def _fixed_get_imports(filename: str | os.PathLike) -> list[str]:
     return imports
 
 
-def _get_florence_class():
-    """Get Florence2 model class from kijai's bundled implementation."""
+def _setup_florence_modules():
+    """
+    Set up Florence2 modules from kijai's bundled implementation.
+    Also registers a mock transformers.models.florence2 to satisfy dynamic imports.
+    """
     import importlib.util
+    from types import ModuleType
 
     kijai_path = Path(folder_paths.base_path) / "custom_nodes" / "comfyui-florence2"
     package_name = "comfyui_florence2_bundled"
@@ -68,29 +97,66 @@ def _get_florence_class():
     sys.modules[f"{package_name}.modeling_florence2"] = model_module
     model_spec.loader.exec_module(model_module)
 
+    # Create mock transformers.models.florence2 module to satisfy dynamic imports
+    # This is needed because AutoProcessor tries to import from transformers.models.florence2
+    if "transformers.models.florence2" not in sys.modules:
+        mock_florence2 = ModuleType("transformers.models.florence2")
+        mock_florence2.__file__ = str(kijai_path / "modeling_florence2.py")
+        mock_florence2.__path__ = [str(kijai_path)]
+
+        # Copy all exports from kijai's modules
+        for name in dir(config_module):
+            if not name.startswith("_"):
+                setattr(mock_florence2, name, getattr(config_module, name))
+        for name in dir(model_module):
+            if not name.startswith("_"):
+                setattr(mock_florence2, name, getattr(model_module, name))
+
+        # Register the mock module
+        sys.modules["transformers.models.florence2"] = mock_florence2
+
+        # Also ensure transformers.models knows about it
+        import transformers.models
+        if not hasattr(transformers.models, "florence2"):
+            transformers.models.florence2 = mock_florence2
+
     return model_module.Florence2ForConditionalGeneration
 
 
+def _get_florence_class():
+    """Get Florence2 model class from kijai's bundled implementation."""
+    return _setup_florence_modules()
+
+
 def _load_florence_model(local_path: Path, dtype: torch.dtype, trust_remote: bool):
-    """Load Florence model with appropriate method based on transformers version."""
+    """Load Florence model - requires kijai's comfyui-florence2 for transformers >= 4.50."""
+
+    # For transformers >= 4.50, we MUST use kijai's bundled implementation
+    # because the model's bundled code doesn't inherit from GenerationMixin
     if _USE_BUNDLED_FLORENCE:
-        # Use kijai's bundled Florence2 implementation for newer transformers
-        # This version properly inherits from GenerationMixin
-        try:
-            kijai_path = Path(folder_paths.base_path) / "custom_nodes" / "comfyui-florence2"
-            if kijai_path.exists():
-                Florence2ForConditionalGeneration = _get_florence_class()
+        kijai_path = Path(folder_paths.base_path) / "custom_nodes" / "comfyui-florence2"
+        if not kijai_path.exists():
+            raise RuntimeError(
+                "Florence-2 requires comfyui-florence2 for transformers >= 4.50. "
+                "Please install it from: https://github.com/kijai/ComfyUI-Florence2 "
+                "(git clone into custom_nodes folder) OR downgrade transformers: "
+                "pip install transformers==4.44.2"
+            )
 
-                print(f"[SID-Toolkit] Using bundled Florence2 (transformers {transformers.__version__})")
-                return Florence2ForConditionalGeneration.from_pretrained(
-                    local_path,
-                    torch_dtype=dtype,
-                    trust_remote_code=trust_remote,
-                )
-        except Exception as e:
-            print(f"[SID-Toolkit] Bundled Florence2 failed: {e}, falling back to AutoModel")
+        Florence2ForConditionalGeneration = _get_florence_class()
+        print(f"[SID-Toolkit] Using kijai's Florence2 (transformers {transformers.__version__})")
 
-    # Fallback: Use AutoModelForCausalLM with flash_attn workaround
+        with patch(
+            "transformers.dynamic_module_utils.get_imports",
+            _fixed_get_imports
+        ):
+            return Florence2ForConditionalGeneration.from_pretrained(
+                local_path,
+                torch_dtype=dtype,
+                trust_remote_code=trust_remote,
+            )
+
+    # For older transformers, use AutoModelForCausalLM
     from transformers import AutoModelForCausalLM
 
     print(f"[SID-Toolkit] Using AutoModelForCausalLM (transformers {transformers.__version__})")
@@ -137,30 +203,7 @@ class FlorenceModel(BaseCaptionModel):
 
     def _get_local_path(self) -> Path:
         """Get local model path, downloading if needed."""
-        download_config = self._config.get("download", {})
-        subfolder = download_config.get("subfolder", "LLM")
-        use_symlinks = download_config.get("use_symlinks", False)
-
-        model_name = self.model_id.split("/")[-1]
-        local_path = Path(folder_paths.models_dir) / subfolder / model_name
-
-        if local_path.exists():
-            return local_path
-
-        print(f"[SID-Toolkit] Downloading {self.model_id} to {local_path}...")
-
-        from huggingface_hub import snapshot_download
-
-        local_path.parent.mkdir(parents=True, exist_ok=True)
-
-        snapshot_download(
-            repo_id=self.model_id,
-            local_dir=local_path,
-            local_dir_use_symlinks=use_symlinks,
-        )
-
-        print(f"[SID-Toolkit] Download complete: {model_name}")
-        return local_path
+        return download_model(self.model_id, self._config)
 
     def load(self) -> None:
         """Load Florence-2 model and processor."""
@@ -193,6 +236,7 @@ class FlorenceModel(BaseCaptionModel):
         ).to(offload_device)
         self._quantized = False
 
+        # Load processor
         self._processor = AutoProcessor.from_pretrained(
             local_path,
             trust_remote_code=trust_remote,
@@ -210,7 +254,10 @@ class FlorenceModel(BaseCaptionModel):
         config: Optional[GenerationConfig] = None,
     ) -> str:
         """Generate caption using Florence-2."""
+        _log(f"Generate called with mode: {mode.value}")
+
         if not self.is_loaded:
+            _log("Model not loaded, loading now...")
             self.load()
 
         # Use provided config or fall back to defaults from file
@@ -222,8 +269,11 @@ class FlorenceModel(BaseCaptionModel):
                 do_sample=gen_config.get("do_sample", False),
             )
 
+        _log(f"Generation config: max_tokens={config.max_tokens}, num_beams={config.num_beams}, do_sample={config.do_sample}")
+
         # Get prompt from config file
         prompt = get_prompt(self._config_name, mode.value)
+        _log(f"Prompt/Task: '{prompt}'")
 
         with isolated_execution():
             # Move model to compute device

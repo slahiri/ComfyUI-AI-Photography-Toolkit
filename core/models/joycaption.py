@@ -8,11 +8,26 @@ from PIL import Image
 
 from .base import BaseCaptionModel, CaptionMode, GenerationConfig, get_dtype, get_quantization_config
 from ..config import get_model_config, get_prompt
+from ..download import download_model
 from ..platform import isolated_execution
 
 # ComfyUI imports
 import comfy.model_management as mm
-import folder_paths
+
+# Global verbose flag
+_verbose = False
+
+
+def set_verbose(verbose: bool) -> None:
+    """Set verbose logging flag."""
+    global _verbose
+    _verbose = verbose
+
+
+def _log(message: str) -> None:
+    """Print message if verbose is enabled."""
+    if _verbose:
+        print(f"[SID-JoyCaption] {message}")
 
 
 class JoyCaptionModel(BaseCaptionModel):
@@ -46,30 +61,7 @@ class JoyCaptionModel(BaseCaptionModel):
 
     def _get_local_path(self) -> Path:
         """Get local model path, downloading if needed."""
-        download_config = self._config.get("download", {})
-        subfolder = download_config.get("subfolder", "LLM")
-        use_symlinks = download_config.get("use_symlinks", False)
-
-        model_name = self.model_id.split("/")[-1]
-        local_path = Path(folder_paths.models_dir) / subfolder / model_name
-
-        if local_path.exists():
-            return local_path
-
-        print(f"[SID-Toolkit] Downloading {self.model_id} to {local_path}...")
-
-        from huggingface_hub import snapshot_download
-
-        local_path.parent.mkdir(parents=True, exist_ok=True)
-
-        snapshot_download(
-            repo_id=self.model_id,
-            local_dir=local_path,
-            local_dir_use_symlinks=use_symlinks,
-        )
-
-        print(f"[SID-Toolkit] Download complete: {model_name}")
-        return local_path
+        return download_model(self.model_id, self._config)
 
     def load(self) -> None:
         """Load JoyCaption model and processor."""
@@ -124,7 +116,10 @@ class JoyCaptionModel(BaseCaptionModel):
         config: Optional[GenerationConfig] = None,
     ) -> str:
         """Generate caption using JoyCaption."""
+        _log(f"Generate called with mode: {mode.value}")
+
         if not self.is_loaded:
+            _log("Model not loaded, loading now...")
             self.load()
 
         # Use provided config or fall back to defaults from file
@@ -136,8 +131,11 @@ class JoyCaptionModel(BaseCaptionModel):
                 temperature=gen_config.get("temperature", 0.6),
             )
 
+        _log(f"Generation config: max_tokens={config.max_tokens}, do_sample={config.do_sample}, temp={config.temperature}")
+
         # Get prompt from config file
         prompt = get_prompt(self._config_name, mode.value)
+        _log(f"Prompt: '{prompt}'")
 
         # Ensure RGB
         image = image.convert("RGB")

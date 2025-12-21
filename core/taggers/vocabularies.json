@@ -1,0 +1,378 @@
+{
+  "_version": "1.0.0",
+  "_description": "Comprehensive vocabularies for all taggers",
+
+  "fashion_clip": {
+    "styles": [
+      "casual outfit", "formal outfit", "business attire", "sportswear",
+      "streetwear", "evening wear", "loungewear", "swimwear", "activewear",
+      "workwear", "smart casual", "business casual", "semi-formal",
+      "avant-garde fashion", "bohemian style", "boho chic", "preppy style",
+      "punk style", "grunge style", "gothic fashion", "hippie style",
+      "retro fashion", "vintage fashion", "geek chic", "normcore",
+      "androgynous fashion", "gender-neutral clothing", "unisex outfit",
+      "haute couture", "high fashion", "ready-to-wear", "designer fashion",
+      "modest fashion", "conservative dress", "eclectic style",
+      "maximalist fashion", "minimalist fashion", "chic style", "elegant style",
+      "edgy style", "rocker style", "biker style", "classic style",
+      "romantic style", "feminine style", "masculine style",
+      "coastal style", "nautical style", "resort wear",
+      "western style", "country style", "korean fashion", "japanese fashion"
+    ],
+    "tops": [
+      "t-shirt", "graphic tee", "plain tee", "v-neck shirt", "crew neck",
+      "blouse", "button-up shirt", "dress shirt", "oxford shirt",
+      "sweater", "knit sweater", "cable knit", "turtleneck", "mock neck",
+      "hoodie", "pullover hoodie", "zip-up hoodie", "sweatshirt",
+      "tank top", "camisole", "crop top", "halter top", "off-shoulder top",
+      "cardigan", "vest", "polo shirt", "henley shirt", "flannel shirt",
+      "tube top", "bandeau top", "peplum top", "wrap top", "bodysuit"
+    ],
+    "bottoms": [
+      "jeans", "skinny jeans", "straight leg jeans", "wide leg jeans", "bootcut jeans",
+      "ripped jeans", "high-waisted jeans", "low-rise jeans", "mom jeans", "boyfriend jeans",
+      "pants", "dress pants", "chinos", "khakis", "trousers", "slacks",
+      "shorts", "denim shorts", "cargo shorts", "athletic shorts", "bermuda shorts",
+      "skirt", "mini skirt", "midi skirt", "maxi skirt", "pencil skirt", "pleated skirt",
+      "leggings", "yoga pants", "sweatpants", "joggers", "track pants",
+      "cargo pants", "culottes", "palazzo pants", "capris", "cigarette pants",
+      "harem pants", "drop crotch pants", "tapered pants"
+    ],
+    "dresses": [
+      "mini dress", "midi dress", "maxi dress", "knee-length dress", "floor-length dress",
+      "a-line dress", "bodycon dress", "sheath dress", "shift dress", "empire waist dress",
+      "fit and flare dress", "mermaid dress", "trumpet dress", "ballgown", "princess dress",
+      "wrap dress", "shirt dress", "slip dress", "sundress", "peasant dress",
+      "tiered dress", "smock dress", "pinafore dress", "jumper dress", "tunic dress",
+      "cocktail dress", "evening gown", "ball gown", "prom dress", "formal gown",
+      "wedding dress", "bridal gown", "bridesmaid dress",
+      "flapper dress", "vintage dress", "retro dress", "boho dress",
+      "lace dress", "sequin dress", "beaded dress", "floral dress",
+      "backless dress", "strapless dress", "one-shoulder dress", "off-shoulder dress"
+    ],
+    "outerwear": [
+      "jacket", "blazer", "suit jacket", "sport coat",
+      "leather jacket", "faux leather jacket", "moto jacket",
+      "denim jacket", "jean jacket", "trucker jacket",
+      "bomber jacket", "varsity jacket", "flight jacket",
+      "coat", "overcoat", "peacoat", "trench coat", "wool coat",
+      "parka", "puffer jacket", "down jacket", "quilted jacket",
+      "windbreaker", "rain jacket", "anorak", "poncho",
+      "cape", "shawl", "kimono jacket", "cardigan coat"
+    ],
+    "footwear": [
+      "sneakers", "running shoes", "athletic shoes", "tennis shoes",
+      "high heels", "stilettos", "pumps", "kitten heels", "platform heels",
+      "boots", "ankle boots", "knee-high boots", "thigh-high boots", "combat boots",
+      "chelsea boots", "cowboy boots", "rain boots", "winter boots",
+      "sandals", "flip flops", "slides", "wedges", "espadrilles",
+      "loafers", "penny loafers", "moccasins", "driving shoes",
+      "flats", "ballet flats", "pointed toe flats", "mary janes",
+      "oxford shoes", "brogues", "derby shoes", "monk straps"
+    ],
+    "accessories": [
+      "hat", "baseball cap", "beanie", "fedora", "beret", "bucket hat", "sun hat",
+      "sunglasses", "aviator sunglasses", "cat eye sunglasses", "round sunglasses",
+      "eyeglasses", "reading glasses",
+      "scarf", "silk scarf", "wool scarf", "infinity scarf",
+      "tie", "necktie", "bow tie",
+      "belt", "leather belt", "chain belt", "statement belt",
+      "handbag", "tote bag", "crossbody bag", "clutch", "shoulder bag", "satchel",
+      "backpack", "messenger bag", "briefcase", "duffle bag",
+      "necklace", "pendant", "choker", "chain necklace",
+      "earrings", "hoop earrings", "stud earrings", "drop earrings",
+      "bracelet", "bangle", "cuff bracelet", "watch", "luxury watch"
+    ],
+    "necklines": [
+      "v-neckline", "deep v-neck", "plunging neckline", "sweetheart neckline",
+      "scoop neck", "round neckline", "crew neck", "boat neck", "bateau neckline",
+      "square neckline", "halter neckline", "high neck", "mock neck", "turtleneck",
+      "cowl neck", "keyhole neckline", "illusion neckline", "off-shoulder neckline",
+      "one-shoulder", "strapless neckline", "bandeau neckline",
+      "peter pan collar", "mandarin collar", "stand collar", "notched collar"
+    ],
+    "sleeves": [
+      "sleeveless", "cap sleeves", "short sleeves", "elbow sleeves", "three-quarter sleeves",
+      "long sleeves", "full sleeves", "puff sleeves", "balloon sleeves", "bishop sleeves",
+      "bell sleeves", "flutter sleeves", "angel sleeves", "batwing sleeves", "dolman sleeves",
+      "raglan sleeves", "kimono sleeves", "juliet sleeves",
+      "cold shoulder", "slit sleeves", "ruffle sleeves"
+    ],
+    "materials": [
+      "denim", "leather", "faux leather", "vegan leather", "suede", "velvet",
+      "silk", "satin", "chiffon", "lace", "tulle", "organza", "taffeta",
+      "cotton", "linen", "wool", "cashmere", "tweed", "flannel", "corduroy",
+      "jersey", "knit fabric", "crochet", "mesh", "sheer fabric",
+      "sequins", "beaded", "embroidered", "embellished",
+      "distressed", "ripped", "frayed", "stonewashed",
+      "metallic fabric", "holographic", "iridescent", "patent leather",
+      "faux fur", "fleece", "quilted", "padded"
+    ],
+    "patterns": [
+      "floral pattern", "striped pattern", "plaid pattern", "checkered pattern",
+      "polka dots", "animal print", "leopard print", "zebra print", "snake print",
+      "geometric pattern", "abstract pattern", "paisley pattern",
+      "solid color", "two-tone", "multicolor", "ombre", "tie-dye",
+      "camouflage", "houndstooth", "herringbone", "gingham"
+    ],
+    "colors": [
+      "black outfit", "white outfit", "red outfit", "blue outfit", "green outfit",
+      "pink outfit", "yellow outfit", "orange outfit", "purple outfit",
+      "navy blue", "burgundy", "maroon", "olive green", "teal",
+      "neutral tones", "earth tones", "pastel colors", "bright colors", "neon colors",
+      "monochrome outfit", "color blocked"
+    ],
+    "uniforms": [
+      "uniform", "military uniform", "police uniform", "nurse uniform", "doctor uniform",
+      "school uniform", "sailor uniform", "maid uniform", "chef uniform",
+      "flight attendant uniform", "pilot uniform", "firefighter uniform",
+      "sports uniform", "team jersey", "athletic uniform",
+      "business suit", "corporate attire", "office wear",
+      "service uniform", "hospitality uniform", "security uniform"
+    ],
+    "cosplay": [
+      "cosplay", "costume", "cosplay outfit", "character costume",
+      "anime cosplay", "video game cosplay", "superhero costume",
+      "fantasy costume", "medieval costume", "renaissance costume",
+      "halloween costume", "theatrical costume", "stage costume",
+      "historical costume", "period costume", "sci-fi costume"
+    ],
+    "traditional": [
+      "traditional clothing", "cultural attire", "ethnic wear",
+      "kimono", "yukata", "hanbok", "cheongsam", "qipao",
+      "sari", "lehenga", "salwar kameez", "kurta",
+      "dirndl", "lederhosen", "kilt", "dashiki",
+      "ao dai", "kebaya", "batik", "abaya", "hijab"
+    ],
+    "occasions": [
+      "wedding attire", "bridal wear", "formal event", "black tie event",
+      "cocktail party", "garden party", "beach wedding",
+      "prom outfit", "graduation outfit", "job interview outfit",
+      "date night outfit", "party outfit", "festival outfit",
+      "vacation outfit", "travel outfit", "gym outfit", "workout wear"
+    ],
+    "fit": [
+      "fitted clothing", "loose fit", "oversized fit", "relaxed fit",
+      "tailored clothing", "structured silhouette", "flowy silhouette",
+      "high-waisted", "low-rise", "mid-rise",
+      "form-fitting", "body-hugging", "baggy", "boxy"
+    ]
+  },
+
+  "pose": {
+    "orientations": [
+      "facing camera", "facing away", "profile view", "side view",
+      "three-quarter view", "back view", "front view",
+      "looking at camera", "looking away", "looking down", "looking up"
+    ],
+    "stances": [
+      "standing", "standing straight", "standing relaxed", "standing tall",
+      "sitting", "seated", "sitting cross-legged", "sitting on floor",
+      "kneeling", "crouching", "squatting", "bending",
+      "leaning", "leaning forward", "leaning back",
+      "lying down", "reclining", "prone position"
+    ],
+    "arm_positions": [
+      "arms raised", "one arm raised", "arms up", "arms overhead",
+      "arms at sides", "arms relaxed", "arms behind back",
+      "hands on hips", "hand on hip", "akimbo pose",
+      "arms crossed", "arms folded", "hugging self",
+      "hands in pockets", "hand in pocket",
+      "hands clasped", "hands together", "prayer hands",
+      "pointing", "gesturing", "waving",
+      "touching face", "hand on chin", "hand on cheek",
+      "arms outstretched", "arms extended", "reaching"
+    ],
+    "leg_positions": [
+      "legs together", "legs apart", "wide stance",
+      "one leg forward", "weight on one leg", "contrapposto",
+      "legs crossed", "crossed ankles",
+      "walking pose", "mid-stride", "stepping forward",
+      "kicking", "jumping", "mid-air"
+    ],
+    "head_positions": [
+      "head straight", "head tilted", "head tilted left", "head tilted right",
+      "chin up", "chin down", "head turned",
+      "looking over shoulder", "glancing sideways"
+    ],
+    "body_language": [
+      "confident pose", "relaxed pose", "casual pose", "formal stance",
+      "power pose", "open body language", "closed body language",
+      "dynamic pose", "static pose", "action pose",
+      "elegant pose", "graceful pose", "dramatic pose",
+      "playful pose", "serious expression", "contemplative pose"
+    ],
+    "photography_poses": [
+      "model pose", "fashion pose", "editorial pose",
+      "portrait pose", "headshot", "full body shot",
+      "candid pose", "natural pose", "posed shot",
+      "glamour pose", "beauty shot", "lifestyle pose"
+    ]
+  },
+
+  "photography": {
+    "composition": [
+      "rule of thirds", "centered composition", "symmetrical composition",
+      "asymmetrical composition", "leading lines", "framing",
+      "negative space", "fill the frame", "diagonal composition",
+      "golden ratio", "golden spiral", "triangular composition",
+      "pattern composition", "texture composition"
+    ],
+    "framing": [
+      "close-up", "extreme close-up", "medium close-up",
+      "medium shot", "cowboy shot", "american shot",
+      "full shot", "long shot", "extreme long shot",
+      "wide shot", "establishing shot",
+      "over-the-shoulder", "point of view shot",
+      "dutch angle", "tilted frame", "canted angle",
+      "high angle", "low angle", "eye level",
+      "bird's eye view", "worm's eye view", "overhead shot"
+    ],
+    "orientation": [
+      "landscape orientation", "portrait orientation", "square format",
+      "horizontal frame", "vertical frame",
+      "panoramic", "ultra-wide", "cinematic aspect ratio"
+    ],
+    "lighting": [
+      "natural lighting", "artificial lighting", "mixed lighting",
+      "soft lighting", "hard lighting", "diffused light",
+      "direct sunlight", "golden hour", "blue hour", "magic hour",
+      "backlit", "backlighting", "rim lighting", "silhouette",
+      "front lighting", "side lighting", "rembrandt lighting",
+      "butterfly lighting", "loop lighting", "split lighting",
+      "high key lighting", "low key lighting", "chiaroscuro",
+      "studio lighting", "flash photography", "ambient light",
+      "window light", "overcast lighting", "harsh shadows", "soft shadows"
+    ],
+    "focus": [
+      "sharp focus", "in focus", "tack sharp",
+      "soft focus", "slightly soft", "out of focus",
+      "shallow depth of field", "deep depth of field",
+      "bokeh", "background blur", "foreground blur",
+      "selective focus", "rack focus", "split focus"
+    ],
+    "color_mood": [
+      "warm tones", "cool tones", "neutral tones",
+      "vibrant colors", "muted colors", "saturated", "desaturated",
+      "high contrast", "low contrast", "balanced contrast",
+      "monochrome", "black and white", "sepia tone",
+      "color graded", "cinematic color", "film look",
+      "bright", "dark", "moody", "airy", "dreamy"
+    ],
+    "style": [
+      "portrait photography", "fashion photography", "editorial photography",
+      "street photography", "documentary photography", "candid photography",
+      "studio photography", "outdoor photography", "location photography",
+      "lifestyle photography", "commercial photography", "fine art photography",
+      "glamour photography", "beauty photography", "headshot photography",
+      "environmental portrait", "posed portrait", "natural portrait"
+    ],
+    "technical": [
+      "high resolution", "low resolution", "crisp details",
+      "film grain", "digital noise", "clean image",
+      "long exposure", "motion blur", "frozen motion",
+      "HDR", "high dynamic range", "bracketed exposure"
+    ],
+    "quality_aesthetic": [
+      "exceptional aesthetic quality", "excellent aesthetic quality", "good aesthetic quality",
+      "average aesthetic quality", "below average aesthetic", "visually stunning",
+      "pleasing composition", "professional quality", "amateur quality",
+      "artistic merit", "visual appeal", "eye-catching"
+    ],
+    "quality_technical": [
+      "excellent technical quality", "good technical quality", "acceptable technical quality",
+      "low technical quality", "poor technical quality", "professional grade",
+      "broadcast quality", "web quality", "print quality"
+    ],
+    "clarity": [
+      "sharp and clean", "excellent clarity", "good clarity", "minimal noise",
+      "slight blur or noise", "noticeable blur", "visible noise",
+      "significant blur", "heavy noise", "motion blur present",
+      "camera shake", "out of focus areas", "tack sharp details"
+    ],
+    "composition_types": [
+      "rule of thirds", "center composition", "horizontal symmetry", "vertical symmetry",
+      "diagonal composition", "triangle composition", "pattern composition",
+      "frame within frame", "leading lines", "s-curve composition",
+      "golden ratio", "minimalist composition", "layered depth"
+    ],
+    "composition_elements": [
+      "horizontal lines", "vertical lines", "diagonal lines", "curved lines",
+      "strong linear elements", "symmetry axis", "partial symmetry",
+      "natural framing", "negative space", "minimalist elements",
+      "elements at thirds", "balanced composition", "dynamic tension"
+    ],
+    "subject_position": [
+      "subject at thirds intersection", "subject on vertical third", "subject on horizontal third",
+      "centered subject", "central composition", "subject at golden ratio",
+      "subject in upper left", "subject in upper right", "subject in lower left", "subject in lower right",
+      "subject on left side", "subject on right side", "subject in upper area", "subject in lower area",
+      "subject fills frame", "small subject in frame", "environmental context",
+      "multiple subjects", "off-center subject", "asymmetric placement"
+    ]
+  },
+
+  "human_detection": [
+    "1girl", "2girls", "3girls", "4girls", "5girls", "6+girls", "multiple girls",
+    "1boy", "2boys", "3boys", "4boys", "5boys", "6+boys", "multiple boys",
+    "1other", "androgynous", "solo",
+    "person", "woman", "man", "girl", "boy", "child", "adult", "elderly",
+    "human", "people", "crowd", "couple", "group",
+    "face", "portrait", "selfie", "upper body", "lower body", "full body",
+    "cowboy shot", "from behind", "from side", "from above", "from below",
+    "smile", "looking at viewer", "closed eyes", "open mouth",
+    "long hair", "short hair", "blonde hair", "black hair", "brown hair",
+    "breasts", "cleavage", "navel", "thighs", "legs", "arms", "hands"
+  ],
+
+  "nsfw": {
+    "rating": [
+      "safe content", "suggestive content", "nsfw content", "explicit content",
+      "questionable content", "mature content", "adult content"
+    ],
+    "exposed": [
+      "exposed female breast", "exposed male chest", "exposed buttocks",
+      "exposed female genitalia", "exposed male genitalia", "exposed anus",
+      "exposed belly", "exposed feet", "exposed armpits",
+      "topless", "bottomless", "nude", "naked", "fully nude",
+      "partial nudity", "implied nudity", "artistic nudity"
+    ],
+    "covered": [
+      "covered female breast", "covered buttocks", "covered belly",
+      "covered feet", "covered armpits", "covered female genitalia",
+      "clothed", "partially clothed", "underwear visible",
+      "bra visible", "panties visible", "lingerie"
+    ],
+    "body_parts": [
+      "breasts", "cleavage", "sideboob", "underboob", "nipples",
+      "buttocks", "ass", "thighs", "legs", "midriff", "navel",
+      "back", "shoulders", "armpits", "feet", "toes",
+      "crotch", "groin", "pubic area"
+    ],
+    "clothing_states": [
+      "fully clothed", "partially undressed", "clothes lift",
+      "shirt lift", "skirt lift", "dress lift", "pants pull",
+      "unbuttoned", "unzipped", "open shirt", "loose clothing",
+      "wet clothing", "see-through clothing", "tight clothing",
+      "revealing outfit", "skimpy outfit", "barely covered"
+    ],
+    "poses_suggestive": [
+      "seductive pose", "provocative pose", "alluring pose",
+      "lying on bed", "lying on back", "lying on side",
+      "legs spread", "legs apart", "bent over", "on all fours",
+      "hands on hips", "arched back", "looking back",
+      "over shoulder", "bedroom eyes", "sultry expression",
+      "biting lip", "tongue out", "blowing kiss"
+    ],
+    "context": [
+      "bedroom", "bathroom", "shower", "bathtub", "pool",
+      "beach", "locker room", "dressing room", "mirror selfie",
+      "boudoir", "intimate setting", "private moment"
+    ],
+    "accessories": [
+      "collar", "choker", "garter", "stockings", "fishnets",
+      "high heels", "platform shoes", "thigh highs",
+      "blindfold", "handcuffs", "rope", "chains"
+    ]
+  }
+}

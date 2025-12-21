@@ -7,7 +7,6 @@ from .florence import FlorenceModel
 from .qwen import QwenVLModel
 from .qwen3 import Qwen3VLModel
 from .joycaption import JoyCaptionModel
-from .blip import Blip2Model
 from .minicpm import MiniCPMVModel
 
 
@@ -29,11 +28,6 @@ def _create_joycaption(model_id: Optional[str], precision: str) -> BaseCaptionMo
 
 def _create_joycaption_alpha(model_id: Optional[str], precision: str) -> BaseCaptionModel:
     return JoyCaptionModel(model_id, precision=precision, config_name="joycaption_alpha")
-
-
-# BLIP-2 variants
-def _create_blip2(model_id: Optional[str], precision: str) -> BaseCaptionModel:
-    return Blip2Model(model_id, precision=precision, config_name="blip2")
 
 
 # MiniCPM-V variants
@@ -84,10 +78,9 @@ _MODEL_REGISTRY: dict[str, Callable[[Optional[str], str], BaseCaptionModel]] = {
     # Legacy models (for backwards compatibility)
     "qwen": _create_qwen,
 
-    # Fast tier - Florence, BLIP-2, and small Qwen models
+    # Fast tier - Florence and small Qwen models
     "florence": _create_florence,           # Florence-2-large-PromptGen-v2.0
     "florence_base": _create_florence_base, # Florence-2-base-PromptGen-v1.5
-    "blip2": _create_blip2,                 # BLIP-2 OPT-2.7B
     "qwen2_2b": _create_qwen2_2b,
     "qwen25_3b": _create_qwen25_3b,
     "qwen3_2b": _create_qwen3_2b,
