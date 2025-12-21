@@ -149,14 +149,14 @@ class SID_TaggerConfig:
                     "tooltip": "FashionCLIP zero-shot style (~50ms)"
                 }),
                 "fashion_clip_threshold": ("FLOAT", {
-                    "default": 0.2,
+                    "default": 0.15,
                     "min": 0.05,
                     "max": 0.9,
                     "step": 0.05,
-                    "tooltip": "Lower = more style tags"
+                    "tooltip": "Lower = more style tags (0.15 for ethnic wear)"
                 }),
                 "fashion_clip_top_k": ("INT", {
-                    "default": 15,
+                    "default": 20,
                     "min": 1,
                     "max": 50,
                     "step": 1,
@@ -251,8 +251,8 @@ class SID_TaggerConfig:
         yolos_fashion_enabled: bool = True,
         yolos_threshold: float = 0.25,
         fashion_clip_enabled: bool = True,
-        fashion_clip_threshold: float = 0.2,
-        fashion_clip_top_k: int = 15,
+        fashion_clip_threshold: float = 0.15,
+        fashion_clip_top_k: int = 20,
         segformer_clothes_enabled: bool = True,
         segformer_min_area: float = 0.02,
         wargon_classifier_enabled: bool = True,

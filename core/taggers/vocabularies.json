@@ -138,11 +138,19 @@
       "historical costume", "period costume", "sci-fi costume"
     ],
     "traditional": [
-      "traditional clothing", "cultural attire", "ethnic wear",
-      "kimono", "yukata", "hanbok", "cheongsam", "qipao",
-      "sari", "lehenga", "salwar kameez", "kurta",
-      "dirndl", "lederhosen", "kilt", "dashiki",
-      "ao dai", "kebaya", "batik", "abaya", "hijab"
+      "traditional clothing", "cultural attire", "ethnic wear", "traditional dress",
+      "kimono", "yukata", "hanbok", "cheongsam", "qipao", "ao dai", "kebaya", "batik",
+      "sari", "silk sari", "cotton sari", "banarasi sari", "kanjeevaram sari", "designer sari",
+      "lehenga", "lehenga choli", "bridal lehenga", "designer lehenga", "ghagra choli",
+      "salwar kameez", "salwar suit", "punjabi suit", "anarkali suit", "palazzo suit",
+      "kurta", "kurti", "kurta pajama", "sherwani", "achkan", "bandhgala", "nehru jacket",
+      "dupatta", "chunni", "stole", "shawl", "pashmina",
+      "chaniya choli", "pattu pavadai", "half sari", "langa voni", "dhoti", "lungi", "mundu",
+      "blouse", "choli", "crop blouse", "backless blouse",
+      "churidar", "patiala", "palazzo pants", "sharara", "gharara",
+      "indo-western", "fusion wear", "contemporary ethnic",
+      "dirndl", "lederhosen", "kilt", "dashiki", "kaftan", "abaya", "hijab", "burqa", "niqab",
+      "thobe", "dishdasha", "agal", "keffiyeh", "turban", "pagri"
     ],
     "occasions": [
       "wedding attire", "bridal wear", "formal event", "black tie event",
