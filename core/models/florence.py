@@ -38,18 +38,6 @@ def _log(message: str) -> None:
 
 _MODELS_DIR = Path(folder_paths.models_dir) / "LLM"
 
-# Check if we need to use bundled Florence model (transformers >= 4.50.0)
-# After 4.50, PreTrainedModel no longer inherits from GenerationMixin
-def _parse_version(version_str: str) -> tuple:
-    """Parse version string to tuple for comparison."""
-    try:
-        parts = version_str.split(".")[:3]
-        return tuple(int(p.split("+")[0].split("a")[0].split("b")[0].split("rc")[0]) for p in parts)
-    except (ValueError, IndexError):
-        return (0, 0, 0)
-
-_USE_BUNDLED_FLORENCE = _parse_version(transformers.__version__) >= (4, 50, 0)
-
 
 # Workaround for unnecessary flash_attn requirement in Florence-2
 def _fixed_get_imports(filename: str | os.PathLike) -> list[str]:
@@ -62,15 +50,20 @@ def _fixed_get_imports(filename: str | os.PathLike) -> list[str]:
     return imports
 
 
-def _setup_florence_modules():
+def _get_kijai_path() -> Path:
+    """Get path to kijai's comfyui-florence2 installation."""
+    return Path(folder_paths.base_path) / "custom_nodes" / "comfyui-florence2"
+
+
+def _load_kijai_florence_class():
     """
-    Set up Florence2 modules from kijai's bundled implementation.
-    Also registers a mock transformers.models.florence2 to satisfy dynamic imports.
+    Load Florence2 model class from kijai's bundled implementation.
+    This version properly inherits from GenerationMixin.
     """
     import importlib.util
     from types import ModuleType
 
-    kijai_path = Path(folder_paths.base_path) / "custom_nodes" / "comfyui-florence2"
+    kijai_path = _get_kijai_path()
     package_name = "comfyui_florence2_bundled"
 
     # Load configuration module first (required by modeling module)
@@ -82,7 +75,6 @@ def _setup_florence_modules():
     config_module = importlib.util.module_from_spec(config_spec)
     config_module.__package__ = package_name
     sys.modules[f"{package_name}.configuration_florence2"] = config_module
-    # Also register without package prefix for relative imports
     sys.modules["configuration_florence2"] = config_module
     config_spec.loader.exec_module(config_module)
 
@@ -97,14 +89,12 @@ def _setup_florence_modules():
     sys.modules[f"{package_name}.modeling_florence2"] = model_module
     model_spec.loader.exec_module(model_module)
 
-    # Create mock transformers.models.florence2 module to satisfy dynamic imports
-    # This is needed because AutoProcessor tries to import from transformers.models.florence2
+    # Create mock transformers.models.florence2 module for AutoProcessor
     if "transformers.models.florence2" not in sys.modules:
         mock_florence2 = ModuleType("transformers.models.florence2")
         mock_florence2.__file__ = str(kijai_path / "modeling_florence2.py")
         mock_florence2.__path__ = [str(kijai_path)]
 
-        # Copy all exports from kijai's modules
         for name in dir(config_module):
             if not name.startswith("_"):
                 setattr(mock_florence2, name, getattr(config_module, name))
@@ -112,10 +102,8 @@ def _setup_florence_modules():
             if not name.startswith("_"):
                 setattr(mock_florence2, name, getattr(model_module, name))
 
-        # Register the mock module
         sys.modules["transformers.models.florence2"] = mock_florence2
 
-        # Also ensure transformers.models knows about it
         import transformers.models
         if not hasattr(transformers.models, "florence2"):
             transformers.models.florence2 = mock_florence2
@@ -123,43 +111,46 @@ def _setup_florence_modules():
     return model_module.Florence2ForConditionalGeneration
 
 
-def _get_florence_class():
-    """Get Florence2 model class from kijai's bundled implementation."""
-    return _setup_florence_modules()
-
-
 def _load_florence_model(local_path: Path, dtype: torch.dtype, trust_remote: bool):
-    """Load Florence model - requires kijai's comfyui-florence2 for transformers >= 4.50."""
+    """
+    Load Florence model using the best available method.
 
-    # For transformers >= 4.50, we MUST use kijai's bundled implementation
-    # because the model's bundled code doesn't inherit from GenerationMixin
-    if _USE_BUNDLED_FLORENCE:
-        kijai_path = Path(folder_paths.base_path) / "custom_nodes" / "comfyui-florence2"
-        if not kijai_path.exists():
-            raise RuntimeError(
-                "Florence-2 requires comfyui-florence2 for transformers >= 4.50. "
-                "Please install it from: https://github.com/kijai/ComfyUI-Florence2 "
-                "(git clone into custom_nodes folder) OR downgrade transformers: "
-                "pip install transformers==4.44.2"
-            )
+    Priority:
+    1. kijai's comfyui-florence2 (works with all transformers versions)
+    2. Fail with helpful error message
+    """
+    kijai_path = _get_kijai_path()
 
-        Florence2ForConditionalGeneration = _get_florence_class()
+    # Check if kijai's implementation is available
+    if kijai_path.exists():
         print(f"[SID-Toolkit] Using kijai's Florence2 (transformers {transformers.__version__})")
 
-        with patch(
-            "transformers.dynamic_module_utils.get_imports",
-            _fixed_get_imports
-        ):
-            return Florence2ForConditionalGeneration.from_pretrained(
-                local_path,
-                torch_dtype=dtype,
-                trust_remote_code=trust_remote,
-            )
+        try:
+            Florence2ForConditionalGeneration = _load_kijai_florence_class()
 
-    # For older transformers, use AutoModelForCausalLM
+            with patch(
+                "transformers.dynamic_module_utils.get_imports",
+                _fixed_get_imports
+            ):
+                return Florence2ForConditionalGeneration.from_pretrained(
+                    local_path,
+                    torch_dtype=dtype,
+                    trust_remote_code=trust_remote,
+                )
+        except Exception as e:
+            print(f"[SID-Toolkit] Warning: kijai's Florence2 failed: {e}")
+            print(f"[SID-Toolkit] Falling back to AutoModelForCausalLM...")
+            # Fall through to fallback
+
+    # Fallback: Try AutoModelForCausalLM (works with older transformers < 4.50)
+    # This will likely fail with transformers >= 4.50 due to GenerationMixin issue
+    print(f"[SID-Toolkit] Using AutoModelForCausalLM (transformers {transformers.__version__})")
+    print(f"[SID-Toolkit] WARNING: This may fail with transformers >= 4.50!")
+    print(f"[SID-Toolkit] Install kijai's comfyui-florence2 for best compatibility:")
+    print(f"[SID-Toolkit]   https://github.com/kijai/ComfyUI-Florence2")
+
     from transformers import AutoModelForCausalLM
 
-    print(f"[SID-Toolkit] Using AutoModelForCausalLM (transformers {transformers.__version__})")
     with patch(
         "transformers.dynamic_module_utils.get_imports",
         _fixed_get_imports
@@ -236,7 +227,15 @@ class FlorenceModel(BaseCaptionModel):
         ).to(offload_device)
         self._quantized = False
 
-        # Load processor
+        # Load processor - also needs the mock module registered
+        kijai_path = _get_kijai_path()
+        if kijai_path.exists():
+            # Ensure mock module is set up before loading processor
+            try:
+                _load_kijai_florence_class()
+            except Exception:
+                pass  # Already loaded or will be handled
+
         self._processor = AutoProcessor.from_pretrained(
             local_path,
             trust_remote_code=trust_remote,
