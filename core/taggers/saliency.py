@@ -74,7 +74,7 @@ class SaliencyTagger(BaseTagger):
         self._is_loaded = True
 
     def _get_dino_saliency(self, image: Image.Image) -> np.ndarray:
-        """Get saliency map using DINOv2 attention."""
+        """Get saliency map using DINOv2 features (not attention - more reliable)."""
         import torch
 
         rgb_image = image.convert("RGB")
@@ -83,58 +83,82 @@ class SaliencyTagger(BaseTagger):
         inputs = self._processor(images=rgb_image, return_tensors="pt")
         inputs = {k: v.to(self._device) for k, v in inputs.items()}
 
-        # Get attention maps
         with torch.no_grad():
-            outputs = self._model(**inputs, output_attentions=True)
+            # Get patch features (more reliable than attention)
+            outputs = self._model(**inputs)
 
-            # Use last layer attention
-            attentions = outputs.attentions[-1]  # [batch, heads, tokens, tokens]
+            # Use last hidden state patch tokens (exclude CLS token)
+            patch_features = outputs.last_hidden_state[0, 1:, :]  # [num_patches, hidden_dim]
 
-            # Average across heads and get CLS token attention
-            # CLS token attends to patch tokens
-            cls_attention = attentions[0, :, 0, 1:].mean(dim=0)  # [num_patches]
+            # Compute feature magnitude as saliency proxy
+            feature_norm = torch.norm(patch_features, dim=1)  # [num_patches]
 
             # Reshape to spatial grid
-            num_patches = cls_attention.shape[0]
+            num_patches = feature_norm.shape[0]
             grid_size = int(np.sqrt(num_patches))
-            attention_map = cls_attention.reshape(grid_size, grid_size)
+            saliency_map = feature_norm.reshape(grid_size, grid_size)
 
             # Resize to image size
-            attention_np = attention_map.cpu().numpy()
-            attention_resized = np.array(
-                Image.fromarray(attention_np).resize(
+            saliency_np = saliency_map.cpu().numpy()
+            saliency_resized = np.array(
+                Image.fromarray(saliency_np).resize(
                     (image.width, image.height),
                     Image.BILINEAR
                 )
             )
 
             # Normalize
-            attention_resized = (attention_resized - attention_resized.min())
-            if attention_resized.max() > 0:
-                attention_resized = attention_resized / attention_resized.max()
+            saliency_resized = (saliency_resized - saliency_resized.min())
+            if saliency_resized.max() > 0:
+                saliency_resized = saliency_resized / saliency_resized.max()
 
-        return attention_resized
+        return saliency_resized
 
     def _get_cv_saliency(self, image: Image.Image) -> np.ndarray:
-        """Get saliency map using OpenCV."""
+        """Get saliency map using OpenCV (works with standard opencv-python)."""
         import cv2
 
         img_array = np.array(image.convert("RGB"))
-        img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
 
-        # Try spectral residual saliency
-        saliency = cv2.saliency.StaticSaliencySpectralResidual_create()
-        success, saliency_map = saliency.computeSaliency(img_bgr)
+        # Try spectral residual saliency if available (requires opencv-contrib)
+        if hasattr(cv2, 'saliency'):
+            try:
+                img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+                saliency = cv2.saliency.StaticSaliencySpectralResidual_create()
+                success, saliency_map = saliency.computeSaliency(img_bgr)
+                if success:
+                    return saliency_map.astype(np.float32)
+            except Exception:
+                pass
 
-        if success:
-            return saliency_map.astype(np.float32)
-
-        # Fallback to edge-based saliency
+        # Standard OpenCV fallback: combine edges + color contrast
         gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
+
+        # Edge detection
         edges = cv2.Canny(gray, 50, 150)
-        blurred = cv2.GaussianBlur(edges.astype(np.float32), (31, 31), 0)
+
+        # Color contrast (LAB color space)
+        lab = cv2.cvtColor(img_array, cv2.COLOR_RGB2LAB)
+        l, a, b = cv2.split(lab)
+
+        # Mean of a and b channels gives color saliency
+        mean_a, mean_b = np.mean(a), np.mean(b)
+        color_sal = np.sqrt((a.astype(float) - mean_a)**2 + (b.astype(float) - mean_b)**2)
+
+        # Combine edges and color
+        edges_float = edges.astype(np.float32)
+        if edges_float.max() > 0:
+            edges_float = edges_float / edges_float.max()
+        if color_sal.max() > 0:
+            color_sal = color_sal / color_sal.max()
+
+        combined = 0.5 * edges_float + 0.5 * color_sal.astype(np.float32)
+
+        # Blur to get smoother regions
+        blurred = cv2.GaussianBlur(combined, (31, 31), 0)
         if blurred.max() > 0:
             blurred = blurred / blurred.max()
+
         return blurred
 
     def _analyze_subject_position(

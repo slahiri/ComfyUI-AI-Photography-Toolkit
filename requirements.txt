@@ -13,5 +13,5 @@ nudenet
 pyiqa
 ultralytics
 mediapipe
-opencv-contrib-python
+opencv-python
 scipy
