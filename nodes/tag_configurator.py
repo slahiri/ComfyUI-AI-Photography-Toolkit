@@ -23,11 +23,11 @@ class SID_TaggerConfig:
                     "wd-swinv2-tagger-v3",
                     "wd-convnext-tagger-v3",
                     "wd-vit-tagger-v3",
-                    "wd-vit-large-tagger-v3",
                     "wd-eva02-large-tagger-v3",
                     "wd-v1-4-moat-tagger-v2",
                     "wd-v1-4-swinv2-tagger-v2",
                     "wd-v1-4-convnext-tagger-v2",
+                    "wd-v1-4-vit-tagger-v2",
                 ], {
                     "default": "wd-swinv2-tagger-v3",
                     "tooltip": "WD14 model variant (always enabled)"
