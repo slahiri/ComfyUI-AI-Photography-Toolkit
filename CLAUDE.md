@@ -1,157 +1,117 @@
 # ComfyUI-AI-Photography-Toolkit
 
-## Project Overview
-A ComfyUI custom node toolkit for AI-powered image analysis and prompt generation. Provides multi-model tagging, VLM captioning, and prompt enhancement.
+## Current State (Dec 2024)
 
-## Current Version
-- Branch: `dev/4.3.0`
-- Tag: `v4.3.0`
+**Branch**: `dev/4.3.0`
+**Commit**: `7f1186d` - feat: add prompt composition pipeline and tokenization spec
 
-## Architecture
+### Active Task: Prompt Composition Rewrite
 
-### Core Components
-
-```
-core/
-├── models/           # VLM caption models
-│   ├── florence.py   # Florence-2 PromptGen (uses kijai's bundled impl)
-│   ├── qwen.py       # Qwen2-VL
-│   └── base.py       # BaseCaptionModel
-├── taggers/          # Image analysis taggers
-│   ├── wd14.py       # WD14 tagger (ONNX)
-│   ├── joytag.py     # JoyTag (ONNX, 448x448)
-│   ├── nudenet.py    # NudeNet v2
-│   ├── iqa.py        # NIMA/MUSIQ/BRISQUE quality
-│   ├── saliency.py   # DINOv2 + CV fallback
-│   ├── composition.py # CADB composition
-│   ├── fashion/      # Fashion composite tagger
-│   │   ├── fashion_clip.py
-│   │   ├── yolov8_clothing.py
-│   │   ├── yolos_fashionpedia.py
-│   │   ├── segformer_clothes.py
-│   │   └── wargon_classifier.py
-│   └── pose/         # Pose composite tagger
-│       └── mediapipe_pose.py
-├── tagging_pipeline.py  # Orchestrates all taggers
-└── config/           # Model configs (YAML)
-```
-
-### Nodes
-- `SID_TaggerConfig` - Configure taggers and thresholds
-- `SID_ZImagePromptGenerator` - Main prompt generation node
-
-## Key Technical Decisions
-
-### Florence-2 Loading (transformers 4.50+)
-- Uses kijai's `comfyui-florence2` bundled implementation
-- Must register both model AND processor classes in sys.modules
-- See `_load_kijai_florence_class()` and `_register_processor_from_model()`
-
-### Dependency Management
-- Standard `requirements.txt` approach (ComfyUI-Manager compatible)
-- No auto-install code - removed all subprocess/pip machinery
-- torch/torchvision NOT in requirements (user installs with correct CUDA)
-
-### JSON Output Format
-```json
-{
-  "module_name": {
-    "tags": ["tag1", "tag2", "tag3"],
-    "attributes": { "count": 3, "model": "...", ... }
-  }
-}
-```
-
-## Recent Fixes (Dec 2024)
-
-1. **Florence-2 processor loading** - Register `Florence2Processor` from model's local `processing_florence2.py`
-
-2. **Saliency without opencv-contrib** - Uses edge + color contrast fallback, DINOv2 uses feature norms not attention
-
-3. **JoyTag ONNX** - Fixed to use correct 448x448 input size
-
-4. **Removed RAM++** - Incompatible with transformers 4.50+ (`apply_chunking_to_forward` removed)
-
-5. **WD14 model list** - Fixed invalid `wd-vit-large-tagger-v3`, added `wd-v1-4-vit-tagger-v2`
-
-## Available WD14 Models
-- wd-swinv2-tagger-v3 (default, best)
-- wd-vit-tagger-v3
-- wd-convnext-tagger-v3
-- wd-eva02-large-tagger-v3
-- wd-v1-4-moat-tagger-v2
-- wd-v1-4-swinv2-tagger-v2
-- wd-v1-4-convnext-tagger-v2
-- wd-v1-4-vit-tagger-v2
-
-## Fashion Vocabulary
-Expanded to include 50+ ethnic/traditional wear terms:
-- Indian: sari, lehenga, salwar kameez, kurta, sherwani, dupatta
-- Middle Eastern: abaya, hijab, thobe, kaftan
-- Asian: kimono, hanbok, cheongsam, ao dai
-
-See `core/taggers/vocabularies.json` for full list.
-
-## Known Limitations
-- FashionCLIP trained on Western fashion - ethnic wear detection may be limited
-- MediaPipe pose may fail on some systems (reinstall mediapipe)
-- CADB composition model unavailable (uses fallback CV analysis)
-
-## Development Commands
-```bash
-# Clone on new machine
-git clone git@github.com:slahiri/ComfyUI-AI-Photography-Toolkit.git
-cd ComfyUI-AI-Photography-Toolkit
-git checkout dev/4.3.0
-
-# Install dependencies (in ComfyUI venv)
-pip install -r requirements.txt
-```
-
-## File Locations
-- Models: `D:\ComfyUI\models\LLM\` (Florence, Qwen)
-- Taggers: `D:\ComfyUI\models\taggers\` (WD14, JoyTag)
-- Config: `core/config/*.yaml`
-- Vocabularies: `core/taggers/vocabularies.json`
-
-## Active Development: Prompt Composition Rewrite
-
-**Status**: In Progress (Dec 2024)
-
-The `SID_PromptCompose` node is being rewritten with a new tokenization → classification → assembly pipeline.
-
-### Documentation
-
-| Document | Purpose |
-|----------|---------|
-| [docs/image_tokenization_spec.md](docs/image_tokenization_spec.md) | Full technical specification (Phases 1-6) |
-| [docs/implementation_plan.md](docs/implementation_plan.md) | Implementation roadmap with task checkboxes |
-
-### Quick Summary
+Rewriting the `SID_PromptCompose` node with a new tokenization → classification → assembly pipeline.
 
 **Problem**: Current `StandardGenerator` produces broken output:
 - Grammar errors ("her eyes are brown eyes")
 - Meta-commentary not filtered ("in the middle of the image")
 - Missing content, redundant phrases
 
-**Solution**: New pipeline with:
-1. **Tokenization** - Extract from all metadata sources into `ImageToken` format
-2. **Classification** - 5-layer cascade assigns tokens to 9 canonical categories
-3. **Assembly (Rule-Based)** - Templates + phrase mappings + grammar rules
-4. **Assembly (LLM)** - Optional enhancement using LLM providers
+**Solution**: 8-phase implementation plan
 
-### Modes
-- `Standard` → Rule-based assembly (fast, free, deterministic)
-- `Enhance with AI` → LLM-based assembly (higher quality, costs money)
+## Documentation
 
-### Key Files (New Structure)
+| Document | Purpose |
+|----------|---------|
+| [docs/image_tokenization_spec.md](docs/image_tokenization_spec.md) | Full technical specification (Phases 1-7) |
+| [docs/implementation_plan.md](docs/implementation_plan.md) | Implementation roadmap with task checkboxes |
+
+## Implementation Phases
+
+| Phase | Description | Priority | Status |
+|-------|-------------|----------|--------|
+| 1 | Core Infrastructure (ImageToken, TokenType, categories) | HIGH | Not Started |
+| 2 | Tokenization (extractors for taggers, analyzers, captions) | HIGH | Not Started |
+| 3 | Classification (5-layer cascade) | HIGH | Not Started |
+| 4 | Rule-Based Assembly (templates, phrase mappings) | HIGH | Not Started |
+| 5 | LLM Assembly (enhancement mode) | MEDIUM | Not Started |
+| 6 | Validation (quality scoring) | LOW | Not Started |
+| 7 | Integration (replace StandardGenerator) | HIGH | Not Started |
+| 8 | Token Grounding Visualization | LOW | Not Started |
+
+**MVP**: Phases 1-4, 7 (18-26 hours)
+**Full**: All phases (31-46 hours)
+
+## Target File Structure
+
 ```
 core/compose/
-├── tokenizer/      # Phase 1-2: Extract and normalize tokens
-├── classifier/     # Phase 3: Assign to canonical categories
-├── assembler/      # Phase 5-6: Rule-based and LLM assembly
-├── validator/      # Quality validation (optional)
-└── pipeline.py     # Main orchestrator
+├── tokenizer/
+│   ├── __init__.py
+│   ├── base.py              # ImageToken, TokenType enum
+│   ├── tagger_extractor.py  # wd14, pixai, joytag, nudenet
+│   ├── analyzer_extractor.py # photography, iqa, composition
+│   ├── caption_extractor.py # florence captions
+│   └── normalizer.py        # deduplication, confidence
+├── classifier/
+│   ├── __init__.py
+│   ├── base.py              # TokenClassification
+│   ├── categories.py        # 9 canonical categories
+│   ├── deterministic.py     # Layer 1-2
+│   └── dictionary.py        # Layer 3
+├── assembler/
+│   ├── __init__.py
+│   ├── base.py
+│   ├── rule_based.py        # Standard mode
+│   ├── llm_based.py         # Enhance with AI mode
+│   ├── templates.py
+│   └── phrase_mappings.py
+├── validator/               # Optional
+├── grounding/               # Phase 8, optional
+└── pipeline.py              # Main orchestrator
 ```
 
-**Resume Work**: Start with [implementation_plan.md](docs/implementation_plan.md)
+## 9 Canonical Categories
+
+1. Quality Boosters
+2. Subject
+3. Subject Details (hair, eyes, face, body, clothing, skin)
+4. Action/Pose
+5. Environment/Scene
+6. Lighting
+7. Style/Medium
+8. Composition
+9. Technical Parameters
+
+## Modes
+
+- `Standard` → Rule-based assembly (fast, free, deterministic)
+- `Enhance with AI` → LLM-based assembly (higher quality, API costs)
+
+## Key Design Decisions
+
+1. **ImageToken** - Unified format: text, confidence, source, token_type, metadata
+2. **5-Layer Classification** - Deterministic → Source routing → Dictionary → Embeddings → Uncategorized
+3. **META Filtering** - Remove "the image shows", "in the middle of" patterns
+4. **Phrase Mappings** - "1girl" → "a woman", "cowboy shot" → "framed from mid-thigh up"
+
+## Resume Work
+
+1. Read [docs/implementation_plan.md](docs/implementation_plan.md)
+2. Check task checkboxes for current progress
+3. Continue from next uncompleted phase
+4. Test incrementally after each phase
+
+## Quick Reference
+
+### Current Compose Location
+- `core/compose/` - Existing implementation (to be replaced)
+- `core/compose/standard.py` - Broken StandardGenerator
+- `core/compose/llm.py` - LLM generator (reusable)
+
+### Metadata Sources
+- **Taggers**: wd14, pixai, joytag, nudenet
+- **Analyzers**: photography, iqa, composition, saliency
+- **Captions**: florence_caption, florence_description, florence_analyze, vlm_description
+
+### Test Command
+```bash
+python -m pytest tests/compose/ -v
+```
