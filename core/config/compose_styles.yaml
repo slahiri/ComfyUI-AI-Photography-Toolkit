@@ -1,0 +1,438 @@
+# Compose Styles Configuration
+# ============================
+# Defines output styles for SID_PromptCompose node.
+# Each style has its own template structure, patterns, and LLM prompts.
+
+# Global settings
+defaults:
+  max_words: 250
+  min_confidence: 0.4
+  max_tags_per_category: 3
+  use_florence_base: true
+
+# Tags to always exclude (applies to all styles)
+exclude_tags:
+  # Quality boosters (modern models handle automatically)
+  - masterpiece
+  - best quality
+  - highly detailed
+  - 8k
+  - 4k
+  - uhd
+  - high resolution
+  - hd
+  - trending on artstation
+  - award winning
+  - absurdres
+  - highres
+
+  # Metadata artifacts
+  - artist name
+  - signature
+  - watermark
+  - web address
+  - patreon username
+  - twitter username
+  - dated
+  - username
+
+  # Count prefixes (not needed for natural language)
+  - 1girl
+  - 1boy
+  - 2girls
+  - 2boys
+  - solo
+  - multiple girls
+  - multiple boys
+
+  # Generic/unhelpful
+  - sensitive
+  - nsfw content
+  - simple background
+
+# Output Styles
+styles:
+  # =========================================================================
+  # Z-IMAGE / FLUX Style
+  # =========================================================================
+  z-image:
+    name: "Z-Image / Flux"
+    description: "Full descriptive sentences for Z-Image and Flux models"
+
+    # Key characteristics
+    syntax: "sentences"  # sentences | tags | hybrid
+    supports_negative: false
+    supports_weights: false
+    max_tokens: 1024
+
+    # Template structure order (used by all modes)
+    structure:
+      - subject        # Who/What with detailed attributes
+      - action         # What they're doing or how they exist
+      - environment    # Setting, location, time of day
+      - lighting       # Mood, weather, light quality
+      - style          # Medium, artistic reference, camera/film
+      - composition    # Framing, angle, focus
+      - text           # Exact text in "double quotes"
+
+    # Category patterns for tag classification
+    # Each category has: keywords (for matching), priority, max_items
+    categories:
+      subject:
+        keywords:
+          - woman
+          - girl
+          - man
+          - boy
+          - person
+          - child
+          - elderly
+          - female
+          - male
+        priority: 1
+        max_items: 2
+
+      ethnicity:
+        keywords:
+          - asian
+          - indian
+          - european
+          - caucasian
+          - african
+          - latin
+          - japanese
+          - korean
+          - chinese
+        priority: 2
+        max_items: 1
+
+      age:
+        keywords:
+          - young
+          - mature
+          - elderly
+          - teen
+          - adult
+          - middle aged
+        priority: 3
+        max_items: 1
+
+      hair:
+        keywords:
+          - hair
+          - haired
+          - black hair
+          - blonde
+          - brunette
+          - redhead
+          - ponytail
+          - braid
+          - bangs
+        priority: 4
+        max_items: 3
+
+      eyes:
+        keywords:
+          - eyes
+          - brown eyes
+          - blue eyes
+          - green eyes
+          - gaze
+        priority: 5
+        max_items: 2
+
+      facial:
+        keywords:
+          - lips
+          - nose
+          - face
+          - skin
+          - makeup
+          - lipstick
+          - freckles
+          - beard
+          - mustache
+        priority: 6
+        max_items: 3
+
+      expression:
+        keywords:
+          - smile
+          - smiling
+          - expression
+          - confident
+          - serious
+          - happy
+          - sad
+          - alluring
+          - neutral
+        priority: 7
+        max_items: 2
+
+      pose:
+        keywords:
+          - standing
+          - sitting
+          - lying
+          - posing
+          - leaning
+          - walking
+          - running
+          - kneeling
+        priority: 8
+        max_items: 2
+
+      action:
+        keywords:
+          - holding
+          - looking
+          - reaching
+          - touching
+          - hand on
+          - arms
+          - crossed
+        priority: 9
+        max_items: 2
+
+      gaze:
+        keywords:
+          - looking at viewer
+          - looking away
+          - looking down
+          - looking up
+          - eye contact
+          - closed eyes
+        priority: 10
+        max_items: 1
+
+      clothing:
+        keywords:
+          - dress
+          - saree
+          - sari
+          - robe
+          - suit
+          - shirt
+          - blouse
+          - pants
+          - skirt
+          - jacket
+          - coat
+          - wearing
+          - outfit
+          - uniform
+        priority: 11
+        max_items: 3
+
+      accessories:
+        keywords:
+          - bracelet
+          - necklace
+          - jewelry
+          - earring
+          - watch
+          - ring
+          - glasses
+          - sunglasses
+          - hat
+          - scarf
+        priority: 12
+        max_items: 3
+
+      environment:
+        keywords:
+          - indoor
+          - outdoor
+          - room
+          - studio
+          - street
+          - park
+          - beach
+          - forest
+          - city
+          - nature
+          - background
+        priority: 13
+        max_items: 2
+
+      time:
+        keywords:
+          - day
+          - night
+          - sunset
+          - sunrise
+          - dawn
+          - dusk
+          - morning
+          - evening
+        priority: 14
+        max_items: 1
+
+      weather:
+        keywords:
+          - sunny
+          - cloudy
+          - rainy
+          - snowy
+          - foggy
+          - misty
+          - overcast
+        priority: 15
+        max_items: 1
+
+      lighting:
+        keywords:
+          - light
+          - lighting
+          - dim
+          - soft
+          - warm
+          - cold
+          - dark
+          - bright
+          - shadow
+          - backlight
+          - rim light
+          - natural light
+        priority: 16
+        max_items: 3
+
+      atmosphere:
+        keywords:
+          - mood
+          - intimate
+          - dramatic
+          - peaceful
+          - tense
+          - romantic
+          - mysterious
+          - cozy
+        priority: 17
+        max_items: 2
+
+      camera:
+        keywords:
+          - shot
+          - portrait
+          - close-up
+          - wide shot
+          - medium shot
+          - cowboy shot
+          - full body
+          - headshot
+        priority: 18
+        max_items: 2
+
+      focus:
+        keywords:
+          - bokeh
+          - focus
+          - blur
+          - depth of field
+          - sharp
+          - soft focus
+        priority: 19
+        max_items: 2
+
+      style:
+        keywords:
+          - photo
+          - photograph
+          - realistic
+          - cinematic
+          - artistic
+          - professional
+          - candid
+          - editorial
+        priority: 20
+        max_items: 2
+
+    # Sentence templates for Fast mode
+    # {category} is replaced with joined tags from that category
+    templates:
+      subject: "A {ethnicity} {subject}"
+      hair: "with {hair}"
+      eyes: "and {eyes}"
+      facial: "She has {facial}."
+      expression: "Her expression is {expression}."
+      pose: "She is {pose}."
+      action: "She is {action}."
+      gaze: "Her gaze is {gaze}."
+      clothing: "She is wearing {clothing}."
+      accessories: "She is accessorized with {accessories}."
+      environment: "The scene is set {environment}."
+      time: "The time is {time}."
+      weather: "The weather is {weather}."
+      lighting: "The lighting is {lighting}, creating depth and atmosphere."
+      atmosphere: "The mood is {atmosphere}."
+      camera: "Captured as a {camera}."
+      focus: "with {focus}."
+      style: "Shot in a {style} style."
+
+    # LLM system prompt
+    llm_system_prompt: |
+      You are an expert prompt engineer for Z-Image, a text-to-image AI model.
+
+      CRITICAL Z-IMAGE RULES:
+      1. Write FULL DESCRIPTIVE SENTENCES (not comma-separated tags)
+      2. NO negative prompts supported - all guidance must be positive
+      3. NO quality boosters: "masterpiece", "best quality", "8k", "trending on artstation"
+      4. Describe spatial relationships clearly
+      5. Use natural, flowing prose that paints a complete picture
+
+    # LLM user prompt template
+    llm_user_prompt: |
+      Generate a Z-Image prompt from this image analysis.
+
+      STRUCTURE (in order):
+      1. Subject: Who/what with physical attributes (ethnicity, age, features)
+      2. Appearance: Facial features, expression, skin, makeup
+      3. Pose/Action: Body position, hand placement, gaze direction
+      4. Clothing: Garments with colors, patterns, draping style
+      5. Environment: Setting, background, atmospheric details
+      6. Lighting: Type, direction, quality, mood
+      7. Technical: Camera angle, depth of field, composition
+
+      IMAGE DATA:
+      -----------
+      Dimensions: {width}x{height}
+
+      Top Tags (by confidence):
+      {tags}
+
+      Florence Caption:
+      {florence}
+
+      Photography Analysis:
+      {photography}
+
+      Composition Analysis:
+      {composition}
+
+      Generate a single cohesive prompt (150-250 words).
+      Write ONLY the prompt, no explanations or formatting.
+      Focus on natural, flowing sentences.
+
+  # =========================================================================
+  # SDXL Style (Future)
+  # =========================================================================
+  # sdxl:
+  #   name: "SDXL / Stable Diffusion"
+  #   description: "Comma-separated tags with weight syntax"
+  #   syntax: "tags"
+  #   supports_negative: true
+  #   supports_weights: true
+  #   max_tokens: 150
+  #   weight_syntax: "(tag:weight)"
+  #   ...
+
+  # =========================================================================
+  # Midjourney Style (Future)
+  # =========================================================================
+  # midjourney:
+  #   name: "Midjourney"
+  #   description: "MJ-optimized with parameters"
+  #   syntax: "hybrid"
+  #   supports_negative: true  # via --no
+  #   supports_weights: true   # via ::weight
+  #   ...

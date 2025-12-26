@@ -22,12 +22,20 @@ class SaliencyTagger(BaseTagger):
     """
 
     TAGGER_NAME = "saliency"
-    MODEL_ID = "facebook/dinov2-base"
+
+    # Available DINOv2 models
+    DINOV2_MODELS = {
+        "dinov2-small": "facebook/dinov2-small",
+        "dinov2-base": "facebook/dinov2-base",
+        "dinov2-large": "facebook/dinov2-large",
+        "dinov2-giant": "facebook/dinov2-giant",
+    }
 
     def __init__(
         self,
         use_dino: bool = True,
         fallback_to_cv: bool = True,
+        model: str = "dinov2-base",
         **kwargs
     ):
         """
@@ -36,10 +44,13 @@ class SaliencyTagger(BaseTagger):
         Args:
             use_dino: Use DINOv2 for saliency (more accurate)
             fallback_to_cv: Use CV saliency if DINO unavailable
+            model: DINOv2 model variant (dinov2-small/base/large/giant)
         """
         super().__init__(**kwargs)
         self.use_dino = use_dino
         self.fallback_to_cv = fallback_to_cv
+        self.model_name = model
+        self.model_id = self.DINOV2_MODELS.get(model, "facebook/dinov2-base")
         self._model = None
         self._processor = None
         self._device = None
@@ -56,8 +67,8 @@ class SaliencyTagger(BaseTagger):
 
                 self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
-                print("[SID-Saliency] Loading DINOv2...")
-                model_path = download_hf_model(self.MODEL_ID, "saliency")
+                print(f"[SID-Saliency] Loading DINOv2 ({self.model_name})...")
+                model_path = download_hf_model(self.model_id, "saliency")
 
                 self._processor = AutoImageProcessor.from_pretrained(model_path)
                 self._model = AutoModel.from_pretrained(model_path)

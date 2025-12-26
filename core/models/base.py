@@ -26,6 +26,8 @@ class GenerationConfig:
     num_beams: int = 4
     do_sample: bool = False
     temperature: float = 1.0
+    top_p: float = 0.9
+    top_k: Optional[int] = None  # None = disabled
 
 
 # =============================================================================
@@ -134,12 +136,29 @@ class BaseCaptionModel(ABC):
 
     def _cleanup(self) -> None:
         """Common cleanup logic for unload."""
+        import gc
+
         if self._model is not None:
-            if not self._quantized:
+            # For quantized models, we need special handling
+            if self._quantized:
+                # Try to delete any cached states
+                try:
+                    if hasattr(self._model, 'eval'):
+                        self._model.eval()
+                    # Clear any cached gradients or buffers
+                    for param in self._model.parameters():
+                        param.data = None
+                        if param.grad is not None:
+                            param.grad = None
+                except Exception:
+                    pass
+            else:
                 try:
                     self._model.to("cpu")
                 except Exception:
                     pass
+
+            # Delete model reference
             del self._model
             self._model = None
 
@@ -148,6 +167,11 @@ class BaseCaptionModel(ABC):
             self._processor = None
 
         self._quantized = False
+
+        # Force garbage collection before CUDA cleanup
+        gc.collect()
+        gc.collect()
+
         cleanup_memory(aggressive=True)
 
     @abstractmethod

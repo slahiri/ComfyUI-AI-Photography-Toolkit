@@ -9,11 +9,15 @@ import numpy as np
 from PIL import Image
 
 from .base import BaseTagger, TagItem, TaggerResult
+from ..log import log, log_start, log_end
 
 import folder_paths
 
 # Global verbose flag
 _verbose = False
+
+# Threshold modes
+THRESHOLD_MODES = ["Fixed", "MCut", "Detailed"]
 
 
 def set_verbose(verbose: bool) -> None:
@@ -25,7 +29,45 @@ def set_verbose(verbose: bool) -> None:
 def _log(message: str) -> None:
     """Print message if verbose is enabled."""
     if _verbose:
-        print(f"[SID-WD14] {message}")
+        log("WD14", message)
+
+
+def mcut_threshold(probs: np.ndarray, min_threshold: float = 0.1) -> float:
+    """
+    Maximum Cut Thresholding (MCut).
+
+    Finds optimal threshold by identifying the largest gap in sorted probabilities.
+    This often results in more detailed tags being included.
+
+    Args:
+        probs: Array of prediction probabilities
+        min_threshold: Minimum threshold to use (default: 0.1)
+
+    Returns:
+        Optimal threshold value
+    """
+    # Sort probabilities in descending order
+    sorted_probs = np.sort(probs)[::-1]
+
+    # Need at least 2 values to find a gap
+    if len(sorted_probs) < 2:
+        return min_threshold
+
+    # Compute differences between adjacent probabilities
+    diffs = sorted_probs[:-1] - sorted_probs[1:]
+
+    # Find the index of the maximum gap
+    max_gap_idx = np.argmax(diffs)
+
+    # Threshold is the midpoint of the largest gap
+    threshold = (sorted_probs[max_gap_idx] + sorted_probs[max_gap_idx + 1]) / 2
+
+    # Ensure minimum threshold
+    threshold = max(threshold, min_threshold)
+
+    _log(f"MCut threshold: {threshold:.3f} (gap at index {max_gap_idx})")
+
+    return float(threshold)
 
 
 # Available WD14 models
@@ -97,6 +139,7 @@ class WD14Tagger(BaseTagger):
         model_name: str = DEFAULT_MODEL,
         general_threshold: float = 0.35,
         character_threshold: float = 0.85,
+        threshold_mode: str = "Fixed",
         replace_underscore: bool = True,
         trailing_comma: bool = False,
         exclude_tags: str = "",
@@ -107,8 +150,9 @@ class WD14Tagger(BaseTagger):
 
         Args:
             model_name: Which WD14 model variant to use
-            general_threshold: Confidence threshold for general tags
+            general_threshold: Confidence threshold for general tags (used in Fixed mode)
             character_threshold: Confidence threshold for character tags
+            threshold_mode: "Fixed" (use general_threshold), "MCut" (auto-detect), "Detailed" (0.25)
             replace_underscore: Replace underscores with spaces
             trailing_comma: Add trailing comma to each tag
             exclude_tags: Comma-separated list of tags to exclude
@@ -118,6 +162,7 @@ class WD14Tagger(BaseTagger):
         self.model_name = model_name
         self.general_threshold = general_threshold
         self.character_threshold = character_threshold
+        self.threshold_mode = threshold_mode
         self.replace_underscore = replace_underscore
         self.trailing_comma = trailing_comma
         self.exclude_tags = set(
@@ -129,6 +174,7 @@ class WD14Tagger(BaseTagger):
         self._general_index = None
         self._character_index = None
         self._input_size = 448  # Default, will be updated on load
+        self._last_effective_threshold = None  # Track what threshold was actually used
 
     def _get_model_path(self) -> tuple[Path, Path]:
         """Get paths to model and tags files."""
@@ -152,7 +198,7 @@ class WD14Tagger(BaseTagger):
             )
 
         repo_id = WD14_MODELS[self.model_name]["repo"]
-        print(f"[SID-Toolkit] Downloading WD14 model: {self.model_name}...")
+        download_start = log_start("WD14", f"Downloading {self.model_name}")
         _log(f"Repo: {repo_id}")
 
         from huggingface_hub import hf_hub_download
@@ -183,7 +229,7 @@ class WD14Tagger(BaseTagger):
         if downloaded_csv.exists():
             downloaded_csv.rename(csv_path)
 
-        print(f"[SID-Toolkit] WD14 model downloaded: {self.model_name}")
+        log_end("WD14", f"{self.model_name} downloaded", download_start)
 
     def _load_tags(self, csv_path: Path) -> None:
         """Load tags from CSV file."""
@@ -252,7 +298,7 @@ class WD14Tagger(BaseTagger):
         _log(f"Using providers: {providers}")
 
         # Load model
-        print(f"[SID-Toolkit] Loading WD14 model: {self.model_name}")
+        load_start = log_start("WD14", f"Loading {self.model_name}")
         self._session = ort.InferenceSession(str(onnx_path), providers=providers)
 
         # Get input size from model
@@ -264,7 +310,7 @@ class WD14Tagger(BaseTagger):
         self._load_tags(csv_path)
 
         self._is_loaded = True
-        print(f"[SID-Toolkit] WD14 model loaded: {self.model_name}")
+        log_end("WD14", f"{self.model_name} loaded", load_start)
 
     def _preprocess_image(self, image: Image.Image) -> np.ndarray:
         """Preprocess image for model input."""
@@ -321,6 +367,24 @@ class WD14Tagger(BaseTagger):
 
         _log(f"Got {len(probs)} predictions")
 
+        # Determine effective threshold based on mode
+        if self.threshold_mode == "MCut":
+            # Use MCut on general tags only
+            if self._general_index is not None and self._character_index is not None:
+                general_probs = probs[self._general_index:self._character_index]
+                effective_threshold = mcut_threshold(general_probs)
+            else:
+                effective_threshold = self.general_threshold
+        elif self.threshold_mode == "Detailed":
+            # Lower threshold for more detailed tags
+            effective_threshold = 0.25
+        else:
+            # Fixed mode - use general_threshold
+            effective_threshold = self.general_threshold
+
+        self._last_effective_threshold = effective_threshold
+        _log(f"Threshold mode: {self.threshold_mode}, effective threshold: {effective_threshold:.3f}")
+
         # Process results
         tags = []
 
@@ -337,10 +401,10 @@ class WD14Tagger(BaseTagger):
             ))
             _log(f"Rating: {rating_tag} ({rating_conf:.3f})")
 
-        # General tags
+        # General tags - use effective threshold
         if self._general_index is not None and self._character_index is not None:
             for idx in range(self._general_index, self._character_index):
-                if probs[idx] > self.general_threshold:
+                if probs[idx] > effective_threshold:
                     tag_text = self._tags_list[idx]
                     if tag_text.lower() not in self.exclude_tags:
                         # Escape parentheses for prompt compatibility
@@ -375,6 +439,8 @@ class WD14Tagger(BaseTagger):
             tags=tags,
             metadata={
                 "model": self.model_name,
+                "threshold_mode": self.threshold_mode,
+                "effective_threshold": effective_threshold,
                 "general_threshold": self.general_threshold,
                 "character_threshold": self.character_threshold,
             }

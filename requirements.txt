@@ -1,17 +1,30 @@
 # ComfyUI-AI-Photography-Toolkit Dependencies
 # Install: pip install -r requirements.txt
+#
+# Already provided by ComfyUI (DO NOT ADD):
+#   torch, torchvision, transformers, safetensors, scipy, Pillow, numpy
 
 # Core
 huggingface_hub
-safetensors
-transformers>=4.46.0
+hf_xet  # Faster HuggingFace downloads via Xet Storage
+pyyaml
+bitsandbytes; platform_system != "Darwin"  # 4-bit/8-bit quantization for VLMs
 
-# Taggers
-onnxruntime-gpu
+# Cloud VLM APIs (for SID_PromptSynthesis)
+anthropic         # Anthropic Claude API
+openai            # OpenAI GPT-4 API
+google-generativeai  # Google Gemini API
+
+# Taggers - WD14, JoyTag (ONNX models)
+onnxruntime-gpu; platform_system != "Darwin"
+onnxruntime; platform_system == "Darwin"
+
+# Taggers - Other models
 timm
-nudenet
-pyiqa
-ultralytics
-mediapipe
 opencv-python
-scipy
+
+# Optional taggers (install manually if needed)
+# nudenet           # NudeNet NSFW detection
+# pyiqa             # IQA quality assessment
+# ultralytics       # YOLOv8 fashion detection
+# dghs-imgutils     # PixAI anime tagger (requires >=0.19.0)

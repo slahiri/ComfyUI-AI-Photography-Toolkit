@@ -1,0 +1,48 @@
+{
+  "system_prompt": "You are an expert image describer specializing in creating detailed, accurate prompts for AI image generation. Be assertive and specific. Avoid vague terms like 'possibly', 'likely', 'seems to be'. Describe what you observe with confidence.",
+
+  "singleshot": {
+    "z-image": {
+      "prompt": "Write a highly detailed description of this image for photorealistic AI image generation.\n\nDescribe the following aspects in natural, flowing language:\n\n1. SUBJECT: Main subject(s) - physical appearance, expression, pose, body language, notable features\n2. CLOTHING/ATTIRE: Style, fit, fabric texture, colors, patterns, accessories\n3. LIGHTING: Light source direction, quality (soft/harsh), color temperature, shadows, highlights\n4. COMPOSITION: Framing, depth of field, focal point, camera angle, shot type\n5. ENVIRONMENT: Setting, background elements, props, atmosphere\n6. MOOD/STYLE: Overall mood, artistic style, color palette, tonal quality\n7. TECHNICAL: Camera details if apparent (lens type, aperture effect, bokeh)\n\nWrite ONLY the prompt as one cohesive paragraph. No headers, no explanations, no preamble.",
+      "style_notes": "Photorealistic, natural language, camera/photography terms welcome"
+    },
+
+    "sdxl": {
+      "prompt": "Analyze this image and create a detailed prompt optimized for SDXL image generation.\n\nStart with quality boosters, then describe:\n- Main subject with physical details\n- Clothing, accessories, and styling\n- Pose, expression, and body language\n- Lighting quality and direction\n- Background and environment\n- Artistic style and mood\n- Color palette and atmosphere\n\nFormat: Begin with 'masterpiece, best quality, highly detailed' then continue with natural language description.\n\nWrite ONLY the prompt. No explanations.",
+      "style_notes": "Quality boosters + natural language, SDXL-optimized"
+    },
+
+    "flux": {
+      "prompt": "Create a concise, focused prompt for FLUX image generation based on this image.\n\nDescribe:\n- Core subject and their appearance\n- Key visual elements and composition\n- Setting and context\n- Lighting and atmosphere\n- Notable stylistic elements\n\nFLUX works best with clean, direct descriptions without quality boosters. Focus on specificity and clarity.\n\nWrite ONLY the prompt as natural language. Be concise but detailed.",
+      "style_notes": "Clean, no quality boosters, specific and direct"
+    },
+
+    "pony": {
+      "prompt": "Create comma-separated booru-style tags for this image (Pony Diffusion format).\n\nInclude tags for:\n- Quality: score_9, score_8_up, score_7_up\n- Subject: 1girl/1boy/etc, solo/multiple\n- Physical: hair color, eye color, body type\n- Clothing: detailed garment tags with underscores\n- Expression: facial expression, mood\n- Pose: body position, gesture, action\n- Composition: shot type, camera angle\n- Setting: background, location\n\nUse underscores for multi-word tags (e.g., long_hair, blue_eyes, school_uniform).\n\nWrite ONLY the comma-separated tags. No explanations.",
+      "style_notes": "Booru tag format, underscores, quality scores"
+    },
+
+    "illustrious": {
+      "prompt": "Create a detailed prompt for Illustrious (anime) model based on this image.\n\nFormat: Mix of quality tags and natural language.\n\nInclude:\n- Quality boosters: masterpiece, best quality\n- Character: appearance, features, expression\n- Attire: detailed clothing description\n- Pose and gesture\n- Background and setting\n- Art style and coloring\n- Lighting and mood\n\nCombine anime terminology with descriptive language.\n\nWrite ONLY the prompt. No explanations.",
+      "style_notes": "Anime style, quality tags + natural language hybrid"
+    },
+
+    "general": {
+      "prompt": "Write a comprehensive, detailed description of this image suitable for AI image generation.\n\nCover all aspects systematically:\n\n1. PRIMARY SUBJECT: Detailed description of the main subject(s)\n2. APPEARANCE: Physical features, expression, distinguishing characteristics\n3. ATTIRE: Clothing, accessories, styling details\n4. POSE/ACTION: Body position, gesture, movement\n5. LIGHTING: Quality, direction, shadows, highlights\n6. COMPOSITION: Framing, perspective, focal elements\n7. BACKGROUND: Environment, setting, contextual elements\n8. ATMOSPHERE: Mood, color palette, overall feeling\n9. STYLE: Artistic style, rendering quality\n\nBe specific and assertive. Describe what you see, not what you assume.\n\nWrite ONLY the description as flowing prose. No headers or explanations.",
+      "style_notes": "Universal format, comprehensive, model-agnostic"
+    }
+  },
+
+  "refine": {
+    "base_prompt": "Based on the following analysis data and the image, create a detailed {target_format} prompt.\n\n{context}\n\nDetected elements:\n- Clothing: {clothing_tags}\n- Pose: {pose_tags}\n- Setting: {setting_tags}\n- Other: {other_tags}\n\nLook at the image to verify and expand on these tags. Provide additional details about:\n1. Subject appearance and expression not captured in tags\n2. Clothing details (style, fit, fabric, texture)\n3. Pose nuances and body language\n4. Lighting quality and direction\n5. Background and environment details\n6. Overall mood and atmosphere\n\nSynthesize everything into a cohesive {target_format} prompt.\n\nWrite ONLY the final prompt. No explanations.",
+
+    "format_instructions": {
+      "z-image": "Use natural language with photography terms.",
+      "sdxl": "Start with 'masterpiece, best quality, highly detailed' then natural language.",
+      "flux": "Clean, direct description without quality boosters.",
+      "pony": "Use booru-style comma-separated tags with underscores.",
+      "illustrious": "Mix quality tags with anime-style natural language.",
+      "general": "Comprehensive natural language description."
+    }
+  }
+}

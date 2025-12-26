@@ -16,6 +16,7 @@ from .base import BaseCaptionModel, CaptionMode, GenerationConfig, get_dtype, ge
 from ..config import get_model_config, get_prompt
 from ..download import download_model
 from ..platform import isolated_execution
+from ..log import log, log_start, log_end, log_warn
 
 # ComfyUI imports
 import comfy.model_management as mm
@@ -34,7 +35,7 @@ def set_verbose(verbose: bool) -> None:
 def _log(message: str) -> None:
     """Print message if verbose is enabled."""
     if _verbose:
-        print(f"[SID-Florence] {message}")
+        log("Florence", message)
 
 _MODELS_DIR = Path(folder_paths.models_dir) / "LLM"
 
@@ -138,7 +139,7 @@ def _register_processor_from_model(local_path: Path):
     try:
         proc_spec.loader.exec_module(proc_module)
     except Exception as e:
-        print(f"[SID-Toolkit] Warning: Failed to load processor module: {e}")
+        log_warn("Florence", f"Failed to load processor module: {e}")
         return
 
     # Add processor class to the mock transformers.models.florence2 module
@@ -165,7 +166,7 @@ def _load_florence_model(local_path: Path, dtype: torch.dtype, trust_remote: boo
 
     # Check if kijai's implementation is available
     if kijai_path.exists():
-        print(f"[SID-Toolkit] Using kijai's Florence2 (transformers {transformers.__version__})")
+        log("Florence", f"Using kijai's Florence2 (transformers {transformers.__version__})", force=True)
 
         try:
             Florence2ForConditionalGeneration = _load_kijai_florence_class()
@@ -174,22 +175,25 @@ def _load_florence_model(local_path: Path, dtype: torch.dtype, trust_remote: boo
                 "transformers.dynamic_module_utils.get_imports",
                 _fixed_get_imports
             ):
-                return Florence2ForConditionalGeneration.from_pretrained(
+                load_start = log_start("Florence", "Loading weights")
+                model = Florence2ForConditionalGeneration.from_pretrained(
                     local_path,
                     torch_dtype=dtype,
                     trust_remote_code=trust_remote,
                 )
+                log_end("Florence", "Weights loaded", load_start)
+                return model
         except Exception as e:
-            print(f"[SID-Toolkit] Warning: kijai's Florence2 failed: {e}")
-            print(f"[SID-Toolkit] Falling back to AutoModelForCausalLM...")
+            log_warn("Florence", f"kijai's Florence2 failed: {e}")
+            log("Florence", "Falling back to AutoModelForCausalLM...", force=True)
             # Fall through to fallback
 
     # Fallback: Try AutoModelForCausalLM (works with older transformers < 4.50)
     # This will likely fail with transformers >= 4.50 due to GenerationMixin issue
-    print(f"[SID-Toolkit] Using AutoModelForCausalLM (transformers {transformers.__version__})")
-    print(f"[SID-Toolkit] WARNING: This may fail with transformers >= 4.50!")
-    print(f"[SID-Toolkit] Install kijai's comfyui-florence2 for best compatibility:")
-    print(f"[SID-Toolkit]   https://github.com/kijai/ComfyUI-Florence2")
+    log_warn("Florence", f"Using AutoModelForCausalLM (transformers {transformers.__version__})")
+    log_warn("Florence", "This may fail with transformers >= 4.50!")
+    log_warn("Florence", "Install kijai's comfyui-florence2 for best compatibility:")
+    log_warn("Florence", "  https://github.com/kijai/ComfyUI-Florence2")
 
     from transformers import AutoModelForCausalLM
 
@@ -257,11 +261,11 @@ class FlorenceModel(BaseCaptionModel):
         quant_config = get_quantization_config(self.precision)
 
         precision_label = self.precision.upper() if self.precision != "auto" else "FP16"
-        print(f"[SID-Toolkit] Loading Florence-2 ({precision_label}, transformers {transformers.__version__})")
+        load_start = log_start("Florence", f"Loading Florence-2 ({precision_label})")
 
         # Load model - Florence-2 doesn't support quantization well due to custom model code
         if quant_config is not None:
-            print(f"[SID-Toolkit] Warning: Florence-2 doesn't support {self.precision} quantization, using FP16")
+            log_warn("Florence", f"Florence-2 doesn't support {self.precision} quantization, using FP16")
 
         # Standard loading for Florence-2 (already small ~1.5GB model)
         self._model = _load_florence_model(
@@ -291,7 +295,7 @@ class FlorenceModel(BaseCaptionModel):
         self._device = device
         self._offload_device = offload_device
 
-        print(f"[SID-Toolkit] Florence-2 loaded successfully ({precision_label})")
+        log_end("Florence", f"Florence-2 loaded", load_start)
 
     def generate(
         self,

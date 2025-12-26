@@ -6,8 +6,6 @@ from .base import BaseCaptionModel
 from .florence import FlorenceModel
 from .qwen import QwenVLModel
 from .qwen3 import Qwen3VLModel
-from .joycaption import JoyCaptionModel
-from .minicpm import MiniCPMVModel
 
 
 # Model factory functions - return configured model instances
@@ -21,20 +19,6 @@ def _create_florence_base(model_id: Optional[str], precision: str) -> BaseCaptio
     return FlorenceModel(model_id, precision=precision, config_name="florence_base")
 
 
-# JoyCaption variants
-def _create_joycaption(model_id: Optional[str], precision: str) -> BaseCaptionModel:
-    return JoyCaptionModel(model_id, precision=precision, config_name="joycaption")
-
-
-def _create_joycaption_alpha(model_id: Optional[str], precision: str) -> BaseCaptionModel:
-    return JoyCaptionModel(model_id, precision=precision, config_name="joycaption_alpha")
-
-
-# MiniCPM-V variants
-def _create_minicpm_v26(model_id: Optional[str], precision: str) -> BaseCaptionModel:
-    return MiniCPMVModel(model_id, precision=precision, config_name="minicpm_v26")
-
-
 # Qwen2/2.5 variants
 def _create_qwen(model_id: Optional[str], precision: str) -> BaseCaptionModel:
     return QwenVLModel(model_id, precision=precision, config_name="qwen")
@@ -45,6 +29,12 @@ def _create_qwen2_2b(model_id: Optional[str], precision: str) -> BaseCaptionMode
 
 
 def _create_qwen25_3b(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+    """General-purpose Qwen2.5-VL-3B-Instruct."""
+    return QwenVLModel(model_id, precision=precision, config_name="qwen25_3b")
+
+
+def _create_qwen25_3b_caption(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+    """Captioning-tuned Qwen2.5-VL-3B."""
     return QwenVLModel(model_id, precision=precision, config_name="qwen25_3b_caption")
 
 
@@ -52,7 +42,13 @@ def _create_qwen2_7b(model_id: Optional[str], precision: str) -> BaseCaptionMode
     return QwenVLModel(model_id, precision=precision, config_name="qwen2_7b_captioner")
 
 
+def _create_qwen25_7b(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+    """General-purpose Qwen2.5-VL-7B-Instruct."""
+    return QwenVLModel(model_id, precision=precision, config_name="qwen25_7b")
+
+
 def _create_qwen25_7b_captioner(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+    """Captioning-tuned Qwen2.5-VL-7B."""
     return QwenVLModel(model_id, precision=precision, config_name="qwen25_7b_captioner")
 
 
@@ -60,17 +56,53 @@ def _create_qwen25_7b_caption(model_id: Optional[str], precision: str) -> BaseCa
     return QwenVLModel(model_id, precision=precision, config_name="qwen25_7b_caption")
 
 
-# Qwen3 variants
-def _create_qwen3_2b(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+# Qwen3 variants - Abliterated (uncensored)
+def _create_qwen3_2b_abliterated(model_id: Optional[str], precision: str) -> BaseCaptionModel:
     return Qwen3VLModel(model_id, precision=precision, config_name="qwen3_2b_abliterated")
 
 
-def _create_qwen3_4b(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+def _create_qwen3_4b_abliterated(model_id: Optional[str], precision: str) -> BaseCaptionModel:
     return Qwen3VLModel(model_id, precision=precision, config_name="qwen3_4b_abliterated")
 
 
+def _create_qwen3_8b_abliterated(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+    return Qwen3VLModel(model_id, precision=precision, config_name="qwen3_8b_abliterated")
+
+
+# Qwen3 variants - Base Instruct
+def _create_qwen3_2b(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+    return Qwen3VLModel(model_id, precision=precision, config_name="qwen3_2b")
+
+
+def _create_qwen3_4b(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+    return Qwen3VLModel(model_id, precision=precision, config_name="qwen3_4b")
+
+
 def _create_qwen3_8b(model_id: Optional[str], precision: str) -> BaseCaptionModel:
-    return Qwen3VLModel(model_id, precision=precision, config_name="qwen3_8b_caption")
+    return Qwen3VLModel(model_id, precision=precision, config_name="qwen3_8b")
+
+
+# Qwen2.5 variants - Abliterated (uncensored)
+def _create_qwen25_3b_abliterated(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+    return QwenVLModel(model_id, precision=precision, config_name="qwen25_3b_abliterated")
+
+
+def _create_qwen25_7b_abliterated(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+    return QwenVLModel(model_id, precision=precision, config_name="qwen25_7b_abliterated")
+
+
+# Qwen2 variants - Abliterated (uncensored)
+def _create_qwen2_2b_abliterated(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+    return QwenVLModel(model_id, precision=precision, config_name="qwen2_2b_abliterated")
+
+
+# Qwen2 variants - Base Instruct
+def _create_qwen2_2b_instruct(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+    return QwenVLModel(model_id, precision=precision, config_name="qwen2_2b")
+
+
+def _create_qwen2_7b_instruct(model_id: Optional[str], precision: str) -> BaseCaptionModel:
+    return QwenVLModel(model_id, precision=precision, config_name="qwen2_7b")
 
 
 # Registry of available models: name -> factory function
@@ -78,21 +110,38 @@ _MODEL_REGISTRY: dict[str, Callable[[Optional[str], str], BaseCaptionModel]] = {
     # Legacy models (for backwards compatibility)
     "qwen": _create_qwen,
 
-    # Fast tier - Florence and small Qwen models
+    # Florence models
     "florence": _create_florence,           # Florence-2-large-PromptGen-v2.0
     "florence_base": _create_florence_base, # Florence-2-base-PromptGen-v1.5
-    "qwen2_2b": _create_qwen2_2b,
-    "qwen25_3b": _create_qwen25_3b,
-    "qwen3_2b": _create_qwen3_2b,
-    "qwen3_4b": _create_qwen3_4b,
 
-    # Balanced tier - JoyCaption, MiniCPM-V, and 7B-8B Qwen models
-    "joycaption": _create_joycaption,       # JoyCaption-Beta-One
-    "joycaption_alpha": _create_joycaption_alpha,  # JoyCaption-Alpha-Two
-    "minicpm_v26": _create_minicpm_v26,     # MiniCPM-V-2.6
-    "qwen2_7b": _create_qwen2_7b,
+    # Qwen2-VL models
+    "qwen2_2b": _create_qwen2_2b,                        # Legacy: captioning-tuned
+    "qwen2_2b_abliterated": _create_qwen2_2b_abliterated,  # Abliterated (uncensored)
+    "qwen2_2b_instruct": _create_qwen2_2b_instruct,     # Base Instruct
+    "qwen2_7b": _create_qwen2_7b,                        # Legacy: captioning-tuned
+    "qwen2_7b_instruct": _create_qwen2_7b_instruct,     # Base Instruct
+
+    # Qwen2.5-VL models - Abliterated (uncensored, for Singleshot)
+    "qwen25_3b_abliterated": _create_qwen25_3b_abliterated,
+    "qwen25_7b_abliterated": _create_qwen25_7b_abliterated,
+
+    # Qwen2.5-VL models - Base Instruct (for Refine)
+    "qwen25_3b": _create_qwen25_3b,
+    "qwen25_7b": _create_qwen25_7b,
+
+    # Qwen2.5-VL models - Captioning-tuned (legacy)
+    "qwen25_3b_caption": _create_qwen25_3b_caption,
     "qwen25_7b_captioner": _create_qwen25_7b_captioner,
     "qwen25_7b_caption": _create_qwen25_7b_caption,
+
+    # Qwen3-VL models - Abliterated (uncensored, for Singleshot)
+    "qwen3_2b_abliterated": _create_qwen3_2b_abliterated,
+    "qwen3_4b_abliterated": _create_qwen3_4b_abliterated,
+    "qwen3_8b_abliterated": _create_qwen3_8b_abliterated,
+
+    # Qwen3-VL models - Base Instruct (for Refine)
+    "qwen3_2b": _create_qwen3_2b,
+    "qwen3_4b": _create_qwen3_4b,
     "qwen3_8b": _create_qwen3_8b,
 }
 

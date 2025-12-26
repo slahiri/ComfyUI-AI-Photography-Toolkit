@@ -6,14 +6,20 @@ from PIL import Image
 import json
 
 from .taggers import WD14Tagger, PhotographyTagger, TagItem, TaggerResult
+from .taggers import PixAITagger
 from .taggers import JoyTagTagger
 from .taggers import NudeNetTagger
 from .taggers import IQATagger, CADBCompositionTagger, SaliencyTagger
 from .taggers.wd14 import set_verbose as set_wd14_verbose
 from .taggers.utils import get_human_detection_tags
+from .log import log, log_start, log_end, log_error
 
 # Taggers that require human presence
-HUMAN_SPECIFIC_TAGGERS = {"fashion", "pose"}
+HUMAN_SPECIFIC_TAGGERS = {
+    "fashion", "pose",
+    "fashion_yolov8", "fashion_yolos", "fashion_clip",
+    "fashion_segformer", "fashion_wargon",
+}
 
 
 @dataclass
@@ -68,7 +74,7 @@ class TaggingPipeline:
     def _log(self, message: str) -> None:
         """Print message if verbose is enabled."""
         if self.verbose:
-            print(f"[SID-Pipeline] {message}")
+            log("Pipeline", message)
 
     def _get_tagger(self, name: str):
         """Get or create a tagger instance."""
@@ -82,6 +88,17 @@ class TaggingPipeline:
             tagger = WD14Tagger(
                 model_name=tagger_config.get("model", "wd-swinv2-tagger-v3"),
                 general_threshold=tagger_config.get("general_threshold", 0.35),
+                character_threshold=tagger_config.get("character_threshold", 0.85),
+                threshold_mode=tagger_config.get("threshold_mode", "Fixed"),
+                replace_underscore=tagger_config.get("replace_underscore", True),
+                exclude_tags=tagger_config.get("exclude_tags", ""),
+            )
+            self._taggers[name] = tagger
+            return tagger
+
+        elif name == "pixai":
+            tagger = PixAITagger(
+                general_threshold=tagger_config.get("general_threshold", 0.30),
                 character_threshold=tagger_config.get("character_threshold", 0.85),
                 replace_underscore=tagger_config.get("replace_underscore", True),
                 exclude_tags=tagger_config.get("exclude_tags", ""),
@@ -119,11 +136,54 @@ class TaggingPipeline:
             self._taggers[name] = tagger
             return tagger
 
+        # Individual fashion taggers
+        elif name == "fashion_yolov8":
+            from .taggers.fashion import YOLOv8ClothingTagger
+            tagger = YOLOv8ClothingTagger(
+                threshold=tagger_config.get("threshold", 0.3),
+            )
+            self._taggers[name] = tagger
+            return tagger
+
+        elif name == "fashion_yolos":
+            from .taggers.fashion import YOLOSFashionpediaTagger
+            tagger = YOLOSFashionpediaTagger(
+                threshold=tagger_config.get("threshold", 0.3),
+            )
+            self._taggers[name] = tagger
+            return tagger
+
+        elif name == "fashion_clip":
+            from .taggers.fashion import FashionCLIPTagger
+            tagger = FashionCLIPTagger(
+                threshold=tagger_config.get("threshold", 0.15),
+                top_k=tagger_config.get("top_k", 30),
+            )
+            self._taggers[name] = tagger
+            return tagger
+
+        elif name == "fashion_segformer":
+            from .taggers.fashion import SegFormerClothesTagger
+            tagger = SegFormerClothesTagger(
+                min_area_percent=tagger_config.get("min_area", 0.01),
+            )
+            self._taggers[name] = tagger
+            return tagger
+
+        elif name == "fashion_wargon":
+            from .taggers.fashion import WargonClothingTagger
+            tagger = WargonClothingTagger(
+                threshold=tagger_config.get("threshold", 0.2),
+                top_k=tagger_config.get("top_k", 10),
+            )
+            self._taggers[name] = tagger
+            return tagger
+
         elif name == "pose":
             from .taggers.pose import PoseTagger
             tagger = PoseTagger(
-                models=tagger_config.get("models", {"mediapipe": True}),
-                params=tagger_config.get("params", {}),
+                models={"mediapipe": True},
+                params={"mediapipe_confidence": tagger_config.get("confidence", 0.5)},
             )
             self._taggers[name] = tagger
             return tagger
@@ -150,6 +210,7 @@ class TaggingPipeline:
             tagger = SaliencyTagger(
                 use_dino=tagger_config.get("use_dino", True),
                 fallback_to_cv=tagger_config.get("fallback_to_cv", True),
+                model=tagger_config.get("model", "dinov2-base"),
             )
             self._taggers[name] = tagger
             return tagger
@@ -221,8 +282,10 @@ class TaggingPipeline:
                 self._log(f"  Human detected: {human_detected}")
 
             except Exception as e:
+                import traceback
                 self._log(f"  wd14 failed: {e}")
-                print(f"[SID-Pipeline] Warning: wd14 tagger failed: {e}")
+                log_error("Pipeline", f"wd14 tagger failed: {e}")
+                traceback.print_exc()
                 failed_taggers["wd14"] = str(e)
 
         # Step 2: Run remaining taggers
@@ -261,8 +324,10 @@ class TaggingPipeline:
                 self._log(f"  {tagger_name}: {len(result.tags)} tags")
 
             except Exception as e:
+                import traceback
                 self._log(f"  {tagger_name} failed: {e}")
-                print(f"[SID-Pipeline] Warning: {tagger_name} tagger failed: {e}")
+                log_error("Pipeline", f"{tagger_name} tagger failed: {e}")
+                traceback.print_exc()
                 failed_taggers[tagger_name] = str(e)
 
         # Sort all tags by confidence
@@ -352,8 +417,14 @@ class TaggingPipeline:
 
     def unload_all(self) -> None:
         """Unload all tagger models to free memory."""
+        from .platform import cleanup_memory
+
         self._log("Unloading all taggers...")
         for name, tagger in self._taggers.items():
             self._log(f"  Unloading {name}")
             tagger.unload()
         self._taggers.clear()
+
+        # Force aggressive cleanup
+        cleanup_memory(aggressive=True)
+        self._log("Cleanup complete")

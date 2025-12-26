@@ -6,6 +6,7 @@ Dependencies are managed via requirements.txt and installed by ComfyUI-Manager.
 
 from .base import BaseTagger, TagItem, TaggerResult
 from .wd14 import WD14Tagger, WD14_MODELS, DEFAULT_MODEL as WD14_DEFAULT_MODEL
+from .pixai import PixAITagger
 from .instant import ColorAnalyzer, BlurDetector, PhotographyTagger
 from .joytag import JoyTagTagger
 from .nudenet import NudeNetTagger, NudeNetONNXTagger
@@ -20,6 +21,7 @@ __all__ = [
     "WD14Tagger",
     "WD14_MODELS",
     "WD14_DEFAULT_MODEL",
+    "PixAITagger",
     "JoyTagTagger",
     "NudeNetTagger",
     "NudeNetONNXTagger",

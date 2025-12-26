@@ -5,6 +5,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 # Config directory path
 _CONFIG_DIR = Path(__file__).parent.parent / "config"
 
@@ -12,24 +14,29 @@ _CONFIG_DIR = Path(__file__).parent.parent / "config"
 @lru_cache(maxsize=16)
 def load_config(name: str) -> dict[str, Any]:
     """
-    Load a JSON config file by name.
+    Load a config file by name (supports JSON and YAML).
 
     Args:
-        name: Config name (without .json extension)
+        name: Config name (without extension)
 
     Returns:
-        Parsed JSON as dict
+        Parsed config as dict
 
     Raises:
         FileNotFoundError: If config file doesn't exist
     """
-    config_path = _CONFIG_DIR / f"{name}.json"
+    # Try JSON first, then YAML
+    json_path = _CONFIG_DIR / f"{name}.json"
+    yaml_path = _CONFIG_DIR / f"{name}.yaml"
 
-    if not config_path.exists():
-        raise FileNotFoundError(f"Config not found: {config_path}")
-
-    with open(config_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    if json_path.exists():
+        with open(json_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    elif yaml_path.exists():
+        with open(yaml_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+    else:
+        raise FileNotFoundError(f"Config not found: {name} (tried .json and .yaml)")
 
 
 def get_model_config(model_name: str) -> dict[str, Any]:

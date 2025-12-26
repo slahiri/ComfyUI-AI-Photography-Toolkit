@@ -71,37 +71,16 @@ class CADBCompositionTagger(BaseTagger):
         self._device = None
 
     def load(self) -> None:
-        """Load CADB model."""
+        """Load CADB model (currently unavailable - uses CV fallback)."""
         if self._is_loaded:
             return
 
-        try:
-            import torch
-            from transformers import AutoModelForImageClassification, AutoImageProcessor
-        except ImportError:
-            raise ImportError(
-                "transformers and torch are required. "
-                "Install with: pip install transformers torch"
-            )
-
-        self._device = "cuda" if torch.cuda.is_available() else "cpu"
-
-        print("[SID-Composition] Loading CADB composition classifier...")
-
-        # Try loading from HuggingFace
-        try:
-            model_path = download_hf_model(self.MODEL_ID, "composition")
-            self._processor = AutoImageProcessor.from_pretrained(model_path)
-            self._model = AutoModelForImageClassification.from_pretrained(model_path)
-        except Exception as e:
-            print(f"[SID-Composition] CADB model not available: {e}")
-            print("[SID-Composition] Using fallback composition analysis")
-            self._model = None
-            self._processor = None
-
-        if self._model is not None:
-            self._model.to(self._device)
-            self._model.eval()
+        # CADB model repo (shuntagami/cadb-composition-classifier) was deleted from HuggingFace
+        # Skip download attempt and use CV-based composition analysis directly
+        print("[SID-Composition] Using CV-based composition analysis (CADB model unavailable)")
+        self._model = None
+        self._processor = None
+        self._device = None
 
         self._is_loaded = True
 

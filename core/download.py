@@ -7,6 +7,8 @@ from typing import Optional
 
 import folder_paths
 
+from .log import log, log_start, log_end, log_warn
+
 # Global verbose flag (set by caption node)
 _verbose = False
 
@@ -37,7 +39,86 @@ def _get_hf_token() -> Optional[str]:
 def _log(message: str) -> None:
     """Print message if verbose is enabled."""
     if _verbose:
-        print(f"[SID-Download] {message}")
+        log("Download", message)
+
+
+def _validate_model_files(local_path: Path) -> bool:
+    """
+    Validate that all required model files are present.
+
+    Checks for:
+    - Single model file (model.safetensors or pytorch_model.bin)
+    - OR all shards if sharded (model-00001-of-00002.safetensors, etc.)
+
+    Returns:
+        True if model files are complete, False otherwise
+    """
+    import json
+
+    # Check for model index file (indicates sharded model)
+    index_file = local_path / "model.safetensors.index.json"
+    if index_file.exists():
+        try:
+            with open(index_file, "r") as f:
+                index = json.load(f)
+
+            # Get list of required shard files
+            weight_map = index.get("weight_map", {})
+            required_shards = set(weight_map.values())
+
+            # Check if all shards exist
+            for shard in required_shards:
+                shard_path = local_path / shard
+                if not shard_path.exists():
+                    _log(f"Missing shard: {shard}")
+                    return False
+
+            _log(f"All {len(required_shards)} model shards present")
+            return True
+
+        except Exception as e:
+            _log(f"Error reading index file: {e}")
+            return False
+
+    # Check for pytorch index file
+    pytorch_index = local_path / "pytorch_model.bin.index.json"
+    if pytorch_index.exists():
+        try:
+            with open(pytorch_index, "r") as f:
+                index = json.load(f)
+
+            weight_map = index.get("weight_map", {})
+            required_shards = set(weight_map.values())
+
+            for shard in required_shards:
+                shard_path = local_path / shard
+                if not shard_path.exists():
+                    _log(f"Missing shard: {shard}")
+                    return False
+
+            return True
+
+        except Exception as e:
+            _log(f"Error reading pytorch index file: {e}")
+            return False
+
+    # Check for single model file
+    single_model = local_path / "model.safetensors"
+    if single_model.exists():
+        return True
+
+    single_pytorch = local_path / "pytorch_model.bin"
+    if single_pytorch.exists():
+        return True
+
+    # Check for any .safetensors files (some models have different naming)
+    safetensors_files = list(local_path.glob("*.safetensors"))
+    if safetensors_files:
+        _log(f"Found {len(safetensors_files)} safetensors files")
+        return True
+
+    _log("No model files found")
+    return False
 
 
 def download_model(
@@ -71,14 +152,21 @@ def download_model(
     if local_path.exists() and not force_download:
         config_file = local_path / "config.json"
         if config_file.exists():
-            _log(f"Found existing valid download at {local_path}")
-            return local_path
+            # Also check for complete model files
+            is_complete = _validate_model_files(local_path)
+            if is_complete:
+                _log(f"Found existing valid download at {local_path}")
+                return local_path
+            else:
+                log_warn("Download", "Incomplete model files detected, re-downloading...")
+                _log(f"Missing model shards, will re-download")
+                force_download = True
         else:
-            print(f"[SID-Toolkit] Incomplete download detected, re-downloading...")
+            log_warn("Download", "Incomplete download detected, re-downloading...")
             _log(f"Missing config.json, will re-download")
             force_download = True
 
-    print(f"[SID-Toolkit] Downloading {model_id} to {local_path}...")
+    download_start = log_start("Download", f"Downloading {model_id}")
     _log(f"Starting HuggingFace snapshot_download...")
     _log(f"Force download: {force_download}")
 
@@ -104,7 +192,7 @@ def download_model(
         _log(f"snapshot_download completed successfully")
     except OSError as e:
         if "Consistency check failed" in str(e):
-            print(f"[SID-Toolkit] Corrupted download detected, cleaning up and retrying...")
+            log_warn("Download", "Corrupted download detected, cleaning up and retrying...")
             _log(f"Corruption error: {e}")
             _log(f"Deleting {local_path} and retrying...")
             if local_path.exists():
@@ -135,7 +223,7 @@ def download_model(
         _log(f"Download error: {e}")
         raise
 
-    print(f"[SID-Toolkit] Download complete: {model_name}")
+    log_end("Download", f"{model_name} downloaded", download_start)
     _log(f"Download complete, files saved to {local_path}")
     return local_path
 
@@ -159,7 +247,7 @@ def delete_model(model_id: str, config: dict) -> bool:
 
     if local_path.exists():
         shutil.rmtree(local_path)
-        print(f"[SID-Toolkit] Deleted {model_name}")
+        log("Download", f"Deleted {model_name}", force=True)
         return True
 
     return False

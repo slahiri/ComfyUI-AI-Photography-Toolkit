@@ -1,0 +1,18 @@
+# Qwen2.5-3B-Instruct - Medium text-only LLM
+# ~2.5GB VRAM (4-bit), ~6GB (FP16)
+# Good quality, reasonable speed
+
+name: "Qwen2.5-3B-Instruct"
+model_id: "Qwen/Qwen2.5-3B-Instruct"
+model_type: "qwen25_text"
+dtype: "bfloat16"
+
+download:
+  subfolder: "LLM"
+  use_symlinks: false
+
+generation:
+  max_tokens: 512
+  do_sample: true
+  temperature: 0.7
+  top_p: 0.9

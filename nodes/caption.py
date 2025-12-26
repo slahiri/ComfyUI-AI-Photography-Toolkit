@@ -17,8 +17,6 @@ from ..core import download as download_module
 from ..core.models import florence as florence_module
 from ..core.models import qwen as qwen_module
 from ..core.models import qwen3 as qwen3_module
-from ..core.models import joycaption as joycaption_module
-from ..core.models import minicpm as minicpm_module
 from ..core.tagging_pipeline import TaggingPipeline
 
 
@@ -36,7 +34,7 @@ def _tensor_to_pil(tensor) -> Image.Image:
 
 # Model name to factory key mapping
 MODEL_MAP = {
-    # Fast tier (small models, ~1-8GB VRAM)
+    # Fast tier (small models, ~2-6GB VRAM in 4bit)
     "[Fast] Florence-2-base-PromptGen": "florence_base",
     "[Fast] Florence-2-large-PromptGen": "florence",
     "[Fast] Qwen2-VL-2B-Caption": "qwen2_2b",
@@ -44,10 +42,7 @@ MODEL_MAP = {
     "[Fast] Qwen3-VL-2B-Abliterated": "qwen3_2b",
     "[Fast] Qwen3-VL-4B-Abliterated": "qwen3_4b",
 
-    # Balanced tier (large models, ~8-17GB VRAM)
-    "[Balanced] JoyCaption-Alpha-Two": "joycaption_alpha",
-    "[Balanced] JoyCaption-Beta-One": "joycaption",
-    "[Balanced] MiniCPM-V-2.6": "minicpm_v26",
+    # Balanced tier (7B-8B models, ~8-10GB VRAM in 4bit)
     "[Balanced] Qwen2-VL-7B-Captioner": "qwen2_7b",
     "[Balanced] Qwen2.5-VL-7B-Captioner": "qwen25_7b_captioner",
     "[Balanced] Qwen2.5-VL-7B-Caption": "qwen25_7b_caption",
@@ -64,9 +59,6 @@ ALL_MODELS = [
     "[Fast] Qwen3-VL-2B-Abliterated",
     "[Fast] Qwen3-VL-4B-Abliterated",
     # Balanced tier
-    "[Balanced] JoyCaption-Alpha-Two",
-    "[Balanced] JoyCaption-Beta-One",
-    "[Balanced] MiniCPM-V-2.6",
     "[Balanced] Qwen2-VL-7B-Captioner",
     "[Balanced] Qwen2.5-VL-7B-Captioner",
     "[Balanced] Qwen2.5-VL-7B-Caption",
@@ -192,8 +184,6 @@ class SID_ZImagePromptGenerator:
         florence_module.set_verbose(verbose)
         qwen_module.set_verbose(verbose)
         qwen3_module.set_verbose(verbose)
-        joycaption_module.set_verbose(verbose)
-        minicpm_module.set_verbose(verbose)
 
         # Convert tensor to PIL
         pil_image = _tensor_to_pil(image)

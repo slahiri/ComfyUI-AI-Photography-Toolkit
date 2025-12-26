@@ -1,0 +1,203 @@
+{
+  "version": "3.1",
+  "description": "Multi-pass Refine mode with configurable pass counts (2-14 passes)",
+
+  "system_prompt": "You are an expert image analyst. You will receive DETECTED TAGS to verify against the image. CRITICAL RULES: 1) CHECK each detected tag against the image - describe it if present, ignore if wrong. 2) Be PRECISE: distinguish crop top from sports bra, gray from white, veil from hood. 3) Describe headwear LAYERS separately (e.g., black veil over white wimple). 4) Note exposed skin (midriff, cleavage) if tags detected it and you see it. 5) Do NOT assume hands are in pockets - describe actual hand position. 6) Output natural comma-separated phrases only - no tag labels.",
+
+  "pass_templates": {
+    "2": ["subject_complete", "scene_complete"],
+    "4": ["subject", "clothing_complete", "composition_lighting", "style"],
+    "6": ["subject", "clothing_complete", "body", "composition", "lighting", "style"],
+    "8": ["face", "features", "clothing_upper", "clothing_lower_acc", "body", "composition", "lighting", "style"],
+    "10": ["demographics", "face", "hair_skin", "clothing_upper", "clothing_lower_acc", "body", "pose", "composition", "lighting", "style"],
+    "12": ["demographics", "face", "eyes_expression", "hair", "skin", "clothing_upper", "clothing_lower", "accessories", "body_pose", "composition", "lighting", "style"],
+    "14": ["demographics", "face_shape", "eyes", "expression", "hair", "skin", "clothing_upper", "clothing_lower", "accessories", "body_type", "pose", "composition", "lighting", "style"]
+  },
+
+  "modules": {
+    "subject_complete": {
+      "name": "Subject Complete",
+      "priority": 1,
+      "prompt": "Describe the person. Check the detected items above and verify each one.\n\nDESCRIBE THESE (if visible):\n- Age: young adult/adult/mature based on features\n- Ethnicity hints and skin tone (pale/fair/light/medium/olive/tan/brown/dark)\n- Face: shape, expression (describe specifically - lips parted? neutral? slight smile?)\n- Eyes: color, direction of gaze, makeup\n- HEADWEAR: If wearing veil/wimple/hood, describe EACH LAYER separately (e.g., 'black veil over white wimple')\n- Hair: only if visible - color, texture, how it shows\n- CLOTHING LAYERS: Describe each garment from inside to outside. Be specific:\n  * Is it a crop top, sports bra, tank top, or shirt?\n  * Exact colors (white/gray/cream, black/navy/dark)\n  * Neckline, sleeves, fit\n- EXPOSED SKIN: Check tags for 'midriff', 'cleavage', etc. - if present, mention it\n- Hands: Where are they? Resting at sides? On hips? Holding something? NOT in pockets unless clearly visible\n- Accessories: jewelry, watches, etc.\n\nWrite comma-separated phrases. Only describe what you ACTUALLY SEE."
+    },
+
+    "scene_complete": {
+      "name": "Scene Complete",
+      "priority": 2,
+      "prompt": "Describe the scene and composition in natural text. Use the reference tags above as hints.\n\nInclude:\n- Shot type: close-up / medium close-up / medium (waist up) / medium full (hips up) / full body - be accurate based on what's visible\n- Camera angle: eye level, high, low\n- Subject position: centered, rule of thirds, off-center\n- Background: setting, elements, blur level, colors\n- Lighting: direction, soft/hard quality, color temperature\n- Depth of field: sharp subject with blur, or all sharp\n- Overall style: photo genre, aesthetic mood\n\nWrite as comma-separated descriptive phrases. Be accurate about framing - if legs aren't visible, it's not full body."
+    },
+
+    "subject": {
+      "name": "Subject & Face",
+      "priority": 1,
+      "prompt": "Describe the person's face and appearance. Use reference tags above as hints.\n\nInclude:\n- Apparent age range (20s, 30s, 40s+) based on visible features\n- Skin tone (pale/fair/light/medium/olive/tan/brown/dark)\n- Face shape and defining features\n- Eyes: color, shape, gaze, makeup\n- Expression: be specific (e.g., 'intense gaze with slightly parted lips')\n- Hair OR headwear (describe headwear layers if hair is covered)\n\nWrite as comma-separated descriptive phrases."
+    },
+
+    "clothing_complete": {
+      "name": "Clothing & Accessories",
+      "priority": 2,
+      "prompt": "Describe ALL visible clothing and accessories. Use reference tags above as hints.\n\nInclude:\n- Upper body garments: exact type, color (be precise - gray vs white, black vs navy), material, fit\n- Lower body: type, color, length, fit (or state if not visible)\n- Headwear: describe each layer separately (veil, wimple, hood, etc.)\n- Accessories: jewelry, watches, belts - material and color\n- Layering: describe from innermost to outermost visible layer\n\nWrite as comma-separated descriptive phrases. Verify colors yourself - don't trust tag colors blindly."
+    },
+
+    "composition_lighting": {
+      "name": "Composition & Lighting",
+      "priority": 3,
+      "prompt": "Describe composition and lighting:\n\n1. SHOT TYPE: close-up (head only), medium close-up (head+shoulders), medium (waist up), medium full (hips up), full body\n2. CAMERA ANGLE: eye level, high angle, low angle\n3. BACKGROUND: setting, blur level, colors\n4. MAIN LIGHT: direction, source type\n5. LIGHT QUALITY: soft/hard, color temperature\n6. MOOD: bright, dramatic, soft, etc.\n\nBe precise about framing."
+    },
+
+    "body": {
+      "name": "Body & Pose",
+      "priority": 3,
+      "prompt": "Describe body and pose:\n\n1. BODY TYPE: if visible - slim, athletic, curvy, etc.\n2. STANCE: standing, sitting, leaning\n3. BODY ANGLE: facing camera, turned, profile\n4. ARM POSITION: where each arm is, what hands are doing\n5. VISIBLE SKIN: which areas exposed vs covered (be accurate)\n\nOnly describe what is visible in frame."
+    },
+
+    "composition": {
+      "name": "Framing & Background",
+      "priority": 4,
+      "prompt": "Describe composition:\n\n1. SHOT TYPE: close-up, medium close-up, medium, medium full, full body, wide\n2. CAMERA ANGLE: eye level, high, low, dutch\n3. SUBJECT POSITION: centered, left/right third, off-center\n4. BACKGROUND: setting, elements, blur level, colors\n5. DEPTH OF FIELD: sharp subject with blur, or all sharp\n\nIf you can't see legs, it's NOT full body."
+    },
+
+    "lighting": {
+      "name": "Lighting",
+      "priority": 5,
+      "prompt": "Describe lighting:\n\n1. MAIN LIGHT: direction (front, side, back, 45-degree), source type\n2. QUALITY: soft/hard shadows, diffused or direct\n3. COLOR TEMPERATURE: warm (golden), neutral, cool (blue)\n4. CONTRAST: high contrast or soft/flat\n5. SPECIAL: rim light, backlight, fill light\n6. MOOD: bright, dramatic, soft, moody"
+    },
+
+    "style": {
+      "name": "Style & Medium",
+      "priority": 6,
+      "prompt": "Describe style:\n\n1. MEDIUM: photograph, digital art, illustration, render\n2. GENRE: portrait, fashion editorial, glamour, artistic, candid\n3. COLOR PALETTE: dominant colors, overall mood\n4. AESTHETIC: modern, vintage, minimalist, dramatic\n5. QUALITY: resolution feel, sharpness"
+    },
+
+    "face": {
+      "name": "Face & Expression",
+      "priority": 1,
+      "prompt": "Describe the face:\n\n1. FACE SHAPE: oval, round, square, heart, oblong\n2. FEATURES: cheekbones, jaw, chin, nose shape, lip fullness\n3. EXPRESSION: be very specific - describe eyes, mouth, overall emotion\n4. EYES: color, shape, gaze direction, eyelashes, any makeup\n5. EYEBROWS: shape, thickness, grooming\n\nDescribe exactly what you see."
+    },
+
+    "features": {
+      "name": "Hair & Skin",
+      "priority": 2,
+      "prompt": "Describe hair and skin:\n\n1. HAIR COLOR: exact shade, highlights, lowlights\n2. HAIR LENGTH: short, medium, long, very long\n3. HAIR TEXTURE: straight, wavy, curly, coily\n4. HAIR STYLE: loose, tied, braided, how it frames face\n5. SKIN TONE: pale, fair, light, medium, olive, tan, brown, dark\n6. SKIN TEXTURE: smooth, any visible features (freckles, marks)\n\nBe precise with colors."
+    },
+
+    "clothing_upper": {
+      "name": "Upper Clothing",
+      "priority": 3,
+      "prompt": "Describe upper body clothing:\n\n1. GARMENT TYPE: exact type (fitted tank top, loose blouse, etc.)\n2. COLOR: exact color (gray not white, navy not black)\n3. MATERIAL: cotton, silk, leather, knit, etc.\n4. FIT: tight, fitted, relaxed, oversized\n5. NECKLINE: v-neck, scoop, high, off-shoulder\n6. SLEEVES: sleeveless, cap, short, long, bell\n7. DETAILS: buttons, zippers, embellishments\n\nDescribe each layer if multiple."
+    },
+
+    "clothing_lower_acc": {
+      "name": "Lower Clothing & Accessories",
+      "priority": 4,
+      "prompt": "Describe lower clothing and accessories:\n\n1. LOWER GARMENT (if visible): type, color, length, fit, waist style\n2. HEADWEAR: hats, veils, head coverings - each layer\n3. JEWELRY: necklaces, earrings, rings, bracelets - material, color\n4. EYEWEAR: glasses, sunglasses - style, frame color\n5. OTHER: watches, belts, bags, scarves\n\nIf lower body not visible, state that. Only describe what you see."
+    },
+
+    "demographics": {
+      "name": "Demographics",
+      "priority": 1,
+      "prompt": "Describe the person's demographics:\n\n1. APPARENT AGE: young adult (20s), adult (30s), mature adult (40s), middle-aged (50s+)\n   - Describe the features that indicate age, don't just guess\n2. GENDER PRESENTATION: how they present\n3. ETHNICITY: if discernible from features\n4. BUILD: slim, average, athletic, curvy, etc. (if visible)\n\nDescribe observable features. Don't guess."
+    },
+
+    "hair_skin": {
+      "name": "Hair & Skin",
+      "priority": 3,
+      "prompt": "Describe hair and skin in detail:\n\n1. HAIR COLOR: exact shade with any highlights/lowlights\n2. HAIR LENGTH & TEXTURE: short/medium/long, straight/wavy/curly\n3. HAIR STYLE: how it's arranged, frames face\n4. SKIN TONE: pale, fair, light, medium, olive, tan, brown, dark - be accurate\n5. SKIN QUALITY: texture, any visible marks or features"
+    },
+
+    "pose": {
+      "name": "Pose",
+      "priority": 7,
+      "prompt": "Describe the pose:\n\n1. BODY ORIENTATION: facing camera, angled, profile, back\n2. STANCE: standing, sitting, leaning, lying\n3. ARM POSITIONS: where each arm is placed\n4. HAND POSITIONS: what hands are doing, gestures\n5. HEAD TILT: straight, tilted left/right, looking up/down\n6. BODY LANGUAGE: what the pose conveys"
+    },
+
+    "eyes_expression": {
+      "name": "Eyes & Expression",
+      "priority": 3,
+      "prompt": "Describe eyes and expression:\n\n1. EYE COLOR: exact color\n2. EYE SHAPE: almond, round, hooded, etc.\n3. GAZE: at viewer, away, down, unfocused\n4. EYE MAKEUP: eyeliner, shadow, lashes if visible\n5. EYEBROWS: shape, thickness, arch\n6. EXPRESSION: describe mouth, eyes, overall emotion specifically\n   - Not just 'smiling' but 'gentle closed-lip smile' or 'wide grin showing teeth'"
+    },
+
+    "hair": {
+      "name": "Hair",
+      "priority": 4,
+      "prompt": "Describe hair in detail:\n\n1. COLOR: exact shade, highlights, lowlights, roots\n2. LENGTH: short, shoulder-length, long, very long\n3. TEXTURE: straight, wavy, curly, coily, frizzy\n4. STYLE: loose, ponytail, bun, braids, etc.\n5. VOLUME: flat, normal, voluminous\n6. SHINE: matte, natural, glossy\n7. HOW IT FRAMES THE FACE"
+    },
+
+    "skin": {
+      "name": "Skin",
+      "priority": 5,
+      "prompt": "Describe skin:\n\n1. TONE: pale, fair, light, medium, olive, tan, brown, dark\n2. UNDERTONE: warm, neutral, cool (if discernible)\n3. TEXTURE: smooth, matte, dewy\n4. FEATURES: freckles, beauty marks, blemishes if visible\n5. MAKEUP: foundation coverage, contour, highlight if visible"
+    },
+
+    "clothing_lower": {
+      "name": "Lower Clothing",
+      "priority": 7,
+      "prompt": "Describe lower body clothing (if visible):\n\n1. GARMENT TYPE: pants, jeans, skirt, shorts, dress continuation\n2. COLOR: exact color\n3. MATERIAL: denim, cotton, leather, silk, etc.\n4. FIT: tight, relaxed, wide-leg, flared\n5. LENGTH: mini, knee, midi, ankle, floor\n6. WAIST: high, mid, low\n7. DETAILS: pockets, pleats, slits\n\nIf lower body not visible due to framing, state that."
+    },
+
+    "accessories": {
+      "name": "Accessories",
+      "priority": 8,
+      "prompt": "Describe all accessories:\n\n1. HEADWEAR: hats, veils, headbands, hair accessories\n2. JEWELRY: necklaces (length, pendant), earrings (style), rings, bracelets\n3. EYEWEAR: glasses/sunglasses style and color\n4. WATCHES: style, color, wrist\n5. BAGS: type, color, how carried\n6. BELTS: style, color, buckle\n7. OTHER: scarves, gloves, etc.\n\nInclude material and color for each. Only describe visible items."
+    },
+
+    "body_pose": {
+      "name": "Body & Pose",
+      "priority": 9,
+      "prompt": "Describe body and pose:\n\n1. BODY TYPE: slim, athletic, curvy, petite, etc.\n2. BODY ANGLE: facing camera, 3/4 view, profile\n3. STANCE: standing, sitting, leaning\n4. ARM POSITIONS: each arm placement\n5. HAND POSITIONS: gestures, holding, resting\n6. VISIBLE SKIN: which areas exposed vs covered\n7. BODY LANGUAGE: what pose conveys"
+    },
+
+    "face_shape": {
+      "name": "Face Shape",
+      "priority": 2,
+      "prompt": "Describe face shape and structure:\n\n1. FACE SHAPE: oval, round, square, heart, oblong, diamond\n2. FOREHEAD: high, average, low; wide, narrow\n3. CHEEKBONES: high, low; prominent, subtle\n4. JAW: sharp, soft, square, rounded\n5. CHIN: pointed, rounded, square, cleft\n6. NOSE: shape, size, bridge\n7. LIPS: full, thin, shape"
+    },
+
+    "eyes": {
+      "name": "Eyes",
+      "priority": 3,
+      "prompt": "Describe eyes in detail:\n\n1. EYE COLOR: exact color, any variation\n2. EYE SHAPE: almond, round, hooded, monolid, downturned\n3. EYE SIZE: large, average, small\n4. GAZE DIRECTION: at viewer, left, right, down, up\n5. EYELASHES: natural, enhanced, false\n6. EYELINER/SHADOW: style, color if present\n7. EYEBROWS: shape, thickness, color, arch"
+    },
+
+    "expression": {
+      "name": "Expression",
+      "priority": 4,
+      "prompt": "Describe facial expression in detail:\n\n1. MOUTH: closed, slightly parted, open, smiling, neutral\n2. SMILE TYPE (if smiling): closed-lip, teeth showing, subtle, wide\n3. EYE EXPRESSION: soft, intense, dreamy, focused, squinting\n4. OVERALL EMOTION: serene, confident, playful, serious, sultry\n5. MICRO-EXPRESSIONS: dimples, raised brow, etc.\n6. MOOD CONVEYED: what feeling does expression communicate"
+    },
+
+    "body_type": {
+      "name": "Body Type",
+      "priority": 10,
+      "prompt": "Describe body type (if visible):\n\n1. BUILD: slim, petite, athletic, average, curvy, plus-size\n2. PROPORTIONS: shoulders, waist, hips ratio\n3. MUSCLE DEFINITION: if visible (toned, defined abs, etc.)\n4. HEIGHT IMPRESSION: tall, average, petite (relative to frame)\n5. VISIBLE AREAS: what parts of body are in frame"
+    }
+  },
+
+  "combiner": {
+    "section_order": [
+      "subject_complete", "scene_complete",
+      "subject", "demographics", "face", "face_shape", "eyes", "expression", "eyes_expression",
+      "features", "hair", "skin", "hair_skin",
+      "clothing_complete", "clothing_upper", "clothing_lower", "clothing_lower_acc", "accessories",
+      "body", "body_type", "body_pose", "pose",
+      "composition", "composition_lighting",
+      "lighting", "style"
+    ],
+    "separator": ", ",
+    "format_prefixes": {
+      "z-image": "",
+      "sdxl": "masterpiece, best quality, highly detailed, ",
+      "flux": "",
+      "pony": "score_9, score_8_up, score_7_up, ",
+      "illustrious": "masterpiece, best quality, ",
+      "general": ""
+    },
+    "format_suffixes": {
+      "z-image": "",
+      "sdxl": "",
+      "flux": "",
+      "pony": "",
+      "illustrious": "",
+      "general": ""
+    }
+  }
+}

@@ -1,0 +1,87 @@
+# Prompt Generator Configuration
+# Optimal thresholds per tagger for Stage 1A tagging
+
+taggers:
+  # WD14 - anime/booru style tags
+  wd14:
+    enabled: true
+    model: wd-swinv2-tagger-v3
+    general_threshold: 0.15      # Low for more detail
+    character_threshold: 0.85
+    exclude_tags: ""
+    replace_underscore: true
+
+  # PixAI - newer Danbooru data (2025-01), better character recognition
+  # Requires: pip install dghs-imgutils>=0.19.0
+  pixai:
+    enabled: true
+    general_threshold: 0.30
+    character_threshold: 0.85
+    replace_underscore: true
+    exclude_tags: ""
+
+  # JoyTag - photo-friendly natural language
+  joytag:
+    enabled: true
+    threshold: 0.20
+
+  # NudeNet - NSFW detection (18 body part classes only)
+  # For detailed tags like "cleavage", "thighs" - use WD14/PixAI
+  nudenet:
+    enabled: true
+    threshold: 0.25              # Lower for more detections
+    include_covered: true
+    include_faces: true
+
+  # Photography - instant CV analysis (no threshold)
+  photography:
+    enabled: true
+
+  # IQA - quality assessment (no threshold)
+  iqa:
+    enabled: true
+    use_nima: true
+    use_musiq: true
+    use_brisque: true
+    use_clipiqa: false
+
+  # Composition - CADB + elements
+  composition:
+    enabled: true
+    threshold: 0.25
+    detect_elements: true
+
+  # Saliency - subject position (no threshold)
+  saliency:
+    enabled: true
+    use_dino: true
+    fallback_to_cv: true
+
+  # Fashion - individual models (human only)
+  fashion_yolov8:
+    enabled: true
+    threshold: 0.30
+
+  fashion_yolos:
+    enabled: true
+    threshold: 0.30
+
+  fashion_clip:
+    enabled: true
+    threshold: 0.01  # Softmax spreads thin with large vocab
+    top_k: 30
+
+  fashion_segformer:
+    enabled: true
+    min_area: 0.005  # 0.5% of image area
+
+  # fashion_wargon - disabled (transformers 4.50+ compatibility issue)
+  fashion_wargon:
+    enabled: false
+    threshold: 0.20
+    top_k: 10
+
+  # Pose - disabled (MediaPipe install issues)
+  # pose:
+  #   enabled: true
+  #   confidence: 0.50

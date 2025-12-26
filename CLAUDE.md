@@ -113,3 +113,45 @@ pip install -r requirements.txt
 - Taggers: `D:\ComfyUI\models\taggers\` (WD14, JoyTag)
 - Config: `core/config/*.yaml`
 - Vocabularies: `core/taggers/vocabularies.json`
+
+## Active Development: Prompt Composition Rewrite
+
+**Status**: In Progress (Dec 2024)
+
+The `SID_PromptCompose` node is being rewritten with a new tokenization → classification → assembly pipeline.
+
+### Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [docs/image_tokenization_spec.md](docs/image_tokenization_spec.md) | Full technical specification (Phases 1-6) |
+| [docs/implementation_plan.md](docs/implementation_plan.md) | Implementation roadmap with task checkboxes |
+
+### Quick Summary
+
+**Problem**: Current `StandardGenerator` produces broken output:
+- Grammar errors ("her eyes are brown eyes")
+- Meta-commentary not filtered ("in the middle of the image")
+- Missing content, redundant phrases
+
+**Solution**: New pipeline with:
+1. **Tokenization** - Extract from all metadata sources into `ImageToken` format
+2. **Classification** - 5-layer cascade assigns tokens to 9 canonical categories
+3. **Assembly (Rule-Based)** - Templates + phrase mappings + grammar rules
+4. **Assembly (LLM)** - Optional enhancement using LLM providers
+
+### Modes
+- `Standard` → Rule-based assembly (fast, free, deterministic)
+- `Enhance with AI` → LLM-based assembly (higher quality, costs money)
+
+### Key Files (New Structure)
+```
+core/compose/
+├── tokenizer/      # Phase 1-2: Extract and normalize tokens
+├── classifier/     # Phase 3: Assign to canonical categories
+├── assembler/      # Phase 5-6: Rule-based and LLM assembly
+├── validator/      # Quality validation (optional)
+└── pipeline.py     # Main orchestrator
+```
+
+**Resume Work**: Start with [implementation_plan.md](docs/implementation_plan.md)
