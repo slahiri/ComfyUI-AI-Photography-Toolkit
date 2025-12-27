@@ -73,24 +73,24 @@ core/compose/
 
 **Tasks:**
 
-1. [ ] **Tagger Extractor** (`tagger_extractor.py`)
+1. [x] **Tagger Extractor** (`tagger_extractor.py`)
    - Extract from wd14, pixai, joytag dictionaries
    - Handle both formats: `{tag: conf}` and `{tags: [...], attributes: {...}}`
    - Set token_type = TAG
 
-2. [ ] **Analyzer Extractor** (`analyzer_extractor.py`)
+2. [x] **Analyzer Extractor** (`analyzer_extractor.py`)
    - Extract from photography, iqa, composition, saliency
    - Preserve source info for Layer 2 classification
    - Set token_type = TAG or KEY_VALUE
 
-3. [ ] **Caption Extractor** (`caption_extractor.py`)
+3. [x] **Caption Extractor** (`caption_extractor.py`)
    - Sentence segmentation (split by `.!?`)
    - Clause segmentation (split by `,`, `and`, `with`, `while`)
    - Pattern matching for category-specific phrases
    - META pattern filtering (remove "the image shows", etc.)
    - Set token_type = PHRASE or SENTENCE
 
-4. [ ] **Normalizer** (`normalizer.py`)
+4. [x] **Normalizer** (`normalizer.py`)
    - Lowercase normalization
    - Whitespace cleanup
    - Duplicate detection (exact + near-duplicate)
@@ -98,10 +98,12 @@ core/compose/
    - Source reliability weighting
 
 **Test Cases:**
-- [ ] Test tagger extraction with sample wd14 output
-- [ ] Test caption extraction with sample florence_description
-- [ ] Test META filtering removes philosophical content
-- [ ] Test deduplication merges "brown hair" from multiple sources
+- [x] Test tagger extraction with sample wd14 output
+- [x] Test caption extraction with sample florence_description
+- [x] Test META filtering removes philosophical content
+- [x] Test deduplication merges "brown hair" from multiple sources
+
+**Commit:** `bdb58fd` - feat(compose): implement Phase 2 - Tokenization
 
 ---
 
