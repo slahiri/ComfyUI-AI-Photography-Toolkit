@@ -139,7 +139,7 @@ class SID_PromptCompose:
                 }),
                 "temperature": ("FLOAT", {
                     "default": 0.7,
-                    "min": 0.0,
+                    "min": 0.1,
                     "max": 1.5,
                     "step": 0.1,
                     "display": "slider",
