@@ -71,6 +71,7 @@ def main():
         ("sample_metadata_saree.json", "Saree Image"),
         ("sample_metadata_cupcake.json", "Cupcake Image"),
         ("sample_metadata_landscape.json", "Landscape Image"),
+        ("sample_metadata_car.json", "Ferrari Car Image"),
     ]
 
     for filename, name in sample_files:
@@ -112,7 +113,8 @@ def main():
 
         print(f"\n--- Classification Statistics ---")
         print(f"Total tokens: {stats['total_tokens']}")
-        print(f"Categorized: {stats['categorized_percent']}%")
+        print(f"Processed (not uncategorized): {stats['processed_percent']}%")
+        print(f"Useful content: {stats['categorized_percent']}%")
         print(f"Uncategorized: {stats['uncategorized_count']}")
         print(f"Filtered (META): {stats['filtered_count']}")
 

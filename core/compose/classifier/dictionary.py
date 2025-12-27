@@ -12,6 +12,7 @@ from .categories import (
     CategoryKeywords,
     CATEGORY_KEYWORDS,
     SUBJECT_DETAIL_KEYWORDS,
+    is_meta_pattern,
 )
 from .base import TokenClassification
 from ..tokenizer.base import ImageToken
@@ -253,6 +254,16 @@ def classify_with_multi_category(token: ImageToken) -> Optional[TokenClassificat
         TokenClassification with multi-category support if match found
     """
     text_lower = token.text.lower().strip()
+
+    # Check for META patterns first (filter out invalid/placeholder values)
+    if is_meta_pattern(token.text):
+        return TokenClassification(
+            token=token,
+            primary_category=CanonicalCategory.FILTERED_META,
+            confidence=1.0,
+            classifier_layer=3,
+            metadata={"classification_method": "meta_pattern_layer3"}
+        )
 
     # Check explicit multi-category mappings
     if text_lower in MULTI_CATEGORY_TOKENS:

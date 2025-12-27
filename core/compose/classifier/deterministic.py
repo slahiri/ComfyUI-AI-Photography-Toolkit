@@ -38,6 +38,16 @@ def classify_by_florence_key(token: ImageToken) -> Optional[TokenClassification]
     if token.source != TokenSource.FLORENCE_ANALYZE:
         return None
 
+    # Check for META patterns first (filter out invalid/placeholder values)
+    if is_meta_pattern(token.text):
+        return TokenClassification(
+            token=token,
+            primary_category=CanonicalCategory.FILTERED_META,
+            confidence=1.0,
+            classifier_layer=1,
+            metadata={"classification_method": "meta_pattern_layer1"}
+        )
+
     key = token.metadata.get("key", "")
     if not key:
         return None

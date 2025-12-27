@@ -150,8 +150,20 @@ SUBJECT_KEYWORDS = CategoryKeywords(
         # Non-human subjects
         "no humans", "no human", "animal", "cat", "dog", "bird", "horse",
         "object", "food", "vehicle", "car", "boat", "airplane",
+        # Vehicles
+        "motor vehicle", "sports car", "racecar", "race car", "race vehicle",
+        "vehicle focus", "motorcycle", "bike", "bicycle", "truck", "bus",
+        "train", "ship", "helicopter", "jet", "aircraft",
+        # Car brands
+        "ferrari", "lamborghini", "porsche", "bmw", "mercedes", "audi",
+        "nissan", "toyota", "honda", "ford", "chevrolet", "tesla",
+        "maserati", "bugatti", "mclaren", "aston martin", "bentley",
+        # Car parts
+        "spoiler", "spoiler (automobile)", "wheel", "wheels", "tire", "tires",
+        "headlight", "taillight", "bumper", "hood", "trunk", "engine",
+        "steering wheel", "dashboard", "seat", "seats",
     },
-    contains_patterns=["girl", "boy", "woman", "man"],
+    contains_patterns=["girl", "boy", "woman", "man", "vehicle", "car"],
 )
 
 SUBJECT_DETAIL_KEYWORDS: Dict[SubjectDetailType, CategoryKeywords] = {
@@ -187,8 +199,13 @@ SUBJECT_DETAIL_KEYWORDS: Dict[SubjectDetailType, CategoryKeywords] = {
             "red lips", "pink lips", "lip gloss", "eyeliner", "mascara",
             "beauty mark", "dimples", "happy", "sad", "angry", "surprised",
             "confident", "alluring", "sensual", "sultry", "playful",
+            # NudeNet face outputs
+            "female face", "male face", "face", "head",
+            # Mole positions on face
+            "mole on face", "mole on cheek", "mole under eye",
+            "mole near mouth", "mole on chin",
         },
-        contains_patterns=["expression", "lips", "mouth", "makeup"],
+        contains_patterns=["expression", "lips", "mouth", "makeup", "face"],
     ),
     SubjectDetailType.BODY: CategoryKeywords(
         exact_matches={
@@ -201,8 +218,22 @@ SUBJECT_DETAIL_KEYWORDS: Dict[SubjectDetailType, CategoryKeywords] = {
             "waist", "chest", "torso", "bare shoulders", "bare arms",
             "bare legs", "bare back", "bare feet", "fingernails", "toenails",
             "neck", "butt", "ass", "thigh gap", "belly", "tummy",
+            # NudeNet outputs
+            "exposed belly", "exposed armpits", "exposed arms", "exposed legs",
+            "covered female breast", "covered male breast", "exposed breast",
+            "covered female genitalia", "covered male genitalia",
+            "exposed female breast", "exposed male breast",
+            "covered buttocks", "exposed buttocks", "covered feet", "exposed feet",
+            # Moles/beauty marks on body
+            "mole on breast", "mole on arm", "mole on back", "mole on stomach",
+            "mole on thigh", "mole on shoulder", "beauty mark on body",
+            # Exposure/nudity descriptors
+            "nude", "naked", "topless", "bottomless", "partially nude",
+            "one breast out", "breast exposed", "nipple", "nipples",
+            "exposed nipple", "exposed nipples", "areola", "areolae",
         },
-        contains_patterns=["breasts", "thigh", "physique", "figure", "build", "hips"],
+        contains_patterns=["breasts", "thigh", "physique", "figure", "build", "hips",
+                          "exposed", "covered", "nude", "naked"],
     ),
     SubjectDetailType.CLOTHING: CategoryKeywords(
         exact_matches={
@@ -216,7 +247,7 @@ SUBJECT_DETAIL_KEYWORDS: Dict[SubjectDetailType, CategoryKeywords] = {
             "bikini top", "bikini bottom", "string bikini", "micro bikini",
             "side-tie bikini", "side-tie bikini bottom", "highleg bikini",
             "gold bikini", "strapless", "halterneck", "one-piece swimsuit",
-            "monokini", "tankini",
+            "monokini", "tankini", "highleg", "highleg swimsuit",
             # More underwear
             "sports bra", "bralette", "panty", "thong", "briefs", "boxers",
             "underwear only", "no bra", "no panties",
@@ -229,10 +260,18 @@ SUBJECT_DETAIL_KEYWORDS: Dict[SubjectDetailType, CategoryKeywords] = {
             "hoodie", "blouse", "tunic", "gown", "cocktail dress",
             "red dress", "white dress", "black dress", "multicolored dress",
             "backless dress", "strapless dress", "two-tone dress",
-            "multicolored clothes", "red sari", "white panties",
+            "multicolored clothes", "red sari", "white panties", "red robe",
+            # Necklines and visibility
+            "plunging neckline", "v-neckline", "deep neckline", "low neckline",
+            "upper clothing visible", "lower clothing visible",
+            "clothing visible", "partially clothed", "fully clothed",
+            # Shoulder styles
+            "one shoulder", "off shoulder", "off-shoulder", "bare shoulder",
+            "cold shoulder", "asymmetric neckline", "asymmetrical top",
+            "spaghetti straps", "strapless top", "tube top",
         },
         prefix_patterns=["wearing_*", "wearing *", "dressed_*"],
-        contains_patterns=["dress", "shirt", "pants", "skirt", "top", "bra", "bikini", "swimsuit"],
+        contains_patterns=["dress", "shirt", "pants", "skirt", "top", "bra", "bikini", "swimsuit", "neckline", "clothing", "shoulder"],
     ),
     SubjectDetailType.SKIN: CategoryKeywords(
         exact_matches={
@@ -251,7 +290,11 @@ SUBJECT_DETAIL_KEYWORDS: Dict[SubjectDetailType, CategoryKeywords] = {
             "glasses", "sunglasses", "earrings", "necklace", "bracelet", "watch",
             "ring", "piercing", "tattoo", "headband", "hairpin", "hair ornament",
             "choker", "scarf", "belt", "bag", "purse", "umbrella",
+            "wristwatch", "wrist watch", "pendant", "anklet", "brooch",
+            "hair clip", "hair tie", "ponytail holder", "ribbon",
+            "crown", "tiara", "veil", "gloves", "mittens",
         },
+        contains_patterns=["jewelry", "accessory", "ornament"],
     ),
 }
 
@@ -273,9 +316,17 @@ ACTION_POSE_KEYWORDS = CategoryKeywords(
         "head tilt", "head turn", "looking back", "looking over shoulder",
         "bending", "squatting", "on knees", "on back", "on side",
         "twisted torso", "arched back",
+        # Leg poses
+        "legs together", "legs apart", "legs crossed", "crossed legs",
+        "one leg raised", "leg up", "legs spread", "knees together",
+        "knees apart", "feet together", "feet apart",
+        # Carrying/holding variations
+        "carrying bag", "holding bag", "holding phone", "holding camera",
+        "holding food", "holding drink", "holding cup", "holding glass",
     },
     suffix_patterns=["*_shot", "*ing"],
-    contains_patterns=["hand on", "arm up", "hands"],
+    prefix_patterns=["looking at *", "holding *", "carrying *"],
+    contains_patterns=["hand on", "arm up", "hands", "legs", "holding", "carrying"],
 )
 
 ENVIRONMENT_KEYWORDS = CategoryKeywords(
@@ -300,15 +351,38 @@ ENVIRONMENT_KEYWORDS = CategoryKeywords(
         "village", "town", "rural", "bridge", "road", "path", "trail",
         "building", "buildings", "house", "cabin", "balcony", "terrace",
         "railing", "fence", "lamp", "lamppost", "power lines",
+        # Urban/automotive scenes
+        "racetrack", "race track", "track", "garage", "parking lot",
+        "parking", "showroom", "dealership", "highway", "freeway",
+        "intersection", "traffic", "sign", "traffic light", "crosswalk",
+        # Seasons and weather
+        "winter", "summer", "spring", "autumn", "fall", "snowy", "rainy",
+        "sunny", "cloudy", "foggy", "misty", "stormy", "windy",
+        # Agricultural/rural
+        "rice paddy", "rice field", "wheat field", "corn field", "farmland",
+        "farm", "barn", "stable", "countryside", "pasture", "orchard",
         # Props and objects
         "food", "cake", "cupcake", "fruit", "strawberry", "cherry",
         "ice cream", "dessert", "pastry", "drink", "wine", "champagne",
         "coffee", "tea", "cup", "plate", "table", "chair", "sofa",
         "mirror", "lamp", "candle", "book", "phone", "camera",
         "umbrella", "balloon", "gift", "toy", "flower bouquet",
+        "whipped cream", "frosting", "icing", "sprinkles", "chocolate",
+        "candy", "cookie", "cookies", "biscuit", "muffin", "donut",
+        # More landscape/nature
+        "mountains", "mountain peak", "mountain range", "peak", "summit",
+        "lakefront", "lakeshore", "seaside", "coastline", "riverside",
+        "reflection in water", "water reflection", "mirrored water",
+        "alpine", "glacier", "tundra", "highlands", "lowlands",
+        # Descriptive nature terms
+        "serene", "tranquil", "peaceful", "calm", "still",
+        "majestic", "imposing", "towering", "vast", "expansive",
+        "lush", "green", "verdant", "pristine", "untouched",
+        "ethereal", "misty", "hazy", "soft light", "golden light",
     },
     suffix_patterns=["* background", "*_background"],
-    contains_patterns=["background", "indoor", "outdoor", "room", "sky"],
+    contains_patterns=["background", "indoor", "outdoor", "room", "sky", "mountain", "lake", "river",
+                      "serene", "tranquil", "peaceful", "majestic", "lush"],
 )
 
 LIGHTING_KEYWORDS = CategoryKeywords(
@@ -317,14 +391,19 @@ LIGHTING_KEYWORDS = CategoryKeywords(
         "natural light", "natural lighting", "artificial light",
         "studio light", "studio lighting", "rim light", "backlight",
         "backlighting", "side light", "front light", "dramatic lighting",
-        "bright", "dark", "dim", "shadows", "high key", "low key",
+        "bright", "dark", "dim", "shadow", "shadows", "high key", "low key",
         "warm light", "cool light", "golden hour", "blue hour",
         "soft and even", "even lighting", "flat lighting",
         "warm tones", "cool tones", "neutral tones", "muted colors",
         "vibrant colors", "desaturated", "low contrast", "high contrast",
         "light gray tones", "monochrome lighting",
+        # Color themes
+        "blue theme", "red theme", "green theme", "orange theme",
+        "purple theme", "pink theme", "golden theme", "sepia theme",
+        "monochrome", "black and white", "grayscale", "color grading",
+        "color palette", "warm palette", "cool palette",
     },
-    contains_patterns=["light", "lighting", "tones", "contrast", "shadows"],
+    contains_patterns=["light", "lighting", "tones", "contrast", "shadows", "theme"],
 )
 
 STYLE_MEDIUM_KEYWORDS = CategoryKeywords(
@@ -335,6 +414,13 @@ STYLE_MEDIUM_KEYWORDS = CategoryKeywords(
         "minimalist", "modern", "vintage", "retro", "classic", "artistic",
         "professional", "editorial", "fashion", "portrait", "glamour",
         "fine art", "commercial", "cinematic",
+        # Additional styles
+        "real life", "pinup", "cosplay", "boudoir", "glamour shot",
+        "headshot photography", "fashion photography", "studio photography",
+        "street photography", "candid", "posed", "lifestyle",
+        # Artwork type
+        "original", "original art", "fan art", "fanart", "concept art",
+        "official", "official media", "key visual",
     },
     contains_patterns=["style", "art", "painting", "render"],
 )
@@ -349,6 +435,9 @@ COMPOSITION_KEYWORDS = CategoryKeywords(
         "centered", "rule of thirds", "symmetry", "asymmetry",
         "portrait orientation", "landscape orientation", "square",
         "2:3 aspect ratio", "3:4 aspect ratio", "16:9 aspect ratio",
+        # Distance values from florence_analyze
+        "close", "middle", "far", "very close", "very far",
+        "medium distance", "near", "distant",
     },
     prefix_patterns=["camera_angle_*", "distance_*", "composition_*"],
     contains_patterns=["shot", "view", "angle", "framing"],
@@ -392,6 +481,7 @@ META_FILTER_PATTERNS: List[str] = [
     "the image depicts",
     "the image captures",
     "the image features",
+    "the image has",
     "the photo shows",
     "the photograph shows",
     "in the middle of the image",
@@ -420,6 +510,59 @@ META_FILTER_PATTERNS: List[str] = [
     "this image",
     "this photograph",
     "this photo",
+    # Long captions that are meta-commentary
+    "a stunning landscape photograph",
+    "a stunning portrait",
+    "a breathtaking view",
+    "taken from a distance",
+    # Usernames and watermarks (should be filtered)
+    "patreon username",
+    "gumroad username",
+    "twitter username",
+    "instagram username",
+    "deviantart username",
+    "pixiv username",
+    "onlyfans username",
+    "username",
+    "artist name",
+    "artist signature",
+    # Software/editing
+    "photoshop",
+    "lightroom",
+    "photoshopped",
+    "digitally enhanced",
+    # Generic meta
+    "source:",
+    "official art",
+    # Noise/nonsense tokens from taggers
+    "what", "blood", "death", "parody",
+    # Parsing artifacts and placeholder values
+    "na>",
+    "na)",
+    "na:",
+    "na|",
+    "na and body:",
+    "na'",
+    "na\\",
+    "na |",
+    "| na",
+    ": na",
+    "n/a",
+    "accessory: na",
+    "na/na",
+    # Long descriptive captions that are meta
+    "the saree is a traditional",
+    "the dress is a",
+    "the outfit is a",
+    "the clothing is a",
+    "the overall effect is",
+    "her eyes are closed",
+    "his eyes are closed",
+    "appears to be enjoying",
+    "appears to be in her",
+    "appears to be in his",
+    "high-quality, edited",
+    "edited photo",
 ]
 
 
