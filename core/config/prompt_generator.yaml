@@ -57,6 +57,30 @@ taggers:
     use_dino: true
     fallback_to_cv: true
 
+  # Shot Type - framing classification (close-up, medium, full, etc.)
+  shot_type:
+    enabled: true
+    threshold: 0.30
+    top_k: 2
+
+  # CLIP Camera - angles, DOF, perspective
+  clip_camera:
+    enabled: true
+    threshold: 0.15
+    model: openai/clip-vit-base-patch32
+
+  # Lighting - intrinsic lighting analysis (CV-based, fast)
+  lighting:
+    enabled: true
+    threshold: 0.50
+    analyze_shadows: true
+    analyze_highlights: true
+
+  # Shadow - dedicated shadow detection
+  shadow:
+    enabled: true
+    threshold: 0.50
+
   # Fashion - individual models (human only)
   fashion_yolov8:
     enabled: true
@@ -81,7 +105,50 @@ taggers:
     threshold: 0.20
     top_k: 10
 
+  # DeepFashion Attributes - fabric, pattern, texture, style, fit (human only)
+  deepfashion_attributes:
+    enabled: true
+    threshold: 0.15
+    top_k_per_category: 3
+
+  # Fashion Color - dominant clothing colors (human only)
+  fashion_color:
+    enabled: true
+    num_colors: 5
+    min_percentage: 0.05
+
   # Pose - disabled (MediaPipe install issues)
   # pose:
   #   enabled: true
   #   confidence: 0.50
+
+  # Places365 - scene/location recognition (365 categories)
+  places365:
+    enabled: true
+    threshold: 0.15
+    top_k: 5
+
+  # CLIP Scene - photo style, camera type, subject type, mood
+  clip_scene:
+    enabled: true
+    threshold: 0.15
+    top_k_per_category: 3
+    # categories: photo_style, camera_type, photo_quality, subject_type, mood, time_of_day, season_weather
+
+  # Wildlife - animals, pets, nature, biomes
+  wildlife:
+    enabled: true
+    threshold: 0.20
+    top_k: 10
+
+  # Landmarks - famous buildings, monuments, natural wonders
+  landmarks:
+    enabled: true
+    threshold: 0.20
+    top_k: 5
+
+  # Sky & Weather - clouds, sun, moon, weather conditions
+  sky_weather:
+    enabled: true
+    threshold: 0.18
+    top_k: 8

@@ -13,6 +13,14 @@ from .nudenet import NudeNetTagger, NudeNetONNXTagger
 from .iqa import IQATagger
 from .composition import CADBCompositionTagger, CompositionElementsTagger
 from .saliency import SaliencyTagger
+from .camera import ShotTypeClassifier, CLIPCameraTagger
+from .lighting import IntrinsicLightingTagger, ShadowDetector
+from .bbox_analyzer import BBoxAnalyzer
+from .places365 import Places365Tagger
+from .clip_scene import CLIPSceneTagger
+from .wildlife import WildlifeTagger
+from .landmarks import LandmarkTagger
+from .sky_weather import SkyWeatherTagger
 
 __all__ = [
     "BaseTagger",
@@ -32,4 +40,14 @@ __all__ = [
     "ColorAnalyzer",
     "BlurDetector",
     "PhotographyTagger",
+    "ShotTypeClassifier",
+    "CLIPCameraTagger",
+    "IntrinsicLightingTagger",
+    "ShadowDetector",
+    "BBoxAnalyzer",
+    "Places365Tagger",
+    "CLIPSceneTagger",
+    "WildlifeTagger",
+    "LandmarkTagger",
+    "SkyWeatherTagger",
 ]

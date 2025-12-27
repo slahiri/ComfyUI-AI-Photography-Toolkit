@@ -10,6 +10,7 @@ from .base import (
 from .standard import StandardGenerator
 from .llm import LLMGenerator
 from .pipeline import ComposePipeline
+from .canonical_structurer import CanonicalStructurer
 
 __all__ = [
     # Enums and configs
@@ -23,4 +24,6 @@ __all__ = [
     "LLMGenerator",
     # Pipeline
     "ComposePipeline",
+    # Canonical structurer
+    "CanonicalStructurer",
 ]

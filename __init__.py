@@ -13,25 +13,19 @@ __version__ = "5.0.0"
 
 # Import nodes
 from .nodes import (
-    SID_ZImagePromptGenerator,
-    SID_TaggerConfig,
     SID_ImageAnalysis,
     SID_PromptSynthesis,
+    SID_PromptCompose,
 )
-from .nodes.prompt_compose import SID_PromptCompose
 
 # V1 API registration
 NODE_CLASS_MAPPINGS = {
-    "SID_ZImagePromptGenerator": SID_ZImagePromptGenerator,
-    "SID_TaggerConfig": SID_TaggerConfig,
     "SID_ImageAnalysis": SID_ImageAnalysis,
     "SID_PromptSynthesis": SID_PromptSynthesis,
     "SID_PromptCompose": SID_PromptCompose,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "SID_ZImagePromptGenerator": "SID Z-Image Prompt Generator",
-    "SID_TaggerConfig": "SID Tagger Config",
     "SID_ImageAnalysis": "SID Image Analysis",
     "SID_PromptSynthesis": "SID Prompt Synthesis",
     "SID_PromptCompose": "SID Prompt Compose",

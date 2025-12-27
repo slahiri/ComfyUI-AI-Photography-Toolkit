@@ -30,6 +30,8 @@ from .analyzer_extractor import (
     extract_from_iqa,
     extract_from_composition,
     extract_from_saliency,
+    extract_from_shot_type,
+    extract_from_clip_camera,
     extract_from_fashion,
     extract_all_analyzer_tokens,
 )
@@ -78,6 +80,8 @@ __all__ = [
     "extract_from_iqa",
     "extract_from_composition",
     "extract_from_saliency",
+    "extract_from_shot_type",
+    "extract_from_clip_camera",
     "extract_from_fashion",
     "extract_all_analyzer_tokens",
     # Caption extraction

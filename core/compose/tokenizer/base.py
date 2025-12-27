@@ -44,6 +44,12 @@ class TokenSource(Enum):
     IQA = "iqa"
     COMPOSITION = "composition"
     SALIENCY = "saliency"
+    SHOT_TYPE = "shot_type"
+    CLIP_CAMERA = "clip_camera"
+    LIGHTING = "lighting"
+    SHADOW = "shadow"
+    DEEPFASHION = "deepfashion_attributes"
+    FASHION_COLOR = "fashion_color"
 
     # Captions (Florence)
     FLORENCE_CAPTION = "florence_caption"
@@ -70,6 +76,12 @@ SOURCE_WEIGHTS: Dict[TokenSource, float] = {
     TokenSource.IQA: 0.85,
     TokenSource.COMPOSITION: 0.85,
     TokenSource.SALIENCY: 0.8,
+    TokenSource.SHOT_TYPE: 0.9,  # MobileNetV3 shot type classifier
+    TokenSource.CLIP_CAMERA: 0.85,  # CLIP zero-shot camera attributes
+    TokenSource.LIGHTING: 0.85,  # Intrinsic lighting analysis (CV-based)
+    TokenSource.SHADOW: 0.8,  # Shadow detection
+    TokenSource.DEEPFASHION: 0.9,  # DeepFashion attributes (CLIP-based)
+    TokenSource.FASHION_COLOR: 0.85,  # Fashion color analysis
     TokenSource.FLORENCE_CAPTION: 0.85,
     TokenSource.FLORENCE_DESCRIPTION: 0.85,
     TokenSource.FLORENCE_ANALYZE: 0.9,

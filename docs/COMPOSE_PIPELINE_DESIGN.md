@@ -109,6 +109,8 @@ INPUT (metadata)
 | florence_mixed_caption_plus | prose + tags | Split, keep prose intact |
 | vlm_description | prose | Keep intact |
 | florence_analyze | key-value | Extract as tags |
+| florence_objects | detection | Extract labels as tags (with counts) |
+| florence_region_captions | detection | Extract region descriptions |
 | wd14_tags | tags | Collect all |
 | joytag_tags | tags | Collect all |
 

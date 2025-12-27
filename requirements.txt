@@ -22,6 +22,7 @@ onnxruntime; platform_system == "Darwin"
 # Taggers - Other models
 timm
 opencv-python
+scikit-learn      # FashionColorAnalyzer k-means clustering
 
 # Optional taggers (install manually if needed)
 # nudenet           # NudeNet NSFW detection

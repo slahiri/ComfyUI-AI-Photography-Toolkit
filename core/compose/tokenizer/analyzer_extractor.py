@@ -142,6 +142,204 @@ def extract_from_saliency(metadata: Dict[str, Any], min_confidence: float = 0.0)
     return tokens
 
 
+def extract_from_shot_type(metadata: Dict[str, Any], min_confidence: float = 0.0) -> List[ImageToken]:
+    """Extract tokens from shot type classifier output.
+
+    Shot type format: {"shot type": confidence, ...}
+    Describes camera framing: close-up, medium shot, full shot, etc.
+    """
+    tokens = []
+    shot_data = metadata.get("shot_type", {})
+
+    if not isinstance(shot_data, dict):
+        return tokens
+
+    for shot_type, confidence in shot_data.items():
+        if not isinstance(confidence, (int, float)):
+            continue
+        if confidence < min_confidence:
+            continue
+
+        text = shot_type.strip()
+        if not text:
+            continue
+
+        tokens.append(ImageToken(
+            text=text,
+            confidence=float(confidence),
+            source=TokenSource.SHOT_TYPE,
+            token_type=TokenType.TAG,
+            metadata={"analyzer": "shot_type"}
+        ))
+
+    return tokens
+
+
+def extract_from_clip_camera(metadata: Dict[str, Any], min_confidence: float = 0.0) -> List[ImageToken]:
+    """Extract tokens from CLIP camera attributes output.
+
+    CLIP camera format: {"camera attribute": confidence, ...}
+    Describes camera angles, DOF, perspective using CLIP zero-shot.
+    """
+    tokens = []
+    clip_data = metadata.get("clip_camera", {})
+
+    if not isinstance(clip_data, dict):
+        return tokens
+
+    for attribute, confidence in clip_data.items():
+        if not isinstance(confidence, (int, float)):
+            continue
+        if confidence < min_confidence:
+            continue
+
+        text = attribute.strip()
+        if not text:
+            continue
+
+        tokens.append(ImageToken(
+            text=text,
+            confidence=float(confidence),
+            source=TokenSource.CLIP_CAMERA,
+            token_type=TokenType.TAG,
+            metadata={"analyzer": "clip_camera"}
+        ))
+
+    return tokens
+
+
+def extract_from_lighting(metadata: Dict[str, Any], min_confidence: float = 0.0) -> List[ImageToken]:
+    """Extract tokens from intrinsic lighting analyzer output.
+
+    Lighting format: {"lighting descriptor": confidence, ...}
+    Describes light direction, quality, shadows, highlights, style.
+    """
+    tokens = []
+    lighting_data = metadata.get("lighting", {})
+
+    if not isinstance(lighting_data, dict):
+        return tokens
+
+    for descriptor, confidence in lighting_data.items():
+        if not isinstance(confidence, (int, float)):
+            continue
+        if confidence < min_confidence:
+            continue
+
+        text = descriptor.strip()
+        if not text:
+            continue
+
+        tokens.append(ImageToken(
+            text=text,
+            confidence=float(confidence),
+            source=TokenSource.LIGHTING,
+            token_type=TokenType.TAG,
+            metadata={"analyzer": "lighting"}
+        ))
+
+    return tokens
+
+
+def extract_from_shadow(metadata: Dict[str, Any], min_confidence: float = 0.0) -> List[ImageToken]:
+    """Extract tokens from shadow detector output.
+
+    Shadow format: {"shadow descriptor": confidence, ...}
+    Describes shadow presence, intensity, distribution.
+    """
+    tokens = []
+    shadow_data = metadata.get("shadow", {})
+
+    if not isinstance(shadow_data, dict):
+        return tokens
+
+    for descriptor, confidence in shadow_data.items():
+        if not isinstance(confidence, (int, float)):
+            continue
+        if confidence < min_confidence:
+            continue
+
+        text = descriptor.strip()
+        if not text:
+            continue
+
+        tokens.append(ImageToken(
+            text=text,
+            confidence=float(confidence),
+            source=TokenSource.SHADOW,
+            token_type=TokenType.TAG,
+            metadata={"analyzer": "shadow"}
+        ))
+
+    return tokens
+
+
+def extract_from_deepfashion(metadata: Dict[str, Any], min_confidence: float = 0.0) -> List[ImageToken]:
+    """Extract tokens from DeepFashion attribute analyzer output.
+
+    DeepFashion format: {"attribute": confidence, ...}
+    Describes fabric, pattern, texture, style, fit, neckline, sleeves, length, color.
+    """
+    tokens = []
+    df_data = metadata.get("deepfashion_attributes", {})
+
+    if not isinstance(df_data, dict):
+        return tokens
+
+    for attribute, confidence in df_data.items():
+        if not isinstance(confidence, (int, float)):
+            continue
+        if confidence < min_confidence:
+            continue
+
+        text = attribute.strip()
+        if not text:
+            continue
+
+        tokens.append(ImageToken(
+            text=text,
+            confidence=float(confidence),
+            source=TokenSource.DEEPFASHION,
+            token_type=TokenType.TAG,
+            metadata={"analyzer": "deepfashion_attributes"}
+        ))
+
+    return tokens
+
+
+def extract_from_fashion_color(metadata: Dict[str, Any], min_confidence: float = 0.0) -> List[ImageToken]:
+    """Extract tokens from fashion color analyzer output.
+
+    Fashion color format: {"color descriptor": confidence, ...}
+    Describes dominant colors in clothing using k-means clustering.
+    """
+    tokens = []
+    color_data = metadata.get("fashion_color", {})
+
+    if not isinstance(color_data, dict):
+        return tokens
+
+    for color_desc, confidence in color_data.items():
+        if not isinstance(confidence, (int, float)):
+            continue
+        if confidence < min_confidence:
+            continue
+
+        text = color_desc.strip()
+        if not text:
+            continue
+
+        tokens.append(ImageToken(
+            text=text,
+            confidence=float(confidence),
+            source=TokenSource.FASHION_COLOR,
+            token_type=TokenType.TAG,
+            metadata={"analyzer": "fashion_color"}
+        ))
+
+    return tokens
+
+
 def extract_from_fashion(metadata: Dict[str, Any], min_confidence: float = 0.0) -> List[ImageToken]:
     """Extract tokens from fashion analyzer outputs.
 
@@ -226,13 +424,23 @@ def extract_all_analyzer_tokens(
     batch.image_info = metadata.get("image_info", {})
 
     if sources is None:
-        sources = ["photography", "iqa", "composition", "saliency", "fashion"]
+        sources = [
+            "photography", "iqa", "composition", "saliency",
+            "shot_type", "clip_camera", "lighting", "shadow",
+            "deepfashion_attributes", "fashion_color", "fashion"
+        ]
 
     extractors = {
         "photography": extract_from_photography,
         "iqa": extract_from_iqa,
         "composition": extract_from_composition,
         "saliency": extract_from_saliency,
+        "shot_type": extract_from_shot_type,
+        "clip_camera": extract_from_clip_camera,
+        "lighting": extract_from_lighting,
+        "shadow": extract_from_shadow,
+        "deepfashion_attributes": extract_from_deepfashion,
+        "fashion_color": extract_from_fashion_color,
         "fashion": extract_from_fashion,
     }
 

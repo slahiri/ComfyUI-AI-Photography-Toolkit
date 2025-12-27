@@ -3,24 +3,29 @@ SID Image Analysis Node - Stage 1: Extract structured metadata from images.
 
 Analyzes images using:
 - Multi-model taggers (WD14, JoyTag, NudeNet, Fashion, Saliency, etc.)
-- Florence-2 VLM runs multiple passes:
-  - All models: detailed_caption, more_detailed_caption
-  - PromptGen models add: generate_tags, mixed_caption, analyze, mixed_caption_plus
+- Florence-2 VLM runs up to 8 passes:
+  - Pass 1-2: detailed_caption, more_detailed_caption (all models)
+  - Pass 3-6: generate_tags, mixed_caption, analyze, mixed_caption_plus (PromptGen only)
+  - Pass 7: object_detection - detect objects with bounding boxes
+  - Pass 8: dense_region_caption - captions for each detected region
+- BBox analyzer for geometric composition insights
+- Canonical structurer for scene detection and category classification
 
 Outputs:
-- image: Pass-through of input image
 - metadata: Structured JSON metadata (SID_METADATA type)
-- prompt: Human-readable text analysis (for display/preview)
 """
 
 import json
 import torch
 import numpy as np
+import uuid
 from PIL import Image
 
 import comfy.utils
 from ..core.platform import cleanup_memory
 from ..core.log import log, log_start, log_end, log_error
+from ..core.compose import CanonicalStructurer
+from ..core.taggers import BBoxAnalyzer
 
 # WD14 model choices
 WD14_MODELS = [
@@ -70,7 +75,9 @@ FLORENCE_MODELS = [
 FLORENCE_PASSES = [
     "1 Pass (Caption)",           # Just detailed caption
     "2 Pass (Caption+Describe)",  # Caption + More detailed description
-    "3 Pass (All)",               # All passes including analyze (6 for PromptGen)
+    "3 Pass (Tags+Analyze)",      # PromptGen: generate_tags, mixed_caption, analyze, mixed_caption_plus
+    "4 Pass (+Detection)",        # + Object detection
+    "5 Pass (All)",               # + Dense region captions (maximum detail)
 ]
 
 # Florence-2 task prompts
@@ -79,6 +86,8 @@ FLORENCE_TASK_PROMPTS = {
     "caption": "<CAPTION>",
     "detailed_caption": "<DETAILED_CAPTION>",
     "more_detailed_caption": "<MORE_DETAILED_CAPTION>",
+    "object_detection": "<OD>",
+    "dense_region_caption": "<DENSE_REGION_CAPTION>",
 }
 
 # PromptGen-specific tasks (only for MiaoshouAI PromptGen models)
@@ -99,8 +108,8 @@ class SID_ImageAnalysis:
     """
 
     CATEGORY = "SID Nodes"
-    RETURN_TYPES = ("IMAGE", "SID_METADATA", "STRING")
-    RETURN_NAMES = ("image", "metadata", "prompt")
+    RETURN_TYPES = ("SID_METADATA", "STRING")
+    RETURN_NAMES = ("metadata", "prompt")
     FUNCTION = "analyze"
     OUTPUT_NODE = False
 
@@ -114,6 +123,10 @@ class SID_ImageAnalysis:
             "required": {
                 "image": ("IMAGE", {
                     "tooltip": "Input image to analyze"
+                }),
+                "analysis_enabled": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "Enable full analysis. If disabled, only Florence-2 caption is generated."
                 }),
                 "wd14_model": (WD14_MODELS, {
                     "default": "wd-swinv2-tagger-v3",
@@ -132,8 +145,15 @@ class SID_ImageAnalysis:
                     "tooltip": "Florence-2 VLM model"
                 }),
                 "florence_passes": (FLORENCE_PASSES, {
-                    "default": "3 Pass (All)",
-                    "tooltip": "1: Caption only | 2: +Description | 3: All passes (PromptGen adds tags/analyze)"
+                    "default": "5 Pass (All)",
+                    "tooltip": "1: Caption | 2: +Description | 3: +Tags/Analyze | 4: +Object Detection | 5: +Region Captions"
+                }),
+                "tag_filter": ("FLOAT", {
+                    "default": 0.25,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.01,
+                    "tooltip": "Minimum confidence threshold for canonical categorization. Tags below this go to below_threshold."
                 }),
             },
             "optional": {
@@ -164,6 +184,10 @@ class SID_ImageAnalysis:
         self._florence_device = None
         self._florence_offload_device = None
         self._florence_dtype = None
+        # Canonical structurer for scene detection
+        self._structurer = CanonicalStructurer()
+        # BBox analyzer for geometric insights
+        self._bbox_analyzer = BBoxAnalyzer()
 
     def _get_engine(self, verbose: bool, hf_token: str, wd14_model: str, dinov2_model: str, threshold_mode: str = "Fixed"):
         """Get or create tagging engine."""
@@ -336,6 +360,56 @@ class SID_ImageAnalysis:
         img_np = (image_tensor.cpu().numpy() * 255).astype(np.uint8)
         return Image.fromarray(img_np, mode="RGB")
 
+    def _parse_detection_result(self, result: dict, verbose: bool = False) -> dict:
+        """Parse Florence-2 detection result into a structured format.
+
+        Input format from Florence:
+            {'<OD>': {'bboxes': [[x1,y1,x2,y2], ...], 'labels': ['label1', ...]}}
+        or:
+            {'<DENSE_REGION_CAPTION>': {'bboxes': [...], 'labels': [...]}}
+
+        Output format:
+            {'label1': {'count': 2, 'bboxes': [...]}, 'label2': {...}}
+        """
+        parsed = {}
+
+        try:
+            # Handle nested dict from post_process_generation
+            if isinstance(result, dict):
+                # Get the inner dict (keyed by task prompt)
+                inner = None
+                for key in result:
+                    if isinstance(result[key], dict) and 'bboxes' in result[key]:
+                        inner = result[key]
+                        break
+
+                if inner is None:
+                    # Maybe it's already in the right format
+                    if 'bboxes' in result and 'labels' in result:
+                        inner = result
+
+                if inner and 'bboxes' in inner and 'labels' in inner:
+                    bboxes = inner['bboxes']
+                    labels = inner['labels']
+
+                    # Group by label
+                    for i, label in enumerate(labels):
+                        label_clean = label.strip().lower()
+                        if label_clean not in parsed:
+                            parsed[label_clean] = {'count': 0, 'bboxes': []}
+                        parsed[label_clean]['count'] += 1
+                        if i < len(bboxes):
+                            parsed[label_clean]['bboxes'].append(bboxes[i])
+
+                    if verbose:
+                        log("ImageAnalysis", f"  Parsed {len(labels)} detections into {len(parsed)} unique labels")
+
+        except Exception as e:
+            if verbose:
+                log_error("ImageAnalysis", f"Failed to parse detection result: {e}")
+
+        return parsed
+
     def _release_models(self):
         """Release models from VRAM."""
         if self._florence_model is not None:
@@ -349,102 +423,117 @@ class SID_ImageAnalysis:
 
         cleanup_memory(aggressive=True)
 
-    def _build_analysis_text(self, metadata: dict) -> str:
-        """Build human-readable analysis text from metadata."""
-        lines = []
-
-        # Florence outputs (most valuable for prompt generation)
-        florence_outputs = [
-            ("florence_mixed_caption_plus", "MIXED CAPTION PLUS"),
-            ("florence_mixed_caption", "MIXED CAPTION"),
-            ("florence_analyze", "ANALYZE"),
-            ("florence_generate_tags", "GENERATED TAGS"),
-            ("florence_description", "DETAILED DESCRIPTION"),
-            ("florence_caption", "CAPTION"),
-        ]
-
-        for key, title in florence_outputs:
-            if key in metadata and metadata[key]:
-                lines.append(f"=== {title} ===")
-                lines.append(metadata[key])
-                lines.append("")
-
-        # Tagger summaries
-        tagger_names = {
-            "wd14": "WD14 Tags",
-            "joytag": "JoyTag",
-            "fashion_yolov8": "Fashion Detection",
-            "fashion_yolos": "Fashion Items",
-            "fashion_segformer": "Garment Segments",
-            "fashion_clip": "Fashion Style",
-            "nudenet": "Body Areas",
-            "pose": "Pose",
-            "saliency": "Focus Areas",
-            "composition": "Composition",
-        }
-
-        for key, display_name in tagger_names.items():
-            if key in metadata and isinstance(metadata[key], dict):
-                # Sort by confidence
-                sorted_tags = sorted(
-                    metadata[key].items(),
-                    key=lambda x: x[1] if isinstance(x[1], (int, float)) else 0,
-                    reverse=True
-                )
-                if sorted_tags:
-                    lines.append(f"=== {display_name.upper()} ===")
-                    tag_strs = [f"{tag} ({conf:.0%})" if isinstance(conf, float) else f"{tag} ({conf})"
-                                for tag, conf in sorted_tags[:20]]
-                    lines.append(", ".join(tag_strs))
-                    lines.append("")
-
-        return "\n".join(lines)
-
     def analyze(
         self,
         image: torch.Tensor,
+        analysis_enabled: bool = True,
         wd14_model: str = "wd-swinv2-tagger-v3",
         wd14_threshold_mode: str = "MCut",
         dinov2_model: str = "dinov2-base",
         florence_model: str = "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
         florence_passes: str = "3 Pass (All)",
+        tag_filter: float = 0.25,
         verbose: bool = False,
         release_vram: bool = True,
         hf_token: str = "",
         # Legacy parameters (ignored, for backwards compatibility)
         **kwargs,
-    ) -> tuple[torch.Tensor, str, str]:
+    ) -> tuple[str, str]:
         """
         Analyze image and return structured metadata.
 
         Returns:
-            - image: Pass-through input image
             - metadata: JSON metadata string (SID_METADATA type)
-            - prompt: Human-readable analysis text (for preview/display)
+            - prompt: Florence-2 description text
 
         Runs:
-        1. Multi-model taggers (WD14, JoyTag, etc.)
-        2. Florence-2 passes:
-           - All models: detailed_caption, more_detailed_caption
-           - PromptGen models add: generate_tags, mixed_caption, analyze, mixed_caption_plus
+        1. Multi-model taggers (WD14, JoyTag, etc.) - if analysis_enabled
+        2. Florence-2 passes (based on florence_passes setting):
+           - Pass 1: detailed_caption
+           - Pass 2: more_detailed_caption
+           - Pass 3-6 (PromptGen only): generate_tags, mixed_caption, analyze, mixed_caption_plus
+           - Pass 7: object_detection (OD) - counts objects, detects props
+           - Pass 8: dense_region_caption - captions for background elements
         """
         pil_image = self._tensor_to_pil(image)
 
-        # Calculate total steps for progress bar
-        # Steps: 1. Taggers, 2. Load Florence, 3-8. Florence passes (up to 6 for PromptGen models)
-        # PromptGen models: 1 + 1 + 6 = 8 passes
-        # Other models: 1 + 1 + 2 = 4 passes (but we allocate 8 and skip)
-        total_steps = 8  # Taggers + Florence load + up to 6 passes
-
-        pbar = comfy.utils.ProgressBar(total_steps)
+        # Generate session ID
+        session_id = str(uuid.uuid4())[:8]
 
         # Initialize simple 2-layer metadata
         metadata = {
+            "session_id": session_id,
+            "tag_filter": tag_filter,
             "image_info": {
                 "width": pil_image.width,
                 "height": pil_image.height,
             },
         }
+
+        # If analysis disabled, only run Florence-2 for description
+        if not analysis_enabled:
+            log("ImageAnalysis", f"Analysis disabled - running Florence-2 only")
+
+            pbar = comfy.utils.ProgressBar(2)  # Load + 1 pass
+
+            # Load Florence
+            if self._florence_model is None or self._current_florence_model != florence_model:
+                self._load_florence(florence_model, verbose)
+            pbar.update(1)
+
+            prompt_output = ""
+            if self._florence_model is not None:
+                # Run most detailed caption
+                p1_start = log_start("ImageAnalysis", "Florence: More Detailed Caption")
+                desc_result = self._run_florence_task(pil_image, "more_detailed_caption", verbose)
+                if desc_result:
+                    metadata["florence_description"] = desc_result
+                    prompt_output = desc_result
+                    log_end("ImageAnalysis", "Florence caption", p1_start, f"{len(desc_result)} chars")
+            pbar.update(1)
+
+            # Release VRAM if requested
+            if release_vram:
+                self._release_models()
+
+            # Build metadata JSON output
+            metadata["analysis_enabled"] = False
+            metadata_json = json.dumps(metadata, indent=2, ensure_ascii=False)
+
+            log("ImageAnalysis", f"Quick mode complete: {len(prompt_output)} chars prompt")
+
+            # Cleanup
+            del pil_image
+            cleanup_memory()
+
+            return (metadata_json, prompt_output)
+
+        # Full analysis mode
+        metadata["analysis_enabled"] = True
+
+        # Calculate total steps for progress bar
+        # Count enabled taggers from config + Florence load + up to 8 Florence passes
+        from pathlib import Path
+        import yaml
+        try:
+            config_path = Path(__file__).parent.parent / "core" / "config" / "prompt_generator.yaml"
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f)
+            tagger_count = len([k for k, v in config.get("taggers", {}).items() if v.get("enabled", True)])
+        except:
+            tagger_count = 22  # Default estimate
+        florence_steps = 9  # Load + 8 passes
+        total_steps = tagger_count + florence_steps
+
+        pbar = comfy.utils.ProgressBar(total_steps)
+        current_step = [0]  # Use list for mutable closure
+
+        def tagger_progress(tagger_name, index, total):
+            """Callback for tagger progress updates."""
+            current_step[0] = index
+            pbar.update_absolute(index, total_steps)
+            if verbose:
+                log("ImageAnalysis", f"  [{index}/{total}] Running {tagger_name}")
 
         # Run tagging engine with threshold mode
         log("ImageAnalysis", f"Analyzing image ({pil_image.width}x{pil_image.height})")
@@ -452,7 +541,7 @@ class SID_ImageAnalysis:
         taggers_start = log_start("ImageAnalysis", "Running taggers")
         try:
             engine = self._get_engine(verbose, hf_token, wd14_model, dinov2_model, wd14_threshold_mode)
-            result = engine.run(pil_image, show_confidence=True)
+            result = engine.run(pil_image, show_confidence=True, progress_callback=tagger_progress)
             log_end("ImageAnalysis", "Taggers complete", taggers_start, f"ran: {getattr(result, 'taggers_run', [])}")
             if getattr(result, 'taggers_failed', {}):
                 log("ImageAnalysis", f"Taggers failed: {getattr(result, 'taggers_failed', {})}")
@@ -461,7 +550,10 @@ class SID_ImageAnalysis:
             import traceback
             traceback.print_exc()
             result = None
-        pbar.update(1)  # Taggers complete
+
+        # Update progress to end of tagger phase
+        tagger_end_step = tagger_count
+        pbar.update_absolute(tagger_end_step, total_steps)
 
         # Parse tagger results - simple format: { "tagger_name": { "tag": confidence } }
         if result and hasattr(result, 'tagger_results') and result.tagger_results:
@@ -480,7 +572,16 @@ class SID_ImageAnalysis:
             log("ImageAnalysis", "No tagger results to parse")
 
         # Determine number of passes from selection
-        num_passes = 3 if "3 Pass" in florence_passes else (2 if "2 Pass" in florence_passes else 1)
+        if "5 Pass" in florence_passes:
+            num_passes = 5
+        elif "4 Pass" in florence_passes:
+            num_passes = 4
+        elif "3 Pass" in florence_passes:
+            num_passes = 3
+        elif "2 Pass" in florence_passes:
+            num_passes = 2
+        else:
+            num_passes = 1
         is_promptgen = self._is_promptgen_model(florence_model)
 
         if verbose:
@@ -488,9 +589,11 @@ class SID_ImageAnalysis:
 
         # Run Florence-2 passes - always runs for best synthesis context
         # Load Florence once
+        florence_step = tagger_end_step  # Start Florence steps after taggers
         if self._florence_model is None or self._current_florence_model != florence_model:
             self._load_florence(florence_model, verbose)
-        pbar.update(1)  # Florence loaded
+        florence_step += 1
+        pbar.update_absolute(florence_step, total_steps)  # Florence loaded
 
         if self._florence_model is not None:
             # Pass 1: Detailed caption (always runs)
@@ -501,7 +604,8 @@ class SID_ImageAnalysis:
                 log_end("ImageAnalysis", "Florence Pass 1", p1_start, f"{len(caption_result)} chars")
                 if verbose:
                     log("ImageAnalysis", f"  Caption preview: {caption_result[:100]}...")
-            pbar.update(1)
+            florence_step += 1
+            pbar.update_absolute(florence_step, total_steps)
 
             # Pass 2: More detailed description (if num_passes >= 2)
             if num_passes >= 2:
@@ -512,9 +616,8 @@ class SID_ImageAnalysis:
                     log_end("ImageAnalysis", "Florence Pass 2", p2_start, f"{len(desc_result)} chars")
                     if verbose:
                         log("ImageAnalysis", f"  Description preview: {desc_result[:100]}...")
-                pbar.update(1)
-            else:
-                pbar.update(1)  # Skip pass 2
+            florence_step += 1
+            pbar.update_absolute(florence_step, total_steps)
 
             # Pass 3+: PromptGen-specific passes (if num_passes >= 3 and is PromptGen model)
             if num_passes >= 3 and is_promptgen:
@@ -524,7 +627,8 @@ class SID_ImageAnalysis:
                 if tags_result:
                     metadata["florence_generate_tags"] = tags_result
                     log_end("ImageAnalysis", "Florence Pass 3", p3_start, f"{len(tags_result)} chars")
-                pbar.update(1)
+                florence_step += 1
+                pbar.update_absolute(florence_step, total_steps)
 
                 # Pass 4: Mixed Caption
                 p4_start = log_start("ImageAnalysis", "Florence Pass 4: Mixed Caption")
@@ -532,7 +636,8 @@ class SID_ImageAnalysis:
                 if mixed_result:
                     metadata["florence_mixed_caption"] = mixed_result
                     log_end("ImageAnalysis", "Florence Pass 4", p4_start, f"{len(mixed_result)} chars")
-                pbar.update(1)
+                florence_step += 1
+                pbar.update_absolute(florence_step, total_steps)
 
                 # Pass 5: Analyze
                 p5_start = log_start("ImageAnalysis", "Florence Pass 5: Analyze")
@@ -544,7 +649,8 @@ class SID_ImageAnalysis:
                         # Show parsed analyze data
                         if isinstance(analyze_result, dict):
                             log("ImageAnalysis", f"  Analyze keys: {list(analyze_result.keys())}")
-                pbar.update(1)
+                florence_step += 1
+                pbar.update_absolute(florence_step, total_steps)
 
                 # Pass 6: Mixed Caption Plus
                 p6_start = log_start("ImageAnalysis", "Florence Pass 6: Mixed Caption Plus")
@@ -552,25 +658,120 @@ class SID_ImageAnalysis:
                 if mixed_plus_result:
                     metadata["florence_mixed_caption_plus"] = mixed_plus_result
                     log_end("ImageAnalysis", "Florence Pass 6", p6_start, f"{len(mixed_plus_result)} chars")
-                pbar.update(1)
+                florence_step += 1
+                pbar.update_absolute(florence_step, total_steps)
             elif num_passes >= 3:
                 # Non-PromptGen model with 3 passes: skip PromptGen tasks
                 log("ImageAnalysis", "Skipping PromptGen tasks (not a PromptGen model)")
-                pbar.update(4)  # Skip 4 PromptGen passes
+                florence_step += 4  # Skip 4 PromptGen passes
+                pbar.update_absolute(florence_step, total_steps)
             else:
                 # Less than 3 passes: skip all PromptGen passes
-                pbar.update(4)
+                florence_step += 4
+                pbar.update_absolute(florence_step, total_steps)
+
+            # Pass 7: Object Detection (num_passes >= 4)
+            if num_passes >= 4:
+                p7_start = log_start("ImageAnalysis", "Florence Pass 7: Object Detection")
+                od_result = self._run_florence_task(pil_image, "object_detection", verbose)
+                if od_result:
+                    # Parse OD result - format: {'bboxes': [...], 'labels': [...]}
+                    metadata["florence_objects"] = self._parse_detection_result(od_result, verbose)
+                    log_end("ImageAnalysis", "Florence Pass 7", p7_start, f"{len(metadata.get('florence_objects', {}))} objects")
+            florence_step += 1
+            pbar.update_absolute(florence_step, total_steps)
+
+            # Pass 8: Dense Region Caption (num_passes >= 5)
+            if num_passes >= 5:
+                p8_start = log_start("ImageAnalysis", "Florence Pass 8: Dense Region Caption")
+                drc_result = self._run_florence_task(pil_image, "dense_region_caption", verbose)
+                if drc_result:
+                    # Parse DRC result - format: {'bboxes': [...], 'labels': [...]}
+                    metadata["florence_region_captions"] = self._parse_detection_result(drc_result, verbose)
+                    log_end("ImageAnalysis", "Florence Pass 8", p8_start, f"{len(metadata.get('florence_region_captions', {}))} regions")
+            florence_step += 1
+            pbar.update_absolute(florence_step, total_steps)
         else:
             # Florence failed to load, update remaining steps
-            pbar.update(6 if (num_passes >= 3 and is_promptgen) else 2)
+            florence_step += 8  # Skip all 8 Florence passes
+            pbar.update_absolute(florence_step, total_steps)
+
+        # Run bbox analyzer for geometric insights (if we have detection data)
+        if "florence_objects" in metadata and metadata["florence_objects"]:
+            try:
+                bbox_start = log_start("ImageAnalysis", "Running bbox analysis")
+                bbox_result = self._bbox_analyzer.analyze(
+                    florence_objects=metadata["florence_objects"],
+                    florence_regions=metadata.get("florence_region_captions"),
+                    image_width=pil_image.width,
+                    image_height=pil_image.height,
+                )
+                metadata["bbox_analysis"] = self._bbox_analyzer.to_dict(bbox_result)
+                log_end("ImageAnalysis", "BBox analysis", bbox_start,
+                       f"shot={bbox_result.shot_type}, subjects={bbox_result.subject_count}")
+
+                # Print bbox summary line
+                rot = f"{bbox_result.rule_of_thirds_score:.0%}" if bbox_result.rule_of_thirds_score else "-"
+                print(f"{'bbox_analysis':<20} {'PASS':<10} shot={bbox_result.shot_type}, RoT={rot}, subjects={bbox_result.subject_count}")
+            except Exception as e:
+                log_error("ImageAnalysis", f"BBox analyzer failed: {e}")
+                import traceback
+                traceback.print_exc()
+                metadata["bbox_analysis"] = {"error": str(e)}
+                print(f"{'bbox_analysis':<20} {'FAIL':<10} {str(e)[:30]}")
+
+        # Run canonical structurer for scene detection and category classification
+        try:
+            canonical_start = log_start("ImageAnalysis", "Running canonical structurer")
+            canonical_structure = self._structurer.structure(metadata, threshold=tag_filter)
+            metadata["canonical"] = self._structurer.to_json(canonical_structure)
+            log_end("ImageAnalysis", "Canonical structurer", canonical_start,
+                   f"scene={canonical_structure.scene_type.primary.value}")
+
+            # Print canonical summary line
+            primary = canonical_structure.scene_type.primary.value
+            conf = f"{canonical_structure.scene_type.primary_confidence:.0%}"
+            secondary = canonical_structure.scene_type.secondary.value if canonical_structure.scene_type.secondary else "-"
+            print(f"{'canonical':<20} {'PASS':<10} scene={primary} ({conf}), secondary={secondary}, filter={tag_filter}")
+
+            # Print categorization summary
+            canonical_json = metadata["canonical"]
+            print("-" * 50)
+            print(f"Categorization Summary (threshold >= {tag_filter})")
+            print("-" * 50)
+            categories = ["subject", "scene", "composition", "lighting", "style", "constraints", "uncategorized", "below_threshold"]
+            total_categorized = 0
+            for cat in categories:
+                if cat in canonical_json:
+                    count = len(canonical_json[cat])
+                    print(f"{cat:<20} {count:>6} tags")
+                    total_categorized += count
+            print("-" * 50)
+            print(f"{'Total':<20} {total_categorized:>6} tags")
+            print("=" * 50)
+        except Exception as e:
+            log_error("ImageAnalysis", f"Canonical structurer failed: {e}")
+            import traceback
+            traceback.print_exc()
+            metadata["canonical"] = {"error": str(e)}
+            print(f"{'canonical':<20} {'FAIL':<10} {str(e)[:30]}")
 
         # Verbose quality summary
         if verbose:
             log("ImageAnalysis", "=== Quality Summary ===")
-            tag_count = sum(len(v) for k, v in metadata.items() if isinstance(v, dict) and k not in ["image_info"])
+            tag_count = sum(len(v) for k, v in metadata.items() if isinstance(v, dict) and k not in ["image_info", "canonical", "bbox_analysis"])
             florence_count = sum(1 for k in metadata.keys() if k.startswith("florence_"))
             log("ImageAnalysis", f"  Total tags: {tag_count}")
             log("ImageAnalysis", f"  Florence outputs: {florence_count}")
+            if "bbox_analysis" in metadata and not metadata["bbox_analysis"].get("error"):
+                bbox = metadata["bbox_analysis"]
+                log("ImageAnalysis", f"  Shot type: {bbox.get('shot_type')} ({bbox.get('shot_type_confidence', 0):.0%})")
+                if "composition" in bbox:
+                    comp = bbox["composition"]
+                    log("ImageAnalysis", f"  Composition: RoT={comp.get('rule_of_thirds', 0):.0%}, Golden={comp.get('golden_ratio', 0):.0%}")
+            if "canonical" in metadata and "scene_detection" in metadata.get("canonical", {}):
+                scene = metadata["canonical"]["scene_detection"]
+                log("ImageAnalysis", f"  Scene: {scene.get('primary')} ({scene.get('primary_confidence', 0):.0%})")
             if "iqa" in metadata:
                 log("ImageAnalysis", f"  IQA scores: {metadata['iqa']}")
 
@@ -578,22 +779,21 @@ class SID_ImageAnalysis:
         if release_vram:
             self._release_models()
 
-        # Build outputs
-        # 1. Metadata JSON (for SID_METADATA type)
+        # Build metadata JSON output
         metadata_json = json.dumps(metadata, indent=2, ensure_ascii=False)
 
-        # 2. Human-readable prompt text (for preview/display)
-        prompt_text = self._build_analysis_text(metadata)
+        # Get prompt output from florence_description
+        prompt_output = metadata.get("florence_description", "")
 
         if verbose:
             log("ImageAnalysis", f"Metadata: {len(metadata_json)} chars")
-            log("ImageAnalysis", f"Prompt: {len(prompt_text)} chars")
+            log("ImageAnalysis", f"Prompt: {len(prompt_output)} chars")
 
         # Cleanup
         del pil_image
         cleanup_memory()
 
-        return (image, metadata_json, prompt_text)
+        return (metadata_json, prompt_output)
 
     def unload(self) -> None:
         """Unload all models and free memory."""

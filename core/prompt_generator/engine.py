@@ -124,7 +124,7 @@ class PromptGeneratorEngine:
         except Exception as e:
             print(f"[ImageToPrompt] Warning: Failed to set HF token: {e}")
 
-    def run(self, image: Image.Image, show_confidence: bool = False) -> EngineResult:
+    def run(self, image: Image.Image, show_confidence: bool = False, progress_callback=None) -> EngineResult:
         """
         Run all applicable taggers on the image.
 
@@ -136,14 +136,15 @@ class PromptGeneratorEngine:
         Args:
             image: PIL Image to analyze
             show_confidence: Include confidence scores in output
+            progress_callback: Optional callable(tagger_name, index, total) for progress updates
 
         Returns:
             EngineResult with formatted prompt and metadata
         """
         print(f"[ImageToPrompt] Processing image {image.size}")
 
-        # Run the existing pipeline
-        pipeline_result = self._pipeline.run(image)
+        # Run the existing pipeline with progress callback
+        pipeline_result = self._pipeline.run(image, progress_callback=progress_callback)
 
         # Format output - grouped by provider
         if show_confidence:

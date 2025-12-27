@@ -199,6 +199,10 @@ SUBJECT_DETAIL_KEYWORDS: Dict[SubjectDetailType, CategoryKeywords] = {
         },
         suffix_patterns=["*_eyes", "* eyes"],
         prefix_patterns=["eye_*", "eye *"],
+        # Exclude camera angles that start with "eye"
+        negative_keywords={
+            "eye level", "eye level shot", "eye-level", "eye-level shot",
+        },
     ),
     SubjectDetailType.FACE: CategoryKeywords(
         exact_matches={
@@ -475,6 +479,17 @@ COMPOSITION_KEYWORDS = CategoryKeywords(
         # Distance values from florence_analyze
         "close", "middle", "far", "very close", "very far",
         "medium distance", "near", "distant",
+        # Camera angles from CLIP camera tagger
+        "eye level shot", "eye level", "eye-level shot", "eye-level",
+        "low angle shot", "high angle shot", "bird's eye view", "worm's eye view",
+        "overhead shot",
+        # Shot types from shot type classifier
+        "long shot", "full body shot",
+        # DOF from CLIP camera
+        "shallow depth of field", "deep focus", "bokeh background",
+        "sharp throughout", "selective focus",
+        # Perspective from CLIP camera
+        "profile view",
     },
     prefix_patterns=["camera_angle_*", "distance_*", "composition_*"],
     contains_patterns=["shot", "view", "angle", "framing"],

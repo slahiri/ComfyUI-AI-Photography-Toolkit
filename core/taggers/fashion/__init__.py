@@ -6,6 +6,10 @@ from .yolov8_clothing import YOLOv8ClothingTagger
 from .fashion_clip import FashionCLIPTagger
 from .segformer_clothes import SegFormerClothesTagger
 from .wargon_classifier import WargonClothingTagger
+from .deepfashion_attributes import (
+    DeepFashionAttributeTagger,
+    FashionColorAnalyzer,
+)
 
 __all__ = [
     "FashionTagger",
@@ -14,4 +18,6 @@ __all__ = [
     "FashionCLIPTagger",
     "SegFormerClothesTagger",
     "WargonClothingTagger",
+    "DeepFashionAttributeTagger",
+    "FashionColorAnalyzer",
 ]
