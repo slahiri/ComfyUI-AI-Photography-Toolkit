@@ -53,8 +53,23 @@ class AssemblerConfig:
     })
 
     def get_limit_for_category(self, category: CanonicalCategory) -> int:
-        """Get the token limit for a specific category."""
-        return self.category_limits.get(category.value, self.max_tokens_per_category)
+        """Get the token limit for a specific category.
+
+        If max_tokens_per_category is set higher than the default (50),
+        use it as the limit for all categories (user wants more detail).
+        Otherwise, use the category-specific limits (user wants defaults or less).
+        """
+        default_limit = 50  # Default value
+        category_limit = self.category_limits.get(category.value, default_limit)
+
+        # If user explicitly set a higher limit, use it
+        if self.max_tokens_per_category > default_limit:
+            return self.max_tokens_per_category
+        # If user set a lower limit, cap all categories to it
+        elif self.max_tokens_per_category < default_limit:
+            return min(category_limit, self.max_tokens_per_category)
+        # Default: use category-specific limits
+        return category_limit
 
 
 @dataclass

@@ -108,11 +108,14 @@ class StandardAssembler(BaseAssembler):
             subcat = tc.subcategory or SubjectDetailType.BODY  # Default
             result[subcat].append(tc)
 
-        # Sort each subcategory by confidence
+        # Sort each subcategory by confidence and apply limits
+        limit = self.config.get_limit_for_category(CanonicalCategory.SUBJECT_DETAILS)
         for subcat in result:
             result[subcat].sort(key=lambda t: t.token.confidence, reverse=True)
-            # Limit per subcategory
-            result[subcat] = result[subcat][:self.config.max_tokens_per_category]
+            # Limit per subcategory (use category limit, not max_tokens_per_category)
+            # Divide limit across subcategories to prevent any single subcategory from dominating
+            per_subcat_limit = max(5, limit // len(result)) if result else limit
+            result[subcat] = result[subcat][:per_subcat_limit]
 
         return result
 
