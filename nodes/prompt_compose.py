@@ -3,16 +3,21 @@
 import json
 from typing import Tuple
 
-from ..core.compose import ComposePipeline, ComposeConfig
+from ..core.compose.compose_pipeline import (
+    ComposePipeline,
+    PipelineConfig,
+    ComposeMode,
+    PromptStyle,
+)
 from ..core.log import log, log_start, log_end, log_error
 
 
 # =============================================================================
-# Model Configuration - Single Dropdown
+# Model Configuration
 # =============================================================================
 
-# Models for Enhance with AI mode - TEXT-ONLY models (not VLMs)
-ENHANCE_MODELS = [
+# Models for LLM mode - TEXT-ONLY models (not VLMs)
+LLM_MODELS = [
     # Local Qwen2.5 Text-Only (NOT VL/Vision models)
     "[Local] Qwen2.5-0.5B (~0.5GB)",   # Fastest, basic quality
     "[Local] Qwen2.5-1.5B (~1.5GB)",   # Good balance
@@ -49,26 +54,33 @@ MODEL_MAP = {
     "[Anthropic] claude-3-5-haiku-20241022": ("anthropic", "claude-3-5-haiku-20241022"),
 }
 
-OUTPUT_STYLES = ["z-image"]
-COMPOSE_MODES = ["Standard", "Enhance with AI"]
-CAPTION_SOURCES = [
-    "Auto",                    # Best available (VLM > Florence)
-    "Synthesis (VLM)",         # Use VLM description from Synthesis
-    "Analysis (Florence)",     # Use Florence caption from Analysis
-    "Tags Only",               # Build from tags, no caption base
-]
+# Mode options
+COMPOSE_MODES = ["NLP (Fast)", "LLM (Enhanced)"]
+
+# Prompt output styles
+PROMPT_STYLES = ["Natural", "Tags", "Hybrid"]
+
+# Style map
+STYLE_MAP = {
+    "Natural": PromptStyle.NATURAL,
+    "Tags": PromptStyle.TAGS,
+    "Hybrid": PromptStyle.HYBRID,
+}
 
 
 class SID_PromptCompose:
     """
     Compose natural language prompts from image analysis metadata.
 
-    Converts multi-model tagging metadata into structured prompts
-    optimized for specific image generation models (Z-Image, Flux, etc.).
+    Uses a multi-phase pipeline:
+    1. Tokenization - Extract tokens from all metadata sources
+    2. Classification - Categorize tokens into 9 canonical categories
+    3. Assembly - Build structured prompts from classified tokens
+    4. Validation - Check quality and auto-correct issues
 
     Modes:
-    - Standard: NLP + Florence integration (deterministic)
-    - Enhance with AI: AI-based synthesis (best quality)
+    - NLP (Fast): Rule-based processing, deterministic, ~50ms
+    - LLM (Enhanced): AI-enhanced with local or cloud LLMs, ~1-3s
     """
 
     CATEGORY = "SID Nodes"
@@ -87,21 +99,17 @@ class SID_PromptCompose:
                 "metadata": ("SID_METADATA", {
                     "tooltip": "Analysis metadata from SID_ImageAnalysis"
                 }),
-                "output_style": (OUTPUT_STYLES, {
-                    "default": "z-image",
-                    "tooltip": "Target prompt format (z-image for Flux/Z-Image models)"
-                }),
                 "mode": (COMPOSE_MODES, {
-                    "default": "Standard",
-                    "tooltip": "Standard: NLP+Florence | Enhance with AI: AI synthesis"
+                    "default": "NLP (Fast)",
+                    "tooltip": "NLP: Fast rule-based | LLM: AI-enhanced quality"
                 }),
-                "caption_source": (CAPTION_SOURCES, {
-                    "default": "Auto",
-                    "tooltip": "Caption base: Auto (best available) | Synthesis (VLM) | Analysis (Florence) | Tags Only"
+                "prompt_style": (PROMPT_STYLES, {
+                    "default": "Natural",
+                    "tooltip": "Natural: Flowing prose | Tags: Comma-separated | Hybrid: Sentence + tags"
                 }),
-                "enhance_model": (ENHANCE_MODELS, {
-                    "default": ENHANCE_MODELS[0],
-                    "tooltip": "AI model for Enhance with AI mode (ignored in Standard)"
+                "llm_model": (LLM_MODELS, {
+                    "default": LLM_MODELS[0],
+                    "tooltip": "AI model for LLM mode (ignored in NLP mode)"
                 }),
             },
             "optional": {
@@ -110,20 +118,31 @@ class SID_PromptCompose:
                     "tooltip": "API key for cloud providers (Gemini/OpenAI/Anthropic)"
                 }),
                 "min_confidence": ("FLOAT", {
-                    "default": 0.1,
+                    "default": 0.3,
                     "min": 0.1,
                     "max": 0.9,
                     "step": 0.05,
                     "display": "slider",
-                    "tooltip": "Minimum tag confidence to include"
+                    "tooltip": "Minimum token confidence to include"
+                }),
+                "max_tokens_per_category": ("INT", {
+                    "default": 5,
+                    "min": 1,
+                    "max": 20,
+                    "step": 1,
+                    "tooltip": "Maximum tokens per category in output"
+                }),
+                "use_embeddings": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Use semantic embeddings for classification (requires sentence-transformers)"
                 }),
                 "temperature": ("FLOAT", {
-                    "default": 0.1,
+                    "default": 0.7,
                     "min": 0.0,
                     "max": 1.5,
                     "step": 0.1,
                     "display": "slider",
-                    "tooltip": "AI sampling temperature (Enhance with AI mode only)"
+                    "tooltip": "LLM sampling temperature (LLM mode only)"
                 }),
                 "release_vram": ("BOOLEAN", {
                     "default": True,
@@ -133,10 +152,6 @@ class SID_PromptCompose:
                     "default": False,
                     "tooltip": "Enable detailed logging with analytics"
                 }),
-                "hf_token": ("STRING", {
-                    "default": "",
-                    "tooltip": "HuggingFace token for gated local models"
-                }),
             },
         }
 
@@ -144,33 +159,35 @@ class SID_PromptCompose:
         self,
         image,
         metadata,
-        output_style: str = "z-image",
-        mode: str = "Standard",
-        caption_source: str = "Auto",
-        enhance_model: str = None,
+        mode: str = "NLP (Fast)",
+        prompt_style: str = "Natural",
+        llm_model: str = None,
         api_key: str = "",
-        min_confidence: float = 0.1,
-        temperature: float = 0.1,
+        min_confidence: float = 0.3,
+        max_tokens_per_category: int = 5,
+        use_embeddings: bool = False,
+        temperature: float = 0.7,
         release_vram: bool = True,
         verbose: bool = False,
-        hf_token: str = "",
     ) -> Tuple:
-        """Compose prompt from metadata."""
+        """Compose prompt from metadata using the new pipeline."""
 
-        # Parse model selection
-        enhance_model = enhance_model or ENHANCE_MODELS[0]
-        provider, model_id = MODEL_MAP.get(enhance_model, ("local", "qwen25_text_1.5b"))
+        # Parse mode
+        compose_mode = ComposeMode.LLM if "LLM" in mode else ComposeMode.NLP
 
-        # Use hf_token for local models, api_key for cloud providers
-        hf_token_val = hf_token if provider == "local" else None
-        cloud_api_key = api_key if provider != "local" else None
+        # Parse style
+        style = STYLE_MAP.get(prompt_style, PromptStyle.NATURAL)
 
-        # Normalize mode for internal use
-        mode_internal = "enhance_ai" if "enhance" in mode.lower() else "standard"
+        # Parse LLM model selection
+        llm_model = llm_model or LLM_MODELS[0]
+        provider, model_id = MODEL_MAP.get(llm_model, ("local", "qwen25_text_1.5b"))
 
-        log("Compose", f"Mode: {mode} | Style: {output_style} | Caption: {caption_source}", force=True)
-        if mode_internal == "enhance_ai":
-            log("Compose", f"Model: {enhance_model}", force=True)
+        # API key handling
+        llm_api_key = api_key if provider != "local" and api_key else None
+
+        log("Compose", f"Mode: {mode} | Style: {prompt_style}", force=True)
+        if compose_mode == ComposeMode.LLM:
+            log("Compose", f"LLM: {llm_model}", force=True)
 
         # Parse metadata if string
         if isinstance(metadata, str):
@@ -180,45 +197,50 @@ class SID_PromptCompose:
                 log_error("Compose", "Failed to parse metadata JSON")
                 metadata_dict = {}
         else:
-            metadata_dict = metadata
+            metadata_dict = metadata if isinstance(metadata, dict) else {}
 
-        # Build config
-        config = ComposeConfig(
+        # Build pipeline config
+        config = PipelineConfig(
+            mode=compose_mode,
             min_confidence=min_confidence,
-            caption_source=caption_source,
-            temperature=temperature,
+            prompt_style=style,
+            max_tokens_per_category=max_tokens_per_category,
+            use_embeddings=use_embeddings,
+            llm_provider=provider,
+            llm_model=model_id,
+            llm_api_key=llm_api_key,
+            llm_temperature=temperature,
         )
 
-        # Create pipeline
-        pipeline = ComposePipeline(
-            style=output_style,
-            mode=mode_internal,
-            caption_source=caption_source,
-            provider=provider,
-            model=model_id,
-            api_key=cloud_api_key,
-            hf_token=hf_token_val,
-            config=config,
-        )
+        # Create and run pipeline
+        pipeline = ComposePipeline(config)
 
-        # Generate
         try:
-            result = pipeline.generate(metadata_dict)
+            start = log_start("Compose", f"Generating ({mode})")
+            result = pipeline.compose(metadata_dict)
             prompt = result.prompt
 
+            log_end("Compose", f"Generated", start, f"{result.word_count} words")
+
             # Log analytics if verbose
-            if verbose and result.analytics:
-                analytics = result.analytics.to_dict()
-                log("Compose", f"Analytics: {json.dumps(analytics['summary'], indent=2)}", force=True)
+            if verbose:
+                log("Compose", f"  Tokens extracted: {result.tokens_extracted}", force=True)
+                log("Compose", f"  Classification: {result.classification_stats.get('processed_percent', 0)}%", force=True)
+                log("Compose", f"  Quality score: {result.quality_score:.2f}", force=True)
+                log("Compose", f"  Categories: {', '.join(result.categories_used)}", force=True)
+                if result.validation_issues > 0:
+                    log("Compose", f"  Validation issues: {result.validation_issues}", force=True)
 
-                for source, stats in analytics.get('by_source', {}).items():
-                    log("Compose", f"  {source}: {stats['included']}/{stats['total']} tags included", force=True)
-
-            log("Compose", f"Generated {result.word_count} words", force=True)
-
-            # Add analytics to metadata
-            if result.analytics:
-                metadata_dict["compose_analytics"] = result.analytics.to_dict()
+            # Add pipeline stats to metadata
+            metadata_dict["compose_stats"] = {
+                "mode": compose_mode.value,
+                "style": prompt_style,
+                "word_count": result.word_count,
+                "tokens_extracted": result.tokens_extracted,
+                "quality_score": result.quality_score,
+                "categories_used": result.categories_used,
+                "classification": result.classification_stats,
+            }
 
         except Exception as e:
             log_error("Compose", f"Generation failed: {e}")
@@ -227,8 +249,8 @@ class SID_PromptCompose:
             prompt = f"Error: {e}"
 
         finally:
-            # Cleanup if Enhance with AI mode and release_vram is enabled
-            if mode_internal == "enhance_ai" and release_vram:
+            # Cleanup if LLM mode and release_vram is enabled
+            if compose_mode == ComposeMode.LLM and release_vram:
                 pipeline.unload()
 
         # Return metadata as JSON string
