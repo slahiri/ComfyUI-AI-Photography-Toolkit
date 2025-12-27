@@ -117,22 +117,34 @@ class Places365Tagger(BaseTagger):
         try:
             import torchvision.transforms as transforms
             from torchvision import models
-            from huggingface_hub import hf_hub_download
+            import urllib.request
+            from pathlib import Path
 
             # Use GPU if available
             self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-            # Try to load from HuggingFace hub or use standard Places365
-            try:
-                # Load ResNet50 Places365 from HuggingFace
-                model_path = hf_hub_download(
-                    repo_id="alexhoffman/resnet50_places365",
-                    filename="resnet50_places365.pth.tar",
-                )
+            # Model cache directory
+            cache_dir = Path.home() / ".cache" / "places365"
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            model_path = cache_dir / "resnet50_places365.pth.tar"
 
+            # Download from MIT's official server if not cached
+            if not model_path.exists():
+                print("[Places365] Downloading model from MIT CSAIL...")
+                url = "http://places2.csail.mit.edu/models_places365/resnet50_places365.pth.tar"
+                try:
+                    urllib.request.urlretrieve(url, model_path)
+                    print(f"[Places365] Model saved to {model_path}")
+                except Exception as e:
+                    print(f"[Places365] Download failed: {e}")
+                    print("[Places365] Falling back to CLIP-based scene detection")
+                    self._use_clip_fallback = True
+                    return
+
+            try:
                 # Create model
                 self.model = models.resnet50(num_classes=365)
-                checkpoint = torch.load(model_path, map_location=self._device)
+                checkpoint = torch.load(model_path, map_location=self._device, weights_only=False)
 
                 # Handle different checkpoint formats
                 if 'state_dict' in checkpoint:
@@ -145,7 +157,7 @@ class Places365Tagger(BaseTagger):
 
             except Exception as e:
                 # Fallback: use CLIP for scene detection
-                print(f"[Places365] Model download failed: {e}")
+                print(f"[Places365] Model load failed: {e}")
                 print("[Places365] Falling back to CLIP-based scene detection")
                 self._use_clip_fallback = True
                 return
@@ -164,19 +176,24 @@ class Places365Tagger(BaseTagger):
                 ),
             ])
 
-            # Load labels
-            try:
-                labels_path = hf_hub_download(
-                    repo_id="alexhoffman/resnet50_places365",
-                    filename="categories_places365.txt",
-                )
+            # Download and load labels
+            labels_path = cache_dir / "categories_places365.txt"
+            if not labels_path.exists():
+                try:
+                    labels_url = "https://raw.githubusercontent.com/CSAILVision/places365/master/categories_places365.txt"
+                    urllib.request.urlretrieve(labels_url, labels_path)
+                except:
+                    pass
+
+            if labels_path.exists():
                 with open(labels_path, 'r') as f:
                     self.labels = [line.strip().split(' ')[0][3:] for line in f.readlines()]
-            except:
+            else:
                 # Use our predefined labels
                 self.labels = PLACES365_CATEGORIES[:365]
 
             self._use_clip_fallback = False
+            print(f"[Places365] Model loaded successfully ({len(self.labels)} categories)")
 
         except ImportError as e:
             print(f"[Places365] Required package not found: {e}")
