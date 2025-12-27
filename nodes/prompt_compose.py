@@ -145,13 +145,17 @@ class SID_PromptCompose:
                     "display": "slider",
                     "tooltip": "LLM sampling temperature (LLM mode only)"
                 }),
+                "verbose": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Enable detailed logging with quality output"
+                }),
                 "release_vram": ("BOOLEAN", {
                     "default": True,
                     "tooltip": "Release local AI model after use"
                 }),
-                "verbose": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Enable detailed logging with analytics"
+                "hf_token": ("STRING", {
+                    "default": "",
+                    "tooltip": "HuggingFace token for local LLM models"
                 }),
             },
         }
@@ -161,15 +165,16 @@ class SID_PromptCompose:
         image,
         metadata,
         mode: str = "NLP (Fast)",
-        prompt_style: str = "Natural",
+        prompt_style: str = "Structured",
         llm_model: str = None,
         api_key: str = "",
         min_confidence: float = 0.3,
-        max_tokens_per_category: int = 5,
+        max_tokens_per_category: int = 50,
         use_embeddings: bool = False,
         temperature: float = 0.7,
-        release_vram: bool = True,
         verbose: bool = False,
+        release_vram: bool = True,
+        hf_token: str = "",
     ) -> Tuple:
         """Compose prompt from metadata using the new pipeline."""
 

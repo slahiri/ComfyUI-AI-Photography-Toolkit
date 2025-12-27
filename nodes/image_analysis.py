@@ -66,6 +66,13 @@ FLORENCE_MODELS = [
     "microsoft/Florence-2-base",
 ]
 
+# Florence pass options
+FLORENCE_PASSES = [
+    "1 Pass (Caption)",           # Just detailed caption
+    "2 Pass (Caption+Describe)",  # Caption + More detailed description
+    "3 Pass (All)",               # All passes including analyze (6 for PromptGen)
+]
+
 # Florence-2 task prompts
 # Standard tasks (all models)
 FLORENCE_TASK_PROMPTS = {
@@ -122,17 +129,21 @@ class SID_ImageAnalysis:
                 }),
                 "florence_model": (FLORENCE_MODELS, {
                     "default": "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
-                    "tooltip": "Florence-2 VLM (runs 3x: caption, detailed description, tag extraction)"
+                    "tooltip": "Florence-2 VLM model"
+                }),
+                "florence_passes": (FLORENCE_PASSES, {
+                    "default": "3 Pass (All)",
+                    "tooltip": "1: Caption only | 2: +Description | 3: All passes (PromptGen adds tags/analyze)"
                 }),
             },
             "optional": {
+                "verbose": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Enable detailed logging with quality output"
+                }),
                 "release_vram": ("BOOLEAN", {
                     "default": True,
                     "tooltip": "Release VRAM after analysis"
-                }),
-                "verbose": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Enable detailed logging"
                 }),
                 "hf_token": ("STRING", {
                     "default": "",
@@ -396,8 +407,9 @@ class SID_ImageAnalysis:
         wd14_threshold_mode: str = "MCut",
         dinov2_model: str = "dinov2-base",
         florence_model: str = "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
-        release_vram: bool = True,
+        florence_passes: str = "3 Pass (All)",
         verbose: bool = False,
+        release_vram: bool = True,
         hf_token: str = "",
         # Legacy parameters (ignored, for backwards compatibility)
         **kwargs,
@@ -467,33 +479,45 @@ class SID_ImageAnalysis:
         else:
             log("ImageAnalysis", "No tagger results to parse")
 
+        # Determine number of passes from selection
+        num_passes = 3 if "3 Pass" in florence_passes else (2 if "2 Pass" in florence_passes else 1)
+        is_promptgen = self._is_promptgen_model(florence_model)
+
+        if verbose:
+            log("ImageAnalysis", f"Florence passes: {num_passes} (PromptGen: {is_promptgen})")
+
         # Run Florence-2 passes - always runs for best synthesis context
         # Load Florence once
         if self._florence_model is None or self._current_florence_model != florence_model:
             self._load_florence(florence_model, verbose)
         pbar.update(1)  # Florence loaded
 
-        is_promptgen = self._is_promptgen_model(florence_model)
-
         if self._florence_model is not None:
-            # Pass 1: Detailed caption (all models)
+            # Pass 1: Detailed caption (always runs)
             p1_start = log_start("ImageAnalysis", "Florence Pass 1: Detailed Caption")
             caption_result = self._run_florence_task(pil_image, "detailed_caption", verbose)
             if caption_result:
                 metadata["florence_caption"] = caption_result
                 log_end("ImageAnalysis", "Florence Pass 1", p1_start, f"{len(caption_result)} chars")
+                if verbose:
+                    log("ImageAnalysis", f"  Caption preview: {caption_result[:100]}...")
             pbar.update(1)
 
-            # Pass 2: More detailed description (all models)
-            p2_start = log_start("ImageAnalysis", "Florence Pass 2: More Detailed Caption")
-            desc_result = self._run_florence_task(pil_image, "more_detailed_caption", verbose)
-            if desc_result:
-                metadata["florence_description"] = desc_result
-                log_end("ImageAnalysis", "Florence Pass 2", p2_start, f"{len(desc_result)} chars")
-            pbar.update(1)
+            # Pass 2: More detailed description (if num_passes >= 2)
+            if num_passes >= 2:
+                p2_start = log_start("ImageAnalysis", "Florence Pass 2: More Detailed Caption")
+                desc_result = self._run_florence_task(pil_image, "more_detailed_caption", verbose)
+                if desc_result:
+                    metadata["florence_description"] = desc_result
+                    log_end("ImageAnalysis", "Florence Pass 2", p2_start, f"{len(desc_result)} chars")
+                    if verbose:
+                        log("ImageAnalysis", f"  Description preview: {desc_result[:100]}...")
+                pbar.update(1)
+            else:
+                pbar.update(1)  # Skip pass 2
 
-            # PromptGen-specific passes (only for MiaoshouAI PromptGen models)
-            if is_promptgen:
+            # Pass 3+: PromptGen-specific passes (if num_passes >= 3 and is PromptGen model)
+            if num_passes >= 3 and is_promptgen:
                 # Pass 3: Generate Tags
                 p3_start = log_start("ImageAnalysis", "Florence Pass 3: Generate Tags")
                 tags_result = self._run_florence_task(pil_image, "generate_tags", verbose)
@@ -516,6 +540,10 @@ class SID_ImageAnalysis:
                 if analyze_result:
                     metadata["florence_analyze"] = analyze_result
                     log_end("ImageAnalysis", "Florence Pass 5", p5_start, f"{len(analyze_result)} chars")
+                    if verbose:
+                        # Show parsed analyze data
+                        if isinstance(analyze_result, dict):
+                            log("ImageAnalysis", f"  Analyze keys: {list(analyze_result.keys())}")
                 pbar.update(1)
 
                 # Pass 6: Mixed Caption Plus
@@ -525,13 +553,26 @@ class SID_ImageAnalysis:
                     metadata["florence_mixed_caption_plus"] = mixed_plus_result
                     log_end("ImageAnalysis", "Florence Pass 6", p6_start, f"{len(mixed_plus_result)} chars")
                 pbar.update(1)
-            else:
-                # Non-PromptGen model: skip PromptGen tasks
+            elif num_passes >= 3:
+                # Non-PromptGen model with 3 passes: skip PromptGen tasks
                 log("ImageAnalysis", "Skipping PromptGen tasks (not a PromptGen model)")
                 pbar.update(4)  # Skip 4 PromptGen passes
+            else:
+                # Less than 3 passes: skip all PromptGen passes
+                pbar.update(4)
         else:
             # Florence failed to load, update remaining steps
-            pbar.update(6 if is_promptgen else 2)
+            pbar.update(6 if (num_passes >= 3 and is_promptgen) else 2)
+
+        # Verbose quality summary
+        if verbose:
+            log("ImageAnalysis", "=== Quality Summary ===")
+            tag_count = sum(len(v) for k, v in metadata.items() if isinstance(v, dict) and k not in ["image_info"])
+            florence_count = sum(1 for k in metadata.keys() if k.startswith("florence_"))
+            log("ImageAnalysis", f"  Total tags: {tag_count}")
+            log("ImageAnalysis", f"  Florence outputs: {florence_count}")
+            if "iqa" in metadata:
+                log("ImageAnalysis", f"  IQA scores: {metadata['iqa']}")
 
         # Release VRAM if requested
         if release_vram:

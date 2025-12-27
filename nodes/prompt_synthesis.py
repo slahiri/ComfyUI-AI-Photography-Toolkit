@@ -194,8 +194,8 @@ class SID_PromptSynthesis:
                 "metadata": ("SID_METADATA", {"tooltip": "Metadata from SID_ImageAnalysis"}),
                 "api_key": ("STRING", {"default": "", "tooltip": "API key for Gemini/OpenAI/Anthropic"}),
                 "precision": (QWEN_PRECISION, {"default": "4-Bit", "tooltip": "Local model precision"}),
+                "verbose": ("BOOLEAN", {"default": False, "tooltip": "Enable detailed logging with quality output"}),
                 "release_vram": ("BOOLEAN", {"default": True, "tooltip": "Release local VLM after use"}),
-                "verbose": ("BOOLEAN", {"default": False, "tooltip": "Detailed logging"}),
                 "hf_token": ("STRING", {"default": "", "tooltip": "HuggingFace token for gated local models"}),
             },
         }
