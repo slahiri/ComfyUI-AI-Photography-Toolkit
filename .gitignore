@@ -68,10 +68,11 @@ test_results/
 # Archives
 *.zip
 
-# Local test scripts
-test_*.py
+# Local test scripts (root level only, not in tests/)
+/test_*.py
 compare_results.py
 download_test_images.py
+!tests/
 nul
 
 # Debug and generation output

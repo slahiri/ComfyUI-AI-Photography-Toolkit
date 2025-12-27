@@ -1,0 +1,511 @@
+TOKEN EXTRACTION RESULTS
+================================================================================
+Total tokens: 169
+
+[wd14] [0.99] 1girl
+  -> subject
+
+[wd14] [0.96] solo
+  -> subject
+
+[wd14] [0.94] navel
+  -> subject_details/body
+
+[wd14] [0.92] nun
+  -> uncategorized
+
+[wd14] [0.90] habit
+  -> uncategorized
+
+[wd14] [0.86] looking at viewer
+  -> subject_details/eyes
+
+[wd14] [0.83] midriff
+  -> subject_details/body
+
+[wd14] [0.79] realistic
+  -> quality_boosters
+
+[wd14] [0.76] white skirt
+  -> subject_details/clothing
+
+[wd14] [0.72] red lips
+  -> subject_details/face
+
+[wd14] [0.69] sensitive
+  -> uncategorized
+
+[wd14] [0.68] skirt
+  -> subject_details/clothing
+
+[wd14] [0.64] crop top
+  -> subject_details/clothing
+
+[wd14] [0.59] traditional nun
+  -> uncategorized
+
+[wd14] [0.58] makeup
+  -> subject_details/face
+
+[wd14] [0.56] brown eyes
+  -> subject_details/eyes
+
+[wd14] [0.56] breasts
+  -> subject_details/body
+
+[wd14] [0.53] blurry
+  -> uncategorized
+
+[wd14] [0.50] blurry background
+  -> environment
+
+[wd14] [0.46] long sleeves
+  -> uncategorized
+
+[wd14] [0.45] coif
+  -> uncategorized
+
+[joytag] [0.94] 1girl
+  -> subject
+
+[joytag] [0.81] nun
+  -> uncategorized
+
+[joytag] [0.78] solo
+  -> subject
+
+[joytag] [0.72] habit
+  -> uncategorized
+
+[joytag] [0.71] navel
+  -> subject_details/body
+
+[joytag] [0.65] makeup
+  -> subject_details/face
+
+[joytag] [0.60] lipstick
+  -> subject_details/face
+
+[joytag] [0.58] lips
+  -> subject_details/face
+
+[joytag] [0.56] realistic
+  -> quality_boosters
+
+[joytag] [0.55] red lips
+  -> subject_details/face
+
+[joytag] [0.55] looking at viewer
+  -> subject_details/eyes
+
+[joytag] [0.54] puffy sleeves
+  -> uncategorized
+
+[joytag] [0.54] breasts
+  -> subject_details/body
+
+[joytag] [0.53] nose
+  -> subject_details/face
+
+[joytag] [0.53] long sleeves
+  -> uncategorized
+
+[joytag] [0.52] midriff
+  -> subject_details/body
+
+[joytag] [0.51] blurry background
+  -> environment
+
+[joytag] [0.49] bandages
+  -> uncategorized
+
+[joytag] [0.48] standing
+  -> action_pose
+
+[joytag] [0.46] indoors
+  -> environment
+
+[joytag] [0.46] brown eyes
+  -> subject_details/eyes
+
+[joytag] [0.46] dark skin
+  -> subject_details/skin
+
+[joytag] [0.46] blurry
+  -> uncategorized
+
+[joytag] [0.45] veil
+  -> uncategorized
+
+[joytag] [0.44] eyeliner
+  -> uncategorized
+
+[joytag] [0.43] stomach
+  -> uncategorized
+
+[joytag] [0.42] abs
+  -> subject_details/body
+
+[joytag] [0.41] white pants
+  -> subject_details/clothing
+
+[joytag] [0.40] crop top
+  -> subject_details/clothing
+
+[joytag] [0.40] dark-skinned female
+  -> subject_details/skin
+
+[joytag] [0.40] medium breasts
+  -> subject_details/body
+
+[joytag] [0.39] white skirt
+  -> subject_details/clothing
+
+[joytag] [0.39] photo-referenced
+  -> uncategorized
+
+[joytag] [0.39] shrug clothing
+  -> action_pose
+
+[joytag] [0.39] original
+  -> uncategorized
+
+[joytag] [0.38] eyeshadow
+  -> subject_details/face
+
+[joytag] [0.38] juliet sleeves
+  -> uncategorized
+
+[joytag] [0.38] 3d
+  -> style_medium
+
+[joytag] [0.36] yellow eyes
+  -> subject_details/eyes
+
+[joytag] [0.36] cowboy shot
+  -> subject
+
+[joytag] [0.35] closed mouth
+  -> subject_details/face
+
+[joytag] [0.34] bandaged arm
+  -> uncategorized
+
+[joytag] [0.34] small breasts
+  -> subject_details/body
+
+[joytag] [0.34] white sleeves
+  -> uncategorized
+
+[joytag] [0.34] nail polish
+  -> uncategorized
+
+[joytag] [0.34] dress
+  -> subject_details/clothing
+
+[joytag] [0.33] long skirt
+  -> subject_details/clothing
+
+[joytag] [0.33] photoshop medium
+  -> uncategorized
+
+[joytag] [0.33] fingernails
+  -> uncategorized
+
+[joytag] [0.33] jewelry
+  -> subject_details/clothing
+
+[pixai] [0.95] 3d
+  -> style_medium
+
+[pixai] [0.94] nun
+  -> uncategorized
+
+[pixai] [0.94] realistic
+  -> quality_boosters
+
+[pixai] [0.93] asian
+  -> uncategorized
+
+[pixai] [0.92] 1girl
+  -> subject
+
+[pixai] [0.92] solo
+  -> subject
+
+[pixai] [0.84] photorealistic
+  -> quality_boosters
+
+[pixai] [0.83] habit
+  -> uncategorized
+
+[pixai] [0.83] navel
+  -> subject_details/body
+
+[pixai] [0.80] looking at viewer
+  -> subject_details/eyes
+
+[pixai] [0.79] crop top
+  -> subject_details/clothing
+
+[pixai] [0.74] midriff
+  -> subject_details/body
+
+[pixai] [0.71] indoors
+  -> environment
+
+[pixai] [0.70] blurry
+  -> uncategorized
+
+[pixai] [0.69] blurry background
+  -> environment
+
+[pixai] [0.64] white skirt
+  -> subject_details/clothing
+
+[pixai] [0.60] coif
+  -> uncategorized
+
+[pixai] [0.59] skirt
+  -> subject_details/clothing
+
+[pixai] [0.57] traditional nun
+  -> uncategorized
+
+[pixai] [0.56] nose
+  -> subject_details/face
+
+[pixai] [0.55] thick lips
+  -> subject_details/face
+
+[pixai] [0.53] long sleeves
+  -> uncategorized
+
+[pixai] [0.47] lips
+  -> subject_details/face
+
+[pixai] [0.47] window
+  -> environment
+
+[pixai] [0.42] sleeves past wrists
+  -> uncategorized
+
+[pixai] [0.40] alternate costume
+  -> uncategorized
+
+[pixai] [0.39] red lips
+  -> subject_details/face
+
+[pixai] [0.37] breasts
+  -> subject_details/body
+
+[pixai] [0.37] standing
+  -> action_pose
+
+[pixai] [0.37] makeup
+  -> subject_details/face
+
+[pixai] [0.35] puffy sleeves
+  -> uncategorized
+
+[pixai] [0.35] cosplay
+  -> uncategorized
+
+[pixai] [0.32] stomach
+  -> uncategorized
+
+[nudenet] [0.90] nsfw content
+  -> uncategorized
+
+[nudenet] [0.85] female face
+  -> uncategorized
+
+[nudenet] [0.76] covered female breast x2
+  -> uncategorized
+
+[nudenet] [0.67] exposed belly
+  -> uncategorized
+
+[photography] [0.90] white smoke tones
+  -> lighting
+
+[photography] [0.80] neutral tones
+  -> lighting
+
+[photography] [0.85] muted colors
+  -> lighting
+
+[photography] [0.80] desaturated
+  -> lighting
+
+[photography] [0.80] high contrast
+  -> lighting
+
+[photography] [0.80] sharp
+  -> quality_boosters
+
+[photography] [0.75] good focus
+  -> uncategorized
+
+[photography] [0.95] portrait orientation
+  -> composition
+
+[photography] [0.90] vertical frame
+  -> uncategorized
+
+[photography] [0.85] 2:3 aspect ratio
+  -> composition
+
+[photography] [0.80] low resolution
+  -> technical
+
+[photography] [0.75] centered composition
+  -> uncategorized
+
+[photography] [0.75] centered framing
+  -> action_pose
+
+[photography] [0.60] rule of thirds
+  -> composition
+
+[photography] [0.80] photographic framing
+  -> action_pose
+
+[photography] [0.95] photograph
+  -> quality_boosters
+
+[photography] [0.90] photography
+  -> quality_boosters
+
+[iqa] [0.80] good aesthetic quality
+  -> quality_boosters
+
+[iqa] [0.90] excellent technical quality
+  -> quality_boosters
+
+[iqa] [0.85] professional quality
+  -> uncategorized
+
+[iqa] [0.80] good clarity
+  -> uncategorized
+
+[iqa] [0.75] minimal noise
+  -> uncategorized
+
+[composition] [0.70] vertical lines
+  -> uncategorized
+
+[composition] [0.75] strong linear elements
+  -> uncategorized
+
+[composition] [0.70] partial symmetry
+  -> style_medium
+
+[composition] [0.75] elements at thirds
+  -> uncategorized
+
+[saliency] [0.75] subject on horizontal third
+  -> uncategorized
+
+[saliency] [0.85] centered subject
+  -> uncategorized
+
+[saliency] [0.80] central composition
+  -> uncategorized
+
+[saliency] [0.70] multiple subjects
+  -> uncategorized
+
+[unknown] [0.79] wearing clothing
+  -> subject_details/clothing
+
+[unknown] [0.84] wearing dress
+  -> subject_details/clothing
+
+[unknown] [0.82] wearing hat
+  -> subject_details/clothing
+
+[unknown] [0.44] wearing skirt
+  -> subject_details/clothing
+
+[unknown] [0.32] wearing belt
+  -> subject_details/clothing
+
+[unknown] [0.95] upper clothing visible
+  -> uncategorized
+
+[unknown] [0.60] wearing skirt
+  -> subject_details/clothing
+
+[florence_analyze] [0.90] from front
+  -> uncategorized
+
+[florence_analyze] [0.90] photo realistic
+  -> quality_boosters
+
+[florence_analyze] [0.90] indoor
+  -> environment
+
+[florence_analyze] [0.90] a modern, minimalist interior with large windows allowing natural light to enter
+  -> lighting
+
+[florence_analyze] [0.90] black crop top
+  -> subject_details/clothing
+
+[florence_analyze] [0.90] white skirt
+  -> subject_details/clothing
+
+[florence_analyze] [0.90] standing
+  -> action_pose
+
+[florence_analyze] [0.90] facing viewer
+  -> action_pose
+
+[florence_analyze] [0.90] looking at viewer
+  -> subject_details/eyes
+
+[florence_analyze] [0.90] confident
+  -> uncategorized
+
+[florence_analyze] [0.90] brown
+  -> uncategorized
+
+[florence_analyze] [0.90] 1 woman
+  -> subject
+
+[florence_analyze] [0.90] black
+  -> uncategorized
+
+[florence_analyze] [0.90] nun habit
+  -> uncategorized
+
+[florence_analyze] [0.90] light skin
+  -> subject_details/skin
+
+[florence_analyze] [0.90] slim, toned
+  -> uncategorized
+
+[florence_caption] [0.85] photo of a woman dressed as a nun, standing confidently in a modern, minimalist interior with large windows. she has a pale complexion, dark eyes, and a serious expression. she is wearing a black and white habit with a white veil, a black crop top, and white skirt. the background is blurred, but it appears to be an indoor space with large, bright windows. the lighting is soft and natural, highlighting her toned physique and the texture of her outfit. the image has a high-quality, professional look with a focus on the subject's athletic physique.
+  -> subject_details/face
+
+[florence_description] [0.85] a photo-realistic shoot from a portrait camera angle about a woman dressed as a nun posing confidently in a modern, minimalist interior setting.
+  -> subject_details/clothing
+
+[florence_description] [0.85] the image also shows a woman in the middle of the frame, standing confidently with her hands on her hips, wearing a black crop top and white skirt, which accentuates her toned midriff and defined abs.
+  -> subject_details/clothing
+
+[florence_description] [0.85] she has a serious expression and is looking directly at the camera with her brown eyes.
+  -> subject_details/face
+
+[florence_description] [0.85] her hair is styled in a traditional nun's habit, with a black veil covering her face and a white headscarf.
+  -> style_medium
+
+[florence_description] [0.85] her body is slim and toned, with her midriffs visible, and she is wearing a white skirt that falls just above her knees.
+  -> subject_details/clothing
+
+[florence_description] [0.85] the background is a bright, empty room with large windows, allowing natural light to filter in and illuminate the space, creating a bright and airy atmosphere.
+  -> environment
+
+[florence_description] [0.85] the lighting is soft and natural, highlighting her curves and emphasizing her toning and defined abdominal muscles.
+  -> lighting
+
