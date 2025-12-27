@@ -58,10 +58,12 @@ core/compose/
 
 **Tasks:**
 
-1. [ ] Create `ImageToken` dataclass with fields: text, confidence, source, token_type, metadata
-2. [ ] Create `TokenType` enum: TAG, PHRASE, KEY_VALUE, SENTENCE
-3. [ ] Create `CanonicalCategory` enum with all 9 categories
-4. [ ] Create `TokenClassification` dataclass with primary/secondary categories
+1. [x] Create `ImageToken` dataclass with fields: text, confidence, source, token_type, metadata
+2. [x] Create `TokenType` enum: TAG, PHRASE, KEY_VALUE, SENTENCE
+3. [x] Create `CanonicalCategory` enum with all 9 categories
+4. [x] Create `TokenClassification` dataclass with primary/secondary categories
+
+**Commit:** `c7859cf` - feat(compose): implement Phase 1 - Core Infrastructure
 
 ---
 

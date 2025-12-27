@@ -27,7 +27,7 @@ Rewriting the `SID_PromptCompose` node with a new tokenization → classificatio
 
 | Phase | Description | Priority | Status |
 |-------|-------------|----------|--------|
-| 1 | Core Infrastructure (ImageToken, TokenType, categories) | HIGH | Not Started |
+| 1 | Core Infrastructure (ImageToken, TokenType, categories) | HIGH | **COMPLETE** |
 | 2 | Tokenization (extractors for taggers, analyzers, captions) | HIGH | Not Started |
 | 3 | Classification (5-layer cascade) | HIGH | Not Started |
 | 4 | Rule-Based Assembly (templates, phrase mappings) | HIGH | Not Started |
