@@ -15,11 +15,14 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Any
 
+from PIL import Image
+
 from .tokenizer import (
     TokenBatch,
     extract_all_tagger_tokens,
     extract_all_analyzer_tokens,
     extract_all_caption_tokens,
+    extract_from_rag,
     normalize_batch,
 )
 from .classifier import (
@@ -62,6 +65,11 @@ class PipelineConfig:
     # Classifier settings
     use_embeddings: bool = False  # Layer 4 (requires sentence-transformers)
     use_llm_classifier: bool = False  # Layer 4.5 for classification
+
+    # RAG settings
+    use_rag: bool = False  # Visual RAG for vocabulary enhancement
+    rag_threshold: float = 0.7  # Minimum similarity for RAG retrieval
+    rag_top_k: int = 3  # Results per category
 
     # Assembler settings
     prompt_style: PromptStyle = PromptStyle.NATURAL
@@ -118,11 +126,16 @@ class ComposePipeline:
         self.config = config or PipelineConfig()
         self._llm_model = None
 
-    def compose(self, metadata: Dict) -> PipelineResult:
+    def compose(
+        self,
+        metadata: Dict,
+        image: Optional[Image.Image] = None,
+    ) -> PipelineResult:
         """Compose a prompt from image metadata.
 
         Args:
             metadata: Image analysis metadata dict
+            image: Optional PIL Image for RAG retrieval
 
         Returns:
             PipelineResult with the generated prompt
@@ -136,15 +149,19 @@ class ComposePipeline:
                 metadata = {}
 
         if self.config.mode == ComposeMode.NLP:
-            return self._compose_nlp(metadata)
+            return self._compose_nlp(metadata, image)
         else:
-            return self._compose_llm(metadata)
+            return self._compose_llm(metadata, image)
 
-    def _compose_nlp(self, metadata: Dict) -> PipelineResult:
+    def _compose_nlp(
+        self,
+        metadata: Dict,
+        image: Optional[Image.Image] = None,
+    ) -> PipelineResult:
         """NLP mode: Rule-based composition pipeline."""
 
         # Phase 2: Tokenization
-        token_batch = self._tokenize(metadata)
+        token_batch = self._tokenize(metadata, image)
 
         # Phase 3: Classification
         classified = self._classify(token_batch)
@@ -171,11 +188,15 @@ class ComposePipeline:
             }
         )
 
-    def _compose_llm(self, metadata: Dict) -> PipelineResult:
+    def _compose_llm(
+        self,
+        metadata: Dict,
+        image: Optional[Image.Image] = None,
+    ) -> PipelineResult:
         """LLM mode: AI-enhanced composition."""
 
         # First run NLP pipeline to get structured data
-        token_batch = self._tokenize(metadata)
+        token_batch = self._tokenize(metadata, image)
         classified = self._classify(token_batch)
         stats = get_classification_stats(classified)
         assembled = self._assemble(classified)
@@ -212,7 +233,11 @@ class ComposePipeline:
             }
         )
 
-    def _tokenize(self, metadata: Dict) -> TokenBatch:
+    def _tokenize(
+        self,
+        metadata: Dict,
+        image: Optional[Image.Image] = None,
+    ) -> TokenBatch:
         """Phase 2: Extract and normalize tokens."""
         # Extract from all sources
         tagger_batch = extract_all_tagger_tokens(metadata, min_confidence=0.0)
@@ -227,6 +252,15 @@ class ComposePipeline:
         combined.add_all(tagger_batch.tokens)
         combined.add_all(analyzer_batch.tokens)
         combined.add_all(caption_batch.tokens)
+
+        # Extract from RAG if enabled and image provided
+        if self.config.use_rag and image is not None:
+            rag_tokens = extract_from_rag(
+                image=image,
+                top_k=self.config.rag_top_k,
+                threshold=self.config.rag_threshold,
+            )
+            combined.add_all(rag_tokens)
 
         # Normalize
         normalized = normalize_batch(
@@ -419,6 +453,14 @@ Enhanced prompt:"""
         if self._llm_model is not None:
             self._llm_model.unload()
             self._llm_model = None
+
+        # Unload RAG retriever if used
+        if self.config.use_rag:
+            try:
+                from .rag import unload_rag_retriever
+                unload_rag_retriever()
+            except ImportError:
+                pass
 
 
 # Convenience functions

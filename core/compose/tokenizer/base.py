@@ -36,6 +36,9 @@ class TokenSource(Enum):
     NUDENET = "nudenet"
     POSE = "pose"
 
+    # RAG (visual retrieval)
+    RAG = "rag"
+
     # Analyzers
     PHOTOGRAPHY = "photography"
     IQA = "iqa"
@@ -62,6 +65,7 @@ SOURCE_WEIGHTS: Dict[TokenSource, float] = {
     TokenSource.PIXAI: 0.9,
     TokenSource.NUDENET: 0.8,
     TokenSource.POSE: 0.95,  # Pose detection is reliable
+    TokenSource.RAG: 0.85,  # Visual retrieval (similarity-based)
     TokenSource.PHOTOGRAPHY: 0.9,
     TokenSource.IQA: 0.85,
     TokenSource.COMPOSITION: 0.85,

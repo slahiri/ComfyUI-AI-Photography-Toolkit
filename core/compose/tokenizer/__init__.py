@@ -56,6 +56,11 @@ from .normalizer import (
     normalize_for_comparison,
 )
 
+from .rag_extractor import (
+    extract_from_rag,
+    extract_from_rag_by_category,
+)
+
 __all__ = [
     # Base types
     "TokenType",
@@ -96,6 +101,9 @@ __all__ = [
     "filter_meta_tokens",
     "normalize_batch",
     "normalize_for_comparison",
+    # RAG extraction
+    "extract_from_rag",
+    "extract_from_rag_by_category",
 ]
 
 

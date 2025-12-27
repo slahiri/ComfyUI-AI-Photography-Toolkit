@@ -3,6 +3,9 @@
 import json
 from typing import Tuple
 
+import numpy as np
+from PIL import Image
+
 from ..core.compose.compose_pipeline import (
     ComposePipeline,
     PipelineConfig,
@@ -137,6 +140,18 @@ class SID_PromptCompose:
                     "default": False,
                     "tooltip": "Use semantic embeddings for classification (requires sentence-transformers)"
                 }),
+                "use_rag": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Use visual RAG to enhance vocabulary (requires pre-built index)"
+                }),
+                "rag_threshold": ("FLOAT", {
+                    "default": 0.7,
+                    "min": 0.5,
+                    "max": 0.95,
+                    "step": 0.05,
+                    "display": "slider",
+                    "tooltip": "Minimum similarity for RAG retrieval"
+                }),
                 "temperature": ("FLOAT", {
                     "default": 0.7,
                     "min": 0.1,
@@ -171,6 +186,8 @@ class SID_PromptCompose:
         min_confidence: float = 0.3,
         max_tokens_per_category: int = 50,
         use_embeddings: bool = False,
+        use_rag: bool = False,
+        rag_threshold: float = 0.7,
         temperature: float = 0.7,
         verbose: bool = False,
         release_vram: bool = True,
@@ -212,18 +229,33 @@ class SID_PromptCompose:
             prompt_style=style,
             max_tokens_per_category=max_tokens_per_category,
             use_embeddings=use_embeddings,
+            use_rag=use_rag,
+            rag_threshold=rag_threshold,
             llm_provider=provider,
             llm_model=model_id,
             llm_api_key=llm_api_key,
             llm_temperature=temperature,
         )
 
+        # Convert image tensor to PIL for RAG (if enabled)
+        pil_image = None
+        if use_rag:
+            try:
+                # ComfyUI image tensor: (B, H, W, C) in 0-1 range
+                img_tensor = image[0] if len(image.shape) == 4 else image
+                img_np = (img_tensor.cpu().numpy() * 255).astype(np.uint8)
+                pil_image = Image.fromarray(img_np, mode="RGB")
+                log("Compose", f"RAG enabled, image: {pil_image.width}x{pil_image.height}")
+            except Exception as e:
+                log_error("Compose", f"Failed to convert image for RAG: {e}")
+                pil_image = None
+
         # Create and run pipeline
         pipeline = ComposePipeline(config)
 
         try:
             start = log_start("Compose", f"Generating ({mode})")
-            result = pipeline.compose(metadata_dict)
+            result = pipeline.compose(metadata_dict, image=pil_image)
             prompt = result.prompt
 
             log_end("Compose", f"Generated", start, f"{result.word_count} words")

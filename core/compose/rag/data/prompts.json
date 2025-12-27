@@ -1,0 +1,3067 @@
+[
+  {
+    "prompt": "Tight Portrait",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Portrait",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Cinematic Portrait",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Cinema Still",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Product",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Editorial",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Fashion & Glamour",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Model shoot",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Candid",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Black & white",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Analog",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Disposable Camera",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Polaroid / Instant",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Street",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Night photography",
+    "category": "medium",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Lineart",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Anime",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Anime Concept-art",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Classic Manga",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Colored Manga",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Western Anime",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Retro Anime",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Character Sheet / Turnaround",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Studio Ghibli",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Shinkai Style (Scenery)",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Slice of life",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Chibi",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Shōnen",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Shōjo",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Seinen",
+    "category": "medium",
+    "subcategory": "Anime"
+  },
+  {
+    "prompt": "Line Art",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Pixel art",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Digital Painting",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Quick Concept Art",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Character Concept Art",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Environment Concept Art",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Risograph",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Mixed Media Collage",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Vector Illustration",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Flat Design Illustration",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Corporate Memphis",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Low Poly Vector",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Sticker",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Blueprint / Schematic",
+    "category": "medium",
+    "subcategory": "2D"
+  },
+  {
+    "prompt": "Stylized (3D)",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Disney (3D)",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "DreamWorks (3D)",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Pixar (3D)",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Illumination (3D)",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Laika Stop-Motion Style",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Sony Animation (3D)",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Octane Render",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Unreal Render",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Claymation / Aardman",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Voxel Art",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Plastic Bricks / LEGO",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Low-poly",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Papercraft / Origami",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Isometric Room",
+    "category": "medium",
+    "subcategory": "3D"
+  },
+  {
+    "prompt": "Pencil Sketch",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Charcoal Sketch",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Colored Pencil Sketch",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Conte Crayon Sketch",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Watercolor Painting",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Oil Painting",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Acrylic Painting",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Ink Wash Painting",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Brush & Ink Illustration",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Pastel Painting",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Fresco Painting",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Etching",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Engraving",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Lithograph",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Mosaic",
+    "category": "medium",
+    "subcategory": "Traditional Art"
+  },
+  {
+    "prompt": "Geometric",
+    "category": "medium",
+    "subcategory": "Abstract"
+  },
+  {
+    "prompt": "Gestural",
+    "category": "medium",
+    "subcategory": "Abstract"
+  },
+  {
+    "prompt": "Surreal",
+    "category": "medium",
+    "subcategory": "Abstract"
+  },
+  {
+    "prompt": "Acrylic pour",
+    "category": "medium",
+    "subcategory": "Abstract"
+  },
+  {
+    "prompt": "Fluid / Pour Painting",
+    "category": "medium",
+    "subcategory": "Abstract"
+  },
+  {
+    "prompt": "Fractal",
+    "category": "medium",
+    "subcategory": "Abstract"
+  },
+  {
+    "prompt": "Alcohol Ink",
+    "category": "medium",
+    "subcategory": "Abstract"
+  },
+  {
+    "prompt": "Infant / Baby",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Infant / Baby",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Toddler",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Toddler",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Child (6-10)",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Child (6-10)",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Teenager",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Teenager",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Young Adult (20s)",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Young Adult (20s)",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Adult (30s-40s)",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Adult (30s-40s)",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Middle Aged (50s)",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Middle Aged (50s)",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Elderly / Senior",
+    "category": "subject",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Natural / Average",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "V-Taper",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Stocky",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Slim",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Athletic",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Muscular",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Ripped / Shredded",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Lanky",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Swimmer's Build",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Plus-size / Heavy",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Dad Bod",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Broad-shouldered",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Skinny",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Powerlifter / Bulk",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Tall",
+    "category": "subject",
+    "subcategory": "Body"
+  },
+  {
+    "prompt": "Fair",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Very Fair / Porcelain",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Rosy",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Light",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Light Olive",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Olive",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Sallow",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Warm Tan",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Golden",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Medium / Neutral",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Caramel",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Brown",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Ebony",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Deep brown",
+    "category": "subject",
+    "subcategory": "Skin"
+  },
+  {
+    "prompt": "Round",
+    "category": "subject",
+    "subcategory": "Face"
+  },
+  {
+    "prompt": "Oval",
+    "category": "subject",
+    "subcategory": "Face"
+  },
+  {
+    "prompt": "Square",
+    "category": "subject",
+    "subcategory": "Face"
+  },
+  {
+    "prompt": "Heart-shaped",
+    "category": "subject",
+    "subcategory": "Face"
+  },
+  {
+    "prompt": "Long",
+    "category": "subject",
+    "subcategory": "Face"
+  },
+  {
+    "prompt": "Angular",
+    "category": "subject",
+    "subcategory": "Face"
+  },
+  {
+    "prompt": "Round",
+    "category": "subject",
+    "subcategory": "Face"
+  },
+  {
+    "prompt": "Oval",
+    "category": "subject",
+    "subcategory": "Face"
+  },
+  {
+    "prompt": "Square",
+    "category": "subject",
+    "subcategory": "Face"
+  },
+  {
+    "prompt": "Heart-shaped",
+    "category": "subject",
+    "subcategory": "Face"
+  },
+  {
+    "prompt": "Long",
+    "category": "subject",
+    "subcategory": "Face"
+  },
+  {
+    "prompt": "Almond-shaped",
+    "category": "subject",
+    "subcategory": "Eyes"
+  },
+  {
+    "prompt": "Hooded",
+    "category": "subject",
+    "subcategory": "Eyes"
+  },
+  {
+    "prompt": "Round",
+    "category": "subject",
+    "subcategory": "Eyes"
+  },
+  {
+    "prompt": "Deep-set",
+    "category": "subject",
+    "subcategory": "Eyes"
+  },
+  {
+    "prompt": "Wide-set",
+    "category": "subject",
+    "subcategory": "Eyes"
+  },
+  {
+    "prompt": "Monolid",
+    "category": "subject",
+    "subcategory": "Eyes"
+  },
+  {
+    "prompt": "Close-set",
+    "category": "subject",
+    "subcategory": "Eyes"
+  },
+  {
+    "prompt": "Almond-shaped",
+    "category": "subject",
+    "subcategory": "Eyes"
+  },
+  {
+    "prompt": "Round",
+    "category": "subject",
+    "subcategory": "Eyes"
+  },
+  {
+    "prompt": "Protruding",
+    "category": "subject",
+    "subcategory": "Eyes"
+  },
+  {
+    "prompt": "Wide-set",
+    "category": "subject",
+    "subcategory": "Eyes"
+  },
+  {
+    "prompt": "Deep-set",
+    "category": "subject",
+    "subcategory": "Eyes"
+  },
+  {
+    "prompt": "Small nose",
+    "category": "subject",
+    "subcategory": "Nose"
+  },
+  {
+    "prompt": "Broad nose",
+    "category": "subject",
+    "subcategory": "Nose"
+  },
+  {
+    "prompt": "Straight nose",
+    "category": "subject",
+    "subcategory": "Nose"
+  },
+  {
+    "prompt": "Snub",
+    "category": "subject",
+    "subcategory": "Nose"
+  },
+  {
+    "prompt": "Upturned",
+    "category": "subject",
+    "subcategory": "Nose"
+  },
+  {
+    "prompt": "Hooked",
+    "category": "subject",
+    "subcategory": "Nose"
+  },
+  {
+    "prompt": "Small nose",
+    "category": "subject",
+    "subcategory": "Nose"
+  },
+  {
+    "prompt": "Broad nose",
+    "category": "subject",
+    "subcategory": "Nose"
+  },
+  {
+    "prompt": "Straight nose",
+    "category": "subject",
+    "subcategory": "Nose"
+  },
+  {
+    "prompt": "Snub",
+    "category": "subject",
+    "subcategory": "Nose"
+  },
+  {
+    "prompt": "Upturned",
+    "category": "subject",
+    "subcategory": "Nose"
+  },
+  {
+    "prompt": "Thin lips",
+    "category": "subject",
+    "subcategory": "Lips"
+  },
+  {
+    "prompt": "Medium lips",
+    "category": "subject",
+    "subcategory": "Lips"
+  },
+  {
+    "prompt": "Full lips",
+    "category": "subject",
+    "subcategory": "Lips"
+  },
+  {
+    "prompt": "Wide mouth",
+    "category": "subject",
+    "subcategory": "Lips"
+  },
+  {
+    "prompt": "Narrow mouth",
+    "category": "subject",
+    "subcategory": "Lips"
+  },
+  {
+    "prompt": "Overbite",
+    "category": "subject",
+    "subcategory": "Lips"
+  },
+  {
+    "prompt": "Underbite",
+    "category": "subject",
+    "subcategory": "Lips"
+  },
+  {
+    "prompt": "Full lips",
+    "category": "subject",
+    "subcategory": "Lips"
+  },
+  {
+    "prompt": "Thin lips",
+    "category": "subject",
+    "subcategory": "Lips"
+  },
+  {
+    "prompt": "Cupid's bow",
+    "category": "subject",
+    "subcategory": "Lips"
+  },
+  {
+    "prompt": "Wide mouth",
+    "category": "subject",
+    "subcategory": "Lips"
+  },
+  {
+    "prompt": "Small mouth",
+    "category": "subject",
+    "subcategory": "Lips"
+  },
+  {
+    "prompt": "Small",
+    "category": "subject",
+    "subcategory": "Ears"
+  },
+  {
+    "prompt": "Large",
+    "category": "subject",
+    "subcategory": "Ears"
+  },
+  {
+    "prompt": "Close to head",
+    "category": "subject",
+    "subcategory": "Ears"
+  },
+  {
+    "prompt": "Gauged ears",
+    "category": "subject",
+    "subcategory": "Ears"
+  },
+  {
+    "prompt": "Protruding",
+    "category": "subject",
+    "subcategory": "Ears"
+  },
+  {
+    "prompt": "Pointed / Elf ears",
+    "category": "subject",
+    "subcategory": "Ears"
+  },
+  {
+    "prompt": "Small",
+    "category": "subject",
+    "subcategory": "Ears"
+  },
+  {
+    "prompt": "Large",
+    "category": "subject",
+    "subcategory": "Ears"
+  },
+  {
+    "prompt": "Close to head",
+    "category": "subject",
+    "subcategory": "Ears"
+  },
+  {
+    "prompt": "Gauged ears",
+    "category": "subject",
+    "subcategory": "Ears"
+  },
+  {
+    "prompt": "Protruding",
+    "category": "subject",
+    "subcategory": "Ears"
+  },
+  {
+    "prompt": "Bald",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Shaved",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Buzzcut",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Crew cut",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "High fade",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Low fade",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Undercut",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Combover",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Pompadour",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Quiff",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Mohawk",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Curly top",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Wavy",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Long hair",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Man bun",
+    "category": "subject",
+    "subcategory": "Hair"
+  },
+  {
+    "prompt": "Clean shaved",
+    "category": "subject",
+    "subcategory": "Facial Hair"
+  },
+  {
+    "prompt": "Stubble",
+    "category": "subject",
+    "subcategory": "Facial Hair"
+  },
+  {
+    "prompt": "Heavy stubble",
+    "category": "subject",
+    "subcategory": "Facial Hair"
+  },
+  {
+    "prompt": "Short beard",
+    "category": "subject",
+    "subcategory": "Facial Hair"
+  },
+  {
+    "prompt": "Full beard",
+    "category": "subject",
+    "subcategory": "Facial Hair"
+  },
+  {
+    "prompt": "Long beard",
+    "category": "subject",
+    "subcategory": "Facial Hair"
+  },
+  {
+    "prompt": "Trimmed beard",
+    "category": "subject",
+    "subcategory": "Facial Hair"
+  },
+  {
+    "prompt": "Goatee",
+    "category": "subject",
+    "subcategory": "Facial Hair"
+  },
+  {
+    "prompt": "Van Dyke",
+    "category": "subject",
+    "subcategory": "Facial Hair"
+  },
+  {
+    "prompt": "Mustache (handlebar, pencil, chevron)",
+    "category": "subject",
+    "subcategory": "Facial Hair"
+  },
+  {
+    "prompt": "Mutton chops",
+    "category": "subject",
+    "subcategory": "Facial Hair"
+  },
+  {
+    "prompt": "Designer beard",
+    "category": "subject",
+    "subcategory": "Facial Hair"
+  },
+  {
+    "prompt": "Kurta",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Chapan",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Sherwani",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Toga",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Thobe",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Kimono",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Kilt",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Agbada",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Hanfu",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Lederhosen",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Poncho",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Barong Tagalog",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Bisht",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Dashiki",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Caftan",
+    "category": "clothing",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Crewneck T-shirt",
+    "category": "clothing",
+    "subcategory": "Informal"
+  },
+  {
+    "prompt": "V-neck T-shirt",
+    "category": "clothing",
+    "subcategory": "Informal"
+  },
+  {
+    "prompt": "Oversized T-shirt",
+    "category": "clothing",
+    "subcategory": "Informal"
+  },
+  {
+    "prompt": "Polo Shirt",
+    "category": "clothing",
+    "subcategory": "Informal"
+  },
+  {
+    "prompt": "Henley Shirt",
+    "category": "clothing",
+    "subcategory": "Informal"
+  },
+  {
+    "prompt": "Flannel Shirt",
+    "category": "clothing",
+    "subcategory": "Informal"
+  },
+  {
+    "prompt": "Hoodie",
+    "category": "clothing",
+    "subcategory": "Informal"
+  },
+  {
+    "prompt": "Muscle Tank",
+    "category": "clothing",
+    "subcategory": "Informal"
+  },
+  {
+    "prompt": "Hawaiian Shirt",
+    "category": "clothing",
+    "subcategory": "Informal"
+  },
+  {
+    "prompt": "Sweatshirt",
+    "category": "clothing",
+    "subcategory": "Informal"
+  },
+  {
+    "prompt": "Rugby Shirt",
+    "category": "clothing",
+    "subcategory": "Informal"
+  },
+  {
+    "prompt": "Denim Shirt",
+    "category": "clothing",
+    "subcategory": "Informal"
+  },
+  {
+    "prompt": "Military",
+    "category": "clothing",
+    "subcategory": "Uniform"
+  },
+  {
+    "prompt": "Military ceremonial",
+    "category": "clothing",
+    "subcategory": "Uniform"
+  },
+  {
+    "prompt": "Police",
+    "category": "clothing",
+    "subcategory": "Uniform"
+  },
+  {
+    "prompt": "Firefighter",
+    "category": "clothing",
+    "subcategory": "Uniform"
+  },
+  {
+    "prompt": "Security guard",
+    "category": "clothing",
+    "subcategory": "Uniform"
+  },
+  {
+    "prompt": "Pilot",
+    "category": "clothing",
+    "subcategory": "Uniform"
+  },
+  {
+    "prompt": "Cabin crew",
+    "category": "clothing",
+    "subcategory": "Uniform"
+  },
+  {
+    "prompt": "Nurse scrubs",
+    "category": "clothing",
+    "subcategory": "Uniform"
+  },
+  {
+    "prompt": "Doctor",
+    "category": "clothing",
+    "subcategory": "Uniform"
+  },
+  {
+    "prompt": "Chef",
+    "category": "clothing",
+    "subcategory": "Uniform"
+  },
+  {
+    "prompt": "Sailor",
+    "category": "clothing",
+    "subcategory": "Uniform"
+  },
+  {
+    "prompt": "Construction",
+    "category": "clothing",
+    "subcategory": "Uniform"
+  },
+  {
+    "prompt": "Tuxedo",
+    "category": "clothing",
+    "subcategory": "Partywear"
+  },
+  {
+    "prompt": "White dinner suit",
+    "category": "clothing",
+    "subcategory": "Partywear"
+  },
+  {
+    "prompt": "Velvet blazer",
+    "category": "clothing",
+    "subcategory": "Partywear"
+  },
+  {
+    "prompt": "Sequin jacket",
+    "category": "clothing",
+    "subcategory": "Partywear"
+  },
+  {
+    "prompt": "Metallic suit",
+    "category": "clothing",
+    "subcategory": "Partywear"
+  },
+  {
+    "prompt": "Satin party shirt",
+    "category": "clothing",
+    "subcategory": "Partywear"
+  },
+  {
+    "prompt": "Velvet smoking jacket",
+    "category": "clothing",
+    "subcategory": "Partywear"
+  },
+  {
+    "prompt": "Shiny lapel blazer",
+    "category": "clothing",
+    "subcategory": "Partywear"
+  },
+  {
+    "prompt": "Patterned party blazer",
+    "category": "clothing",
+    "subcategory": "Partywear"
+  },
+  {
+    "prompt": "Sparkle shirt",
+    "category": "clothing",
+    "subcategory": "Partywear"
+  },
+  {
+    "prompt": "Bold color suit",
+    "category": "clothing",
+    "subcategory": "Partywear"
+  },
+  {
+    "prompt": "Embellished jacket",
+    "category": "clothing",
+    "subcategory": "Partywear"
+  },
+  {
+    "prompt": "Pajama set",
+    "category": "clothing",
+    "subcategory": "Sleepwear"
+  },
+  {
+    "prompt": "Boxer shorts",
+    "category": "clothing",
+    "subcategory": "Sleepwear"
+  },
+  {
+    "prompt": "Robe",
+    "category": "clothing",
+    "subcategory": "Sleepwear"
+  },
+  {
+    "prompt": "T-shirt & shorts",
+    "category": "clothing",
+    "subcategory": "Sleepwear"
+  },
+  {
+    "prompt": "Onesie",
+    "category": "clothing",
+    "subcategory": "Sleepwear"
+  },
+  {
+    "prompt": "Silk pajama",
+    "category": "clothing",
+    "subcategory": "Sleepwear"
+  },
+  {
+    "prompt": "Flannel pajama",
+    "category": "clothing",
+    "subcategory": "Sleepwear"
+  },
+  {
+    "prompt": "Thermal set",
+    "category": "clothing",
+    "subcategory": "Sleepwear"
+  },
+  {
+    "prompt": "Loungewear set",
+    "category": "clothing",
+    "subcategory": "Sleepwear"
+  },
+  {
+    "prompt": "Henley & shorts",
+    "category": "clothing",
+    "subcategory": "Sleepwear"
+  },
+  {
+    "prompt": "Basketball shorts",
+    "category": "clothing",
+    "subcategory": "Sleepwear"
+  },
+  {
+    "prompt": "Swim trunks",
+    "category": "clothing",
+    "subcategory": "Swimwear"
+  },
+  {
+    "prompt": "Boardshorts",
+    "category": "clothing",
+    "subcategory": "Swimwear"
+  },
+  {
+    "prompt": "Volleyball shorts",
+    "category": "clothing",
+    "subcategory": "Swimwear"
+  },
+  {
+    "prompt": "Swim shorts",
+    "category": "clothing",
+    "subcategory": "Swimwear"
+  },
+  {
+    "prompt": "Speedo",
+    "category": "clothing",
+    "subcategory": "Swimwear"
+  },
+  {
+    "prompt": "Rashguard",
+    "category": "clothing",
+    "subcategory": "Swimwear"
+  },
+  {
+    "prompt": "Boardshorts",
+    "category": "clothing",
+    "subcategory": "Swimwear"
+  },
+  {
+    "prompt": "Swimsuit",
+    "category": "clothing",
+    "subcategory": "Swimwear"
+  },
+  {
+    "prompt": "Swim skirt",
+    "category": "clothing",
+    "subcategory": "Swimwear"
+  },
+  {
+    "prompt": "Monokini",
+    "category": "clothing",
+    "subcategory": "Swimwear"
+  },
+  {
+    "prompt": "Rashguard",
+    "category": "clothing",
+    "subcategory": "Swimwear"
+  },
+  {
+    "prompt": "Boxers",
+    "category": "clothing",
+    "subcategory": "Innerwear"
+  },
+  {
+    "prompt": "Briefs",
+    "category": "clothing",
+    "subcategory": "Innerwear"
+  },
+  {
+    "prompt": "Boxer Briefs",
+    "category": "clothing",
+    "subcategory": "Innerwear"
+  },
+  {
+    "prompt": "Trunks",
+    "category": "clothing",
+    "subcategory": "Innerwear"
+  },
+  {
+    "prompt": "Athletic briefs",
+    "category": "clothing",
+    "subcategory": "Innerwear"
+  },
+  {
+    "prompt": "Low-rise briefs",
+    "category": "clothing",
+    "subcategory": "Innerwear"
+  },
+  {
+    "prompt": "Compression shirt",
+    "category": "clothing",
+    "subcategory": "Innerwear"
+  },
+  {
+    "prompt": "Lingerie (bralette)",
+    "category": "clothing",
+    "subcategory": "Innerwear"
+  },
+  {
+    "prompt": "Lingerie (balconette)",
+    "category": "clothing",
+    "subcategory": "Innerwear"
+  },
+  {
+    "prompt": "Lingerie (push-up)",
+    "category": "clothing",
+    "subcategory": "Innerwear"
+  },
+  {
+    "prompt": "Brief",
+    "category": "clothing",
+    "subcategory": "Innerwear"
+  },
+  {
+    "prompt": "Bikini Brief",
+    "category": "clothing",
+    "subcategory": "Innerwear"
+  },
+  {
+    "prompt": "Soft Breathable Cotton",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Lightweight Linen Slub",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Luxurious Silk Drape",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Smooth Satin Gloss",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Plush Velvet Pile",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Warm Wool Dense",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Ultra-Soft Cashmere",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Sturdy Denim Twill",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Supple Leather Grain",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Faux Leather Sheen",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Soft Suede Nap",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Delicate Lace Openwork",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Sheer Mesh Grid",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Light Chiffon Flow",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Crisp Organza Sheer",
+    "category": "clothing",
+    "subcategory": "Detailing"
+  },
+  {
+    "prompt": "Conifer Forest",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Tropical Rainforest",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Bamboo Grove",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Alpine Meadow",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "African Savannah",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Tropical Beach",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Rocky Coastline",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Waterfall",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Mirror Lake",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Winding River",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Coral Reef",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Sand Dunes",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Red Rock Canyon",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Arctic Tundra",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Glacial Field",
+    "category": "outdoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Airport Terminal",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Airport Tarmac",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Rooftop Helipad",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Subway Platform",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Vintage Steam Train",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Futuristic Monorail",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Highway Overpass",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Parking Lot",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Park & Ride",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Protected Bike Lane",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Gas Station Night",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Road Tunnel",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Suspension Bridge",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Stone Arch Bridge",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "Metro Viaduct",
+    "category": "outdoor",
+    "subcategory": "Transit"
+  },
+  {
+    "prompt": "City Skyline",
+    "category": "outdoor",
+    "subcategory": "Urban"
+  },
+  {
+    "prompt": "Downtown Street",
+    "category": "outdoor",
+    "subcategory": "Urban"
+  },
+  {
+    "prompt": "Neon Plaza",
+    "category": "outdoor",
+    "subcategory": "Urban"
+  },
+  {
+    "prompt": "Suburban Street",
+    "category": "outdoor",
+    "subcategory": "Urban"
+  },
+  {
+    "prompt": "Urban Alley",
+    "category": "outdoor",
+    "subcategory": "Urban"
+  },
+  {
+    "prompt": "Residential Block",
+    "category": "outdoor",
+    "subcategory": "Urban"
+  },
+  {
+    "prompt": "Open Air Market",
+    "category": "outdoor",
+    "subcategory": "Urban"
+  },
+  {
+    "prompt": "Industrial District",
+    "category": "outdoor",
+    "subcategory": "Urban"
+  },
+  {
+    "prompt": "Construction Site",
+    "category": "outdoor",
+    "subcategory": "Urban"
+  },
+  {
+    "prompt": "Boardwalk",
+    "category": "outdoor",
+    "subcategory": "Urban"
+  },
+  {
+    "prompt": "Concrete Skatepark",
+    "category": "outdoor",
+    "subcategory": "Urban"
+  },
+  {
+    "prompt": "Bungalow",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Cottage",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Farmhouse",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Villa",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Townhouse",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Cabin",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Chalet",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Beach House",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Stilt House",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Mansion",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Ranch House",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Tiny House",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Shipping Container House",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Earthship / Eco House",
+    "category": "outdoor",
+    "subcategory": "Houses"
+  },
+  {
+    "prompt": "Primary School Entrance",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "University Quad",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Corporate HQ Plaza",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Police Station Exterior",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Railway Station Platforms",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Airport Terminal Forecourt",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Courthouse Steps",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Museum Facade",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Town Hall Square",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Fire Station Bay",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Outdoor Stadium Exterior",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Market Square",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Embassy Exterior",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Bank Headquarters",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Financial District Office Tower",
+    "category": "outdoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Outdoor Concert Amphitheater",
+    "category": "outdoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Open-Air Cinema",
+    "category": "outdoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Drive-In Theater",
+    "category": "outdoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Theme Park Midway",
+    "category": "outdoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Ferris Wheel Pier",
+    "category": "outdoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Carnival Fair",
+    "category": "outdoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Boardwalk",
+    "category": "outdoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Street Performance Plaza",
+    "category": "outdoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Night Market (entertainment)",
+    "category": "outdoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Rooftop Bar Terrace",
+    "category": "outdoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Ice Rink (seasonal)",
+    "category": "outdoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Nightclub District Street",
+    "category": "outdoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Hindu Temple Entrance",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Ancient Stone Temple",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Temple Courtyard",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Mosque Exterior",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Friday Mosque Courtyard",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Church Front Facade",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Cathedral Plaza",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Buddhist Temple",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Buddhist Stupa",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Gurudwara Exterior",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Synagogue Exterior",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Hindu River Ghat",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Pagoda Complex",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Shrine Courtyard",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Hilltop Temple",
+    "category": "outdoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Medieval Castle Ruins",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Coastal Fort",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Ancient Amphitheater",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Archaeological Dig Site",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Roman Aqueduct Remains",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Colonial-era Plaza",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Hilltop Citadel",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Ancient Temple Ruins",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Desert Caravanserai",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Stepwell / Ancient Well",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Old Lighthouse & Promontory",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Historic Railway Station (exterior)",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Palatial Courtyard (historic palace)",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Old Town Gate & Ramparts",
+    "category": "outdoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Sunny & Bright",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Clear Blue Sky",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Heat Haze",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Partly Cloudy",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Overcast",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Ominous Clouds",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Drizzle",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Heavy Downpour",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Lightning Storm",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Gentle Snow",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Blizzard",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Dense Fog",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Morning Mist",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "God Rays",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Double Rainbow",
+    "category": "outdoor",
+    "subcategory": "Weather"
+  },
+  {
+    "prompt": "Spring Blossom",
+    "category": "outdoor",
+    "subcategory": "Seasons"
+  },
+  {
+    "prompt": "Spring Rain",
+    "category": "outdoor",
+    "subcategory": "Seasons"
+  },
+  {
+    "prompt": "High Summer",
+    "category": "outdoor",
+    "subcategory": "Seasons"
+  },
+  {
+    "prompt": "Dry Season",
+    "category": "outdoor",
+    "subcategory": "Seasons"
+  },
+  {
+    "prompt": "Monsoon",
+    "category": "outdoor",
+    "subcategory": "Seasons"
+  },
+  {
+    "prompt": "Early Autumn",
+    "category": "outdoor",
+    "subcategory": "Seasons"
+  },
+  {
+    "prompt": "Golden Fall",
+    "category": "outdoor",
+    "subcategory": "Seasons"
+  },
+  {
+    "prompt": "Late Autumn",
+    "category": "outdoor",
+    "subcategory": "Seasons"
+  },
+  {
+    "prompt": "First Frost",
+    "category": "outdoor",
+    "subcategory": "Seasons"
+  },
+  {
+    "prompt": "Deep Winter",
+    "category": "outdoor",
+    "subcategory": "Seasons"
+  },
+  {
+    "prompt": "Bedroom — Minimalist",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Bedroom — Luxurious",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Bedroom — Cozy",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Bedroom — Cluttered",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Kitchen — Modern",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Kitchen — Rustic",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Kitchen — Farmhouse",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Living room — Mid-century",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Living room — Boho",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Living room — Industrial",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Bathroom — Marble",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Bathroom — Tiled",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Bathroom — Steam",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Bungalow",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Cottage",
+    "category": "indoor",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Office — Open plan",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Office — Corner",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Office — Startup",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Hospital ward",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Clinic",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Operating theatre",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "School classroom",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "University lecture hall",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Library — Reading room",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Gym / fitness center",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Laboratory",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Bank interior",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Courthouse",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Police station",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Post office",
+    "category": "indoor",
+    "subcategory": "Institution"
+  },
+  {
+    "prompt": "Temple — Buddhist",
+    "category": "indoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Temple — Hindu",
+    "category": "indoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Church — Cathedral",
+    "category": "indoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Church — Chapel",
+    "category": "indoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Mosque",
+    "category": "indoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Shrine",
+    "category": "indoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Monastery",
+    "category": "indoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Pagoda",
+    "category": "indoor",
+    "subcategory": "Religious"
+  },
+  {
+    "prompt": "Concert stage",
+    "category": "indoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Music festival — indoor hall",
+    "category": "indoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Theater",
+    "category": "indoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Opera house",
+    "category": "indoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Nightclub",
+    "category": "indoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Dance floor",
+    "category": "indoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Movie theater",
+    "category": "indoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Arcade 1",
+    "category": "indoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Carnival tent interior",
+    "category": "indoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Circus tent",
+    "category": "indoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Comedy club",
+    "category": "indoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "VIP green room",
+    "category": "indoor",
+    "subcategory": "Entertainment"
+  },
+  {
+    "prompt": "Roman ruin — interior",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Greek temple — inner cella",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Medieval castle — hall",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Fortress — guardroom",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Memorial",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Archaeological dig — enclosed trench",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Renaissance palace — interior",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Victorian interior street-front",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Colonial building — foyer",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Feudal courtyard — inner chamber",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Old stone bridge — covered interior",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Museum interior",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "Ottoman bazaar — covered arcade",
+    "category": "indoor",
+    "subcategory": "Historical"
+  },
+  {
+    "prompt": "DSLR",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Mirrorless",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "35mm Film",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Vintage Polaroid",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Disposable Camera",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Kodachrome",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Action Camera",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Drone Aerial",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "CCTV",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Webcam",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "VHS Tape",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Expired film look",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Large Format",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Medium Format",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Pinhole",
+    "category": "camera",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Wide Angle (24mm)",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Ultra-Wide (14mm)",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Fisheye",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Standard (50mm)",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Portrait (85mm)",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Telephoto (200mm)",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Super Telephoto",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Macro",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Anamorphic",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Tilt-Shift",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Soft Focus Lens",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Probe Lens",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Vintage Glass",
+    "category": "camera",
+    "subcategory": "Lense"
+  },
+  {
+    "prompt": "Extreme Close-up",
+    "category": "camera",
+    "subcategory": "Shot Size"
+  },
+  {
+    "prompt": "Close-up",
+    "category": "camera",
+    "subcategory": "Shot Size"
+  },
+  {
+    "prompt": "Medium Close-up",
+    "category": "camera",
+    "subcategory": "Shot Size"
+  },
+  {
+    "prompt": "Medium Shot",
+    "category": "camera",
+    "subcategory": "Shot Size"
+  },
+  {
+    "prompt": "Medium Full Shot",
+    "category": "camera",
+    "subcategory": "Shot Size"
+  },
+  {
+    "prompt": "Full Body Shot",
+    "category": "camera",
+    "subcategory": "Shot Size"
+  },
+  {
+    "prompt": "Wide Shot",
+    "category": "camera",
+    "subcategory": "Shot Size"
+  },
+  {
+    "prompt": "Extreme Wide Shot",
+    "category": "camera",
+    "subcategory": "Shot Size"
+  },
+  {
+    "prompt": "Head-and-shoulders",
+    "category": "camera",
+    "subcategory": "Shot Size"
+  },
+  {
+    "prompt": "Two-shot",
+    "category": "camera",
+    "subcategory": "Shot Size"
+  },
+  {
+    "prompt": "Over-the-shoulder (OTS) insert",
+    "category": "camera",
+    "subcategory": "Shot Size"
+  },
+  {
+    "prompt": "Insert shot",
+    "category": "camera",
+    "subcategory": "Shot Size"
+  },
+  {
+    "prompt": "Eye Level",
+    "category": "camera",
+    "subcategory": "Angle"
+  },
+  {
+    "prompt": "Low Angle",
+    "category": "camera",
+    "subcategory": "Angle"
+  },
+  {
+    "prompt": "High Angle",
+    "category": "camera",
+    "subcategory": "Angle"
+  },
+  {
+    "prompt": "Bird's Eye View",
+    "category": "camera",
+    "subcategory": "Angle"
+  },
+  {
+    "prompt": "Dutch Angle",
+    "category": "camera",
+    "subcategory": "Angle"
+  },
+  {
+    "prompt": "Direct sunlight",
+    "category": "lighting",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Overcast / Diffuse daylight",
+    "category": "lighting",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Golden hour sunlight",
+    "category": "lighting",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Blue hour",
+    "category": "lighting",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Moonlight",
+    "category": "lighting",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Bioluminescent",
+    "category": "lighting",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Neon Lights",
+    "category": "lighting",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Studio strobes",
+    "category": "lighting",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Fluorescent",
+    "category": "lighting",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Candlelight",
+    "category": "lighting",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Streetlights",
+    "category": "lighting",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Front Lighting",
+    "category": "lighting",
+    "subcategory": "Direction"
+  },
+  {
+    "prompt": "Side lighting (left)",
+    "category": "lighting",
+    "subcategory": "Direction"
+  },
+  {
+    "prompt": "Side lighting (right)",
+    "category": "lighting",
+    "subcategory": "Direction"
+  },
+  {
+    "prompt": "Backlighting (Rim)",
+    "category": "lighting",
+    "subcategory": "Direction"
+  },
+  {
+    "prompt": "Rembrandt",
+    "category": "lighting",
+    "subcategory": "Direction"
+  },
+  {
+    "prompt": "Silhouette",
+    "category": "lighting",
+    "subcategory": "Direction"
+  },
+  {
+    "prompt": "Top-down / butterfly",
+    "category": "lighting",
+    "subcategory": "Direction"
+  },
+  {
+    "prompt": "Reflective bounce",
+    "category": "lighting",
+    "subcategory": "Quality"
+  },
+  {
+    "prompt": "High-key",
+    "category": "lighting",
+    "subcategory": "Quality"
+  },
+  {
+    "prompt": "Low-key",
+    "category": "lighting",
+    "subcategory": "Quality"
+  },
+  {
+    "prompt": "Hard Light",
+    "category": "lighting",
+    "subcategory": "Quality"
+  },
+  {
+    "prompt": "Soft Light",
+    "category": "lighting",
+    "subcategory": "Quality"
+  },
+  {
+    "prompt": "Diffused",
+    "category": "lighting",
+    "subcategory": "Quality"
+  },
+  {
+    "prompt": "Flat",
+    "category": "lighting",
+    "subcategory": "Quality"
+  },
+  {
+    "prompt": "Chiaroscuro",
+    "category": "lighting",
+    "subcategory": "Quality"
+  },
+  {
+    "prompt": "Muted / subtle",
+    "category": "lighting",
+    "subcategory": "Quality"
+  },
+  {
+    "prompt": "Volumetric (God Rays)",
+    "category": "lighting",
+    "subcategory": "Effects"
+  },
+  {
+    "prompt": "Lens Flare",
+    "category": "lighting",
+    "subcategory": "Effects"
+  },
+  {
+    "prompt": "Bokeh",
+    "category": "lighting",
+    "subcategory": "Effects"
+  },
+  {
+    "prompt": "Bloom / Glow",
+    "category": "lighting",
+    "subcategory": "Effects"
+  },
+  {
+    "prompt": "Subsurface Scattering",
+    "category": "lighting",
+    "subcategory": "Effects"
+  },
+  {
+    "prompt": "Caustics",
+    "category": "lighting",
+    "subcategory": "Effects"
+  },
+  {
+    "prompt": "Light Leaks",
+    "category": "lighting",
+    "subcategory": "Effects"
+  },
+  {
+    "prompt": "Dappled Light",
+    "category": "lighting",
+    "subcategory": "Effects"
+  },
+  {
+    "prompt": "Colored wash gradient",
+    "category": "lighting",
+    "subcategory": "Effects"
+  },
+  {
+    "prompt": "Deep / Crushed",
+    "category": "lighting",
+    "subcategory": "Shadows"
+  },
+  {
+    "prompt": "Ambient occlusion",
+    "category": "lighting",
+    "subcategory": "Shadows"
+  },
+  {
+    "prompt": "Soft Shadows",
+    "category": "lighting",
+    "subcategory": "Shadows"
+  },
+  {
+    "prompt": "Hard shadow",
+    "category": "lighting",
+    "subcategory": "Shadows"
+  },
+  {
+    "prompt": "Long Shadows",
+    "category": "lighting",
+    "subcategory": "Shadows"
+  },
+  {
+    "prompt": "Colored Shadows 1",
+    "category": "lighting",
+    "subcategory": "Shadows"
+  },
+  {
+    "prompt": "Colored Shadows 2",
+    "category": "lighting",
+    "subcategory": "Shadows"
+  },
+  {
+    "prompt": "Gobo patterns 1",
+    "category": "lighting",
+    "subcategory": "Shadows"
+  },
+  {
+    "prompt": "Gobo patterns 2",
+    "category": "lighting",
+    "subcategory": "Shadows"
+  },
+  {
+    "prompt": "Playful",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Melancholic",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Romantic",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Mysterious",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Tense",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Calm",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Joyful",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Somber",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Dark",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Cheery",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Epic",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Tranquil",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Haunting",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Dreamlike",
+    "category": "others",
+    "subcategory": "default"
+  },
+  {
+    "prompt": "Eerie",
+    "category": "others",
+    "subcategory": "default"
+  }
+]
