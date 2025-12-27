@@ -43,6 +43,8 @@ from .validator import (
     ValidatorConfig,
     ValidationResult,
     validate_prompt,
+    remove_runaway_repetitions,
+    is_garbage_output,
 )
 
 
@@ -206,6 +208,32 @@ class ComposePipeline:
 
         # Generate enhanced prompt with LLM
         enhanced_prompt = self._generate_with_llm(context, assembled.prompt)
+
+        # Clean up LLM output - remove runaway repetitions
+        enhanced_prompt = remove_runaway_repetitions(enhanced_prompt, max_repeats=3)
+
+        # Check if LLM output is garbage (excessive repetition)
+        # If so, fall back to NLP output
+        if is_garbage_output(enhanced_prompt, threshold=8):
+            # LLM failed, use NLP output instead
+            return PipelineResult(
+                prompt=assembled.prompt,
+                mode=ComposeMode.LLM,  # Still report as LLM mode
+                quality_score=0.5,  # Lower quality due to fallback
+                categories_used=assembled.categories_used,
+                tokens_extracted=len(token_batch.tokens),
+                tokens_classified=stats["total_tokens"],
+                classification_stats=stats,
+                validation_issues=1,  # Mark as having issues
+                metadata={
+                    "processed_percent": stats.get("processed_percent", 0),
+                    "llm_provider": self.config.llm_provider,
+                    "llm_model": self.config.llm_model,
+                    "base_prompt_words": assembled.word_count,
+                    "llm_fallback": True,
+                    "llm_fallback_reason": "garbage_output_detected",
+                }
+            )
 
         # Validate the enhanced prompt
         from .assembler import AssembledPrompt

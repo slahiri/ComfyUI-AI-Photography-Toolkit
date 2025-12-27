@@ -201,6 +201,91 @@ def remove_duplicate_words(text: str) -> str:
     return '\n'.join(result_lines)
 
 
+def remove_runaway_repetitions(text: str, max_repeats: int = 3) -> str:
+    """Remove runaway repetitions in LLM output.
+
+    Detects and removes patterns like "dark, dark, dark, dark, dark..."
+    which indicate LLM generation failure.
+
+    Args:
+        text: Prompt text
+        max_repeats: Maximum allowed repetitions of a single word/phrase
+
+    Returns:
+        Cleaned text
+    """
+    # Split into segments (comma or space separated)
+    segments = re.split(r',\s*|\s+', text)
+
+    # Count consecutive and total repetitions
+    word_counts: Dict[str, int] = {}
+    for seg in segments:
+        seg_clean = seg.lower().strip()
+        if seg_clean and len(seg_clean) > 1:
+            word_counts[seg_clean] = word_counts.get(seg_clean, 0) + 1
+
+    # Find words that are repeated excessively
+    excessive_words = {word for word, count in word_counts.items() if count > max_repeats}
+
+    if not excessive_words:
+        return text
+
+    # Remove excessive repetitions
+    lines = text.split('\n')
+    result_lines = []
+
+    for line in lines:
+        segments = line.split(", ")
+        seen_counts: Dict[str, int] = {}
+        result = []
+
+        for segment in segments:
+            seg_clean = segment.lower().strip()
+
+            # Count this segment
+            seen_counts[seg_clean] = seen_counts.get(seg_clean, 0) + 1
+
+            # Only keep if not excessively repeated
+            if seg_clean not in excessive_words or seen_counts[seg_clean] <= max_repeats:
+                result.append(segment)
+
+        result_lines.append(", ".join(result))
+
+    return '\n'.join(result_lines)
+
+
+def is_garbage_output(text: str, threshold: int = 10) -> bool:
+    """Check if text appears to be garbage LLM output.
+
+    Detects patterns that indicate generation failure:
+    - Excessive repetition of single words
+    - Very long strings of the same word
+
+    Args:
+        text: Text to check
+        threshold: Number of repetitions to consider garbage
+
+    Returns:
+        True if text appears to be garbage
+    """
+    words = re.findall(r'\b\w+\b', text.lower())
+    if not words:
+        return True
+
+    # Count word occurrences
+    counts: Dict[str, int] = {}
+    for word in words:
+        if len(word) > 2:  # Skip very short words
+            counts[word] = counts.get(word, 0) + 1
+
+    # Check for excessive repetition
+    for word, count in counts.items():
+        if count >= threshold:
+            return True
+
+    return False
+
+
 # =============================================================================
 # Quality Checks
 # =============================================================================
