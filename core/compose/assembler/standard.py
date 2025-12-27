@@ -110,12 +110,23 @@ class StandardAssembler(BaseAssembler):
 
         # Sort each subcategory by confidence and apply limits
         limit = self.config.get_limit_for_category(CanonicalCategory.SUBJECT_DETAILS)
-        for subcat in result:
-            result[subcat].sort(key=lambda t: t.token.confidence, reverse=True)
-            # Limit per subcategory (use category limit, not max_tokens_per_category)
-            # Divide limit across subcategories to prevent any single subcategory from dominating
-            per_subcat_limit = max(5, limit // len(result)) if result else limit
-            result[subcat] = result[subcat][:per_subcat_limit]
+        num_subcats = len(result)
+
+        if num_subcats > 0:
+            # Calculate per-subcategory limit that won't exceed total
+            # Use ceiling division to distribute evenly
+            per_subcat_limit = max(3, limit // num_subcats)
+
+            # Track total tokens to enforce exact limit
+            total_tokens = 0
+
+            for subcat in result:
+                result[subcat].sort(key=lambda t: t.token.confidence, reverse=True)
+                # Calculate how many we can still take
+                remaining = limit - total_tokens
+                actual_limit = min(per_subcat_limit, remaining, len(result[subcat]))
+                result[subcat] = result[subcat][:actual_limit]
+                total_tokens += len(result[subcat])
 
         return result
 

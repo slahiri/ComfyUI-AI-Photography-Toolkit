@@ -160,9 +160,13 @@ class BaseAssembler(ABC):
             # Combine: short tags first (up to 80% of limit), then long sentences
             limit = max_tokens if max_tokens else self.config.get_limit_for_category(category)
             short_limit = int(limit * 0.8)
-            long_limit = limit - min(len(short_tags), short_limit)
+            # Calculate long_limit to ensure total doesn't exceed limit
+            actual_short = min(len(short_tags), short_limit)
+            long_limit = limit - actual_short
 
-            tokens = short_tags[:short_limit] + long_sentences[:long_limit]
+            tokens = short_tags[:actual_short] + long_sentences[:long_limit]
+            # Final safety check - truncate to exact limit
+            tokens = tokens[:limit]
         else:
             # Sort by confidence (highest first = most important)
             tokens.sort(key=lambda t: t.token.confidence, reverse=True)
