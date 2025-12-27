@@ -277,13 +277,39 @@ SUBJECT_DETAIL_KEYWORDS: Dict[SubjectDetailType, CategoryKeywords] = {
         exact_matches={
             "fair skin", "pale skin", "tan", "tanned", "dark skin", "brown skin",
             "olive skin", "light skin", "fair complexion", "complexion",
-            "smooth skin", "freckled skin",
-            # Ethnicity
+            "smooth skin", "freckled skin", "porcelain skin", "bronze skin",
+            "golden skin", "caramel skin", "ebony skin", "ivory skin",
+            # Ethnicity - General
             "asian", "caucasian", "african", "hispanic", "latina", "latino",
             "indian", "middle eastern", "european", "american",
             "dark-skinned female", "dark-skinned male", "light-skinned",
+            # Ethnicity - Specific Asian
+            "east asian", "south asian", "southeast asian", "chinese", "japanese",
+            "korean", "vietnamese", "thai", "filipino", "filipina", "malaysian",
+            "indonesian", "taiwanese", "singaporean",
+            # Ethnicity - South Asian/Indian subcontinent
+            "south indian", "north indian", "bengali", "punjabi", "gujarati",
+            "marathi", "tamil", "telugu", "pakistani", "bangladeshi", "nepali",
+            "sri lankan", "desi",
+            # Ethnicity - Middle Eastern
+            "arab", "arabian", "persian", "turkish", "iranian", "israeli",
+            "lebanese", "syrian", "egyptian", "iraqi", "jordanian", "emirati",
+            # Ethnicity - African
+            "african american", "black", "west african", "east african",
+            "north african", "nigerian", "ethiopian", "kenyan", "ghanaian",
+            # Ethnicity - European
+            "eastern european", "western european", "scandinavian", "nordic",
+            "mediterranean", "slavic", "british", "french", "german", "italian",
+            "spanish", "greek", "russian", "polish", "irish",
+            # Ethnicity - Latin American
+            "brazilian", "mexican", "colombian", "argentinian", "peruvian",
+            "venezuelan", "cuban", "puerto rican", "dominican", "chilean",
+            # Ethnicity - Mixed/Other
+            "mixed race", "multiracial", "biracial", "eurasian", "afro-asian",
+            "mestizo", "mestiza", "mulatto", "mulatta", "pacific islander",
+            "polynesian", "hawaiian", "maori", "aboriginal", "indigenous",
         },
-        contains_patterns=["skin", "complexion"],
+        contains_patterns=["skin", "complexion", "skinned"],
     ),
     SubjectDetailType.ACCESSORIES: CategoryKeywords(
         exact_matches={

@@ -34,6 +34,7 @@ class TokenSource(Enum):
     JOYTAG = "joytag"
     PIXAI = "pixai"
     NUDENET = "nudenet"
+    POSE = "pose"
 
     # Analyzers
     PHOTOGRAPHY = "photography"
@@ -60,6 +61,7 @@ SOURCE_WEIGHTS: Dict[TokenSource, float] = {
     TokenSource.JOYTAG: 0.95,
     TokenSource.PIXAI: 0.9,
     TokenSource.NUDENET: 0.8,
+    TokenSource.POSE: 0.95,  # Pose detection is reliable
     TokenSource.PHOTOGRAPHY: 0.9,
     TokenSource.IQA: 0.85,
     TokenSource.COMPOSITION: 0.85,

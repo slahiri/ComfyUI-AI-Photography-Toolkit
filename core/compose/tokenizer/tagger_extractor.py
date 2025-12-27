@@ -179,6 +179,47 @@ def extract_from_nudenet(metadata: Dict[str, Any], min_confidence: float = 0.0) 
     return tokens
 
 
+def extract_from_pose(metadata: Dict[str, Any], min_confidence: float = 0.0) -> List[ImageToken]:
+    """Extract tokens from pose tagger output.
+
+    Pose format: {"pose tag": confidence, ...}
+    Tags describe body position, stance, arm/leg positions, etc.
+    Examples: "standing", "arms at sides", "facing viewer", "leaning"
+    """
+    tokens = []
+    pose_data = metadata.get("pose", {})
+
+    if not isinstance(pose_data, dict):
+        return tokens
+
+    for tag, confidence in pose_data.items():
+        if not isinstance(confidence, (int, float)):
+            continue
+        if confidence < min_confidence:
+            continue
+
+        normalized = normalize_tag(tag)
+        if not normalized:
+            continue
+
+        # Skip "no person detected" placeholder
+        if normalized == "no person detected":
+            continue
+
+        tokens.append(ImageToken(
+            text=normalized,
+            confidence=float(confidence),
+            source=TokenSource.POSE,
+            token_type=TokenType.TAG,
+            metadata={
+                "original_tag": tag,
+                "pose_category": True
+            }
+        ))
+
+    return tokens
+
+
 def extract_all_tagger_tokens(
     metadata: Dict[str, Any],
     min_confidence: float = 0.0,
@@ -190,7 +231,7 @@ def extract_all_tagger_tokens(
         metadata: Full metadata dictionary
         min_confidence: Minimum confidence threshold for all sources
         sources: Optional list of sources to extract from.
-                 Defaults to all: ["wd14", "joytag", "pixai", "nudenet"]
+                 Defaults to all: ["wd14", "joytag", "pixai", "nudenet", "pose"]
 
     Returns:
         TokenBatch containing all extracted tokens
@@ -199,13 +240,14 @@ def extract_all_tagger_tokens(
     batch.image_info = metadata.get("image_info", {})
 
     if sources is None:
-        sources = ["wd14", "joytag", "pixai", "nudenet"]
+        sources = ["wd14", "joytag", "pixai", "nudenet", "pose"]
 
     extractors = {
         "wd14": extract_from_wd14,
         "joytag": extract_from_joytag,
         "pixai": extract_from_pixai,
         "nudenet": extract_from_nudenet,
+        "pose": extract_from_pose,
     }
 
     for source in sources:

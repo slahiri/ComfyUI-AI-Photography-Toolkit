@@ -20,6 +20,7 @@ from .tagger_extractor import (
     extract_from_joytag,
     extract_from_pixai,
     extract_from_nudenet,
+    extract_from_pose,
     extract_all_tagger_tokens,
     normalize_tag,
 )
@@ -67,6 +68,7 @@ __all__ = [
     "extract_from_joytag",
     "extract_from_pixai",
     "extract_from_nudenet",
+    "extract_from_pose",
     "extract_all_tagger_tokens",
     "normalize_tag",
     # Analyzer extraction

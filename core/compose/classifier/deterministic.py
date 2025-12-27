@@ -108,6 +108,9 @@ SOURCE_CATEGORY_MAPPINGS = {
 
     # Saliency analyzer → Composition category
     TokenSource.SALIENCY: CanonicalCategory.COMPOSITION,
+
+    # Pose tagger → Action/Pose category
+    TokenSource.POSE: CanonicalCategory.ACTION_POSE,
 }
 
 # More specific source routing based on token text patterns
