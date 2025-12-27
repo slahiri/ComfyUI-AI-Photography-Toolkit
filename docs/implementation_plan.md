@@ -113,17 +113,17 @@ core/compose/
 
 **Tasks:**
 
-1. [ ] **Category Definitions** (`categories.py`)
+1. [x] **Category Definitions** (`categories.py`)
    - Define all 9 canonical categories
    - Define subcategories for Subject Details (hair, eyes, face, body, clothing, skin)
-   - Create keyword dictionaries with exact_matches, prefix_patterns, regex_patterns
+   - Create keyword dictionaries with exact_matches, prefix_patterns, contains_patterns
 
-2. [ ] **Deterministic Classifier** (`deterministic.py`)
+2. [x] **Deterministic Classifier** (`deterministic.py`)
    - Layer 1: florence_analyze key mapping (camera_angle → Composition, etc.)
    - Layer 2: Source-based routing (photography → Lighting, iqa → Quality)
 
-3. [ ] **Dictionary Classifier** (`dictionary.py`)
-   - Layer 3: Keyword lookup with exact, prefix, regex matching
+3. [x] **Dictionary Classifier** (`dictionary.py`)
+   - Layer 3: Keyword lookup with exact, prefix, suffix, contains matching
    - Handle multi-category tokens (primary + secondary)
 
 4. [ ] **Embedding Classifier** (`embeddings.py`) [OPTIONAL - defer if time-constrained]
@@ -131,16 +131,18 @@ core/compose/
    - Category centroid matching
    - Cache embeddings for performance
 
-5. [ ] **Conflict Resolution**
+5. [x] **Conflict Resolution**
    - Handle mutually exclusive tokens (standing vs sitting)
    - Keep highest confidence for conflicts
 
 **Test Cases:**
-- [ ] Test "brown hair" → [Subject Details/hair]
-- [ ] Test "standing" → [Action/Pose]
-- [ ] Test "soft light" → [Lighting]
-- [ ] Test florence_analyze key "camera_angle: front" → [Composition]
-- [ ] Test multi-category: "looking at viewer" → [Action/Pose] primary, [Subject Details/eyes] secondary
+- [x] Test "brown hair" → [Subject Details/hair]
+- [x] Test "standing" → [Action/Pose]
+- [x] Test "soft light" → [Lighting]
+- [x] Test florence_analyze key "camera_angle: front" → [Composition]
+- [x] Test multi-category: "looking at viewer" → [Action/Pose] primary, [Subject Details/eyes] secondary
+
+**Commit:** `574b976` - feat(compose): implement Phase 3 - Classification
 
 ---
 
