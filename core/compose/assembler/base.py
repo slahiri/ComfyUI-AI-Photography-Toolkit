@@ -24,13 +24,14 @@ class PromptStyle(Enum):
     NATURAL = "natural"  # Full sentences, flowing prose
     TAGS = "tags"  # Comma-separated tags (booru style)
     HYBRID = "hybrid"  # Sentence intro + tag details
+    STRUCTURED = "structured"  # Category-segregated output with labels
 
 
 @dataclass
 class AssemblerConfig:
     """Configuration for prompt assembly."""
     style: PromptStyle = PromptStyle.NATURAL
-    max_tokens_per_category: int = 5
+    max_tokens_per_category: int = 50  # High default to preserve information
     include_quality_boosters: bool = True
     include_technical: bool = True
     min_confidence: float = 0.3

@@ -93,13 +93,13 @@ class ValidationResult:
 class ValidatorConfig:
     """Configuration for prompt validation."""
     # Length constraints
-    max_tokens: int = 225  # CLIP token limit
-    max_words: int = 200  # Approximate word limit
-    min_words: int = 10  # Minimum for meaningful prompt
+    max_tokens: int = 500  # High limit to preserve information
+    max_words: int = 500  # High limit to preserve information
+    min_words: int = 5  # Minimum for meaningful prompt
 
     # Duplicate detection
     detect_duplicates: bool = True
-    remove_duplicates: bool = True
+    remove_duplicates: bool = False  # Disabled by default to preserve info
 
     # Conflict detection
     detect_conflicts: bool = True
@@ -109,7 +109,7 @@ class ValidatorConfig:
 
     # Auto-correction
     auto_correct: bool = True
-    truncate_if_too_long: bool = True
+    truncate_if_too_long: bool = False  # Disabled by default to preserve info
 
 
 class BaseValidator(ABC):

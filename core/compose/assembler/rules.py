@@ -182,18 +182,24 @@ def clean_token_for_output(text: str) -> str:
     """Clean a token text for output in prompt.
 
     - Removes underscores
-    - Removes leading numbers (1girl -> girl)
+    - Removes leading numbers only for booru patterns (1girl -> girl)
+    - Preserves technical terms like "3d", "4k", "8k"
     - Normalizes whitespace
     """
+    import re
+
     # Replace underscores with spaces
     text = text.replace("_", " ")
 
-    # Remove leading numbers like "1girl" -> "girl"
-    if text and text[0].isdigit():
-        i = 0
-        while i < len(text) and text[i].isdigit():
-            i += 1
-        text = text[i:]
+    # Only strip leading numbers for booru-style count patterns (1girl, 2boys, etc.)
+    # Pattern: digit(s) followed by common subject words
+    booru_pattern = r'^(\d+)(girls?|boys?|women?|men?|people|persons?|characters?)(.*)$'
+    match = re.match(booru_pattern, text, re.IGNORECASE)
+    if match:
+        # Keep only the word part, not the count
+        text = match.group(2) + match.group(3)
+
+    # Note: We do NOT strip leading numbers from terms like "3d", "4k", "8k", "1080p"
 
     # Normalize whitespace
     text = " ".join(text.split())

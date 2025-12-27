@@ -65,7 +65,7 @@ class PipelineConfig:
 
     # Assembler settings
     prompt_style: PromptStyle = PromptStyle.NATURAL
-    max_tokens_per_category: int = 5
+    max_tokens_per_category: int = 50  # High default to preserve information
 
     # Validator settings
     max_clip_tokens: int = 225

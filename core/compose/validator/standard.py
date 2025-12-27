@@ -121,8 +121,20 @@ class StandardValidator(BaseValidator):
             ))
 
             if self.config.auto_correct and self.config.truncate_if_too_long:
-                words = text.split()
-                text = " ".join(words[:self.config.max_words])
+                # Truncate while preserving newlines for STRUCTURED style
+                lines = text.split('\n')
+                new_lines = []
+                words_remaining = self.config.max_words
+                for line in lines:
+                    line_words = line.split()
+                    if len(line_words) <= words_remaining:
+                        new_lines.append(line)
+                        words_remaining -= len(line_words)
+                    else:
+                        # Truncate this line
+                        new_lines.append(' '.join(line_words[:words_remaining]))
+                        break
+                text = '\n'.join(new_lines)
                 corrections += 1
 
         # Check token limit
@@ -135,11 +147,21 @@ class StandardValidator(BaseValidator):
             ))
 
             if self.config.auto_correct and self.config.truncate_if_too_long:
-                # Truncate to approximately fit
+                # Truncate while preserving newlines
                 ratio = self.config.max_tokens / token_count
-                words = text.split()
-                target_words = int(len(words) * ratio * 0.9)  # 90% to be safe
-                text = " ".join(words[:target_words])
+                target_words = int(word_count * ratio * 0.9)  # 90% to be safe
+                lines = text.split('\n')
+                new_lines = []
+                words_remaining = target_words
+                for line in lines:
+                    line_words = line.split()
+                    if len(line_words) <= words_remaining:
+                        new_lines.append(line)
+                        words_remaining -= len(line_words)
+                    else:
+                        new_lines.append(' '.join(line_words[:words_remaining]))
+                        break
+                text = '\n'.join(new_lines)
                 corrections += 1
 
         return issues, text, corrections

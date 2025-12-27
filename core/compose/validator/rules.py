@@ -161,6 +161,7 @@ def remove_duplicate_words(text: str) -> str:
 
     Only removes exact duplicate comma-separated phrases, not individual
     words within flowing text to preserve grammar.
+    Preserves newlines for STRUCTURED style.
 
     Args:
         text: Prompt text
@@ -168,29 +169,36 @@ def remove_duplicate_words(text: str) -> str:
     Returns:
         Text with duplicate segments removed
     """
-    # Split by commas but preserve sentence structure
-    segments = text.split(", ")
-    seen: Set[str] = set()
-    result = []
+    # Process each line separately to preserve newlines (for STRUCTURED style)
+    lines = text.split('\n')
+    result_lines = []
 
-    for segment in segments:
-        # Normalize for comparison
-        segment_normalized = segment.lower().strip()
+    for line in lines:
+        # Split by commas but preserve sentence structure
+        segments = line.split(", ")
+        seen: Set[str] = set()
+        result = []
 
-        # Skip if too short (likely incomplete)
-        if len(segment_normalized) < 3:
-            result.append(segment)
-            continue
+        for segment in segments:
+            # Normalize for comparison
+            segment_normalized = segment.lower().strip()
 
-        # Check if this segment (or very similar) was seen
-        if segment_normalized not in seen:
-            result.append(segment)
-            seen.add(segment_normalized)
-        # Also add if it's a sentence (has verb-like structure)
-        elif any(c in segment for c in ".!?"):
-            result.append(segment)
+            # Skip if too short (likely incomplete)
+            if len(segment_normalized) < 3:
+                result.append(segment)
+                continue
 
-    return ", ".join(result)
+            # Check if this segment (or very similar) was seen
+            if segment_normalized not in seen:
+                result.append(segment)
+                seen.add(segment_normalized)
+            # Also add if it's a sentence (has verb-like structure)
+            elif any(c in segment for c in ".!?"):
+                result.append(segment)
+
+        result_lines.append(", ".join(result))
+
+    return '\n'.join(result_lines)
 
 
 # =============================================================================
@@ -236,22 +244,27 @@ def fix_quality_issues(text: str) -> str:
     Returns:
         Fixed text
     """
-    # Remove repeated words
-    text = re.sub(r'\b(\w+)\s+\1\b', r'\1', text)
+    # Remove repeated words (but not across newlines)
+    text = re.sub(r'\b(\w+)[ \t]+\1\b', r'\1', text)
 
     # Fix punctuation
     text = re.sub(r',\s*,', ',', text)
     text = re.sub(r'\.\s*\.', '.', text)
-    text = re.sub(r'\s{2,}', ' ', text)
 
-    # Fix leading/trailing punctuation
-    text = re.sub(r'^\s*,\s*', '', text)
-    text = re.sub(r'\s*,\s*$', '', text)
+    # Fix multiple spaces (but preserve newlines for STRUCTURED style)
+    text = re.sub(r'[ \t]{2,}', ' ', text)  # Only horizontal whitespace
 
-    # Remove empty parentheses
-    text = re.sub(r'\(\s*\)', '', text)
+    # Fix leading/trailing punctuation (per line)
+    lines = text.split('\n')
+    fixed_lines = []
+    for line in lines:
+        line = re.sub(r'^\s*,\s*', '', line)
+        line = re.sub(r'\s*,\s*$', '', line)
+        # Remove empty parentheses
+        line = re.sub(r'\(\s*\)', '', line)
+        fixed_lines.append(line.strip())
 
-    return text.strip()
+    return '\n'.join(fixed_lines)
 
 
 # =============================================================================

@@ -77,6 +77,8 @@ class StandardAssembler(BaseAssembler):
             prompt = self._build_tags_prompt(sections)
         elif self.config.style == PromptStyle.HYBRID:
             prompt = self._build_hybrid_prompt(sections, gender)
+        elif self.config.style == PromptStyle.STRUCTURED:
+            prompt = self._build_structured_prompt(sections)
         else:  # NATURAL
             prompt = self._build_natural_prompt(sections, gender)
 
@@ -362,6 +364,39 @@ class StandardAssembler(BaseAssembler):
         if intro and tags:
             return f"{intro}. {tags}"
         return intro or tags
+
+    def _build_structured_prompt(self, sections: List[CategorySection]) -> str:
+        """Build a category-segregated prompt with labels.
+
+        Each category is on its own line with a label.
+        Example:
+            [SUBJECT] woman, nun
+            [SUBJECT_DETAILS] black habit, white wimple, religious attire
+            [ENVIRONMENT] church interior, stained glass window
+        """
+        # Category display names for cleaner output
+        CATEGORY_LABELS = {
+            CanonicalCategory.QUALITY_BOOSTERS: "QUALITY",
+            CanonicalCategory.STYLE_MEDIUM: "STYLE",
+            CanonicalCategory.SUBJECT: "SUBJECT",
+            CanonicalCategory.SUBJECT_DETAILS: "DETAILS",
+            CanonicalCategory.ACTION_POSE: "POSE",
+            CanonicalCategory.ENVIRONMENT: "ENVIRONMENT",
+            CanonicalCategory.LIGHTING: "LIGHTING",
+            CanonicalCategory.COMPOSITION: "COMPOSITION",
+            CanonicalCategory.TECHNICAL: "TECHNICAL",
+        }
+
+        lines = []
+        for section in sections:
+            if not section.tokens:
+                continue
+
+            label = CATEGORY_LABELS.get(section.category, section.category.value.upper())
+            tokens_str = ", ".join(section.tokens)
+            lines.append(f"[{label}] {tokens_str}")
+
+        return "\n".join(lines)
 
 
 # Convenience function

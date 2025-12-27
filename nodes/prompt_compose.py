@@ -58,13 +58,14 @@ MODEL_MAP = {
 COMPOSE_MODES = ["NLP (Fast)", "LLM (Enhanced)"]
 
 # Prompt output styles
-PROMPT_STYLES = ["Natural", "Tags", "Hybrid"]
+PROMPT_STYLES = ["Natural", "Tags", "Hybrid", "Structured"]
 
 # Style map
 STYLE_MAP = {
     "Natural": PromptStyle.NATURAL,
     "Tags": PromptStyle.TAGS,
     "Hybrid": PromptStyle.HYBRID,
+    "Structured": PromptStyle.STRUCTURED,
 }
 
 
@@ -104,8 +105,8 @@ class SID_PromptCompose:
                     "tooltip": "NLP: Fast rule-based | LLM: AI-enhanced quality"
                 }),
                 "prompt_style": (PROMPT_STYLES, {
-                    "default": "Natural",
-                    "tooltip": "Natural: Flowing prose | Tags: Comma-separated | Hybrid: Sentence + tags"
+                    "default": "Structured",
+                    "tooltip": "Natural: Prose | Tags: Comma-separated | Hybrid: Sentence + tags | Structured: Category-labeled lines"
                 }),
                 "llm_model": (LLM_MODELS, {
                     "default": LLM_MODELS[0],
@@ -126,11 +127,11 @@ class SID_PromptCompose:
                     "tooltip": "Minimum token confidence to include"
                 }),
                 "max_tokens_per_category": ("INT", {
-                    "default": 5,
+                    "default": 50,
                     "min": 1,
-                    "max": 20,
-                    "step": 1,
-                    "tooltip": "Maximum tokens per category in output"
+                    "max": 100,
+                    "step": 5,
+                    "tooltip": "Maximum tokens per category in output (higher = more detail)"
                 }),
                 "use_embeddings": ("BOOLEAN", {
                     "default": False,
