@@ -614,6 +614,25 @@ META_FILTER_PATTERNS: List[str] = [
     "her dark hair is styled",
     "the lighting is dramatic",
     "the background is",
+    # Pronoun + verb patterns (common in VLM captions)
+    "he has ",
+    "she has ",
+    "he appears",
+    "she appears",
+    "he looks",
+    "she looks",
+    "he wears",
+    "she wears",
+    "they are ",
+    "they have ",
+    "his face",
+    "her face",
+    "his body",
+    "her body",
+    "on his face",
+    "on her face",
+    "and a serious",
+    "and a confident",
     # Common false positive terms
     "general",  # WD14 meta tag
     "original",  # Style tag that's too generic
@@ -621,6 +640,12 @@ META_FILTER_PATTERNS: List[str] = [
     "fine art parody",  # Specific style that's usually wrong
     # Suggestive content label (not useful for prompts)
     "suggestive content",
+    # Fashion false positives
+    "wearing gloves",
+    "wearing headwear",
+    "wearing shoes",
+    "wearing coat",
+    "glasses",  # Often false positive from YOLOS
 ]
 
 

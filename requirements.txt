@@ -28,3 +28,6 @@ opencv-python
 # pyiqa             # IQA quality assessment
 # ultralytics       # YOLOv8 fashion detection
 # dghs-imgutils     # PixAI anime tagger (requires >=0.19.0)
+
+# Development/Vocabulary Enhancement
+datasets          # HuggingFace datasets for vocabulary enhancement

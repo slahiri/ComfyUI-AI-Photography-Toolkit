@@ -341,9 +341,9 @@ class TaggingPipeline:
                 seen[tag.text.lower()] = True
                 unique_tags.append(tag)
 
-        # Limit to max_tags
-        if len(unique_tags) > self.max_tags:
-            unique_tags = unique_tags[:self.max_tags]
+        # Note: max_tags limit removed from tagging pipeline
+        # All tags now flow through to the compose pipeline
+        # Final limiting happens in assembler via max_tokens_per_category
 
         # Build JSON output grouped by source
         tags_string = self._build_json_output(tagger_results, skipped_taggers, failed_taggers)

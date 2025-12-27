@@ -48,6 +48,9 @@ from .dictionary import (
 
 from ..tokenizer.base import ImageToken, TokenBatch
 
+# Load vocabulary to enhance keyword dictionaries
+from . import vocabulary_loader  # Auto-enhances CATEGORY_KEYWORDS on import
+
 
 # =============================================================================
 # Configuration
@@ -278,10 +281,50 @@ MUTUALLY_EXCLUSIVE_GROUPS = [
     {"pale skin", "dark skin", "tan", "light skin"},
     # Body shot type - only one can be true
     {"full body", "upper body", "lower body", "cowboy shot", "bust shot", "headshot"},
-    # Age - only one category
-    {"boy", "mature male", "old man", "young man", "middle-aged"},
-    {"girl", "mature female", "old woman", "young woman"},
+    # Age - male (include tag variants)
+    {"1boy", "boy", "1man", "man", "mature male", "old man", "young man", "middle-aged", "manly"},
+    # Age - female
+    {"1girl", "girl", "1woman", "woman", "mature female", "old woman", "young woman"},
+    # Subject count - solo vs multiple
+    {"solo", "multiple subjects", "2boys", "2girls", "group"},
 ]
+
+# Fantasy/unrealistic tags to filter when image appears realistic
+FANTASY_TAGS = {
+    "orc", "dwarf", "elf", "pointy ears", "demon", "angel", "vampire",
+    "furry", "anthro", "wings", "tail", "horns", "fangs",
+}
+
+# False positive tags that should be filtered based on context
+BODY_PART_FALSE_POSITIVES = {
+    "tongue",  # Often false positive
+}
+
+# Clothing contradictions - if wearing visible clothing, filter nudity tags
+CLOTHING_INDICATORS = {
+    "wearing clothing", "upper clothing visible", "dress", "shirt", "top",
+    "gold shawl", "shawl", "robe", "traditional clothing", "cape", "cloak",
+    "draped", "garment", "cloth", "wrapped",
+}
+NUDITY_TAGS = {"naked", "nude", "topless", "bottomless", "topless male", "topless female"}
+
+# Tags that are likely misclassifications for this context
+MISCLASSIFICATION_TAGS = {
+    "hilltop citadel",  # Environment, not detail
+    "toga",  # Often confused with draped clothing
+    "boxers",  # Often false positive
+    "greco-roman clothes",  # Often confused with African traditional wear
+    "strongman waist",  # Meaningless term
+    "fine art parody",  # Usually irrelevant
+}
+
+# Youthful terms to filter when subject is clearly mature/adult
+YOUTHFUL_TAGS = {"boy", "1boy", "young", "teenager", "teen"}
+MATURE_REPLACEMENTS = {"boy": "man", "1boy": "1man"}
+
+# Cultural clothing conflicts - filter these based on VLM ethnicity
+INDIAN_CLOTHING_TAGS = {"indian clothes", "saree", "sari", "kurta", "salwar kameez", "dupatta"}
+AFRICAN_CLOTHING_INDICATORS = {"african", "gold shawl", "traditional african", "africa"}
 
 # Gender-specific tags - when gender is clearly established, filter opposite gender tags
 MALE_INDICATORS = {
@@ -319,15 +362,125 @@ GENERIC_WESTERN_CLOTHING = {
 }
 
 
+def _extract_vlm_attributes(image_info: Dict) -> Dict[str, str]:
+    """Extract key attributes from VLM/Florence descriptions.
+
+    Parses captions and descriptions to determine ground truth for:
+    - gender: 'male', 'female', or 'unknown'
+    - ethnicity: 'african', 'asian', 'caucasian', etc.
+    - age: 'child', 'young', 'adult', 'mature', 'elderly'
+
+    Args:
+        image_info: Dictionary containing VLM outputs
+
+    Returns:
+        Dictionary of extracted attributes
+    """
+    attributes = {
+        "gender": "unknown",
+        "ethnicity": "unknown",
+        "age": "unknown",
+        "subject_count": "unknown",  # "single" or "multiple"
+    }
+
+    # Combine all VLM text for analysis
+    vlm_texts = []
+    for key in ["florence_caption", "florence_description", "florence_mixed_caption",
+                "florence_analyze", "florence_generate_tags"]:
+        if key in image_info and image_info[key]:
+            vlm_texts.append(str(image_info[key]).lower())
+
+    if not vlm_texts:
+        return attributes
+
+    combined_text = " ".join(vlm_texts)
+
+    # --- Gender detection ---
+    male_patterns = ["man", "male", "boy", "he ", "his ", "1man", "1boy"]
+    female_patterns = ["woman", "female", "girl", "she ", "her ", "1woman", "1girl"]
+
+    male_score = sum(1 for p in male_patterns if p in combined_text)
+    female_score = sum(1 for p in female_patterns if p in combined_text)
+
+    if male_score > female_score:
+        attributes["gender"] = "male"
+    elif female_score > male_score:
+        attributes["gender"] = "female"
+
+    # --- Ethnicity detection ---
+    ethnicity_patterns = {
+        "african": ["african", "african-american", "black man", "black woman",
+                   "dark skin", "dark-skinned", "dark complexion", "ebony"],
+        "asian": ["asian", "chinese", "japanese", "korean", "east asian"],
+        "south_asian": ["indian", "south asian", "desi"],
+        "caucasian": ["caucasian", "white", "european", "fair skin"],
+        "latino": ["latino", "latina", "hispanic", "mexican"],
+        "middle_eastern": ["middle eastern", "arab", "persian"],
+    }
+
+    ethnicity_scores = {}
+    for ethnicity, patterns in ethnicity_patterns.items():
+        score = sum(1 for p in patterns if p in combined_text)
+        if score > 0:
+            ethnicity_scores[ethnicity] = score
+
+    if ethnicity_scores:
+        attributes["ethnicity"] = max(ethnicity_scores, key=ethnicity_scores.get)
+
+    # --- Age detection ---
+    age_patterns = {
+        "child": ["child", "kid", "infant", "baby", "toddler"],
+        "teenager": ["teen", "teenager", "adolescent"],
+        "young_adult": ["young adult", "20s", "young man", "young woman"],
+        "adult": ["adult", "30s", "early 40s"],
+        "mature": ["mature", "middle-aged", "50s", "middle aged", "late 40s", "early 50s",
+                   "mature male", "mature female", "in his 40s", "in his 50s", "in her 40s", "in her 50s"],
+        "elderly": ["elderly", "senior", "old man", "old woman", "60s", "70s", "80s"],
+    }
+
+    age_scores = {}
+    for age, patterns in age_patterns.items():
+        score = sum(1 for p in patterns if p in combined_text)
+        if score > 0:
+            age_scores[age] = score
+
+    if age_scores:
+        attributes["age"] = max(age_scores, key=age_scores.get)
+
+    # --- Subject count detection ---
+    # Single subject indicators (stronger)
+    single_patterns = ["a man", "a woman", "a person", "the man", "the woman",
+                       "1man", "1boy", "1girl", "1woman", "solo", "single person",
+                       "a muscular", "a young", "a mature", "an elderly"]
+    # Multiple subject indicators
+    multiple_patterns = ["two men", "two women", "two people", "group of",
+                        "2boys", "2girls", "multiple people", "several people",
+                        "couple", "pair of"]
+
+    single_score = sum(1 for p in single_patterns if p in combined_text)
+    multiple_score = sum(1 for p in multiple_patterns if p in combined_text)
+
+    if single_score > multiple_score:
+        attributes["subject_count"] = "single"
+    elif multiple_score > single_score:
+        attributes["subject_count"] = "multiple"
+
+    return attributes
+
+
 def resolve_conflicts(classified: ClassifiedImage) -> ClassifiedImage:
     """Resolve conflicts in classifications.
 
     Handles:
+    - VLM-based ground truth filtering (highest priority)
     - Mutually exclusive tokens (keep highest confidence)
     - Duplicate tokens across categories
     - Ethnic wear vs generic Western clothing conflicts
     - Gender conflicts (filter opposite gender tags)
     - Ethnicity conflicts (asian vs african)
+    - Fantasy tags in realistic images
+    - Clothing vs nudity contradictions
+    - Common false positives and misclassifications
 
     Args:
         classified: ClassifiedImage to process
@@ -350,6 +503,59 @@ def resolve_conflicts(classified: ClassifiedImage) -> ClassifiedImage:
     all_text_combined = " ".join(all_texts_lower)
 
     tokens_to_remove = set()
+
+    # --- Phase 0: VLM-based ground truth filtering (highest priority) ---
+    vlm_attrs = _extract_vlm_attributes(classified.image_info)
+
+    # If VLM says male, remove female-specific tags
+    if vlm_attrs["gender"] == "male":
+        female_tags_to_filter = {"female face", "1girl", "female", "woman", "breasts",
+                                 "cleavage", "female focus", "girl"}
+        for tag in female_tags_to_filter:
+            if tag in text_to_classifications:
+                tokens_to_remove.add(tag)
+
+    # If VLM says female, remove male-specific tags
+    elif vlm_attrs["gender"] == "female":
+        male_tags_to_filter = {"male face", "1boy", "male", "man", "bara",
+                              "pectorals", "male focus", "boy", "topless male"}
+        for tag in male_tags_to_filter:
+            if tag in text_to_classifications:
+                tokens_to_remove.add(tag)
+
+    # If VLM says African ethnicity, remove Asian tags
+    if vlm_attrs["ethnicity"] == "african":
+        asian_tags_to_filter = {"asian", "east asian", "chinese", "japanese", "korean"}
+        for tag in asian_tags_to_filter:
+            if tag in text_to_classifications:
+                tokens_to_remove.add(tag)
+
+    # If VLM says Asian ethnicity, remove African tags
+    elif vlm_attrs["ethnicity"] == "asian":
+        african_tags_to_filter = {"african", "african american", "dark-skinned male",
+                                  "dark-skinned female", "very dark skin"}
+        for tag in african_tags_to_filter:
+            if tag in text_to_classifications:
+                tokens_to_remove.add(tag)
+
+    # If VLM says African, filter Indian clothing tags
+    if vlm_attrs["ethnicity"] == "african":
+        for tag in INDIAN_CLOTHING_TAGS:
+            if tag in text_to_classifications:
+                tokens_to_remove.add(tag)
+
+    # If VLM indicates mature/adult age, filter youthful tags
+    if vlm_attrs["age"] in {"mature", "adult", "elderly"}:
+        for tag in YOUTHFUL_TAGS:
+            if tag in text_to_classifications:
+                tokens_to_remove.add(tag)
+
+    # If VLM indicates single subject, filter "multiple subjects" from saliency
+    if vlm_attrs["subject_count"] == "single":
+        multiple_tags = {"multiple subjects", "2boys", "2girls", "group", "crowd"}
+        for tag in multiple_tags:
+            if tag in text_to_classifications:
+                tokens_to_remove.add(tag)
 
     # --- Phase 1: Mutually exclusive conflicts ---
     for exclusive_group in MUTUALLY_EXCLUSIVE_GROUPS:
@@ -443,7 +649,34 @@ def resolve_conflicts(classified: ClassifiedImage) -> ClassifiedImage:
                         if term in text_to_classifications:
                             tokens_to_remove.add(term)
 
-    # --- Phase 5: Build filtered result ---
+    # --- Phase 5: Fantasy tags in realistic images ---
+    is_realistic = any(t in all_texts_lower for t in {"realistic", "photograph", "photo", "photography"})
+    if is_realistic:
+        for fantasy_tag in FANTASY_TAGS:
+            if fantasy_tag in text_to_classifications:
+                tokens_to_remove.add(fantasy_tag)
+
+    # --- Phase 6: Clothing vs nudity contradictions ---
+    has_clothing = any(t in all_texts_lower for t in CLOTHING_INDICATORS)
+    if has_clothing:
+        for nudity_tag in NUDITY_TAGS:
+            if nudity_tag in text_to_classifications:
+                tokens_to_remove.add(nudity_tag)
+
+    # --- Phase 7: Remove common false positives ---
+    for fp_tag in BODY_PART_FALSE_POSITIVES:
+        if fp_tag in text_to_classifications:
+            # Only remove if confidence is below threshold
+            for cls in text_to_classifications[fp_tag]:
+                if cls.token.confidence < 0.5:
+                    tokens_to_remove.add(fp_tag)
+
+    # --- Phase 8: Remove known misclassification tags ---
+    for misc_tag in MISCLASSIFICATION_TAGS:
+        if misc_tag in text_to_classifications:
+            tokens_to_remove.add(misc_tag)
+
+    # --- Phase 9: Build filtered result ---
     if tokens_to_remove:
         result = ClassifiedImage()
         result.image_info = classified.image_info

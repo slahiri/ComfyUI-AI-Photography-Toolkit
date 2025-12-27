@@ -21,10 +21,12 @@ from ..classifier.categories import (
 
 class PromptStyle(Enum):
     """Output prompt style."""
-    NATURAL = "natural"  # Full sentences, flowing prose
-    TAGS = "tags"  # Comma-separated tags (booru style)
-    HYBRID = "hybrid"  # Sentence intro + tag details
+    NATURAL = "natural"  # Full sentences, flowing prose (legacy)
+    TAGS = "tags"  # Comma-separated tags (booru/SDXL style)
+    HYBRID = "hybrid"  # Sentence intro + tag details (legacy)
     STRUCTURED = "structured"  # Category-segregated output with labels
+    FULL = "full"  # Florence description + structured tags (preserves all info)
+    ZIMAGE = "zimage"  # Z-Image optimized: Florence prose + organized attributes
 
 
 @dataclass

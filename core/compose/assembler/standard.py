@@ -79,6 +79,10 @@ class StandardAssembler(BaseAssembler):
             prompt = self._build_hybrid_prompt(sections, gender)
         elif self.config.style == PromptStyle.STRUCTURED:
             prompt = self._build_structured_prompt(sections)
+        elif self.config.style == PromptStyle.FULL:
+            prompt = self._build_full_prompt(sections, classified.image_info)
+        elif self.config.style == PromptStyle.ZIMAGE:
+            prompt = self._build_zimage_prompt(sections, classified.image_info, gender)
         else:  # NATURAL
             prompt = self._build_natural_prompt(sections, gender)
 
@@ -380,13 +384,18 @@ class StandardAssembler(BaseAssembler):
         return intro or tags
 
     def _build_structured_prompt(self, sections: List[CategorySection]) -> str:
-        """Build a category-segregated prompt with labels.
+        """Build a category-segregated prompt with markdown headers.
 
-        Each category is on its own line with a label.
+        Each category has a markdown header followed by tokens on the next line.
         Example:
-            [SUBJECT] woman, nun
-            [SUBJECT_DETAILS] black habit, white wimple, religious attire
-            [ENVIRONMENT] church interior, stained glass window
+            # SUBJECT
+            woman, nun
+
+            # DETAILS
+            black habit, white wimple, religious attire
+
+            # ENVIRONMENT
+            church interior, stained glass window
         """
         # Category display names for cleaner output
         CATEGORY_LABELS = {
@@ -401,16 +410,460 @@ class StandardAssembler(BaseAssembler):
             CanonicalCategory.TECHNICAL: "TECHNICAL",
         }
 
-        lines = []
+        blocks = []
         for section in sections:
             if not section.tokens:
                 continue
 
             label = CATEGORY_LABELS.get(section.category, section.category.value.upper())
             tokens_str = ", ".join(section.tokens)
-            lines.append(f"[{label}] {tokens_str}")
+            blocks.append(f"# {label}\n{tokens_str}")
 
-        return "\n".join(lines)
+        return "\n\n".join(blocks)
+
+    def _build_full_prompt(self, sections: List[CategorySection], image_info: dict) -> str:
+        """Build a full prompt preserving Florence descriptions + structured tags.
+
+        This style preserves maximum information by:
+        1. Including the best Florence natural language description
+        2. Adding Florence generated tags
+        3. Adding structured category tags from classification
+
+        Example output:
+            # DESCRIPTION
+            A beautiful woman with long, wavy brown hair...
+
+            # FLORENCE TAGS
+            1girl, solo, long hair, brown hair, jewelry...
+
+            # QUALITY
+            realistic, photograph, sharp...
+
+            # DETAILS
+            long hair, brown eyes, necklace...
+        """
+        blocks = []
+
+        # --- Get best Florence description ---
+        # Priority: mixed_caption_plus > mixed_caption > description > caption
+        florence_description = None
+        for key in ["florence_mixed_caption_plus", "florence_mixed_caption",
+                    "florence_description", "florence_caption"]:
+            if key in image_info and image_info[key]:
+                text = str(image_info[key])
+                # Extract just the prose part (before any tags section)
+                if "\n\n" in text:
+                    text = text.split("\n\n")[0]
+                # Skip if too short
+                if len(text) > 50:
+                    florence_description = text.strip()
+                    break
+
+        if florence_description:
+            blocks.append(f"# DESCRIPTION\n{florence_description}")
+
+        # --- Get Florence generated tags ---
+        florence_tags = image_info.get("florence_generate_tags", "")
+        if florence_tags:
+            blocks.append(f"# FLORENCE TAGS\n{florence_tags}")
+
+        # --- Add structured category tags ---
+        CATEGORY_LABELS = {
+            CanonicalCategory.QUALITY_BOOSTERS: "QUALITY",
+            CanonicalCategory.STYLE_MEDIUM: "STYLE",
+            CanonicalCategory.SUBJECT: "SUBJECT",
+            CanonicalCategory.SUBJECT_DETAILS: "DETAILS",
+            CanonicalCategory.ACTION_POSE: "POSE",
+            CanonicalCategory.ENVIRONMENT: "ENVIRONMENT",
+            CanonicalCategory.LIGHTING: "LIGHTING",
+            CanonicalCategory.COMPOSITION: "COMPOSITION",
+            CanonicalCategory.TECHNICAL: "TECHNICAL",
+        }
+
+        for section in sections:
+            if not section.tokens:
+                continue
+
+            label = CATEGORY_LABELS.get(section.category, section.category.value.upper())
+            tokens_str = ", ".join(section.tokens)
+            blocks.append(f"# {label}\n{tokens_str}")
+
+        return "\n\n".join(blocks)
+
+    def _build_zimage_prompt(
+        self,
+        sections: List[CategorySection],
+        image_info: dict,
+        gender: Gender
+    ) -> str:
+        """Build Z-Image optimized prompt following the 6-part formula.
+
+        Z-Image Formula: Subject + Scene + Composition + Lighting + Style + Constraints
+
+        Key principles:
+        - Natural prose, NOT comma-separated tags
+        - Florence descriptions preserved intact
+        - Tags converted to descriptive phrases
+        - 80-250 words optimal
+        - Lighting is critical (always include)
+
+        Output structure:
+        1. Florence prose description (preserved intact)
+        2. Subject attributes as natural descriptions
+        3. Environment/scene description
+        4. Lighting description
+        5. Style and quality
+        6. Technical/composition
+        """
+        parts = []
+
+        # === PART 1: Florence Description (PRESERVED INTACT) ===
+        # Priority: mixed_caption_plus > mixed_caption > description > caption
+        florence_prose = None
+        for key in ["florence_mixed_caption_plus", "florence_mixed_caption",
+                    "florence_description", "florence_caption"]:
+            if key in image_info and image_info[key]:
+                text = str(image_info[key]).strip()
+                # Extract prose part only (before any tag sections)
+                if "\n\n" in text:
+                    text = text.split("\n\n")[0].strip()
+                # Use if it's substantial prose (not just tags)
+                if len(text) > 50 and not self._is_tag_list(text):
+                    florence_prose = text
+                    break
+
+        if florence_prose:
+            parts.append(florence_prose)
+
+        # === PART 2: Subject & Appearance ===
+        # Convert tags to natural descriptions
+        subject_section = next(
+            (s for s in sections if s.category == CanonicalCategory.SUBJECT), None
+        )
+        details_section = next(
+            (s for s in sections if s.category == CanonicalCategory.SUBJECT_DETAILS), None
+        )
+
+        # Build subject phrase if not already in Florence description
+        if not florence_prose:
+            subject_phrase = self._tags_to_subject_phrase(
+                subject_section, details_section, gender
+            )
+            if subject_phrase:
+                parts.append(subject_phrase)
+        elif details_section and details_section.tokens:
+            # Add details not covered by Florence
+            extra_details = self._tags_to_appearance_phrase(details_section.tokens, gender)
+            if extra_details and extra_details.lower() not in florence_prose.lower():
+                parts.append(extra_details)
+
+        # === PART 3: Pose/Action ===
+        action_section = next(
+            (s for s in sections if s.category == CanonicalCategory.ACTION_POSE), None
+        )
+        if action_section and action_section.tokens:
+            pose_phrase = self._tags_to_pose_phrase(action_section.tokens)
+            if pose_phrase:
+                parts.append(pose_phrase)
+
+        # === PART 4: Environment/Scene ===
+        env_section = next(
+            (s for s in sections if s.category == CanonicalCategory.ENVIRONMENT), None
+        )
+        if env_section and env_section.tokens:
+            env_phrase = self._tags_to_environment_phrase(env_section.tokens)
+            if env_phrase:
+                parts.append(env_phrase)
+
+        # === PART 5: Lighting (CRITICAL for Z-Image) ===
+        lighting_section = next(
+            (s for s in sections if s.category == CanonicalCategory.LIGHTING), None
+        )
+        if lighting_section and lighting_section.tokens:
+            lighting_phrase = self._tags_to_lighting_phrase(lighting_section.tokens)
+            if lighting_phrase:
+                parts.append(lighting_phrase)
+        else:
+            # Default lighting if none specified (Z-Image needs lighting)
+            parts.append("The lighting is soft and natural")
+
+        # === PART 6: Style & Quality ===
+        style_section = next(
+            (s for s in sections if s.category == CanonicalCategory.STYLE_MEDIUM), None
+        )
+        quality_section = next(
+            (s for s in sections if s.category == CanonicalCategory.QUALITY_BOOSTERS), None
+        )
+
+        style_tokens = (style_section.tokens if style_section else []) + \
+                       (quality_section.tokens if quality_section else [])
+        if style_tokens:
+            style_phrase = self._tags_to_style_phrase(style_tokens)
+            if style_phrase:
+                parts.append(style_phrase)
+
+        # === PART 7: Composition & Technical ===
+        comp_section = next(
+            (s for s in sections if s.category == CanonicalCategory.COMPOSITION), None
+        )
+        tech_section = next(
+            (s for s in sections if s.category == CanonicalCategory.TECHNICAL), None
+        )
+
+        comp_tokens = (comp_section.tokens if comp_section else []) + \
+                      (tech_section.tokens if tech_section else [])
+        if comp_tokens:
+            comp_phrase = self._tags_to_composition_phrase(comp_tokens)
+            if comp_phrase:
+                parts.append(comp_phrase)
+
+        # Join with periods for natural prose flow
+        prompt = ". ".join(p.rstrip(".") for p in parts if p)
+        if prompt and not prompt.endswith("."):
+            prompt += "."
+
+        return prompt
+
+    def _is_tag_list(self, text: str) -> bool:
+        """Check if text is primarily a comma-separated tag list."""
+        if "," not in text:
+            return False
+        # Count comma-separated items
+        items = [i.strip() for i in text.split(",")]
+        # If most items are short (< 25 chars), it's likely a tag list
+        short_items = sum(1 for i in items if len(i) < 25)
+        return short_items / len(items) > 0.7
+
+    def _tags_to_subject_phrase(
+        self,
+        subject_section: Optional[CategorySection],
+        details_section: Optional[CategorySection],
+        gender: Gender
+    ) -> str:
+        """Convert subject and detail tags to a natural subject phrase."""
+        subj_pronoun, poss_pronoun, obj_pronoun = get_pronouns(gender)
+
+        subject_words = []
+        if subject_section and subject_section.tokens:
+            subject_words = subject_section.tokens[:3]  # Main subject terms
+
+        detail_words = []
+        if details_section and details_section.tokens:
+            detail_words = details_section.tokens[:8]  # Key details
+
+        if not subject_words and not detail_words:
+            return ""
+
+        # Build natural phrase
+        if subject_words:
+            # "A woman" or "A man" or "A person"
+            main_subject = subject_words[0]
+            if main_subject.lower() in ("woman", "man", "person", "girl", "boy"):
+                phrase = f"A {main_subject}"
+            else:
+                phrase = main_subject.capitalize()
+
+            if detail_words:
+                # Group details by type for natural flow
+                phrase += f" with {', '.join(detail_words[:4])}"
+                if len(detail_words) > 4:
+                    phrase += f", {', '.join(detail_words[4:8])}"
+        else:
+            phrase = ", ".join(detail_words)
+
+        return phrase
+
+    def _tags_to_appearance_phrase(self, tokens: List[str], gender: Gender) -> str:
+        """Convert appearance tags to natural description."""
+        if not tokens:
+            return ""
+
+        subj_pronoun, poss_pronoun, obj_pronoun = get_pronouns(gender)
+
+        # Group tokens by likely type
+        hair_tokens = [t for t in tokens if "hair" in t.lower()]
+        eye_tokens = [t for t in tokens if "eye" in t.lower()]
+        body_tokens = [t for t in tokens if any(
+            w in t.lower() for w in ["skin", "body", "tall", "slim", "muscular"]
+        )]
+        clothing_tokens = [t for t in tokens if any(
+            w in t.lower() for w in ["dress", "shirt", "pants", "wearing", "outfit", "suit", "skirt"]
+        )]
+        other_tokens = [t for t in tokens if t not in hair_tokens + eye_tokens + body_tokens + clothing_tokens]
+
+        parts = []
+
+        if hair_tokens:
+            parts.append(f"{poss_pronoun} hair is {', '.join(hair_tokens[:2])}")
+        if eye_tokens:
+            parts.append(f"{poss_pronoun} eyes are {', '.join(eye_tokens[:2])}")
+        if clothing_tokens:
+            parts.append(f"wearing {', '.join(clothing_tokens[:3])}")
+        if other_tokens[:3]:
+            parts.append(", ".join(other_tokens[:3]))
+
+        return ". ".join(parts) if parts else ""
+
+    def _tags_to_pose_phrase(self, tokens: List[str]) -> str:
+        """Convert pose/action tags to natural phrase."""
+        if not tokens:
+            return ""
+
+        # Common pose conversions
+        pose_map = {
+            "standing": "standing",
+            "sitting": "sitting down",
+            "walking": "walking",
+            "running": "running",
+            "looking at viewer": "looking directly at the camera",
+            "looking away": "looking away from the camera",
+            "hands on hips": "with hands on hips",
+            "arms crossed": "with arms crossed",
+            "leaning": "leaning",
+            "posing": "posing",
+        }
+
+        phrases = []
+        for token in tokens[:4]:
+            token_lower = token.lower()
+            for key, phrase in pose_map.items():
+                if key in token_lower:
+                    phrases.append(phrase)
+                    break
+            else:
+                phrases.append(token)
+
+        if len(phrases) == 1:
+            return f"The subject is {phrases[0]}"
+        elif len(phrases) > 1:
+            return f"The subject is {phrases[0]}, {', '.join(phrases[1:])}"
+        return ""
+
+    def _tags_to_environment_phrase(self, tokens: List[str]) -> str:
+        """Convert environment tags to natural scene description."""
+        if not tokens:
+            return ""
+
+        # Classify environment tokens
+        indoor_words = ["room", "interior", "indoor", "studio", "office", "home"]
+        outdoor_words = ["outdoor", "outside", "street", "nature", "park", "beach", "forest"]
+        time_words = ["day", "night", "morning", "evening", "sunset", "dawn", "dusk"]
+
+        indoor_tokens = [t for t in tokens if any(w in t.lower() for w in indoor_words)]
+        outdoor_tokens = [t for t in tokens if any(w in t.lower() for w in outdoor_words)]
+        time_tokens = [t for t in tokens if any(w in t.lower() for w in time_words)]
+        other_tokens = [t for t in tokens if t not in indoor_tokens + outdoor_tokens + time_tokens]
+
+        parts = []
+
+        if indoor_tokens:
+            parts.append(f"in a {indoor_tokens[0]}")
+        elif outdoor_tokens:
+            parts.append(f"in an {outdoor_tokens[0]} setting")
+        elif other_tokens:
+            parts.append(f"in a {other_tokens[0]} setting")
+
+        if time_tokens:
+            parts.append(f"during {time_tokens[0]}")
+
+        # Add additional environment details
+        remaining = [t for t in other_tokens if t not in parts][:3]
+        if remaining:
+            parts.append(f"with {', '.join(remaining)}")
+
+        return "The scene is set " + ", ".join(parts) if parts else ""
+
+    def _tags_to_lighting_phrase(self, tokens: List[str]) -> str:
+        """Convert lighting tags to natural description."""
+        if not tokens:
+            return "The lighting is soft and natural"
+
+        # Lighting descriptors
+        light_quality = []
+        light_direction = []
+        light_color = []
+
+        for token in tokens:
+            token_lower = token.lower()
+            if any(w in token_lower for w in ["soft", "hard", "diffused", "harsh", "dramatic"]):
+                light_quality.append(token)
+            elif any(w in token_lower for w in ["side", "back", "front", "rim", "key", "fill"]):
+                light_direction.append(token)
+            elif any(w in token_lower for w in ["warm", "cool", "golden", "blue", "natural", "artificial"]):
+                light_color.append(token)
+            else:
+                light_quality.append(token)
+
+        parts = ["The lighting is"]
+
+        if light_quality:
+            parts.append(light_quality[0])
+        if light_color:
+            parts.append(f"with {light_color[0]} tones")
+        if light_direction:
+            parts.append(f"coming from {light_direction[0]}")
+
+        return " ".join(parts) if len(parts) > 1 else "The lighting is natural and balanced"
+
+    def _tags_to_style_phrase(self, tokens: List[str]) -> str:
+        """Convert style/quality tags to natural phrase."""
+        if not tokens:
+            return ""
+
+        # Style categories
+        medium = []
+        quality = []
+        aesthetic = []
+
+        for token in tokens:
+            token_lower = token.lower()
+            if any(w in token_lower for w in ["photo", "photograph", "painting", "illustration", "render"]):
+                medium.append(token)
+            elif any(w in token_lower for w in ["8k", "4k", "hd", "detailed", "sharp", "high quality", "masterpiece"]):
+                quality.append(token)
+            else:
+                aesthetic.append(token)
+
+        parts = []
+
+        if medium:
+            parts.append(medium[0])
+        if aesthetic[:2]:
+            parts.append(", ".join(aesthetic[:2]) + " style")
+        if quality[:2]:
+            parts.append(", ".join(quality[:2]))
+
+        return "Shot as a " + ", ".join(parts) if parts else ""
+
+    def _tags_to_composition_phrase(self, tokens: List[str]) -> str:
+        """Convert composition/technical tags to natural phrase."""
+        if not tokens:
+            return ""
+
+        # Composition elements
+        framing = []
+        camera = []
+        technical = []
+
+        for token in tokens:
+            token_lower = token.lower()
+            if any(w in token_lower for w in ["close-up", "wide", "medium", "full body", "portrait", "headshot"]):
+                framing.append(token)
+            elif any(w in token_lower for w in ["lens", "mm", "f/", "aperture", "bokeh", "dof"]):
+                camera.append(token)
+            else:
+                technical.append(token)
+
+        parts = []
+
+        if framing:
+            parts.append(f"framed as a {framing[0]}")
+        if camera:
+            parts.append(f"shot with {camera[0]}")
+        if technical[:2]:
+            parts.append(", ".join(technical[:2]))
+
+        return "The composition is " + ", ".join(parts) if parts else ""
 
 
 # Convenience function

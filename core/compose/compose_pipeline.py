@@ -22,7 +22,6 @@ from .tokenizer import (
     extract_all_tagger_tokens,
     extract_all_analyzer_tokens,
     extract_all_caption_tokens,
-    extract_from_rag,
     normalize_batch,
 )
 from .classifier import (
@@ -67,11 +66,6 @@ class PipelineConfig:
     # Classifier settings
     use_embeddings: bool = False  # Layer 4 (requires sentence-transformers)
     use_llm_classifier: bool = False  # Layer 4.5 for classification
-
-    # RAG settings
-    use_rag: bool = False  # Visual RAG for vocabulary enhancement
-    rag_threshold: float = 0.7  # Minimum similarity for RAG retrieval
-    rag_top_k: int = 3  # Results per category
 
     # Assembler settings
     prompt_style: PromptStyle = PromptStyle.NATURAL
@@ -281,14 +275,8 @@ class ComposePipeline:
         combined.add_all(analyzer_batch.tokens)
         combined.add_all(caption_batch.tokens)
 
-        # Extract from RAG if enabled and image provided
-        if self.config.use_rag and image is not None:
-            rag_tokens = extract_from_rag(
-                image=image,
-                top_k=self.config.rag_top_k,
-                threshold=self.config.rag_threshold,
-            )
-            combined.add_all(rag_tokens)
+        # Store full metadata for VLM-based conflict resolution
+        combined.image_info = metadata
 
         # Normalize
         normalized = normalize_batch(
@@ -339,12 +327,12 @@ class ComposePipeline:
 
         parts = []
 
-        # Add tokens by category
+        # Add tokens by category (all tokens, no limit for LLM context)
         for category in CATEGORY_ORDER:
             tokens = classified.get_category(category)
             if tokens:
                 cat_name = category.value.replace("_", " ").title()
-                token_texts = [t.token.text for t in tokens[:8]]
+                token_texts = [t.token.text for t in tokens]
                 parts.append(f"{cat_name}: {', '.join(token_texts)}")
 
         # Add image info
@@ -481,14 +469,6 @@ Enhanced prompt:"""
         if self._llm_model is not None:
             self._llm_model.unload()
             self._llm_model = None
-
-        # Unload RAG retriever if used
-        if self.config.use_rag:
-            try:
-                from .rag import unload_rag_retriever
-                unload_rag_retriever()
-            except ImportError:
-                pass
 
 
 # Convenience functions

@@ -56,10 +56,7 @@ from .normalizer import (
     normalize_for_comparison,
 )
 
-from .rag_extractor import (
-    extract_from_rag,
-    extract_from_rag_by_category,
-)
+# RAG removed - vocabulary-based enhancement used instead
 
 __all__ = [
     # Base types
@@ -101,9 +98,6 @@ __all__ = [
     "filter_meta_tokens",
     "normalize_batch",
     "normalize_for_comparison",
-    # RAG extraction
-    "extract_from_rag",
-    "extract_from_rag_by_category",
 ]
 
 

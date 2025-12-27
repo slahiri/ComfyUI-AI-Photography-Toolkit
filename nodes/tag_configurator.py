@@ -205,11 +205,11 @@ class SID_TaggerConfig:
                 }),
                 # Settings
                 "max_tags": ("INT", {
-                    "default": 150,
+                    "default": 500,
                     "min": 1,
-                    "max": 500,
-                    "step": 5,
-                    "tooltip": "Maximum total tags to output"
+                    "max": 1000,
+                    "step": 10,
+                    "tooltip": "Informational only. All tags pass through to compose pipeline where max_tokens_per_category applies."
                 }),
                 "verbose": ("BOOLEAN", {
                     "default": False,
@@ -262,7 +262,7 @@ class SID_TaggerConfig:
         mediapipe_pose_enabled: bool = True,
         mediapipe_confidence: float = 0.4,
         # Settings
-        max_tags: int = 150,
+        max_tags: int = 500,
         verbose: bool = False,
     ) -> tuple[dict]:
         """Create tag configuration dictionary."""

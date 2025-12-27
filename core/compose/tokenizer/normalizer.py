@@ -219,7 +219,7 @@ def filter_by_length(
     tokens: List[ImageToken],
     min_length: int = 2,
     max_length: int = 200,
-    max_words: int = 12
+    max_words: int = 8
 ) -> List[ImageToken]:
     """Filter tokens by text length and word count.
 
@@ -230,7 +230,7 @@ def filter_by_length(
         tokens: List of tokens to filter
         min_length: Minimum text length
         max_length: Maximum text length
-        max_words: Maximum word count (filters out long sentences)
+        max_words: Maximum word count (filters out long sentences, default 8)
 
     Returns:
         Filtered list of tokens
