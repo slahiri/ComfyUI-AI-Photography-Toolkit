@@ -147,6 +147,9 @@ SUBJECT_KEYWORDS = CategoryKeywords(
         "multiple boys", "1woman", "1man", "couple", "group", "crowd",
         "female", "male", "person", "people", "model", "woman", "man",
         "girl", "boy", "lady", "gentleman", "figure", "individual",
+        # Non-human subjects
+        "no humans", "no human", "animal", "cat", "dog", "bird", "horse",
+        "object", "food", "vehicle", "car", "boat", "airplane",
     },
     contains_patterns=["girl", "boy", "woman", "man"],
 )
@@ -180,8 +183,12 @@ SUBJECT_DETAIL_KEYWORDS: Dict[SubjectDetailType, CategoryKeywords] = {
             "smiling", "serious", "neutral expression", "blush", "makeup",
             "lipstick", "eyeshadow", "freckles", "mole", "nose", "ears",
             "expression", "facial expression", "grin", "frown", "pout",
+            "teeth", "tongue", "jaw", "chin", "cheeks", "forehead",
+            "red lips", "pink lips", "lip gloss", "eyeliner", "mascara",
+            "beauty mark", "dimples", "happy", "sad", "angry", "surprised",
+            "confident", "alluring", "sensual", "sultry", "playful",
         },
-        contains_patterns=["expression", "lips", "mouth"],
+        contains_patterns=["expression", "lips", "mouth", "makeup"],
     ),
     SubjectDetailType.BODY: CategoryKeywords(
         exact_matches={
@@ -189,8 +196,13 @@ SUBJECT_DETAIL_KEYWORDS: Dict[SubjectDetailType, CategoryKeywords] = {
             "thin", "fit", "toned", "slender", "breasts", "large breasts",
             "medium breasts", "small breasts", "navel", "midriff", "abs",
             "thighs", "legs", "arms", "hands", "feet", "back", "shoulders",
+            "stomach", "collarbone", "cleavage", "sideboob", "underboob",
+            "armpits", "armpit", "hips", "wide hips", "narrow waist",
+            "waist", "chest", "torso", "bare shoulders", "bare arms",
+            "bare legs", "bare back", "bare feet", "fingernails", "toenails",
+            "neck", "butt", "ass", "thigh gap", "belly", "tummy",
         },
-        contains_patterns=["breasts", "thigh", "physique", "figure", "build"],
+        contains_patterns=["breasts", "thigh", "physique", "figure", "build", "hips"],
     ),
     SubjectDetailType.CLOTHING: CategoryKeywords(
         exact_matches={
@@ -200,19 +212,37 @@ SUBJECT_DETAIL_KEYWORDS: Dict[SubjectDetailType, CategoryKeywords] = {
             "uniform", "suit", "tie", "boots", "shoes", "heels", "sneakers",
             "socks", "stockings", "thighhighs", "hat", "glasses", "jewelry",
             "necklace", "earrings", "bracelet", "watch", "ring",
+            # Bikini variants
+            "bikini top", "bikini bottom", "string bikini", "micro bikini",
+            "side-tie bikini", "side-tie bikini bottom", "highleg bikini",
+            "gold bikini", "strapless", "halterneck", "one-piece swimsuit",
+            "monokini", "tankini",
+            # More underwear
+            "sports bra", "bralette", "panty", "thong", "briefs", "boxers",
+            "underwear only", "no bra", "no panties",
             # Ethnic/traditional
             "sari", "saree", "lehenga", "salwar", "kameez", "kurta", "sherwani",
             "dupatta", "kimono", "hanbok", "cheongsam", "ao dai", "abaya",
-            "hijab", "thobe", "kaftan",
+            "hijab", "thobe", "kaftan", "indian clothes", "traditional",
+            # Other
+            "apron", "robe", "toga", "cape", "cloak", "vest", "cardigan",
+            "hoodie", "blouse", "tunic", "gown", "cocktail dress",
+            "red dress", "white dress", "black dress", "multicolored dress",
+            "backless dress", "strapless dress", "two-tone dress",
+            "multicolored clothes", "red sari", "white panties",
         },
         prefix_patterns=["wearing_*", "wearing *", "dressed_*"],
-        contains_patterns=["dress", "shirt", "pants", "skirt", "top", "bra"],
+        contains_patterns=["dress", "shirt", "pants", "skirt", "top", "bra", "bikini", "swimsuit"],
     ),
     SubjectDetailType.SKIN: CategoryKeywords(
         exact_matches={
             "fair skin", "pale skin", "tan", "tanned", "dark skin", "brown skin",
             "olive skin", "light skin", "fair complexion", "complexion",
             "smooth skin", "freckled skin",
+            # Ethnicity
+            "asian", "caucasian", "african", "hispanic", "latina", "latino",
+            "indian", "middle eastern", "european", "american",
+            "dark-skinned female", "dark-skinned male", "light-skinned",
         },
         contains_patterns=["skin", "complexion"],
     ),
@@ -234,8 +264,18 @@ ACTION_POSE_KEYWORDS = CategoryKeywords(
         "pointing", "waving", "reaching", "stretching",
         "facing viewer", "facing away", "from behind", "from side",
         "cowboy shot", "profile", "three-quarter view",
+        # More arm/hand poses
+        "arm up", "hand up", "arm behind head", "hand on head",
+        "hand on own head", "hand in hair", "hand in own hair",
+        "hands up", "arm at side", "crossed arms",
+        "holding", "carrying", "eating", "drinking",
+        # More body poses
+        "head tilt", "head turn", "looking back", "looking over shoulder",
+        "bending", "squatting", "on knees", "on back", "on side",
+        "twisted torso", "arched back",
     },
     suffix_patterns=["*_shot", "*ing"],
+    contains_patterns=["hand on", "arm up", "hands"],
 )
 
 ENVIRONMENT_KEYWORDS = CategoryKeywords(
@@ -248,9 +288,27 @@ ENVIRONMENT_KEYWORDS = CategoryKeywords(
         "street", "city", "urban", "nature", "forest", "beach", "ocean",
         "mountain", "sky", "sunset", "sunrise", "night", "day",
         "window", "door", "wall", "floor", "ceiling", "bed", "couch",
+        # Nature/landscape
+        "scenery", "landscape", "water", "lake", "river", "stream", "pond",
+        "sea", "waterfall", "reflection", "reflective water", "snow", "ice",
+        "cloud", "clouds", "cloudy sky", "fog", "mist", "rain", "storm",
+        "tree", "trees", "plant", "plants", "flower", "flowers", "grass",
+        "jungle", "tropical", "garden", "park", "field", "meadow",
+        "hill", "hills", "valley", "desert", "canyon", "cliff",
+        "mountainous horizon", "blue sky", "grey sky", "white sky",
+        "pine tree", "palm tree", "fern", "foliage", "riverbank", "shore",
+        "village", "town", "rural", "bridge", "road", "path", "trail",
+        "building", "buildings", "house", "cabin", "balcony", "terrace",
+        "railing", "fence", "lamp", "lamppost", "power lines",
+        # Props and objects
+        "food", "cake", "cupcake", "fruit", "strawberry", "cherry",
+        "ice cream", "dessert", "pastry", "drink", "wine", "champagne",
+        "coffee", "tea", "cup", "plate", "table", "chair", "sofa",
+        "mirror", "lamp", "candle", "book", "phone", "camera",
+        "umbrella", "balloon", "gift", "toy", "flower bouquet",
     },
     suffix_patterns=["* background", "*_background"],
-    contains_patterns=["background", "indoor", "outdoor", "room"],
+    contains_patterns=["background", "indoor", "outdoor", "room", "sky"],
 )
 
 LIGHTING_KEYWORDS = CategoryKeywords(
@@ -302,8 +360,14 @@ TECHNICAL_KEYWORDS = CategoryKeywords(
         "depth of field", "shallow dof", "bokeh", "vignette",
         "chromatic aberration", "lens flare", "watermark", "signature",
         "text", "logo", "border", "frame",
+        # Content rating
+        "sensitive", "nsfw", "nsfw content", "safe content", "explicit",
+        "questionable", "general", "rating safe", "rating explicit",
+        # Other technical
+        "low resolution", "high resolution", "blurry", "sharp focus",
+        "cropped", "letterboxed", "pillarboxed",
     },
-    contains_patterns=["resolution", "aspect ratio", "artifacts"],
+    contains_patterns=["resolution", "aspect ratio", "artifacts", "watermark"],
 )
 
 # Map categories to their keywords
