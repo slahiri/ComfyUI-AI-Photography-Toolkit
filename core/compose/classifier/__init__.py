@@ -264,7 +264,31 @@ MUTUALLY_EXCLUSIVE_GROUPS = [
     {"closed eyes", "half-closed eyes", "open eyes"},
     # Facing direction
     {"facing viewer", "facing away", "from behind", "from side"},
+    # Hair texture - critical conflict
+    {"straight hair", "wavy hair", "curly hair"},
+    # Eye color - only one can be true
+    {"brown eyes", "black eyes", "blue eyes", "green eyes", "grey eyes", "hazel eyes"},
+    # Breast size - only one can be true
+    {"large breasts", "small breasts", "medium breasts", "flat chest", "huge breasts"},
+    # Hair length
+    {"short hair", "long hair", "medium hair"},
+    # Body type
+    {"slim", "curvy", "muscular", "chubby", "petite"},
+    # Skin tone
+    {"pale skin", "dark skin", "tan", "light skin"},
 ]
+
+# Ethnic wear - when these are detected, filter out generic Western clothing
+ETHNIC_WEAR_TERMS = {
+    "saree", "sari", "lehenga", "salwar", "kurta", "dupatta", "choli",
+    "kimono", "hanbok", "cheongsam", "ao dai", "abaya", "hijab", "kaftan",
+}
+
+# Generic Western clothing to filter when ethnic wear is present
+GENERIC_WESTERN_CLOTHING = {
+    "dress", "red dress", "strapless dress", "backless dress", "two-tone dress",
+    "strapless", "toga", "robe", "gown", "multicolored dress", "multicolored clothes",
+}
 
 
 def resolve_conflicts(classified: ClassifiedImage) -> ClassifiedImage:
@@ -273,6 +297,7 @@ def resolve_conflicts(classified: ClassifiedImage) -> ClassifiedImage:
     Handles:
     - Mutually exclusive tokens (keep highest confidence)
     - Duplicate tokens across categories
+    - Ethnic wear vs generic Western clothing conflicts
 
     Args:
         classified: ClassifiedImage to process
@@ -280,30 +305,68 @@ def resolve_conflicts(classified: ClassifiedImage) -> ClassifiedImage:
     Returns:
         ClassifiedImage with conflicts resolved
     """
+    import re
+
     # Build a map of token text to classifications
     text_to_classifications: Dict[str, List[TokenClassification]] = defaultdict(list)
+    all_texts_lower = set()
+
     for classification in classified.all_classifications:
         text_lower = classification.token.text.lower().strip()
         text_to_classifications[text_lower].append(classification)
+        all_texts_lower.add(text_lower)
 
-    # Find and resolve mutually exclusive conflicts
+    # Collect all text for pattern matching
+    all_text_combined = " ".join(all_texts_lower)
+
     tokens_to_remove = set()
 
+    # --- Phase 1: Mutually exclusive conflicts ---
     for exclusive_group in MUTUALLY_EXCLUSIVE_GROUPS:
         group_tokens = []
+
         for text in exclusive_group:
+            # Direct match
             if text in text_to_classifications:
                 for classification in text_to_classifications[text]:
-                    group_tokens.append((text, classification))
+                    group_tokens.append((text, classification, classification.token.confidence))
+
+            # Also check if the term appears WITHIN other tokens
+            # e.g., "wavy hair" within "long wavy hair"
+            pattern = r'\b' + re.escape(text) + r'\b'
+            for token_text in all_texts_lower:
+                if token_text != text and re.search(pattern, token_text):
+                    for classification in text_to_classifications[token_text]:
+                        group_tokens.append((token_text, classification, classification.token.confidence))
 
         # If multiple exclusive tokens found, keep only highest confidence
         if len(group_tokens) > 1:
-            group_tokens.sort(key=lambda x: x[1].token.confidence, reverse=True)
-            # Mark lower-confidence tokens for removal
-            for text, _ in group_tokens[1:]:
-                tokens_to_remove.add(text)
+            # Deduplicate by token text
+            seen_texts = {}
+            for text, cls, conf in group_tokens:
+                if text not in seen_texts or conf > seen_texts[text][1]:
+                    seen_texts[text] = (cls, conf)
 
-    # Build new ClassifiedImage without conflicting tokens
+            if len(seen_texts) > 1:
+                # Sort by confidence, keep highest
+                sorted_tokens = sorted(seen_texts.items(), key=lambda x: x[1][1], reverse=True)
+                # Mark lower-confidence tokens for removal
+                for text, _ in sorted_tokens[1:]:
+                    tokens_to_remove.add(text)
+
+    # --- Phase 2: Ethnic wear vs Western clothing ---
+    has_ethnic_wear = any(
+        term in all_text_combined
+        for term in ETHNIC_WEAR_TERMS
+    )
+
+    if has_ethnic_wear:
+        # Remove generic Western clothing terms
+        for western_term in GENERIC_WESTERN_CLOTHING:
+            if western_term in text_to_classifications:
+                tokens_to_remove.add(western_term)
+
+    # --- Phase 3: Build filtered result ---
     if tokens_to_remove:
         result = ClassifiedImage()
         result.image_info = classified.image_info

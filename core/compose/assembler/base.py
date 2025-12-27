@@ -31,12 +31,30 @@ class PromptStyle(Enum):
 class AssemblerConfig:
     """Configuration for prompt assembly."""
     style: PromptStyle = PromptStyle.NATURAL
-    max_tokens_per_category: int = 50  # High default to preserve information
+    max_tokens_per_category: int = 50  # Default limit
     include_quality_boosters: bool = True
     include_technical: bool = True
     min_confidence: float = 0.3
     deduplicate: bool = True
     use_pronouns: bool = True  # Use pronouns after first subject mention
+
+    # Category-specific token limits (overrides max_tokens_per_category)
+    # Lower for dense categories, higher for scene-critical categories
+    category_limits: Dict[str, int] = field(default_factory=lambda: {
+        "quality_boosters": 10,
+        "style_medium": 8,
+        "subject": 5,
+        "subject_details": 25,  # CRITICAL: Cap this to prevent overwhelming
+        "action_pose": 10,
+        "environment": 15,      # Important for scene recreation
+        "lighting": 12,         # Important for mood
+        "composition": 12,
+        "technical": 5,
+    })
+
+    def get_limit_for_category(self, category: CanonicalCategory) -> int:
+        """Get the token limit for a specific category."""
+        return self.category_limits.get(category.value, self.max_tokens_per_category)
 
 
 @dataclass
@@ -101,7 +119,7 @@ class BaseAssembler(ABC):
         Args:
             classified: ClassifiedImage to get tokens from
             category: Category to get tokens for
-            max_tokens: Maximum tokens to return (None = use config)
+            max_tokens: Maximum tokens to return (None = use category-specific limit)
 
         Returns:
             List of TokenClassification sorted by confidence
@@ -113,11 +131,33 @@ class BaseAssembler(ABC):
         # Filter by minimum confidence
         tokens = [t for t in tokens if t.token.confidence >= self.config.min_confidence]
 
-        # Sort by confidence
-        tokens.sort(key=lambda t: t.token.confidence, reverse=True)
+        # For subject_details, prioritize SHORT tags over LONG sentences
+        # Short tags (< 30 chars) are more useful for image generation
+        if category == CanonicalCategory.SUBJECT_DETAILS:
+            # Split into short tags and long sentences
+            short_tags = [t for t in tokens if len(t.token.text) < 30]
+            long_sentences = [t for t in tokens if len(t.token.text) >= 30]
 
-        # Limit count
-        limit = max_tokens or self.config.max_tokens_per_category
+            # Sort each group by confidence
+            short_tags.sort(key=lambda t: t.token.confidence, reverse=True)
+            long_sentences.sort(key=lambda t: t.token.confidence, reverse=True)
+
+            # Combine: short tags first (up to 80% of limit), then long sentences
+            limit = max_tokens if max_tokens else self.config.get_limit_for_category(category)
+            short_limit = int(limit * 0.8)
+            long_limit = limit - min(len(short_tags), short_limit)
+
+            tokens = short_tags[:short_limit] + long_sentences[:long_limit]
+        else:
+            # Sort by confidence (highest first = most important)
+            tokens.sort(key=lambda t: t.token.confidence, reverse=True)
+
+        # Use category-specific limit, falling back to provided max_tokens or default
+        if max_tokens is not None:
+            limit = max_tokens
+        else:
+            limit = self.config.get_limit_for_category(category)
+
         return tokens[:limit]
 
     def _deduplicate_tokens(
