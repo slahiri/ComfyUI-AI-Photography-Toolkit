@@ -117,6 +117,8 @@ SOURCE_CATEGORY_MAPPINGS = {
 PHOTOGRAPHY_COMPOSITION_PATTERNS = {
     "orientation", "frame", "aspect ratio", "format", "resolution",
     "horizontal", "vertical", "square", "landscape", "portrait",
+    "rule of thirds", "thirds", "framing", "composition", "centered",
+    "symmetry", "asymmetry", "leading lines", "golden ratio",
 }
 
 PHOTOGRAPHY_QUALITY_PATTERNS = {

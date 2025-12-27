@@ -218,19 +218,37 @@ def filter_low_confidence(
 def filter_by_length(
     tokens: List[ImageToken],
     min_length: int = 2,
-    max_length: int = 200
+    max_length: int = 200,
+    max_words: int = 12
 ) -> List[ImageToken]:
-    """Filter tokens by text length.
+    """Filter tokens by text length and word count.
+
+    Filters out tokens that are too short, too long, or contain too many words
+    (likely full sentences from captions that shouldn't be individual tokens).
 
     Args:
         tokens: List of tokens to filter
         min_length: Minimum text length
         max_length: Maximum text length
+        max_words: Maximum word count (filters out long sentences)
 
     Returns:
         Filtered list of tokens
     """
-    return [t for t in tokens if min_length <= len(t.text) <= max_length]
+    result = []
+    for t in tokens:
+        # Check character length
+        if not (min_length <= len(t.text) <= max_length):
+            continue
+
+        # Check word count (filter out full sentences)
+        word_count = len(t.text.split())
+        if word_count > max_words:
+            continue
+
+        result.append(t)
+
+    return result
 
 
 def filter_meta_tokens(tokens: List[ImageToken]) -> Tuple[List[ImageToken], List[ImageToken]]:

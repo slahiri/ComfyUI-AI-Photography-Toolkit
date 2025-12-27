@@ -175,9 +175,20 @@ SUBJECT_DETAIL_KEYWORDS: Dict[SubjectDetailType, CategoryKeywords] = {
             "braid", "braids", "bun", "hair bun", "bangs", "side bangs",
             "hair over one eye", "hair between eyes", "ahoge", "bob cut",
             "pixie cut", "shoulder length hair", "very long hair",
+            # Ethnic/cultural hairstyles
+            "afro", "afro hairstyle", "african hairstyle", "dreadlocks", "locs",
+            "cornrows", "box braids", "twist out", "natural hair", "coily hair",
+            "kinky hair", "textured hair", "fade", "undercut", "mohawk",
+            # Facial hair
+            "beard", "full beard", "thick beard", "mustache", "thick mustache",
+            "goatee", "stubble", "facial hair", "clean shaven", "beardlock",
+            # Body hair
+            "chest hair", "arm hair", "body hair", "hairy", "very hairy",
+            "thick arm hair", "navel hair",
         },
-        suffix_patterns=["*_hair", "* hair"],
-        prefix_patterns=["hair_*", "hair *"],
+        suffix_patterns=["*_hair", "* hair", "* hairstyle"],
+        prefix_patterns=["hair_*", "hair *", "afro *", "african *"],
+        contains_patterns=["hair", "beard", "hairstyle"],
     ),
     SubjectDetailType.EYES: CategoryKeywords(
         exact_matches={
@@ -557,6 +568,7 @@ META_FILTER_PATTERNS: List[str] = [
     "lightroom",
     "photoshopped",
     "digitally enhanced",
+    "photoshop (medium)",
     # Generic meta
     "source:",
     "official art",
@@ -589,6 +601,26 @@ META_FILTER_PATTERNS: List[str] = [
     "appears to be in his",
     "high-quality, edited",
     "edited photo",
+    # Caption sentence starters to filter (full sentences)
+    "he is holding",
+    "she is holding",
+    "he is wearing",
+    "she is wearing",
+    "he stands",
+    "she stands",
+    "his eyes are",
+    "her eyes are",
+    "his dark hair is styled",
+    "her dark hair is styled",
+    "the lighting is dramatic",
+    "the background is",
+    # Common false positive terms
+    "general",  # WD14 meta tag
+    "original",  # Style tag that's too generic
+    "fantasy",  # Genre tag
+    "fine art parody",  # Specific style that's usually wrong
+    # Suggestive content label (not useful for prompts)
+    "suggestive content",
 ]
 
 

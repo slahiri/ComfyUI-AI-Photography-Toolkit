@@ -147,12 +147,32 @@ def extract_from_fashion(metadata: Dict[str, Any], min_confidence: float = 0.0) 
 
     Fashion sources: fashion_yolov8, fashion_yolos, fashion_segformer
     Format: {"clothing descriptor": confidence, ...}
+
+    Note: Different sources have different confidence thresholds due to
+    varying false positive rates:
+    - yolov8: Higher accuracy, use standard threshold
+    - yolos: Moderate accuracy, use standard threshold
+    - segformer: Higher false positive rate, requires higher threshold
     """
     tokens = []
 
-    fashion_sources = ["fashion_yolov8", "fashion_yolos", "fashion_segformer"]
+    # Source-specific confidence thresholds
+    # Segformer has higher false positive rate, requires higher confidence
+    source_thresholds = {
+        "fashion_yolov8": min_confidence,
+        "fashion_yolos": max(min_confidence, 0.4),  # Slightly higher
+        "fashion_segformer": max(min_confidence, 0.6),  # Much higher due to FP rate
+    }
 
-    for source_key in fashion_sources:
+    # Common false positive patterns to filter
+    fashion_false_positives = {
+        "glasses",  # Often detected incorrectly
+        "wearing gloves",  # Often incorrect on bare hands
+        "wearing headwear",  # General term, often wrong
+        "wearing shoes",  # Not visible in upper body shots
+    }
+
+    for source_key, threshold in source_thresholds.items():
         fashion_data = metadata.get(source_key, {})
 
         if not isinstance(fashion_data, dict):
@@ -161,11 +181,15 @@ def extract_from_fashion(metadata: Dict[str, Any], min_confidence: float = 0.0) 
         for descriptor, confidence in fashion_data.items():
             if not isinstance(confidence, (int, float)):
                 continue
-            if confidence < min_confidence:
+            if confidence < threshold:
                 continue
 
-            text = descriptor.strip()
+            text = descriptor.strip().lower()
             if not text:
+                continue
+
+            # Skip known false positive patterns
+            if text in fashion_false_positives:
                 continue
 
             tokens.append(ImageToken(

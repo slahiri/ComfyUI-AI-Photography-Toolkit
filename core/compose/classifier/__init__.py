@@ -276,6 +276,34 @@ MUTUALLY_EXCLUSIVE_GROUPS = [
     {"slim", "curvy", "muscular", "chubby", "petite"},
     # Skin tone
     {"pale skin", "dark skin", "tan", "light skin"},
+    # Body shot type - only one can be true
+    {"full body", "upper body", "lower body", "cowboy shot", "bust shot", "headshot"},
+    # Age - only one category
+    {"boy", "mature male", "old man", "young man", "middle-aged"},
+    {"girl", "mature female", "old woman", "young woman"},
+]
+
+# Gender-specific tags - when gender is clearly established, filter opposite gender tags
+MALE_INDICATORS = {
+    "1boy", "male focus", "male", "1man", "man", "boy",
+    "dark-skinned male", "muscular male", "mature male", "old man",
+}
+FEMALE_INDICATORS = {
+    "1girl", "female focus", "female", "1woman", "woman", "girl",
+    "dark-skinned female", "mature female", "old woman",
+}
+# Tags to filter when opposite gender is dominant
+MALE_ONLY_TAGS = {"male face", "muscular male", "bara", "pectorals", "topless male"}
+FEMALE_ONLY_TAGS = {"female face", "breasts", "cleavage", "sideboob"}
+
+# Ethnicity conflicts - these are mutually exclusive
+ETHNICITY_GROUPS = [
+    # East Asian vs African/Dark-skinned (cannot be both)
+    {
+        "asian": {"asian", "east asian", "chinese", "japanese", "korean"},
+        "african": {"african", "african american", "dark-skinned male", "dark-skinned female",
+                   "dark skin", "very dark skin", "black", "west african", "east african"},
+    },
 ]
 
 # Ethnic wear - when these are detected, filter out generic Western clothing
@@ -298,6 +326,8 @@ def resolve_conflicts(classified: ClassifiedImage) -> ClassifiedImage:
     - Mutually exclusive tokens (keep highest confidence)
     - Duplicate tokens across categories
     - Ethnic wear vs generic Western clothing conflicts
+    - Gender conflicts (filter opposite gender tags)
+    - Ethnicity conflicts (asian vs african)
 
     Args:
         classified: ClassifiedImage to process
@@ -366,7 +396,54 @@ def resolve_conflicts(classified: ClassifiedImage) -> ClassifiedImage:
             if western_term in text_to_classifications:
                 tokens_to_remove.add(western_term)
 
-    # --- Phase 3: Build filtered result ---
+    # --- Phase 3: Gender conflict resolution ---
+    # Count male vs female indicators
+    male_count = sum(1 for t in all_texts_lower if t in MALE_INDICATORS)
+    female_count = sum(1 for t in all_texts_lower if t in FEMALE_INDICATORS)
+
+    # If clearly male, filter female-only tags
+    if male_count > 0 and female_count == 0:
+        for female_tag in FEMALE_ONLY_TAGS:
+            if female_tag in text_to_classifications:
+                tokens_to_remove.add(female_tag)
+
+    # If clearly female, filter male-only tags
+    if female_count > 0 and male_count == 0:
+        for male_tag in MALE_ONLY_TAGS:
+            if male_tag in text_to_classifications:
+                tokens_to_remove.add(male_tag)
+
+    # --- Phase 4: Ethnicity conflict resolution ---
+    for ethnicity_group in ETHNICITY_GROUPS:
+        # Count tokens in each ethnicity group
+        group_counts = {}
+        group_confidences = {}
+
+        for group_name, group_terms in ethnicity_group.items():
+            count = 0
+            max_conf = 0.0
+            for term in group_terms:
+                if term in text_to_classifications:
+                    count += len(text_to_classifications[term])
+                    for cls in text_to_classifications[term]:
+                        max_conf = max(max_conf, cls.token.confidence)
+            group_counts[group_name] = count
+            group_confidences[group_name] = max_conf
+
+        # If multiple ethnicity groups have matches, keep only dominant one
+        active_groups = [g for g, c in group_counts.items() if c > 0]
+        if len(active_groups) > 1:
+            # Determine dominant ethnicity by count, then confidence
+            dominant = max(active_groups, key=lambda g: (group_counts[g], group_confidences[g]))
+
+            # Remove tokens from non-dominant groups
+            for group_name, group_terms in ethnicity_group.items():
+                if group_name != dominant:
+                    for term in group_terms:
+                        if term in text_to_classifications:
+                            tokens_to_remove.add(term)
+
+    # --- Phase 5: Build filtered result ---
     if tokens_to_remove:
         result = ClassifiedImage()
         result.image_info = classified.image_info
