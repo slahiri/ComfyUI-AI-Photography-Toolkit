@@ -50,6 +50,7 @@ from ..tokenizer.base import ImageToken, TokenBatch
 
 # Load vocabulary to enhance keyword dictionaries
 from . import vocabulary_loader  # Auto-enhances CATEGORY_KEYWORDS on import
+from . import enhanced_vocabulary_loader  # Adds enhanced_categories.py vocabulary
 
 
 # =============================================================================
@@ -785,4 +786,6 @@ __all__ = [
     "MUTUALLY_EXCLUSIVE_GROUPS",
     # Statistics
     "get_classification_stats",
+    # Enhanced vocabulary
+    "enhanced_vocabulary_loader",
 ]

@@ -21,6 +21,14 @@ from .clip_scene import CLIPSceneTagger
 from .wildlife import WildlifeTagger
 from .landmarks import LandmarkTagger
 from .sky_weather import SkyWeatherTagger
+from .exif import ExifTagger
+from .florence_parser import (
+    FlorenceParser,
+    parse_florence_description,
+    parse_florence_metadata,
+    get_florence_parser,
+)
+from .dwpose import DWPoseTagger
 
 __all__ = [
     "BaseTagger",
@@ -50,4 +58,10 @@ __all__ = [
     "WildlifeTagger",
     "LandmarkTagger",
     "SkyWeatherTagger",
+    "ExifTagger",
+    "FlorenceParser",
+    "parse_florence_description",
+    "parse_florence_metadata",
+    "get_florence_parser",
+    "DWPoseTagger",
 ]

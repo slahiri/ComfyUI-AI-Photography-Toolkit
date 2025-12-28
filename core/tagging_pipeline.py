@@ -15,6 +15,7 @@ from .taggers import ShotTypeClassifier, CLIPCameraTagger
 from .taggers import IntrinsicLightingTagger, ShadowDetector
 from .taggers import Places365Tagger, CLIPSceneTagger, WildlifeTagger
 from .taggers import LandmarkTagger, SkyWeatherTagger
+from .taggers import ExifTagger
 from .taggers.wd14 import set_verbose as set_wd14_verbose
 from .taggers.utils import get_human_detection_tags
 from .log import log, log_start, log_end, log_error
@@ -25,6 +26,7 @@ HUMAN_SPECIFIC_TAGGERS = {
     "fashion_yolov8", "fashion_yolos", "fashion_clip",
     "fashion_segformer", "fashion_wargon",
     "deepfashion_attributes", "fashion_color",
+    "dwpose", "clip_body_pose",  # Body/pose taggers
 }
 
 # Taggers for nature/landscape/outdoor scenes (skip for portraits/fashion)
@@ -336,6 +338,47 @@ class TaggingPipeline:
             tagger = SkyWeatherTagger(
                 threshold=tagger_config.get("threshold", 0.18),
                 top_k=tagger_config.get("top_k", 8),
+            )
+            self._taggers[name] = tagger
+            return tagger
+
+        elif name == "exif":
+            tagger = ExifTagger(
+                threshold=tagger_config.get("threshold", 0.8),
+                include_camera_info=tagger_config.get("include_camera_info", True),
+                include_lens_info=tagger_config.get("include_lens_info", True),
+                include_exposure_info=tagger_config.get("include_exposure_info", True),
+            )
+            self._taggers[name] = tagger
+            return tagger
+
+        elif name == "dwpose":
+            from .taggers import DWPoseTagger
+            tagger = DWPoseTagger(
+                threshold=tagger_config.get("threshold", 0.6),
+                use_dwpose=tagger_config.get("use_dwpose", True),
+            )
+            self._taggers[name] = tagger
+            return tagger
+
+        elif name == "florence_parser":
+            from .taggers import FlorenceParser
+            tagger = FlorenceParser(
+                threshold=tagger_config.get("threshold", 0.7),
+            )
+            self._taggers[name] = tagger
+            return tagger
+
+        elif name == "clip_body_pose":
+            # CLIP Scene with body/pose categories enabled
+            tagger = CLIPSceneTagger(
+                threshold=tagger_config.get("threshold", 0.2),
+                top_k_per_category=tagger_config.get("top_k_per_category", 2),
+                categories=tagger_config.get("categories", [
+                    "breast_size", "body_exposure", "body_type",
+                    "arm_pose", "leg_pose", "body_pose",
+                    "head_pose", "gaze_direction", "facial_expression",
+                ]),
             )
             self._taggers[name] = tagger
             return tagger

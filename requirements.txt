@@ -30,5 +30,9 @@ scikit-learn      # FashionColorAnalyzer k-means clustering
 # ultralytics       # YOLOv8 fashion detection
 # dghs-imgutils     # PixAI anime tagger (requires >=0.19.0)
 
+# NLP tag matching (semantic tag classification)
+sentence-transformers  # Semantic similarity matching
+spacy                  # Lemmatization support
+
 # Development/Vocabulary Enhancement
 datasets          # HuggingFace datasets for vocabulary enhancement
