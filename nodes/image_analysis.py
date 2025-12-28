@@ -150,9 +150,10 @@ class SID_ImageAnalysis:
                 }),
                 "tag_filter": ("FLOAT", {
                     "default": 0.25,
-                    "min": 0.0,
+                    "min": 0.1,
                     "max": 1.0,
                     "step": 0.01,
+                    "display": "slider",
                     "tooltip": "Minimum confidence threshold for canonical categorization. Tags below this go to below_threshold."
                 }),
             },
@@ -168,6 +169,12 @@ class SID_ImageAnalysis:
                 "hf_token": ("STRING", {
                     "default": "",
                     "tooltip": "HuggingFace token (optional)"
+                }),
+                "seed": ("INT", {
+                    "default": 0,
+                    "min": 0,
+                    "max": 0xffffffff,
+                    "tooltip": "Seed for reproducibility"
                 }),
             },
         }
@@ -436,6 +443,7 @@ class SID_ImageAnalysis:
         verbose: bool = False,
         release_vram: bool = True,
         hf_token: str = "",
+        seed: int = 0,
         # Legacy parameters (ignored, for backwards compatibility)
         **kwargs,
     ) -> tuple[str, str]:
@@ -457,12 +465,22 @@ class SID_ImageAnalysis:
         """
         pil_image = self._tensor_to_pil(image)
 
+        # Set random seed for reproducibility (numpy requires seed < 2^32)
+        import random
+        seed_32bit = seed % (2**32)
+        random.seed(seed_32bit)
+        np.random.seed(seed_32bit)
+        torch.manual_seed(seed_32bit)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed_32bit)
+
         # Generate session ID
         session_id = str(uuid.uuid4())[:8]
 
         # Initialize simple 2-layer metadata
         metadata = {
             "session_id": session_id,
+            "seed": seed_32bit,
             "tag_filter": tag_filter,
             "image_info": {
                 "width": pil_image.width,
