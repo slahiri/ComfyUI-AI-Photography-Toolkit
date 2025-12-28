@@ -28,6 +28,12 @@ from .enhanced_categories import (
     classify_tags,
     get_uncategorized_tags,
 )
+from .zimage_assembler import (
+    ZImageAssembler,
+    assemble_zimage_prompt,
+    CATEGORY_ORDER as ZIMAGE_CATEGORY_ORDER,
+    CATEGORY_HEADERS as ZIMAGE_CATEGORY_HEADERS,
+)
 
 __all__ = [
     # Enums and configs
@@ -58,4 +64,9 @@ __all__ = [
     "get_enhanced_classifier",
     "classify_tags",
     "get_uncategorized_tags",
+    # Z-Image assembler
+    "ZImageAssembler",
+    "assemble_zimage_prompt",
+    "ZIMAGE_CATEGORY_ORDER",
+    "ZIMAGE_CATEGORY_HEADERS",
 ]

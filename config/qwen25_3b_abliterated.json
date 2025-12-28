@@ -1,7 +1,7 @@
 {
   "name": "Qwen2.5-VL-3B-Abliterated",
   "description": "Qwen2.5-VL 3B abliterated for unrestricted captioning",
-  "model_id": "prithivMLmods/Qwen2.5-VL-3B-Abliterated",
+  "model_id": "prithivMLmods/Qwen2.5-VL-3B-Abliterated-Caption-it",
   "model_type": "qwen25",
   "dtype": "bf16",
   "trust_remote_code": true,
