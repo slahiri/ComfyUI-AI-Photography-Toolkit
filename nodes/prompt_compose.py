@@ -120,30 +120,32 @@ LOCAL_LLM_MAP = {
 # =============================================================================
 
 # Local LLM: Polish assembled prompt into natural prose
-POLISH_PROMPT = """Rewrite this image description as a single cohesive prompt for AI image generation.
+POLISH_PROMPT = """Rewrite this image description into natural flowing prose for AI image generation.
 
 CURRENT DESCRIPTION:
 {assembled_prompt}
 
-RULES:
-1. Integrate ALL technical terms naturally into the prose
-2. Remove any redundancy
-3. Weave lighting/composition terms into scene description
-4. Maintain the same level of detail
-5. Output ONLY the rewritten description - no explanations
-6. Do NOT add tags or bracketed sections
+CRITICAL RULES:
+1. You MUST include EVERY technical term from the bracketed sections
+2. Do NOT summarize or condense - expand if needed
+3. Weave ALL lighting terms naturally (e.g., "illuminated by soft front lighting with deep shadows")
+4. Weave ALL composition terms naturally (e.g., "composed in portrait orientation with rule of thirds")
+5. Weave ALL style terms naturally (e.g., "captured in a realistic photographic style with saturated colors")
+6. Include EVERY subject detail mentioned
+7. Output should be LONGER than input, not shorter
+8. Output ONLY the rewritten description - no explanations
 
 REWRITTEN DESCRIPTION:"""
 
 # API: Single-pass deep analysis with all data
-API_ENHANCE_PROMPT = """You are an expert at creating prompts for AI image generation.
+API_ENHANCE_PROMPT = """You are an expert at creating prompts for AI image generation. Your goal is MAXIMUM tag coverage.
 
 ## Source Data
 
 ### VLM Description:
 {vlm_description}
 
-### Detected Tags by Category:
+### Detected Tags by Category (MUST ALL BE INCLUDED):
 **Lighting:** {lighting_tags}
 **Composition:** {composition_tags}
 **Style:** {style_tags}
@@ -154,73 +156,72 @@ API_ENHANCE_PROMPT = """You are an expert at creating prompts for AI image gener
 - Tags in VLM: {matched_count}
 - Missing from VLM: {missing_count}
 
-## Task
+## CRITICAL Task
 
-Create an enhanced prompt that:
-1. Preserves VLM's accurate observations
-2. Integrates missing technical tags naturally
-3. Resolves any conflicts (prefer high-confidence tags over VLM)
-4. Removes meta-tags (1girl, solo, sensitive, etc.)
-5. Targets 150-250 words, natural flowing prose
+Create an enhanced prompt that includes EVERY tag listed above:
+1. Start with VLM description as base
+2. Weave in EVERY lighting tag (e.g., "front lighting with deep shadows and soft shadow edges")
+3. Weave in EVERY composition tag (e.g., "portrait orientation, vertical frame, rule of thirds composition")
+4. Weave in EVERY style tag (e.g., "realistic photography with vibrant saturated colors")
+5. Weave in EVERY subject detail (physical features, clothing, expression)
+6. Weave in EVERY scene element
+7. Skip ONLY meta-tags: 1girl, solo, sensitive, explicit, safe
+8. Target 300-500 words - be COMPREHENSIVE, not concise
+9. Use natural flowing prose, not lists
 
-Output ONLY the enhanced prompt, no JSON or explanations."""
+Output ONLY the enhanced prompt:"""
 
-# Multi-pass: Category-specific prompts
+# Multi-pass: Category-specific prompts - MUST include ALL tags
 CATEGORY_PROMPTS = {
-    'lighting': """Describe the lighting in this image:
-- Light direction and quality (soft/hard/dramatic)
-- Color temperature (warm/cool)
-- Shadows and highlights
-- Overall lighting mood
+    'lighting': """Add lighting details to this description. You MUST include ALL of these lighting tags:
+
+TAGS TO INCLUDE: {tags}
 
 Current description: {current}
-Detected lighting tags: {tags}
 
-Write 1-2 sentences integrating these lighting aspects naturally:""",
+Write 2-3 sentences that naturally weave in EVERY lighting tag listed above. Example: "The scene is illuminated by soft front lighting with dramatic deep shadows, creating low-key lighting with butterfly lighting effects and subtle backlighting."
 
-    'composition': """Describe the composition and framing:
-- Shot type (close-up, medium, full body, wide)
-- Camera angle and perspective
-- Depth of field and focus
-- Visual balance and symmetry
+Lighting description:""",
 
-Current description: {current}
-Detected composition tags: {tags}
+    'composition': """Add composition details to this description. You MUST include ALL of these composition tags:
 
-Write 1-2 sentences about composition:""",
-
-    'style': """Describe the artistic style and mood:
-- Photographic style (editorial, candid, portrait)
-- Color palette and tones
-- Artistic quality and mood
-- Visual atmosphere
+TAGS TO INCLUDE: {tags}
 
 Current description: {current}
-Detected style tags: {tags}
 
-Write 1-2 sentences about style:""",
+Write 2-3 sentences that naturally weave in EVERY composition tag. Example: "Framed in portrait orientation with a vertical 2:3 aspect ratio, the subject is positioned at the thirds intersection following rule of thirds composition."
 
-    'subject': """Enhance the subject description:
-- Physical features and appearance
-- Clothing and accessories
-- Expression and pose
-- Notable details
+Composition description:""",
 
-Current description: {current}
-Detected subject tags: {tags}
+    'style': """Add style details to this description. You MUST include ALL of these style tags:
 
-Write 2-3 sentences enhancing the subject details:""",
-
-    'scene': """Describe the environment and setting:
-- Location (indoor/outdoor)
-- Background elements
-- Props and objects
-- Atmosphere and weather
+TAGS TO INCLUDE: {tags}
 
 Current description: {current}
-Detected scene tags: {tags}
 
-Write 1-2 sentences about the scene:""",
+Write 2-3 sentences that naturally weave in EVERY style tag. Example: "Captured in realistic photography style with vibrant saturated colors, black tones, and a multicolored palette creating a monochromatic yet colorful aesthetic."
+
+Style description:""",
+
+    'subject': """Add subject details to this description. You MUST include ALL of these subject tags:
+
+TAGS TO INCLUDE: {tags}
+
+Current description: {current}
+
+Write 3-4 sentences that naturally weave in EVERY subject tag including physical features, clothing, expression, hair, eyes, skin, and pose details.
+
+Subject description:""",
+
+    'scene': """Add scene/environment details to this description. You MUST include ALL of these scene tags:
+
+TAGS TO INCLUDE: {tags}
+
+Current description: {current}
+
+Write 2-3 sentences that naturally weave in EVERY scene tag including background, atmosphere, and setting details.
+
+Scene description:""",
 }
 
 # =============================================================================
@@ -1167,11 +1168,11 @@ class SID_PromptCompose:
                     "tooltip": "Tag confidence threshold for conflict resolution. Tags >= threshold override VLM."
                 }),
                 "max_tokens": ("INT", {
-                    "default": 512,
-                    "min": 128,
-                    "max": 2048,
-                    "step": 64,
-                    "tooltip": "Max tokens for LLM enhancement output"
+                    "default": 1024,
+                    "min": 256,
+                    "max": 4096,
+                    "step": 128,
+                    "tooltip": "Max tokens for LLM enhancement output (higher = more comprehensive)"
                 }),
                 "temperature": ("FLOAT", {
                     "default": 0.3,
