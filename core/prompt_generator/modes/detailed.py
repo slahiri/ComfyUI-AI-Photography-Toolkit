@@ -540,7 +540,7 @@ CRITICAL RULES:
 - NO commentary about meaning, mood interpretation, or artistic intent
 - Focus on: subject details, colors, textures, lighting, composition, materials
 
-Be comprehensive and precise. Describe observable physical details only."""
+Write as a single flowing paragraph. Be precise and literal."""
 
         if prompt_config and prompt_config.get("system_prompt"):
             system_prompt = prompt_config["system_prompt"]
