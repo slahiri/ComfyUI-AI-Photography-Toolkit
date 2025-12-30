@@ -248,9 +248,37 @@ class TaggerRunner:
             print(f"  Detected: {detected}, Model: {model}")
             if detected:
                 pose_type = results.pose.get("pose_type", "unknown")
-                print(f"  Pose type: {pose_type}")
+                pose_conf = results.pose.get("pose_confidence", 0)
+                print(f"  Pose: {pose_type} ({pose_conf:.0%})")
+
+                # Show visible keypoints
+                visible = results.pose.get("visible_keypoints", 0)
+                total = results.pose.get("keypoint_count", 0)
+                if total > 0:
+                    print(f"  Keypoints: {visible}/{total} visible")
+
+                # Show body part visibility
+                parts = []
+                if results.pose.get("shoulders_visible"):
+                    parts.append("shoulders")
+                if results.pose.get("hips_visible"):
+                    parts.append("hips")
+                if results.pose.get("knees_visible"):
+                    parts.append("knees")
+                if results.pose.get("ankles_visible"):
+                    parts.append("ankles")
+                if parts:
+                    print(f"  Visible: {', '.join(parts)}")
+
+                # Show arm position
+                arms_pos = results.pose.get("arms_position", "neutral")
                 if results.pose.get("arms_raised"):
-                    print(f"  Arms raised: Yes")
+                    print(f"  Arms: raised")
+                elif arms_pos != "neutral":
+                    print(f"  Arms: {arms_pos}")
+
+                if results.pose.get("hand_near_face"):
+                    print(f"  Hand near face: Yes")
 
         # Print Photography analysis
         if results.photography:

@@ -81,6 +81,12 @@ def _analyze_pose_keypoints(keypoints: List[Tuple[float, float, float]]) -> Dict
     """
     Analyze pose keypoints to extract pose information.
 
+    Standard pose keypoint indices (COCO format):
+    0: nose, 1: left_eye, 2: right_eye, 3: left_ear, 4: right_ear,
+    5: left_shoulder, 6: right_shoulder, 7: left_elbow, 8: right_elbow,
+    9: left_wrist, 10: right_wrist, 11: left_hip, 12: right_hip,
+    13: left_knee, 14: right_knee, 15: left_ankle, 16: right_ankle
+
     Returns dict with pose analysis.
     """
     if not keypoints or len(keypoints) < 5:
@@ -89,51 +95,168 @@ def _analyze_pose_keypoints(keypoints: List[Tuple[float, float, float]]) -> Dict
     result = {
         "detected": True,
         "keypoint_count": len(keypoints),
+        "visible_keypoints": len([k for k in keypoints if k[2] > 0.3]),
     }
 
-    # Check visibility of key body parts
-    # Standard pose keypoint indices (COCO format):
-    # 0: nose, 1-2: eyes, 3-4: ears, 5-6: shoulders,
-    # 7-8: elbows, 9-10: wrists, 11-12: hips, 13-14: knees, 15-16: ankles
+    # Helper to safely get keypoint
+    def get_kp(idx):
+        if idx < len(keypoints):
+            kp = keypoints[idx]
+            if kp[2] > 0.3:  # confidence threshold
+                return kp
+        return None
 
-    # Determine if standing, sitting, or lying
-    if len(keypoints) >= 17:
-        # Get key points (x, y, confidence)
-        nose = keypoints[0] if len(keypoints) > 0 else (0, 0, 0)
-        left_hip = keypoints[11] if len(keypoints) > 11 else (0, 0, 0)
-        right_hip = keypoints[12] if len(keypoints) > 12 else (0, 0, 0)
-        left_knee = keypoints[13] if len(keypoints) > 13 else (0, 0, 0)
-        right_knee = keypoints[14] if len(keypoints) > 14 else (0, 0, 0)
-        left_ankle = keypoints[15] if len(keypoints) > 15 else (0, 0, 0)
-        right_ankle = keypoints[16] if len(keypoints) > 16 else (0, 0, 0)
+    # Get key body parts
+    nose = get_kp(0)
+    left_shoulder = get_kp(5)
+    right_shoulder = get_kp(6)
+    left_elbow = get_kp(7)
+    right_elbow = get_kp(8)
+    left_wrist = get_kp(9)
+    right_wrist = get_kp(10)
+    left_hip = get_kp(11)
+    right_hip = get_kp(12)
+    left_knee = get_kp(13)
+    right_knee = get_kp(14)
+    left_ankle = get_kp(15)
+    right_ankle = get_kp(16)
 
-        # Calculate vertical positions
-        hip_y = (left_hip[1] + right_hip[1]) / 2 if left_hip[2] > 0.3 and right_hip[2] > 0.3 else 0
-        knee_y = (left_knee[1] + right_knee[1]) / 2 if left_knee[2] > 0.3 and right_knee[2] > 0.3 else 0
-        ankle_y = (left_ankle[1] + right_ankle[1]) / 2 if left_ankle[2] > 0.3 and right_ankle[2] > 0.3 else 0
+    # Calculate body center points
+    shoulder_y = None
+    if left_shoulder and right_shoulder:
+        shoulder_y = (left_shoulder[1] + right_shoulder[1]) / 2
+        shoulder_x = (left_shoulder[0] + right_shoulder[0]) / 2
+        result["shoulders_visible"] = True
 
-        # Estimate pose based on relative positions
-        if hip_y > 0 and ankle_y > 0:
-            hip_ankle_ratio = abs(ankle_y - hip_y)
-            if hip_ankle_ratio < 0.15:
-                result["pose_type"] = "sitting"
-                result["sitting"] = 0.8
-            elif hip_ankle_ratio > 0.3:
-                result["pose_type"] = "standing"
-                result["standing"] = 0.8
+    hip_y = None
+    if left_hip and right_hip:
+        hip_y = (left_hip[1] + right_hip[1]) / 2
+        hip_x = (left_hip[0] + right_hip[0]) / 2
+        result["hips_visible"] = True
+
+    knee_y = None
+    if left_knee and right_knee:
+        knee_y = (left_knee[1] + right_knee[1]) / 2
+        result["knees_visible"] = True
+    elif left_knee:
+        knee_y = left_knee[1]
+        result["knees_visible"] = True
+    elif right_knee:
+        knee_y = right_knee[1]
+        result["knees_visible"] = True
+
+    ankle_y = None
+    if left_ankle and right_ankle:
+        ankle_y = (left_ankle[1] + right_ankle[1]) / 2
+        result["ankles_visible"] = True
+    elif left_ankle:
+        ankle_y = left_ankle[1]
+        result["ankles_visible"] = True
+    elif right_ankle:
+        ankle_y = right_ankle[1]
+        result["ankles_visible"] = True
+
+    # Determine pose type based on relative body part positions
+    pose_type = "unknown"
+    pose_confidence = 0.5
+
+    if hip_y is not None and shoulder_y is not None:
+        torso_height = abs(hip_y - shoulder_y)
+
+        # Check for lying down (horizontal pose)
+        if left_shoulder and right_shoulder and left_hip and right_hip:
+            shoulder_width = abs(left_shoulder[0] - right_shoulder[0])
+            hip_width = abs(left_hip[0] - right_hip[0])
+            # If torso is more horizontal than vertical
+            if torso_height < shoulder_width * 0.5:
+                pose_type = "lying"
+                pose_confidence = 0.8
+                result["lying"] = pose_confidence
+
+        # Standing vs sitting detection
+        if pose_type == "unknown" and ankle_y is not None:
+            hip_ankle_dist = abs(ankle_y - hip_y)
+            hip_shoulder_dist = abs(hip_y - shoulder_y) if shoulder_y else 0.3
+
+            # Normalize by torso height
+            leg_ratio = hip_ankle_dist / hip_shoulder_dist if hip_shoulder_dist > 0 else 0
+
+            if leg_ratio > 1.2:
+                # Legs are extended - standing
+                pose_type = "standing"
+                pose_confidence = min(0.9, 0.6 + leg_ratio * 0.1)
+                result["standing"] = pose_confidence
+            elif leg_ratio < 0.6:
+                # Legs are bent/tucked - sitting
+                pose_type = "sitting"
+                pose_confidence = 0.8
+                result["sitting"] = pose_confidence
             else:
-                result["pose_type"] = "crouching"
-                result["crouching"] = 0.6
+                # Intermediate - could be crouching or kneeling
+                if knee_y and abs(knee_y - hip_y) < hip_shoulder_dist * 0.5:
+                    pose_type = "kneeling"
+                    pose_confidence = 0.7
+                    result["kneeling"] = pose_confidence
+                else:
+                    pose_type = "crouching"
+                    pose_confidence = 0.6
+                    result["crouching"] = pose_confidence
 
-        # Check arm positions
-        left_wrist = keypoints[9] if len(keypoints) > 9 else (0, 0, 0)
-        right_wrist = keypoints[10] if len(keypoints) > 10 else (0, 0, 0)
-        left_shoulder = keypoints[5] if len(keypoints) > 5 else (0, 0, 0)
-        right_shoulder = keypoints[6] if len(keypoints) > 6 else (0, 0, 0)
+        elif pose_type == "unknown" and knee_y is not None:
+            # No ankles visible, use knees
+            hip_knee_dist = abs(knee_y - hip_y) if hip_y else 0
+            if hip_knee_dist > 0.2:
+                pose_type = "standing"
+                pose_confidence = 0.6
+                result["standing"] = pose_confidence
+            else:
+                pose_type = "sitting"
+                pose_confidence = 0.6
+                result["sitting"] = pose_confidence
 
-        if left_wrist[2] > 0.3 and left_shoulder[2] > 0.3:
-            if left_wrist[1] < left_shoulder[1]:  # Wrist above shoulder
-                result["arms_raised"] = True
+    result["pose_type"] = pose_type
+    result["pose_confidence"] = pose_confidence
+
+    # Check arm positions
+    arms_raised = False
+    arms_position = "neutral"
+
+    if shoulder_y:
+        # Check if wrists are above shoulders (arms raised)
+        if left_wrist and left_wrist[1] < shoulder_y - 0.05:
+            arms_raised = True
+        if right_wrist and right_wrist[1] < shoulder_y - 0.05:
+            arms_raised = True
+
+        # Check if arms are extended outward
+        if left_shoulder and left_wrist:
+            left_arm_ext = abs(left_wrist[0] - left_shoulder[0])
+            if left_arm_ext > 0.15:
+                arms_position = "extended"
+        if right_shoulder and right_wrist:
+            right_arm_ext = abs(right_wrist[0] - right_shoulder[0])
+            if right_arm_ext > 0.15:
+                arms_position = "extended"
+
+    if arms_raised:
+        result["arms_raised"] = True
+        result["arms_position"] = "raised"
+    else:
+        result["arms_position"] = arms_position
+
+    # Check if hands are near face (e.g., touching face, thinking pose)
+    if nose and (left_wrist or right_wrist):
+        face_touch = False
+        if left_wrist:
+            dist_to_face = ((left_wrist[0] - nose[0])**2 + (left_wrist[1] - nose[1])**2)**0.5
+            if dist_to_face < 0.15:
+                face_touch = True
+        if right_wrist:
+            dist_to_face = ((right_wrist[0] - nose[0])**2 + (right_wrist[1] - nose[1])**2)**0.5
+            if dist_to_face < 0.15:
+                face_touch = True
+        if face_touch:
+            result["hand_near_face"] = True
 
     return result
 
@@ -159,19 +282,99 @@ def _run_mediapipe(detector: Any, pil_image: Image.Image) -> Dict[str, Any]:
 def _run_controlnet_pose(detector: Any, pil_image: Image.Image, model_type: str) -> Dict[str, Any]:
     """Run ControlNet pose detection (DWPose or OpenPose)."""
     try:
-        # Run detection
-        result = detector(pil_image)
+        # DWPose can return keypoints directly with output_type parameter
+        if model_type == "dwpose":
+            # Try to get keypoints directly from DWPose
+            try:
+                # DWPose __call__ can accept output_type parameter
+                # Try calling with detect_resolution for better accuracy
+                pose_result = detector(
+                    pil_image,
+                    detect_resolution=512,
+                    output_type="np",
+                    include_body=True,
+                    include_hand=False,
+                    include_face=False,
+                )
 
-        # The detector returns a pose image, we need to analyze it
-        # For now, just indicate detection was successful
-        return {
-            "detected": True,
-            "model": model_type,
-            "pose_image_available": True,
-        }
+                # DWPose stores detected poses internally
+                if hasattr(detector, 'detected_poses') and detector.detected_poses:
+                    poses = detector.detected_poses
+                    if len(poses) > 0:
+                        # Get first detected person's body keypoints
+                        body_keypoints = poses[0].body.keypoints if hasattr(poses[0], 'body') else None
+                        if body_keypoints is not None and len(body_keypoints) > 0:
+                            # Convert to list of (x, y, confidence) tuples
+                            keypoints = []
+                            for kp in body_keypoints:
+                                if kp is not None:
+                                    keypoints.append((float(kp.x), float(kp.y), float(kp.score) if hasattr(kp, 'score') else 1.0))
+                                else:
+                                    keypoints.append((0, 0, 0))
+
+                            result = _analyze_pose_keypoints(keypoints)
+                            result["model"] = model_type
+                            result["keypoint_count"] = len([k for k in keypoints if k[2] > 0.3])
+                            return result
+
+                # Fallback: try to access pose data differently
+                if hasattr(detector, 'pose_estimation') and detector.pose_estimation:
+                    # Some versions store it here
+                    return _extract_pose_from_detector(detector, model_type)
+
+            except Exception as e:
+                print(f"[Pose] DWPose keypoint extraction failed: {e}")
+
+        # Fallback for OpenPose or if DWPose keypoint extraction failed
+        # Just run detection and try to infer from the result
+        try:
+            pose_result = detector(pil_image)
+
+            # Check if we got any pose data back
+            if pose_result is not None:
+                # For OpenPose, check if candidate keypoints are available
+                if hasattr(detector, 'body_estimation'):
+                    body_est = detector.body_estimation
+                    if hasattr(body_est, 'candidate') and body_est.candidate is not None:
+                        candidate = body_est.candidate
+                        if len(candidate) > 0:
+                            # Convert candidates to keypoints format
+                            keypoints = [(c[0], c[1], c[2] if len(c) > 2 else 1.0) for c in candidate[:17]]
+                            result = _analyze_pose_keypoints(keypoints)
+                            result["model"] = model_type
+                            return result
+
+                return {
+                    "detected": True,
+                    "model": model_type,
+                    "pose_image_available": True,
+                    "note": "Pose detected but keypoints not extractable",
+                }
+        except Exception as e:
+            print(f"[Pose] Detection error: {e}")
+
+        return {"detected": False, "model": model_type}
+
     except Exception as e:
         print(f"[Pose] ControlNet detection error: {e}")
-        return {"detected": False}
+        import traceback
+        traceback.print_exc()
+        return {"detected": False, "error": str(e)}
+
+
+def _extract_pose_from_detector(detector: Any, model_type: str) -> Dict[str, Any]:
+    """Try to extract pose information from detector's internal state."""
+    result = {"detected": True, "model": model_type}
+
+    # Try various attributes that might hold pose data
+    for attr in ['detected_poses', 'poses', 'keypoints', 'body_keypoints']:
+        if hasattr(detector, attr):
+            data = getattr(detector, attr)
+            if data is not None and len(data) > 0:
+                result["keypoint_source"] = attr
+                break
+
+    return result
 
 
 def run_pose(image: Any) -> Dict[str, Any]:
