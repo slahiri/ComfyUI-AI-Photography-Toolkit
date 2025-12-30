@@ -503,3 +503,154 @@ def _humanize_tag(tag: str) -> str:
     if " " in humanized:
         return humanized
     return humanized
+
+
+def get_fashion_pose_tags(
+    pose_results: Dict[str, Any],
+) -> List[Tuple[str, float]]:
+    """
+    Extract fashion pose tags from pose detection results.
+
+    Args:
+        pose_results: Pose detection results dict
+
+    Returns:
+        List of (tag, confidence) tuples for fashion poses
+    """
+    tags = []
+
+    if not pose_results or not pose_results.get("detected"):
+        return tags
+
+    # Add basic pose type
+    pose_type = pose_results.get("pose_type")
+    pose_conf = pose_results.get("pose_confidence", 0.5)
+    if pose_type and pose_type != "unknown":
+        tags.append((f"{pose_type} pose", pose_conf))
+
+    # Add body/face angle information
+    body_facing = pose_results.get("body_facing")
+    face_facing = pose_results.get("face_facing")
+
+    if body_facing == "camera":
+        tags.append(("facing camera", 0.8))
+    elif body_facing == "side":
+        body_turned = pose_results.get("body_turned", "")
+        if body_turned:
+            tags.append((f"body turned {body_turned}", 0.75))
+        else:
+            tags.append(("side view", 0.75))
+    elif body_facing == "angled":
+        tags.append(("three-quarter view", 0.7))
+
+    if face_facing == "side" or face_facing == "profile":
+        face_turned = pose_results.get("face_turned", "")
+        if face_turned:
+            tags.append((f"looking {face_turned}", 0.8))
+        else:
+            tags.append(("profile view", 0.75))
+    elif face_facing == "angled":
+        face_turned = pose_results.get("face_turned", "")
+        if face_turned:
+            tags.append((f"face angled {face_turned}", 0.7))
+
+    if pose_results.get("back_to_camera"):
+        tags.append(("back to camera", 0.8))
+
+    # Add fashion poses
+    fashion_poses = pose_results.get("fashion_poses", [])
+    for fp in fashion_poses[:5]:  # Top 5 fashion poses
+        pose_name = fp.get("pose", "")
+        conf = fp.get("confidence", 0.5)
+
+        # Convert pose names to natural language
+        pose_descriptions = {
+            "contrapposto": "contrapposto S-curve pose",
+            "hand_on_hip": "hand on hip",
+            "power_pose": "power stance",
+            "crossed_legs": "crossed legs",
+            "walking": "walking pose",
+            "over_shoulder": "over-the-shoulder look",
+            "leaning": "leaning pose",
+            "arms_crossed": "arms crossed",
+            "weight_shift": "weight shifted to one leg",
+            "hands_behind_back": "hands behind back",
+            "looking_away": "looking away from camera",
+            "back_to_camera": "back facing camera",
+        }
+
+        desc = pose_descriptions.get(pose_name, pose_name.replace("_", " "))
+        if desc:
+            tags.append((desc, conf))
+
+    # Add arm position
+    if pose_results.get("arms_raised"):
+        tags.append(("arms raised", 0.8))
+    elif pose_results.get("arms_position") == "extended":
+        tags.append(("arms extended", 0.7))
+
+    if pose_results.get("hand_near_face"):
+        tags.append(("hand near face", 0.75))
+
+    # Deduplicate and sort by confidence
+    seen = set()
+    unique_tags = []
+    for tag, conf in tags:
+        if tag not in seen:
+            seen.add(tag)
+            unique_tags.append((tag, conf))
+
+    unique_tags.sort(key=lambda x: x[1], reverse=True)
+    return unique_tags
+
+
+def format_pose_for_prompt(pose_results: Dict[str, Any]) -> str:
+    """
+    Format pose detection results for LLM prompt injection.
+
+    Args:
+        pose_results: Pose detection results dict
+
+    Returns:
+        Formatted string describing the pose
+    """
+    if not pose_results or not pose_results.get("detected"):
+        return ""
+
+    parts = []
+
+    # Body pose
+    pose_type = pose_results.get("pose_type", "unknown")
+    if pose_type != "unknown":
+        parts.append(f"{pose_type}")
+
+    # Body orientation
+    body_facing = pose_results.get("body_facing")
+    if body_facing:
+        body_turned = pose_results.get("body_turned")
+        if body_turned:
+            parts.append(f"body facing {body_facing} turned {body_turned}")
+        else:
+            parts.append(f"body facing {body_facing}")
+
+    # Face orientation
+    face_facing = pose_results.get("face_facing")
+    if face_facing:
+        face_turned = pose_results.get("face_turned")
+        if face_turned:
+            parts.append(f"face in {face_facing} view looking {face_turned}")
+        elif face_facing != "camera":
+            parts.append(f"{face_facing} face view")
+
+    # Fashion poses
+    fashion_poses = pose_results.get("fashion_poses", [])
+    if fashion_poses:
+        top_pose = fashion_poses[0]
+        desc = top_pose.get("description", top_pose.get("pose", "").replace("_", " "))
+        if desc:
+            parts.append(desc)
+
+    if not parts:
+        return ""
+
+    return "Pose: " + ", ".join(parts)

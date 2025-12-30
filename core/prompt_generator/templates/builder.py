@@ -6,7 +6,7 @@ Builds LLM prompts from templates and active sections.
 
 from typing import Dict, List, Any, Optional, Tuple
 from ..types import Decisions, TaggerResults
-from .tag_injector import get_unmapped_tags, format_tags_for_prompt, get_female_anatomy_tags
+from .tag_injector import get_unmapped_tags, format_tags_for_prompt, get_female_anatomy_tags, get_fashion_pose_tags, format_pose_for_prompt
 from .scene_prompts import format_scene_prompt, get_scene_group
 from .detail_prompts import enhance_section_prompt, get_all_enhancements
 
@@ -71,6 +71,18 @@ class PromptBuilder:
                 if anatomy_tags:
                     # Merge anatomy tags with detected tags (anatomy tags go first for emphasis)
                     detected_tags = anatomy_tags + list(detected_tags)
+
+            # Add pose information if available
+            if tagger_results.pose and tagger_results.pose.get("detected"):
+                pose_tags = get_fashion_pose_tags(tagger_results.pose)
+                if pose_tags:
+                    # Add pose tags to detected tags
+                    detected_tags = list(detected_tags) + pose_tags
+
+                # Add formatted pose description
+                pose_desc = format_pose_for_prompt(tagger_results.pose)
+                if pose_desc:
+                    parts.append(f"\n{pose_desc}")
 
             if detected_tags:
                 tags_str = format_tags_for_prompt(detected_tags, show_confidence=True)

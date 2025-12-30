@@ -249,7 +249,7 @@ class TaggerRunner:
             if detected:
                 pose_type = results.pose.get("pose_type", "unknown")
                 pose_conf = results.pose.get("pose_confidence", 0)
-                print(f"  Pose: {pose_type} ({pose_conf:.0%})")
+                print(f"  Body pose: {pose_type} ({pose_conf:.0%})")
 
                 # Show visible keypoints
                 visible = results.pose.get("visible_keypoints", 0)
@@ -257,18 +257,24 @@ class TaggerRunner:
                 if total > 0:
                     print(f"  Keypoints: {visible}/{total} visible")
 
-                # Show body part visibility
-                parts = []
-                if results.pose.get("shoulders_visible"):
-                    parts.append("shoulders")
-                if results.pose.get("hips_visible"):
-                    parts.append("hips")
-                if results.pose.get("knees_visible"):
-                    parts.append("knees")
-                if results.pose.get("ankles_visible"):
-                    parts.append("ankles")
-                if parts:
-                    print(f"  Visible: {', '.join(parts)}")
+                # Show body/face angles
+                body_facing = results.pose.get("body_facing")
+                face_facing = results.pose.get("face_facing")
+                if body_facing:
+                    body_turned = results.pose.get("body_turned", "")
+                    if body_turned:
+                        print(f"  Body: facing {body_facing}, turned {body_turned}")
+                    else:
+                        print(f"  Body: facing {body_facing}")
+                if face_facing:
+                    face_turned = results.pose.get("face_turned", "")
+                    if face_turned:
+                        print(f"  Face: {face_facing} view, looking {face_turned}")
+                    else:
+                        print(f"  Face: {face_facing} view")
+
+                if results.pose.get("back_to_camera"):
+                    print(f"  Back to camera: Yes")
 
                 # Show arm position
                 arms_pos = results.pose.get("arms_position", "neutral")
@@ -279,6 +285,16 @@ class TaggerRunner:
 
                 if results.pose.get("hand_near_face"):
                     print(f"  Hand near face: Yes")
+
+                # Show fashion poses
+                fashion_poses = results.pose.get("fashion_poses", [])
+                if fashion_poses:
+                    print(f"\n  [FASHION POSES] ({len(fashion_poses)} detected):")
+                    for fp in fashion_poses[:5]:  # Show top 5
+                        pose_name = fp.get("pose", "unknown")
+                        conf = fp.get("confidence", 0)
+                        desc = fp.get("description", "")
+                        print(f"    {conf:.0%}  {pose_name}: {desc}")
 
         # Print Photography analysis
         if results.photography:

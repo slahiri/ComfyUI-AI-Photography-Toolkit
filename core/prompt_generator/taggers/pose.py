@@ -258,6 +258,374 @@ def _analyze_pose_keypoints(keypoints: List[Tuple[float, float, float]]) -> Dict
         if face_touch:
             result["hand_near_face"] = True
 
+    # Detect fashion poses
+    fashion_result = _detect_fashion_poses(keypoints)
+    if fashion_result.get("detected"):
+        result["fashion_poses"] = fashion_result["poses"]
+        result["primary_fashion_pose"] = fashion_result.get("primary_pose")
+        result["fashion_pose_count"] = fashion_result.get("pose_count", 0)
+
+        # Copy body/face angle info
+        if fashion_result.get("body_angle"):
+            result["body_angle"] = fashion_result["body_angle"]
+            result["body_facing"] = fashion_result.get("body_facing")
+        if fashion_result.get("face_angle"):
+            result["face_angle"] = fashion_result["face_angle"]
+            result["face_facing"] = fashion_result.get("face_facing")
+        if fashion_result.get("body_turned"):
+            result["body_turned"] = fashion_result["body_turned"]
+        if fashion_result.get("face_turned"):
+            result["face_turned"] = fashion_result["face_turned"]
+        if fashion_result.get("back_to_camera"):
+            result["back_to_camera"] = True
+
+    return result
+
+
+def _detect_fashion_poses(keypoints: List[Tuple[float, float, float]]) -> Dict[str, Any]:
+    """
+    Detect fashion/model poses from keypoints.
+
+    Analyzes body geometry to identify common fashion photography poses.
+
+    Returns dict with detected fashion poses and confidence scores.
+    """
+    if not keypoints or len(keypoints) < 11:
+        return {"detected": False, "poses": []}
+
+    # Helper to safely get keypoint
+    def get_kp(idx):
+        if idx < len(keypoints):
+            kp = keypoints[idx]
+            if kp[2] > 0.3:
+                return kp
+        return None
+
+    # Get key body parts
+    nose = get_kp(0)
+    left_eye = get_kp(1)
+    right_eye = get_kp(2)
+    left_shoulder = get_kp(5)
+    right_shoulder = get_kp(6)
+    left_elbow = get_kp(7)
+    right_elbow = get_kp(8)
+    left_wrist = get_kp(9)
+    right_wrist = get_kp(10)
+    left_hip = get_kp(11)
+    right_hip = get_kp(12)
+    left_knee = get_kp(13)
+    right_knee = get_kp(14)
+    left_ankle = get_kp(15)
+    right_ankle = get_kp(16)
+
+    detected_poses = []
+    result = {"detected": False, "poses": [], "primary_pose": None}
+
+    # =========================================================================
+    # CONTRAPPOSTO (S-curve) - Classic fashion pose
+    # Hip tilted one way, shoulders tilted opposite
+    # =========================================================================
+    if left_shoulder and right_shoulder and left_hip and right_hip:
+        shoulder_tilt = left_shoulder[1] - right_shoulder[1]  # Positive = left higher
+        hip_tilt = left_hip[1] - right_hip[1]  # Positive = left higher
+
+        # Contrapposto: shoulders and hips tilt in opposite directions
+        if abs(shoulder_tilt) > 0.02 and abs(hip_tilt) > 0.02:
+            if (shoulder_tilt > 0 and hip_tilt < 0) or (shoulder_tilt < 0 and hip_tilt > 0):
+                tilt_diff = abs(shoulder_tilt) + abs(hip_tilt)
+                confidence = min(0.95, 0.5 + tilt_diff * 3)
+                detected_poses.append({
+                    "pose": "contrapposto",
+                    "confidence": confidence,
+                    "description": "S-curve pose with opposite shoulder-hip tilt"
+                })
+
+    # =========================================================================
+    # HAND ON HIP - Confident/sassy pose
+    # Wrist near hip with elbow bent outward
+    # =========================================================================
+    for side, wrist, elbow, hip, shoulder in [
+        ("left", left_wrist, left_elbow, left_hip, left_shoulder),
+        ("right", right_wrist, right_elbow, right_hip, right_shoulder)
+    ]:
+        if wrist and hip and elbow:
+            # Check if wrist is near hip
+            wrist_hip_dist = ((wrist[0] - hip[0])**2 + (wrist[1] - hip[1])**2)**0.5
+            if wrist_hip_dist < 0.12:
+                # Check if elbow is bent outward (elbow x is further from center than wrist)
+                if shoulder:
+                    body_center_x = (left_shoulder[0] + right_shoulder[0]) / 2 if left_shoulder and right_shoulder else shoulder[0]
+                    elbow_outward = abs(elbow[0] - body_center_x) > abs(wrist[0] - body_center_x)
+                    if elbow_outward:
+                        confidence = min(0.95, 0.7 + (0.12 - wrist_hip_dist) * 3)
+                        detected_poses.append({
+                            "pose": "hand_on_hip",
+                            "confidence": confidence,
+                            "side": side,
+                            "description": f"{side.capitalize()} hand placed on hip"
+                        })
+
+    # =========================================================================
+    # POWER POSE - Wide stance, shoulders back
+    # =========================================================================
+    if left_ankle and right_ankle and left_shoulder and right_shoulder:
+        ankle_width = abs(left_ankle[0] - right_ankle[0])
+        shoulder_width = abs(left_shoulder[0] - right_shoulder[0])
+
+        # Wide stance = ankles wider than shoulders
+        if ankle_width > shoulder_width * 1.2:
+            confidence = min(0.9, 0.5 + (ankle_width / shoulder_width - 1) * 0.5)
+            detected_poses.append({
+                "pose": "power_pose",
+                "confidence": confidence,
+                "description": "Wide stance power pose"
+            })
+
+    # =========================================================================
+    # CROSSED LEGS - Elegant standing pose
+    # =========================================================================
+    if left_ankle and right_ankle and left_knee and right_knee:
+        ankle_dist = abs(left_ankle[0] - right_ankle[0])
+        knee_dist = abs(left_knee[0] - right_knee[0])
+
+        # Crossed or close ankles with knees apart
+        if ankle_dist < 0.08 and knee_dist > ankle_dist:
+            confidence = min(0.9, 0.6 + (knee_dist - ankle_dist) * 3)
+            detected_poses.append({
+                "pose": "crossed_legs",
+                "confidence": confidence,
+                "description": "Legs crossed or ankles together"
+            })
+
+    # =========================================================================
+    # WALKING/RUNWAY - One leg forward
+    # =========================================================================
+    if left_ankle and right_ankle and left_hip and right_hip:
+        hip_center_y = (left_hip[1] + right_hip[1]) / 2
+        left_leg_forward = left_ankle[1] < right_ankle[1]  # Lower y = higher in image = forward
+        leg_diff = abs(left_ankle[1] - right_ankle[1])
+
+        if leg_diff > 0.08:
+            confidence = min(0.85, 0.5 + leg_diff * 2)
+            forward_leg = "left" if left_leg_forward else "right"
+            detected_poses.append({
+                "pose": "walking",
+                "confidence": confidence,
+                "forward_leg": forward_leg,
+                "description": f"Walking pose with {forward_leg} leg forward"
+            })
+
+    # =========================================================================
+    # OVER SHOULDER LOOK - Head turned, body angled
+    # =========================================================================
+    if nose and left_shoulder and right_shoulder:
+        shoulder_center_x = (left_shoulder[0] + right_shoulder[0]) / 2
+        head_offset = nose[0] - shoulder_center_x
+
+        # Head significantly off-center from shoulders
+        if abs(head_offset) > 0.08:
+            confidence = min(0.85, 0.5 + abs(head_offset) * 3)
+            look_direction = "left" if head_offset < 0 else "right"
+            detected_poses.append({
+                "pose": "over_shoulder",
+                "confidence": confidence,
+                "direction": look_direction,
+                "description": f"Looking over {look_direction} shoulder"
+            })
+
+    # =========================================================================
+    # LEANING POSE - Body tilted to one side
+    # =========================================================================
+    if left_shoulder and right_shoulder and left_hip and right_hip:
+        shoulder_center_x = (left_shoulder[0] + right_shoulder[0]) / 2
+        hip_center_x = (left_hip[0] + right_hip[0]) / 2
+        lean = shoulder_center_x - hip_center_x
+
+        if abs(lean) > 0.05:
+            confidence = min(0.85, 0.5 + abs(lean) * 4)
+            lean_direction = "left" if lean < 0 else "right"
+            detected_poses.append({
+                "pose": "leaning",
+                "confidence": confidence,
+                "direction": lean_direction,
+                "description": f"Leaning to the {lean_direction}"
+            })
+
+    # =========================================================================
+    # ARMS CROSSED - Defensive or editorial pose
+    # =========================================================================
+    if left_wrist and right_wrist and left_shoulder and right_shoulder:
+        chest_center_x = (left_shoulder[0] + right_shoulder[0]) / 2
+        chest_center_y = (left_shoulder[1] + right_shoulder[1]) / 2 + 0.1  # Slightly below shoulders
+
+        left_near_chest = abs(left_wrist[0] - chest_center_x) < 0.15 and abs(left_wrist[1] - chest_center_y) < 0.15
+        right_near_chest = abs(right_wrist[0] - chest_center_x) < 0.15 and abs(right_wrist[1] - chest_center_y) < 0.15
+
+        if left_near_chest and right_near_chest:
+            # Check if wrists are crossed (one in front of other)
+            wrist_close = abs(left_wrist[0] - right_wrist[0]) < 0.1
+            if wrist_close:
+                detected_poses.append({
+                    "pose": "arms_crossed",
+                    "confidence": 0.8,
+                    "description": "Arms crossed over chest"
+                })
+
+    # =========================================================================
+    # WEIGHT SHIFT - Standing with weight on one leg
+    # =========================================================================
+    if left_hip and right_hip and left_ankle and right_ankle:
+        hip_center_x = (left_hip[0] + right_hip[0]) / 2
+
+        # Check which ankle is closer to hip center (weight-bearing leg)
+        left_weight = abs(left_ankle[0] - hip_center_x)
+        right_weight = abs(right_ankle[0] - hip_center_x)
+
+        weight_diff = abs(left_weight - right_weight)
+        if weight_diff > 0.05:
+            weight_leg = "left" if left_weight < right_weight else "right"
+            confidence = min(0.8, 0.5 + weight_diff * 3)
+            detected_poses.append({
+                "pose": "weight_shift",
+                "confidence": confidence,
+                "weight_on": weight_leg,
+                "description": f"Weight shifted to {weight_leg} leg"
+            })
+
+    # =========================================================================
+    # HANDS BEHIND BACK - Elegant/formal pose
+    # =========================================================================
+    if left_wrist and right_wrist and left_hip and right_hip:
+        hip_center_x = (left_hip[0] + right_hip[0]) / 2
+        # Both wrists near center and below shoulders but above hips
+        wrists_centered = abs(left_wrist[0] - hip_center_x) < 0.1 and abs(right_wrist[0] - hip_center_x) < 0.1
+        wrists_close = abs(left_wrist[0] - right_wrist[0]) < 0.1
+
+        if wrists_centered and wrists_close:
+            # Check if wrists are behind (we can infer from elbow position)
+            if left_elbow and right_elbow:
+                elbows_back = left_elbow[0] < left_wrist[0] and right_elbow[0] > right_wrist[0]
+                if elbows_back:
+                    detected_poses.append({
+                        "pose": "hands_behind_back",
+                        "confidence": 0.75,
+                        "description": "Hands clasped behind back"
+                    })
+
+    # =========================================================================
+    # BODY ANGLE / FACING DIRECTION
+    # Detect if subject is facing camera, profile, 3/4 view, back to camera
+    # =========================================================================
+    body_angle = None
+    face_angle = None
+
+    if left_shoulder and right_shoulder:
+        # Calculate shoulder width ratio (appears narrower when turned)
+        shoulder_width = abs(left_shoulder[0] - right_shoulder[0])
+
+        # Estimate expected full frontal shoulder width based on image
+        # If shoulders appear very narrow, body is turned
+        # We use hip width as reference if available
+        if left_hip and right_hip:
+            hip_width = abs(left_hip[0] - right_hip[0])
+            shoulder_hip_ratio = shoulder_width / hip_width if hip_width > 0.01 else 1.0
+
+            if shoulder_hip_ratio > 1.3:
+                # Shoulders much wider than hips - facing camera
+                body_angle = "frontal"
+                result["body_facing"] = "camera"
+                result["body_angle_confidence"] = 0.8
+            elif shoulder_hip_ratio < 0.7:
+                # Shoulders narrower than hips - turned significantly
+                body_angle = "turned"
+                result["body_facing"] = "side"
+                result["body_angle_confidence"] = 0.7
+            else:
+                # Moderate ratio - could be 3/4 view
+                body_angle = "three_quarter"
+                result["body_facing"] = "angled"
+                result["body_angle_confidence"] = 0.6
+
+        # Determine which way body is turned based on shoulder positions
+        shoulder_center = (left_shoulder[0] + right_shoulder[0]) / 2
+        if left_hip and right_hip:
+            hip_center = (left_hip[0] + right_hip[0]) / 2
+            body_turn = shoulder_center - hip_center
+
+            if abs(body_turn) > 0.03:
+                result["body_turned"] = "left" if body_turn < 0 else "right"
+
+    # Face angle detection using eyes and nose
+    if nose and left_eye and right_eye:
+        eye_center_x = (left_eye[0] + right_eye[0]) / 2
+        eye_width = abs(left_eye[0] - right_eye[0])
+
+        # Nose offset from eye center indicates face turn
+        nose_offset = nose[0] - eye_center_x
+
+        if eye_width > 0.01:
+            offset_ratio = abs(nose_offset) / eye_width
+
+            if offset_ratio < 0.15:
+                face_angle = "frontal"
+                result["face_facing"] = "camera"
+                result["face_angle_confidence"] = 0.85
+            elif offset_ratio < 0.4:
+                face_angle = "three_quarter"
+                result["face_facing"] = "angled"
+                result["face_angle_confidence"] = 0.75
+                result["face_turned"] = "left" if nose_offset < 0 else "right"
+            else:
+                face_angle = "profile"
+                result["face_facing"] = "side"
+                result["face_angle_confidence"] = 0.8
+                result["face_turned"] = "left" if nose_offset < 0 else "right"
+
+    # Detect looking away from camera (face turned opposite to body)
+    if result.get("body_facing") and result.get("face_facing"):
+        if result.get("body_turned") and result.get("face_turned"):
+            if result["body_turned"] != result["face_turned"]:
+                detected_poses.append({
+                    "pose": "looking_away",
+                    "confidence": 0.75,
+                    "description": f"Body facing {result['body_turned']}, looking {result['face_turned']}"
+                })
+        elif result["body_facing"] == "camera" and result["face_facing"] == "side":
+            detected_poses.append({
+                "pose": "looking_away",
+                "confidence": 0.8,
+                "description": "Body facing camera, head turned to side"
+            })
+
+    # Detect back to camera
+    if left_shoulder and right_shoulder and nose:
+        shoulder_center_x = (left_shoulder[0] + right_shoulder[0]) / 2
+        # If nose is significantly behind shoulder line (in image terms, this is tricky)
+        # We can infer from very narrow shoulder width + no face visibility
+        if left_eye and right_eye:
+            eye_visibility = (left_eye[2] + right_eye[2]) / 2
+            if eye_visibility < 0.3:
+                # Eyes not visible - likely back to camera
+                result["back_to_camera"] = True
+                detected_poses.append({
+                    "pose": "back_to_camera",
+                    "confidence": 0.7,
+                    "description": "Subject's back facing camera"
+                })
+
+    # Store angle info
+    result["body_angle"] = body_angle
+    result["face_angle"] = face_angle
+
+    # Sort by confidence and build result
+    if detected_poses:
+        detected_poses.sort(key=lambda x: x["confidence"], reverse=True)
+        result["detected"] = True
+        result["poses"] = detected_poses
+        result["primary_pose"] = detected_poses[0]["pose"]
+        result["primary_confidence"] = detected_poses[0]["confidence"]
+        result["pose_count"] = len(detected_poses)
+
     return result
 
 
