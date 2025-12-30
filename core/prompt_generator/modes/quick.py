@@ -25,36 +25,36 @@ class QuickMode(BaseMode):
     generate a detailed image description. No taggers are executed.
     """
 
-    # System prompt for image analysis
-    SYSTEM_PROMPT = """You are an expert visual analyst specializing in creating detailed image descriptions for AI image generation.
+    # System prompt optimized for Z-Image/Flux generation
+    SYSTEM_PROMPT = """You are an expert visual analyst creating prompts for AI image generation (Z-Image/Flux).
 
-Your task is to describe the image in comprehensive detail, suitable for recreating it with an AI image generator.
+CRITICAL RULES:
+- Use CONCRETE, SPECIFIC, VISUAL descriptions only
+- Describe what you SEE, not what you interpret or feel
+- NO poetic, philosophical, abstract, or emotional language
+- NO metaphors, symbolism, or artistic interpretation
+- NO phrases like "captures the essence", "evokes a sense of", "speaks to"
+- NO commentary about meaning, mood interpretation, or artistic intent
+- NO meta-commentary (no "the image shows", "in the photo", "this photograph")
+- Focus on: subject details, colors, textures, lighting, composition, materials
 
-Guidelines:
-- Be specific and detailed about all visual elements
-- Use natural, flowing language
-- Include subject, appearance, clothing, pose, environment, lighting, and composition
-- Do NOT include meta-commentary about the image itself (no "the image shows" or "in the photo")
-- Do NOT make assumptions about what you cannot see
-- Write as a single flowing paragraph
-
-Focus on factual visual description only."""
+Write precise, literal descriptions of observable visual elements only."""
 
     # User prompt for image analysis
-    USER_PROMPT = """Describe this image in detail for AI image generation.
+    USER_PROMPT = """Describe this image for AI image generation using ONLY concrete visual details.
 
-Include:
-1. SUBJECT: Who or what is the main subject
-2. APPEARANCE: Physical features, ethnicity, age impression, skin tone
-3. HAIR: Color, length, style, texture
-4. FACE: Features, expression, gaze direction
-5. CLOTHING: All visible garments, colors, materials, fit
-6. POSE: Body position, gesture, stance
-7. ENVIRONMENT: Setting, background, atmosphere
-8. LIGHTING: Quality, direction, mood
-9. COMPOSITION: Framing, camera angle, depth of field
+REQUIRED (describe each):
+1. SUBJECT: Specific identity (gender, age, ethnicity, build)
+2. FACE: Shape, features, expression, eye color, skin tone
+3. HAIR: Exact color, length, style, texture
+4. BODY: Visible anatomy, proportions, skin details
+5. CLOTHING: Each garment with color, material, fit, style
+6. POSE: Exact body position, hand placement, stance
+7. ENVIRONMENT: Specific location, objects, surfaces, textures
+8. LIGHTING: Direction, quality, color temperature, shadows
+9. CAMERA: Angle, framing, focus, depth of field
 
-Write as a single flowing paragraph suitable for image generation. Be specific and detailed."""
+Write as a single flowing paragraph. NO poetic language. Be literal and specific."""
 
     @property
     def name(self) -> str:

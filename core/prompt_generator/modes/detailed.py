@@ -5,8 +5,8 @@ Executes taggers, then uses 3 LLM passes to build comprehensive
 descriptions with tag injection, scene-specific prompts, and detail
 enhancements for each component group.
 
-Requires LLM with reasoning capability (API providers only).
-Falls back to Standard mode for local models.
+Works with any LLM (local or API). Uses extended thinking when
+available (Anthropic API) for improved quality.
 """
 
 import base64
@@ -22,7 +22,7 @@ from .standard import StandardMode
 from ..types import GeneratorResult, TaggerResults, Decisions
 from ..decisions import get_engine
 from ..templates import get_loader, get_selector, get_builder
-from ..templates.tag_injector import get_unmapped_tags, format_tags_for_prompt, get_debug_info
+from ..templates.tag_injector import get_unmapped_tags, format_tags_for_prompt, get_debug_info, get_female_anatomy_tags
 from ..templates.scene_prompts import format_scene_prompt, get_scene_group
 from ..templates.detail_prompts import (
     get_animal_prompt,
@@ -50,7 +50,6 @@ class DetailedMode(BaseMode):
     - Inclusion analysis on final output
 
     Falls back to Standard mode if:
-    - LLM doesn't support reasoning (local models)
     - Any error occurs during execution
     """
 
@@ -68,7 +67,7 @@ class DetailedMode(BaseMode):
 
     @property
     def requires_reasoning(self) -> bool:
-        return True
+        return False  # Reasoning is optional, not required
 
     def execute(
         self,
@@ -84,6 +83,10 @@ class DetailedMode(BaseMode):
         """
         Execute Detailed mode with full enhancements.
 
+        Uses 3 LLM passes to build comprehensive descriptions.
+        Works with any LLM (local or API). Uses extended thinking
+        when available (Anthropic API) for improved quality.
+
         Args:
             image: Image tensor from ComfyUI
             llm_model: LLMModelConfig with provider settings
@@ -95,13 +98,6 @@ class DetailedMode(BaseMode):
         Returns:
             GeneratorResult with multi-pass generated description
         """
-        # Check for reasoning support - only API providers with reasoning
-        if llm_model and not getattr(llm_model, 'supports_reasoning', False):
-            print("[Detailed] LLM doesn't support reasoning, falling back to Standard mode")
-            return StandardMode().execute(
-                image, llm_model, tagger_results, decisions, prompt_config, **kwargs
-            )
-
         if image is None:
             return GeneratorResult(
                 prompt="[No image provided]",
@@ -148,6 +144,14 @@ class DetailedMode(BaseMode):
                 threshold=tag_threshold,
                 max_tags=max_injected_tags,
             )
+
+            # Inject female anatomy tags for women subjects (NudeNet often misses these)
+            subject_type = decisions.subject_type.value if hasattr(decisions.subject_type, 'value') else str(decisions.subject_type)
+            anatomy_tags = get_female_anatomy_tags(subject_type, detected_tags)
+            if anatomy_tags:
+                # Merge anatomy tags with detected tags (anatomy tags go first for emphasis)
+                detected_tags = anatomy_tags + list(detected_tags)
+
             tags_str = format_tags_for_prompt(detected_tags, show_confidence=True) if detected_tags else ""
 
             # Step 6: Convert image to base64
@@ -253,13 +257,8 @@ class DetailedMode(BaseMode):
         Returns list of pass configs with enhanced prompts.
         """
         subject_type = decisions.subject_type.value
-        detected_animal = decisions.detected_animal
+        detected_animal = decisions.wildlife_type  # wildlife_type holds animal name
         passes = []
-
-        # Get WD14 tags for enhancement lookup
-        wd14_tags = {}
-        if tagger_results.wd14 and tagger_results.wd14.tags:
-            wd14_tags = tagger_results.wd14.tags
 
         # =====================================================================
         # PASS 1: Subject + Appearance
@@ -278,9 +277,9 @@ Describe in detail:
 5. Skin tone and any notable features"""
 
             # Add tag-driven enhancements for hair/eyes/face
-            hair_enhancements = self._get_tag_enhancements_for_section("hair", wd14_tags, tag_threshold)
-            eyes_enhancements = self._get_tag_enhancements_for_section("eyes", wd14_tags, tag_threshold)
-            face_enhancements = self._get_tag_enhancements_for_section("face", wd14_tags, tag_threshold)
+            hair_enhancements = self._get_tag_enhancements_for_section("hair", tagger_results, tag_threshold)
+            eyes_enhancements = self._get_tag_enhancements_for_section("eyes", tagger_results, tag_threshold)
+            face_enhancements = self._get_tag_enhancements_for_section("face", tagger_results, tag_threshold)
 
             if hair_enhancements:
                 pass1_prompt += f"\n\nFor hair details: {hair_enhancements}"
@@ -359,14 +358,14 @@ Based on what's visible, describe:
 5. Accessories (jewelry, bags, glasses, etc.)"""
 
             # Add clothing-specific enhancements
-            clothing_enhancements = self._get_clothing_enhancements(wd14_tags, tag_threshold)
+            clothing_enhancements = self._get_clothing_enhancements(tagger_results, tag_threshold)
             if clothing_enhancements:
                 pass2_prompt += f"\n\nClothing details to focus on:\n{clothing_enhancements}"
                 pass2_enhancements.append({"type": "clothing"})
 
             # Add tag-driven enhancements for pose/expression
-            pose_enhancements = self._get_tag_enhancements_for_section("pose", wd14_tags, tag_threshold)
-            expression_enhancements = self._get_tag_enhancements_for_section("expression", wd14_tags, tag_threshold)
+            pose_enhancements = self._get_tag_enhancements_for_section("pose", tagger_results, tag_threshold)
+            expression_enhancements = self._get_tag_enhancements_for_section("expression", tagger_results, tag_threshold)
 
             if pose_enhancements:
                 pass2_prompt += f"\n\nFor pose: {pose_enhancements}"
@@ -442,14 +441,14 @@ and any compositional techniques used.
 Overall mood, feeling, and visual impact of the image."""
 
         # Add sky/weather info if available
-        if decisions.sky_weather:
-            pass3_prompt += f"\n\nSky/Weather detected: {decisions.sky_weather}. Describe how this affects the scene."
-            pass3_enhancements.append({"type": "weather", "weather": decisions.sky_weather})
+        if decisions.weather_condition:
+            pass3_prompt += f"\n\nSky/Weather detected: {decisions.weather_condition}. Describe how this affects the scene."
+            pass3_enhancements.append({"type": "weather", "weather": decisions.weather_condition})
 
         # Add landmark info if available
-        if decisions.landmark:
-            pass3_prompt += f"\n\nLandmark detected: {decisions.landmark}. Include this in your environment description."
-            pass3_enhancements.append({"type": "landmark", "landmark": decisions.landmark})
+        if decisions.landmark_name:
+            pass3_prompt += f"\n\nLandmark detected: {decisions.landmark_name}. Include this in your environment description."
+            pass3_enhancements.append({"type": "landmark", "landmark": decisions.landmark_name})
 
         pass3_prompt += """
 
@@ -468,41 +467,29 @@ Write as flowing descriptive prose suitable for AI image generation."""
     def _get_tag_enhancements_for_section(
         self,
         section: str,
-        wd14_tags: Dict[str, float],
+        tagger_results: TaggerResults,
         threshold: float,
     ) -> str:
         """Get tag-driven enhancement text for a section."""
-        enhancements = []
-
-        for tag, confidence in wd14_tags.items():
-            if confidence < threshold:
-                continue
-
-            tag_lower = tag.lower().replace("_", " ")
-            enhancement = get_tag_enhancement(tag_lower, section)
-            if enhancement:
-                enhancements.append(enhancement)
-
-        return " ".join(enhancements)  # Use all matching enhancements
+        # Use the get_tag_enhancement function with correct signature
+        result = get_tag_enhancement(section, tagger_results, threshold)
+        if result:
+            trigger_tag, enhanced_prompt = result
+            return enhanced_prompt
+        return ""
 
     def _get_clothing_enhancements(
         self,
-        wd14_tags: Dict[str, float],
+        tagger_results: TaggerResults,
         threshold: float,
     ) -> str:
         """Get clothing-specific enhancement prompts."""
-        clothing_items = []
-
-        for tag, confidence in wd14_tags.items():
-            if confidence < threshold:
-                continue
-
-            tag_lower = tag.lower().replace("_", " ")
-            clothing_prompt = get_clothing_prompt(tag_lower)
-            if clothing_prompt:
-                clothing_items.append(f"- {tag_lower}: {clothing_prompt}")
-
-        return "\n".join(clothing_items)  # Use all detected clothing items
+        # Use the get_clothing_prompt function with correct signature
+        result = get_clothing_prompt(tagger_results, threshold)
+        if result:
+            clothing_type, clothing_prompt = result
+            return f"- {clothing_type}: {clothing_prompt}"
+        return ""
 
     def _image_to_base64(self, image_tensor: Any, llm_model: Any) -> str:
         """Convert image tensor to base64 string."""
@@ -538,46 +525,82 @@ Write as flowing descriptive prose suitable for AI image generation."""
         prompt: str,
         prompt_config: Optional[Dict[str, Any]] = None,
     ) -> str:
-        """Make LLM call with reasoning enabled."""
+        """Make LLM call. Uses extended thinking when available (Anthropic API)."""
         client = self._get_client(llm_model)
 
-        # System prompt for detailed analysis
-        system_prompt = """You are an expert visual analyst providing detailed image descriptions.
-Your descriptions should be comprehensive, specific, and suitable for AI image generation.
-Focus on observable details. Do not include meta-commentary about the image itself."""
+        # System prompt optimized for Z-Image/Flux generation
+        system_prompt = """You are an expert visual analyst creating prompts for AI image generation (Z-Image/Flux).
+
+CRITICAL RULES:
+- Use CONCRETE, SPECIFIC, VISUAL descriptions only
+- Describe what you SEE, not what you interpret or feel
+- NO poetic, philosophical, abstract, or emotional language
+- NO metaphors, symbolism, or artistic interpretation
+- NO phrases like "captures the essence", "evokes a sense of", "speaks to"
+- NO commentary about meaning, mood interpretation, or artistic intent
+- Focus on: subject details, colors, textures, lighting, composition, materials
+
+Be comprehensive and precise. Describe observable physical details only."""
 
         if prompt_config and prompt_config.get("system_prompt"):
             system_prompt = prompt_config["system_prompt"]
 
         if hasattr(client, 'messages'):
-            # Anthropic API with thinking enabled
-            response = client.messages.create(
-                model=llm_model.model,
-                max_tokens=llm_model.max_tokens,
-                thinking={"type": "enabled", "budget_tokens": min(4000, llm_model.max_tokens // 2)},
-                system=system_prompt,
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": "image/jpeg",
-                                "data": base64_image,
-                            }
-                        },
-                        {"type": "text", "text": prompt}
-                    ]
-                }]
-            )
-            # Extract text from response (skip thinking blocks)
-            for block in response.content:
-                if hasattr(block, 'text'):
-                    return block.text
-            return ""
+            # Anthropic API - use thinking if supported
+            supports_reasoning = getattr(llm_model, 'supports_reasoning', False)
+
+            if supports_reasoning:
+                # With extended thinking
+                response = client.messages.create(
+                    model=llm_model.model,
+                    max_tokens=llm_model.max_tokens,
+                    thinking={"type": "enabled", "budget_tokens": min(4000, llm_model.max_tokens // 2)},
+                    system=system_prompt,
+                    messages=[{
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "image/jpeg",
+                                    "data": base64_image,
+                                }
+                            },
+                            {"type": "text", "text": prompt}
+                        ]
+                    }]
+                )
+                # Extract text from response (skip thinking blocks)
+                for block in response.content:
+                    if hasattr(block, 'text'):
+                        return block.text
+                return ""
+            else:
+                # Without thinking
+                response = client.messages.create(
+                    model=llm_model.model,
+                    max_tokens=llm_model.max_tokens,
+                    temperature=llm_model.temperature,
+                    system=system_prompt,
+                    messages=[{
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "image/jpeg",
+                                    "data": base64_image,
+                                }
+                            },
+                            {"type": "text", "text": prompt}
+                        ]
+                    }]
+                )
+                return response.content[0].text
         else:
-            # OpenAI-compatible API
+            # OpenAI-compatible API (including local models)
             response = client.chat.completions.create(
                 model=llm_model.model,
                 max_tokens=llm_model.max_tokens,
@@ -611,7 +634,22 @@ Focus on observable details. Do not include meta-commentary about the image itse
             import httpx
             timeout = httpx.Timeout(timeout=300.0, connect=30.0)
             return anthropic.Anthropic(api_key=llm_model.api_key, timeout=timeout)
+
+        elif provider == "local":
+            # Local VLM models (Qwen2-VL, etc.)
+            from ....llm_providers.sid_llm_local import LocalModelClient
+            extra = llm_model.extra_params or {}
+            return LocalModelClient(
+                model_name=llm_model.model,
+                quantization=extra.get("quantization", "4-bit"),
+                device=extra.get("device", "auto"),
+                attention_mode=extra.get("attention_mode", "auto"),
+                keep_model_loaded=extra.get("keep_model_loaded", True),
+                hf_token=extra.get("hf_token"),
+            )
+
         else:
+            # OpenAI-compatible API (OpenAI, Gemini, Ollama, LMStudio, etc.)
             from openai import OpenAI
             return OpenAI(
                 api_key=llm_model.api_key or "not-needed",

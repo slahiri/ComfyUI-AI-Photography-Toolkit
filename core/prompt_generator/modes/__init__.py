@@ -5,8 +5,8 @@ Each mode implements a different strategy for generating prompts:
 - Override: Pass-through user prompts
 - Florence: VLM-based description
 - Quick: Single-shot LLM (no taggers)
-- Standard: Tag-driven template LLM (local/API without reasoning)
-- Detailed: Multi-pass LLM with full enhancements (API with reasoning only)
+- Standard: Tag-driven template LLM (single pass)
+- Detailed: Multi-pass LLM with full enhancements (3 passes)
 """
 
 from .base import BaseMode

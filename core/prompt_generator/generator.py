@@ -17,7 +17,7 @@ Mode Selection:
     1. No llm_model -> Florence mode (VLM description)
     2. llm_model + Quick -> Quick mode (single LLM, no tags)
     3. llm_model + Standard -> Standard mode (tags + template + LLM)
-    4. llm_model + Detailed -> Detailed mode (tags + multi-pass LLM, API with reasoning only)
+    4. llm_model + Detailed -> Detailed mode (tags + multi-pass LLM)
 """
 
 import json
@@ -211,13 +211,6 @@ class SID_PromptGenerator:
 
         # Priority 2: LLM modes based on analysis_mode
         mode_key = analysis_mode.lower()
-
-        # Check if Detailed mode is available (requires reasoning)
-        if mode_key == "detailed":
-            supports_reasoning = getattr(llm_model, 'supports_reasoning', False)
-            if not supports_reasoning:
-                print(f"[SID_PromptGenerator] Detailed mode requires reasoning capability, falling back to Standard")
-                mode_key = "standard"
 
         return self._execute_llm_mode(image, llm_model, mode_key, user_prompt, tag_threshold, max_injected_tags)
 

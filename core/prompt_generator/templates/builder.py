@@ -6,7 +6,7 @@ Builds LLM prompts from templates and active sections.
 
 from typing import Dict, List, Any, Optional, Tuple
 from ..types import Decisions, TaggerResults
-from .tag_injector import get_unmapped_tags, format_tags_for_prompt
+from .tag_injector import get_unmapped_tags, format_tags_for_prompt, get_female_anatomy_tags
 from .scene_prompts import format_scene_prompt, get_scene_group
 from .detail_prompts import enhance_section_prompt, get_all_enhancements
 
@@ -63,6 +63,15 @@ class PromptBuilder:
                 threshold=tag_threshold,
                 max_tags=max_tags,
             )
+
+            # Inject female anatomy tags for women subjects (NudeNet often misses these)
+            if decisions is not None:
+                subject_type = decisions.subject_type.value if hasattr(decisions.subject_type, 'value') else str(decisions.subject_type)
+                anatomy_tags = get_female_anatomy_tags(subject_type, detected_tags)
+                if anatomy_tags:
+                    # Merge anatomy tags with detected tags (anatomy tags go first for emphasis)
+                    detected_tags = anatomy_tags + list(detected_tags)
+
             if detected_tags:
                 tags_str = format_tags_for_prompt(detected_tags, show_confidence=True)
                 parts.append(f"\nDetected elements: {tags_str}")

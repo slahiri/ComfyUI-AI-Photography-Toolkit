@@ -235,8 +235,9 @@ class TaggerRunner:
             if detections:
                 print(f"\n[NUDENET] Detections ({len(detections)}):")
                 for det in detections[:10]:
-                    label = det.get("label", "unknown")
-                    conf = det.get("confidence", 0)
+                    # NudeNet uses "class" and "score" keys
+                    label = det.get("class", det.get("label", "unknown"))
+                    conf = det.get("score", det.get("confidence", 0))
                     print(f"  {conf:.2f}  {label}")
 
         # Print Pose detection

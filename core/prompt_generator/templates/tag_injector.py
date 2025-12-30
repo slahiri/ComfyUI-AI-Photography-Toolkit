@@ -129,6 +129,50 @@ def get_unmapped_tags(
     return sorted_tags[:max_tags]
 
 
+# Female anatomy tags to inject for women subjects (nudenet often misses these)
+FEMALE_ANATOMY_TAGS: Dict[str, float] = {
+    "breasts": 0.85,
+    "cleavage": 0.80,
+    "curves": 0.75,
+    "feminine_body": 0.80,
+    "bust": 0.75,
+}
+
+
+def get_female_anatomy_tags(
+    subject_type: str,
+    existing_tags: List[Tuple[str, float]],
+) -> List[Tuple[str, float]]:
+    """
+    Get female anatomy tags to inject for women subjects.
+
+    Since NudeNet often fails to detect female anatomy, we inject
+    common anatomy tags for women subjects to ensure proper description.
+
+    Args:
+        subject_type: The detected subject type (woman, man, person, etc.)
+        existing_tags: Already detected tags to avoid duplicates
+
+    Returns:
+        List of (tag, confidence) tuples to inject
+    """
+    # Only inject for female subjects
+    if subject_type not in ["woman", "person"]:
+        return []
+
+    # Get existing tag names for deduplication
+    existing_names = {tag.lower().replace("_", " ") for tag, _ in existing_tags}
+
+    # Filter out tags that already exist
+    anatomy_tags = []
+    for tag, conf in FEMALE_ANATOMY_TAGS.items():
+        tag_normalized = tag.lower().replace("_", " ")
+        if tag_normalized not in existing_names:
+            anatomy_tags.append((tag, conf))
+
+    return anatomy_tags
+
+
 def _extract_analyzer_tags(
     tagger_results: TaggerResults,
     threshold: float,

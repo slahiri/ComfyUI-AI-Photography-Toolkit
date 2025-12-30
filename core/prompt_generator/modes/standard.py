@@ -267,10 +267,27 @@ class StandardMode(BaseMode):
         """Make LLM call with image and prompt."""
         client = self._get_client(llm_model)
 
-        # Default system prompt
-        default_system = """You are an expert visual analyst. Describe the image based on the specific aspects requested.
-Write as a single flowing paragraph suitable for AI image generation.
-Be specific and detailed. Do not include meta-commentary about the image."""
+        # Default system prompt optimized for Z-Image/Flux generation
+        default_system = """You are an expert visual analyst creating prompts for AI image generation (Z-Image/Flux).
+
+CRITICAL RULES:
+- Use CONCRETE, SPECIFIC, VISUAL descriptions only
+- Describe what you SEE, not what you interpret or feel
+- NO poetic, philosophical, abstract, or emotional language
+- NO metaphors, symbolism, or artistic interpretation
+- NO phrases like "captures the essence", "evokes a sense of", "speaks to"
+- NO commentary about meaning, mood interpretation, or artistic intent
+- Focus on: subject details, colors, textures, lighting, composition, materials
+
+STRUCTURE your description:
+1. Main subject with specific attributes (age, ethnicity, build, features)
+2. Clothing/accessories with materials, colors, fit
+3. Pose, expression, body position
+4. Environment/background with concrete details
+5. Lighting quality, direction, color temperature
+6. Camera angle, framing, depth of field
+
+Write as a single flowing paragraph. Be precise and literal."""
 
         # Use custom prompts if provided
         if prompt_config:
