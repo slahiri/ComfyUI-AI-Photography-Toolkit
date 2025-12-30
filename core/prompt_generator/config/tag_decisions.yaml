@@ -1,0 +1,166 @@
+# Tag Decision Rules for SID_PromptGenerator
+# Maps tagger outputs to decisions for template selection
+
+subject_detection:
+  # Priority 1: Human subjects
+  WOMAN:
+    tags: ["1girl", "woman", "female", "lady", "female_focus", "girl"]
+    nudenet_gender: "female"
+    priority: 1
+
+  MAN:
+    tags: ["1boy", "man", "male", "gentleman", "male_focus", "boy"]
+    nudenet_gender: "male"
+    priority: 1
+
+  COUPLE:
+    tags: ["couple", "2girls", "2boys", "1girl 1boy"]
+    priority: 1
+
+  GROUP:
+    tags: ["multiple_girls", "multiple_boys", "crowd", "group"]
+    priority: 1
+
+  # Priority 2: Non-human subjects
+  LANDSCAPE:
+    tags: ["no_humans", "scenery", "landscape", "nature", "sky", "outdoors"]
+    places365_categories: ["outdoor", "nature", "mountain", "beach", "forest", "field", "lake", "ocean"]
+    priority: 2
+
+  ANIMAL:
+    wildlife_detected: true
+    tags: ["animal", "cat", "dog", "bird", "horse", "wildlife"]
+    priority: 2
+
+  VEHICLE:
+    tags: ["car", "motorcycle", "vehicle", "automobile", "bike", "truck", "train", "airplane", "boat"]
+    priority: 2
+
+  PRODUCT:
+    tags: ["product", "object", "food", "drink", "still_life"]
+    priority: 3
+
+gender_detection:
+  female:
+    tags: ["1girl", "woman", "female", "lady", "she", "girl"]
+    nudenet_indicators: ["female"]
+
+  male:
+    tags: ["1boy", "man", "male", "gentleman", "he", "boy"]
+    nudenet_indicators: ["male"]
+
+nsfw_detection:
+  SAFE:
+    max_exposure: 0
+    nudenet_parts: []
+
+  SUGGESTIVE:
+    nudenet_parts:
+      - "cleavage"
+      - "covered_breast"
+      - "bare_shoulders"
+      - "midriff"
+      - "thighs"
+    max_exposure: 0.3
+
+  EXPLICIT:
+    nudenet_parts:
+      - "exposed_breast"
+      - "exposed_genitalia"
+      - "nude"
+      - "topless"
+    max_exposure: 0.5
+
+shot_type_mapping:
+  # Maps shot type analyzer output to ShotType enum
+  ECU:
+    aliases: ["extreme_close_up", "ecu", "detail"]
+    description: "Extreme close-up focusing on face detail"
+    body_visible: false
+
+  CU:
+    aliases: ["close_up", "cu", "closeup", "head_shot"]
+    description: "Close-up portrait showing head and shoulders"
+    body_visible: false
+
+  MCU:
+    aliases: ["medium_close_up", "mcu", "bust_shot"]
+    description: "Medium close-up from chest up"
+    body_visible: partial
+
+  MS:
+    aliases: ["medium_shot", "ms", "waist_shot", "half_body"]
+    description: "Medium shot from waist up"
+    body_visible: partial
+
+  MFS:
+    aliases: ["medium_full_shot", "mfs", "cowboy_shot", "thigh_shot"]
+    description: "Medium full shot from thighs up"
+    body_visible: true
+
+  FS:
+    aliases: ["full_shot", "fs", "full_body", "full_length"]
+    description: "Full body shot"
+    body_visible: true
+
+  MLS:
+    aliases: ["medium_long_shot", "mls"]
+    description: "Full body with some environment"
+    body_visible: true
+
+  LS:
+    aliases: ["long_shot", "ls", "wide_shot"]
+    description: "Full body with prominent environment"
+    body_visible: true
+
+  ELS:
+    aliases: ["extreme_long_shot", "els", "establishing_shot"]
+    description: "Environment dominant, subject small"
+    body_visible: true
+
+section_triggers:
+  # Rules for activating template sections based on decisions
+
+  body_details:
+    description: "Include body/figure description"
+    enabled_when:
+      - condition: shot_type
+        values: ["MS", "MFS", "FS", "MLS", "LS"]
+      - condition: nsfw_level
+        values: ["SUGGESTIVE", "EXPLICIT"]
+    operator: OR
+
+  pose_details:
+    description: "Include pose description"
+    enabled_when:
+      - condition: shot_type
+        values: ["MCU", "MS", "MFS", "FS", "MLS", "LS"]
+
+  environment_details:
+    description: "Include environment description"
+    enabled_when:
+      - condition: scene_confidence
+        threshold: 0.5
+    disabled_when:
+      - condition: tags
+        values: ["simple_background", "white_background", "plain_background", "solid_background"]
+
+  clothing_details:
+    description: "Include clothing description"
+    enabled_when:
+      - condition: tags
+        values: ["dress", "shirt", "outfit", "clothed", "wearing", "clothes", "suit", "jacket", "pants", "skirt"]
+      - condition: fashion_detected
+        value: true
+    operator: OR
+
+confidence_thresholds:
+  # Minimum confidence for tag inclusion
+  wd14: 0.35
+  pixai: 0.4
+  joytag: 0.5
+  nudenet: 0.3
+  pose: 0.5
+  places365: 0.3
+  shot_type: 0.4
+  wildlife: 0.5

@@ -1007,6 +1007,7 @@ class SID_ZImagePromptGenerator(comfy_io.ComfyNode):
                 top_p=extra.get("top_p", 0.9),
                 repetition_penalty=extra.get("repetition_penalty", 1.2),
                 use_torch_compile=extra.get("use_torch_compile", False),
+                hf_token=extra.get("hf_token"),
             )
 
         else:

@@ -2,20 +2,21 @@
 SID_LLM_Local Node
 
 Unified local vision-language model provider for ComfyUI.
-Supports multiple model families with automatic VRAM management.
+Qwen VLM models with automatic VRAM management.
 
-Supported Model Families:
-- QwenVL: Qwen3-VL, Qwen2.5-VL (2B-32B)
-- Florence-2: Microsoft Florence-2 (0.2B-0.7B) - Fast captioning
-- Moondream2: Lightweight VLM (1.8B) - Efficient
-- SmolVLM: HuggingFace SmolVLM (0.25B-2B) - Ultra-efficient
-- Phi-3.5-Vision: Microsoft Phi-3.5 (4.2B) - High quality
+Supported Models:
+- Qwen3-VL (2B, 4B, 8B) - Latest generation, best quality
+- Qwen2.5-VL (3B, 7B) - Stable, good quality
+- Qwen2-VL (2B, 7B) - Legacy models
+
+Both Abliterated (uncensored) and Instruct versions available.
+Abliterated models are recommended for unrestricted captioning.
 
 Features:
 - VRAM auto-downgrade with safety margin
-- Multiple quantization options
+- Multiple quantization options (4-bit, 8-bit, FP16)
 - Model caching for faster inference
-- Image caching for repeated analyses
+- Flash Attention 2 / SDPA support
 """
 
 import os
@@ -167,10 +168,6 @@ ATTENTION_MODES = ["auto", "flash_attention_2", "sdpa", "eager"]
 class ModelFamily(Enum):
     """Supported model families."""
     QWENVL = "qwenvl"
-    FLORENCE2 = "florence2"
-    MOONDREAM2 = "moondream2"
-    SMOLVLM = "smolvlm"
-    PHI35_VISION = "phi35_vision"
 
 
 @dataclass
@@ -183,31 +180,70 @@ class LocalModelInfo:
     vram_8bit: float  # GB
     vram_4bit: float  # GB
     is_fp8: bool = False
-    is_thinking: bool = False
     max_output_tokens: int = 4096
     description: str = ""
     model_class: str = ""  # HuggingFace model class
 
 
 # =============================================================================
-# Model Registry - All supported local models
+# Model Registry - Qwen VLM Models (Ordered by VRAM usage, smallest first)
 # =============================================================================
 
 LOCAL_MODELS: Dict[str, LocalModelInfo] = {
     # =========================================================================
-    # QwenVL Series - Full Featured VLM (Listed first as recommended)
+    # ~1.5GB VRAM (4-bit) - 2B Models - Best for 6-8GB GPUs
     # =========================================================================
+    "Qwen3-VL-2B-Abliterated": LocalModelInfo(
+        name="Qwen3-VL 2B Abliterated [1.5-4GB] Uncensored",
+        repo_id="huihui-ai/Huihui-Qwen3-VL-2B-Instruct-abliterated",
+        family=ModelFamily.QWENVL,
+        vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
+        max_output_tokens=4096,
+        description="Fast uncensored, best for 6-8GB GPUs",
+        model_class="AutoModelForVision2Seq"
+    ),
     "Qwen3-VL-2B-Instruct": LocalModelInfo(
-        name="Qwen3-VL 2B | 4K tokens | 1.5GB VRAM (Fast)",
+        name="Qwen3-VL 2B Instruct [1.5-4GB]",
         repo_id="Qwen/Qwen3-VL-2B-Instruct",
         family=ModelFamily.QWENVL,
         vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
         max_output_tokens=4096,
-        description="Fast, good for 8GB GPUs",
+        description="Fast, best for 6-8GB GPUs",
+        model_class="AutoModelForVision2Seq"
+    ),
+    "Qwen2-VL-2B-Abliterated": LocalModelInfo(
+        name="Qwen2-VL 2B Abliterated [1.5-4GB] Uncensored",
+        repo_id="huihui-ai/Qwen2-VL-2B-Instruct-abliterated",
+        family=ModelFamily.QWENVL,
+        vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
+        max_output_tokens=4096,
+        description="Legacy uncensored model",
+        model_class="AutoModelForVision2Seq"
+    ),
+    "Qwen2-VL-2B-Instruct": LocalModelInfo(
+        name="Qwen2-VL 2B Instruct [1.5-4GB]",
+        repo_id="Qwen/Qwen2-VL-2B-Instruct",
+        family=ModelFamily.QWENVL,
+        vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
+        max_output_tokens=4096,
+        description="Legacy model",
+        model_class="AutoModelForVision2Seq"
+    ),
+
+    # =========================================================================
+    # ~2GB VRAM (4-bit) - 3-4B Models - Best for 8GB GPUs
+    # =========================================================================
+    "Qwen3-VL-4B-Abliterated": LocalModelInfo(
+        name="Qwen3-VL 4B Abliterated [2-6GB] Uncensored (Recommended)",
+        repo_id="huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated",
+        family=ModelFamily.QWENVL,
+        vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
+        max_output_tokens=4096,
+        description="Best balance, uncensored - recommended",
         model_class="AutoModelForVision2Seq"
     ),
     "Qwen3-VL-4B-Instruct": LocalModelInfo(
-        name="Qwen3-VL 4B | 4K tokens | 2GB VRAM (Recommended)",
+        name="Qwen3-VL 4B Instruct [2-6GB]",
         repo_id="Qwen/Qwen3-VL-4B-Instruct",
         family=ModelFamily.QWENVL,
         vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
@@ -215,159 +251,76 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         description="Best balance of speed and quality",
         model_class="AutoModelForVision2Seq"
     ),
-    "Qwen3-VL-8B-Instruct": LocalModelInfo(
-        name="Qwen3-VL 8B | 4K tokens | 4.5GB VRAM (Quality)",
-        repo_id="Qwen/Qwen3-VL-8B-Instruct",
-        family=ModelFamily.QWENVL,
-        vram_fp16=12.0, vram_8bit=7.0, vram_4bit=4.5,
-        max_output_tokens=4096,
-        description="High quality, needs 12GB+ VRAM",
-        model_class="AutoModelForVision2Seq"
-    ),
-    "Qwen3-VL-2B-Thinking": LocalModelInfo(
-        name="Qwen3-VL 2B Thinking | 4K tokens | 1.5GB VRAM (Reasoning)",
-        repo_id="Qwen/Qwen3-VL-2B-Thinking",
-        family=ModelFamily.QWENVL,
-        vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
-        max_output_tokens=4096,
-        is_thinking=True,
-        description="Fast reasoning model",
-        model_class="AutoModelForVision2Seq"
-    ),
-    "Qwen3-VL-4B-Thinking": LocalModelInfo(
-        name="Qwen3-VL 4B Thinking | 4K tokens | 2GB VRAM (Reasoning)",
-        repo_id="Qwen/Qwen3-VL-4B-Thinking",
-        family=ModelFamily.QWENVL,
-        vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
-        max_output_tokens=4096,
-        is_thinking=True,
-        description="Balanced reasoning model",
-        model_class="AutoModelForVision2Seq"
-    ),
-    "Qwen3-VL-8B-Thinking": LocalModelInfo(
-        name="Qwen3-VL 8B Thinking | 4K tokens | 4.5GB VRAM (Best Reasoning)",
-        repo_id="Qwen/Qwen3-VL-8B-Thinking",
-        family=ModelFamily.QWENVL,
-        vram_fp16=12.0, vram_8bit=7.0, vram_4bit=4.5,
-        max_output_tokens=4096,
-        is_thinking=True,
-        description="High quality reasoning, needs 12GB+ VRAM",
-        model_class="AutoModelForVision2Seq"
-    ),
     "Qwen2.5-VL-3B-Instruct": LocalModelInfo(
-        name="Qwen2.5-VL 3B | 4K tokens | 2GB VRAM",
+        name="Qwen2.5-VL 3B Instruct [2-5GB]",
         repo_id="Qwen/Qwen2.5-VL-3B-Instruct",
         family=ModelFamily.QWENVL,
         vram_fp16=5.0, vram_8bit=3.0, vram_4bit=2.0,
         max_output_tokens=4096,
-        description="Previous gen, compact model",
+        description="Compact model",
+        model_class="AutoModelForVision2Seq"
+    ),
+
+    # =========================================================================
+    # ~4GB VRAM (4-bit) - 7B Models - Best for 12GB GPUs
+    # =========================================================================
+    "Qwen2.5-VL-7B-Abliterated": LocalModelInfo(
+        name="Qwen2.5-VL 7B Abliterated [4-10GB] Uncensored",
+        repo_id="huihui-ai/Qwen2.5-VL-7B-Instruct-abliterated",
+        family=ModelFamily.QWENVL,
+        vram_fp16=10.0, vram_8bit=6.0, vram_4bit=4.0,
+        max_output_tokens=4096,
+        description="Stable quality, uncensored",
         model_class="AutoModelForVision2Seq"
     ),
     "Qwen2.5-VL-7B-Instruct": LocalModelInfo(
-        name="Qwen2.5-VL 7B | 4K tokens | 4GB VRAM",
+        name="Qwen2.5-VL 7B Instruct [4-10GB]",
         repo_id="Qwen/Qwen2.5-VL-7B-Instruct",
         family=ModelFamily.QWENVL,
         vram_fp16=10.0, vram_8bit=6.0, vram_4bit=4.0,
         max_output_tokens=4096,
-        description="Previous gen, stable quality",
+        description="Stable quality",
         model_class="AutoModelForVision2Seq"
     ),
-
-    # =========================================================================
-    # Florence-2 Series (Microsoft) - Ultra Fast Captioning
-    # =========================================================================
-    "Florence-2-base": LocalModelInfo(
-        name="Florence-2 Base | 1K tokens | 0.6GB VRAM (Ultra Fast)",
-        repo_id="microsoft/Florence-2-base",
-        family=ModelFamily.FLORENCE2,
-        vram_fp16=1.5, vram_8bit=1.0, vram_4bit=0.6,
-        max_output_tokens=1024,
-        description="Ultra-fast captioning, 0.23B params",
-        model_class="AutoModelForCausalLM"
-    ),
-    "Florence-2-large": LocalModelInfo(
-        name="Florence-2 Large | 1K tokens | 1.2GB VRAM (Fast)",
-        repo_id="microsoft/Florence-2-large",
-        family=ModelFamily.FLORENCE2,
-        vram_fp16=3.0, vram_8bit=2.0, vram_4bit=1.2,
-        max_output_tokens=1024,
-        description="Better quality captioning, 0.77B params",
-        model_class="AutoModelForCausalLM"
-    ),
-    "Florence-2-base-ft": LocalModelInfo(
-        name="Florence-2 Base FT | 1K tokens | 0.6GB VRAM",
-        repo_id="microsoft/Florence-2-base-ft",
-        family=ModelFamily.FLORENCE2,
-        vram_fp16=1.5, vram_8bit=1.0, vram_4bit=0.6,
-        max_output_tokens=1024,
-        description="Fine-tuned for downstream tasks",
-        model_class="AutoModelForCausalLM"
-    ),
-    "Florence-2-large-ft": LocalModelInfo(
-        name="Florence-2 Large FT | 1K tokens | 1.2GB VRAM",
-        repo_id="microsoft/Florence-2-large-ft",
-        family=ModelFamily.FLORENCE2,
-        vram_fp16=3.0, vram_8bit=2.0, vram_4bit=1.2,
-        max_output_tokens=1024,
-        description="Fine-tuned, best Florence quality",
-        model_class="AutoModelForCausalLM"
-    ),
-
-    # =========================================================================
-    # Moondream2 - Efficient VLM
-    # =========================================================================
-    "Moondream2": LocalModelInfo(
-        name="Moondream2 | 2K tokens | 1.5GB VRAM (Efficient)",
-        repo_id="vikhyatk/moondream2",
-        family=ModelFamily.MOONDREAM2,
-        vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
-        max_output_tokens=2048,
-        description="Efficient VLM, runs on CPU too",
-        model_class="AutoModelForCausalLM"
-    ),
-
-    # =========================================================================
-    # SmolVLM Series (HuggingFace) - Ultra Efficient
-    # =========================================================================
-    "SmolVLM-256M": LocalModelInfo(
-        name="SmolVLM 256M | 1K tokens | 0.3GB VRAM (Tiny)",
-        repo_id="HuggingFaceTB/SmolVLM-256M-Instruct",
-        family=ModelFamily.SMOLVLM,
-        vram_fp16=0.8, vram_8bit=0.5, vram_4bit=0.3,
-        max_output_tokens=1024,
-        description="Tiniest VLM, edge/mobile ready",
-        model_class="AutoModelForVision2Seq"
-    ),
-    "SmolVLM-500M": LocalModelInfo(
-        name="SmolVLM 500M | 1K tokens | 0.6GB VRAM (Small)",
-        repo_id="HuggingFaceTB/SmolVLM-500M-Instruct",
-        family=ModelFamily.SMOLVLM,
-        vram_fp16=1.5, vram_8bit=1.0, vram_4bit=0.6,
-        max_output_tokens=1024,
-        description="Very small, good balance",
-        model_class="AutoModelForVision2Seq"
-    ),
-    "SmolVLM-2B": LocalModelInfo(
-        name="SmolVLM 2B | 2K tokens | 2GB VRAM",
-        repo_id="HuggingFaceTB/SmolVLM-Instruct",
-        family=ModelFamily.SMOLVLM,
-        vram_fp16=4.5, vram_8bit=3.0, vram_4bit=2.0,
-        max_output_tokens=2048,
-        description="Best SmolVLM quality",
-        model_class="AutoModelForVision2Seq"
-    ),
-
-    # =========================================================================
-    # Phi-3.5-Vision (Microsoft) - High Quality
-    # =========================================================================
-    "Phi-3.5-Vision": LocalModelInfo(
-        name="Phi-3.5 Vision | 4K tokens | 3GB VRAM (Quality)",
-        repo_id="microsoft/Phi-3.5-vision-instruct",
-        family=ModelFamily.PHI35_VISION,
-        vram_fp16=8.5, vram_8bit=5.0, vram_4bit=3.0,
+    "Qwen2-VL-7B-Abliterated": LocalModelInfo(
+        name="Qwen2-VL 7B Abliterated [4-10GB] Uncensored",
+        repo_id="huihui-ai/Qwen2-VL-7B-Instruct-abliterated",
+        family=ModelFamily.QWENVL,
+        vram_fp16=10.0, vram_8bit=6.0, vram_4bit=4.0,
         max_output_tokens=4096,
-        description="High quality vision reasoning",
-        model_class="AutoModelForCausalLM"
+        description="Legacy quality, uncensored",
+        model_class="AutoModelForVision2Seq"
+    ),
+    "Qwen2-VL-7B-Instruct": LocalModelInfo(
+        name="Qwen2-VL 7B Instruct [4-10GB]",
+        repo_id="Qwen/Qwen2-VL-7B-Instruct",
+        family=ModelFamily.QWENVL,
+        vram_fp16=10.0, vram_8bit=6.0, vram_4bit=4.0,
+        max_output_tokens=4096,
+        description="Legacy quality model",
+        model_class="AutoModelForVision2Seq"
+    ),
+
+    # =========================================================================
+    # ~4.5GB VRAM (4-bit) - 8B Models - Best for 16GB+ GPUs
+    # =========================================================================
+    "Qwen3-VL-8B-Abliterated": LocalModelInfo(
+        name="Qwen3-VL 8B Abliterated [4.5-12GB] Uncensored (Best Quality)",
+        repo_id="huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated",
+        family=ModelFamily.QWENVL,
+        vram_fp16=12.0, vram_8bit=7.0, vram_4bit=4.5,
+        max_output_tokens=4096,
+        description="Highest quality uncensored, needs 12GB+ VRAM",
+        model_class="AutoModelForVision2Seq"
+    ),
+    "Qwen3-VL-8B-Instruct": LocalModelInfo(
+        name="Qwen3-VL 8B Instruct [4.5-12GB] (Best Quality)",
+        repo_id="Qwen/Qwen3-VL-8B-Instruct",
+        family=ModelFamily.QWENVL,
+        vram_fp16=12.0, vram_8bit=7.0, vram_4bit=4.5,
+        max_output_tokens=4096,
+        description="Highest quality, needs 12GB+ VRAM",
+        model_class="AutoModelForVision2Seq"
     ),
 }
 
@@ -435,6 +388,7 @@ class LocalModelClient:
         repetition_penalty: float = 1.2,
         num_beams: int = 1,
         use_torch_compile: bool = False,
+        hf_token: Optional[str] = None,
     ):
         self.model_name = model_name
         self.quantization = quantization
@@ -445,6 +399,7 @@ class LocalModelClient:
         self.repetition_penalty = repetition_penalty
         self.num_beams = num_beams
         self.use_torch_compile = use_torch_compile
+        self.hf_token = hf_token
 
         self.model = None
         self.processor = None
@@ -555,11 +510,15 @@ class LocalModelClient:
 
         if not os.path.exists(model_path):
             print(f"  Downloading model to {model_path}...")
-            snapshot_download(
-                repo_id=self.model_info.repo_id,
-                local_dir=model_path,
-                ignore_patterns=["*.md", ".git*"],
-            )
+            download_kwargs = {
+                "repo_id": self.model_info.repo_id,
+                "local_dir": model_path,
+                "ignore_patterns": ["*.md", ".git*"],
+            }
+            if self.hf_token:
+                download_kwargs["token"] = self.hf_token
+                print("  Using HuggingFace token for authentication")
+            snapshot_download(**download_kwargs)
 
         # Determine device
         device_info = self._get_device_info()
@@ -576,17 +535,11 @@ class LocalModelClient:
 
         print(f"  Quantization: {self.quantization}")
 
-        # Load based on model family
-        if self.model_info.family == ModelFamily.FLORENCE2:
-            self._load_florence2(model_path, device)
-        elif self.model_info.family == ModelFamily.MOONDREAM2:
-            self._load_moondream2(model_path, device)
-        elif self.model_info.family == ModelFamily.SMOLVLM:
-            self._load_smolvlm(model_path, device)
-        elif self.model_info.family == ModelFamily.PHI35_VISION:
-            self._load_phi35_vision(model_path, device)
-        elif self.model_info.family == ModelFamily.QWENVL:
+        # Load model (only QwenVL family supported)
+        if self.model_info.family == ModelFamily.QWENVL:
             self._load_qwenvl(model_path, device)
+        else:
+            raise ValueError(f"Unsupported model family: {self.model_info.family}")
 
         # Cache for reuse
         if self.keep_model_loaded:
@@ -632,192 +585,6 @@ class LocalModelClient:
 
         return None, optimal_dtype
 
-    def _load_florence2(self, model_path: str, device: str):
-        """Load Florence-2 model with speed optimizations."""
-        import torch
-        from transformers import AutoModelForCausalLM, AutoProcessor
-
-        quant_config, dtype = self._get_quantization_config(device)
-
-        load_kwargs = {
-            "trust_remote_code": True,
-            "low_cpu_mem_usage": True,
-            # Force eager attention - Florence-2's custom code doesn't define _supports_sdpa
-            # which newer transformers (4.49+) checks for
-            "attn_implementation": "eager",
-        }
-
-        if device == "cuda":
-            load_kwargs["device_map"] = {"": 0}
-            if quant_config:
-                load_kwargs["quantization_config"] = quant_config
-            else:
-                load_kwargs["torch_dtype"] = dtype or torch.float16
-
-        self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
-        self.model.eval()
-
-        # Enable KV cache for faster generation
-        if hasattr(self.model.config, 'use_cache'):
-            self.model.config.use_cache = True
-
-        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
-        self.tokenizer = self.processor.tokenizer
-
-    def _clear_transformers_cache(self, model_name: str):
-        """
-        Clear corrupted transformers_modules cache for a specific model.
-        This helps recover from incomplete downloads or cache corruption.
-        Also clears Python's sys.modules cache to prevent stale imports.
-        """
-        import shutil
-        import sys
-        from pathlib import Path
-
-        cache_dir = Path.home() / ".cache" / "huggingface" / "modules" / "transformers_modules"
-        if cache_dir.exists():
-            # Find and remove directories matching the model name
-            for item in cache_dir.iterdir():
-                # Match variations like "Moondream2", "moondream2", "vikhyatk_moondream2"
-                if model_name.lower() in item.name.lower():
-                    try:
-                        shutil.rmtree(item)
-                        print(f"[LocalModelClient] Cleared corrupted cache: {item.name}")
-                    except Exception as e:
-                        print(f"[LocalModelClient] Warning: Could not clear cache {item.name}: {e}")
-
-        # Clear any related entries from sys.modules to prevent stale imports
-        modules_to_remove = [
-            key for key in sys.modules.keys()
-            if model_name.lower() in key.lower() or "transformers_modules" in key
-        ]
-        for mod in modules_to_remove:
-            try:
-                del sys.modules[mod]
-            except Exception:
-                pass
-        if modules_to_remove:
-            print(f"[LocalModelClient] Cleared {len(modules_to_remove)} cached Python modules")
-
-    def _load_moondream2(self, model_path: str, device: str):
-        """Load Moondream2 model with speed optimizations."""
-        import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer
-
-        # Note: Moondream2's vision encoder doesn't support bitsandbytes quantization
-        # (causes Float vs Half dtype mismatch in layer_norm). Always use FP16/BF16.
-        _, dtype = self._get_quantization_config(device)
-
-        load_kwargs = {
-            "trust_remote_code": True,
-            "low_cpu_mem_usage": True,
-        }
-
-        if device == "cuda":
-            load_kwargs["device_map"] = {"": 0}
-            # Skip quantization for Moondream2 - use BF16 if supported, else FP16
-            major, _ = torch.cuda.get_device_capability()
-            if major >= 8:  # Ampere+ supports BF16
-                load_kwargs["torch_dtype"] = torch.bfloat16
-            else:
-                load_kwargs["torch_dtype"] = torch.float16
-
-        # Try loading, if cache is corrupted clear it and retry from HuggingFace
-        try:
-            self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
-        except FileNotFoundError as e:
-            if "transformers_modules" in str(e):
-                print(f"[LocalModelClient] Detected corrupted cache, clearing and retrying from HuggingFace...")
-                self._clear_transformers_cache("moondream")
-                self._clear_transformers_cache("Moondream")
-                # Use repo name with force_download to re-fetch modules
-                retry_kwargs = {**load_kwargs, "force_download": True}
-                self.model = AutoModelForCausalLM.from_pretrained("vikhyatk/moondream2", **retry_kwargs)
-            else:
-                raise
-        self.model.eval()
-
-        # Enable KV cache for faster generation
-        if hasattr(self.model.config, 'use_cache'):
-            self.model.config.use_cache = True
-
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        self.processor = self.model  # Moondream has built-in image processing
-
-    def _load_smolvlm(self, model_path: str, device: str):
-        """Load SmolVLM model with speed optimizations."""
-        import torch
-        from transformers import AutoModelForVision2Seq, AutoProcessor
-
-        quant_config, dtype = self._get_quantization_config(device)
-
-        load_kwargs = {
-            "trust_remote_code": True,
-            "low_cpu_mem_usage": True,
-        }
-
-        # Add attention implementation for SmolVLM
-        if device == "cuda":
-            try:
-                # Check both import AND package metadata (transformers requires metadata)
-                import flash_attn
-                import importlib.metadata
-                importlib.metadata.version("flash_attn")  # This will raise if metadata missing
-                major, _ = torch.cuda.get_device_capability()
-                if major >= 8:
-                    load_kwargs["attn_implementation"] = "flash_attention_2"
-                else:
-                    load_kwargs["attn_implementation"] = "sdpa"
-            except (ImportError, importlib.metadata.PackageNotFoundError):
-                load_kwargs["attn_implementation"] = "sdpa"
-
-        if device == "cuda":
-            load_kwargs["device_map"] = {"": 0}
-            if quant_config:
-                load_kwargs["quantization_config"] = quant_config
-            else:
-                load_kwargs["torch_dtype"] = dtype or torch.float16
-
-        self.model = AutoModelForVision2Seq.from_pretrained(model_path, **load_kwargs)
-        self.model.eval()
-
-        # Enable KV cache for faster generation
-        if hasattr(self.model.config, 'use_cache'):
-            self.model.config.use_cache = True
-
-        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
-        self.tokenizer = self.processor.tokenizer
-
-    def _load_phi35_vision(self, model_path: str, device: str):
-        """Load Phi-3.5-Vision model with speed optimizations."""
-        import torch
-        from transformers import AutoModelForCausalLM, AutoProcessor
-
-        quant_config, dtype = self._get_quantization_config(device)
-
-        load_kwargs = {
-            "trust_remote_code": True,
-            "low_cpu_mem_usage": True,
-            "_attn_implementation": "eager",  # Phi requires eager attention
-        }
-
-        if device == "cuda":
-            load_kwargs["device_map"] = {"": 0}
-            if quant_config:
-                load_kwargs["quantization_config"] = quant_config
-            else:
-                load_kwargs["torch_dtype"] = dtype or torch.float16
-
-        self.model = AutoModelForCausalLM.from_pretrained(model_path, **load_kwargs)
-        self.model.eval()
-
-        # Enable KV cache for faster generation
-        if hasattr(self.model.config, 'use_cache'):
-            self.model.config.use_cache = True
-
-        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
-        self.tokenizer = self.processor.tokenizer
-
     def _load_qwenvl(self, model_path: str, device: str):
         """Load QwenVL model with speed optimizations."""
         import torch
@@ -838,9 +605,10 @@ class LocalModelClient:
             print(f"  Using {self.attention_mode} (user-specified)")
         elif device == "cuda":
             try:
+                # Import importlib.metadata first so it's available in except clause
+                import importlib.metadata
                 # Check both import AND package metadata (transformers requires metadata)
                 import flash_attn
-                import importlib.metadata
                 importlib.metadata.version("flash_attn")  # This will raise if metadata missing
                 major, _ = torch.cuda.get_device_capability()
                 if major >= 8:
@@ -963,19 +731,11 @@ class LocalModelClient:
         while retry_count <= max_retries:
             gen_start = time.time()
 
-            # Generate based on model family
-            if self.model_info.family == ModelFamily.FLORENCE2:
-                response_text = self._generate_florence2(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.MOONDREAM2:
-                response_text = self._generate_moondream2(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.SMOLVLM:
-                response_text = self._generate_smolvlm(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.PHI35_VISION:
-                response_text = self._generate_phi35_vision(images, text_prompt, max_tokens, current_temp)
-            elif self.model_info.family == ModelFamily.QWENVL:
+            # Generate (only QwenVL family supported)
+            if self.model_info.family == ModelFamily.QWENVL:
                 response_text = self._generate_qwenvl(messages, images, max_tokens, current_temp)
             else:
-                raise ValueError(f"Unknown model family: {self.model_info.family}")
+                raise ValueError(f"Unsupported model family: {self.model_info.family}")
 
             gen_elapsed = time.time() - gen_start
 
@@ -1040,227 +800,6 @@ class LocalModelClient:
         except Exception as e:
             print(f"[LocalModelClient] Warning: Cleanup failed: {e}")
 
-    def _generate_florence2(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
-        """Generate with Florence-2."""
-        import torch
-
-        # DynamicCache compatibility fix for transformers 4.49+
-        self._patch_dynamic_cache_compat()
-
-        # Florence-2 uses task prompts like <DETAILED_CAPTION>
-        task_prompt = "<MORE_DETAILED_CAPTION>"
-
-        if images:
-            inputs = self.processor(text=task_prompt, images=images[0], return_tensors="pt")
-        else:
-            inputs = self.processor(text=task_prompt, return_tensors="pt")
-
-        device = next(self.model.parameters()).device
-        dtype = next(self.model.parameters()).dtype
-        # Move inputs to device and cast float tensors to model dtype
-        inputs = {
-            k: v.to(device, dtype=dtype) if v.dtype.is_floating_point else v.to(device)
-            for k, v in inputs.items()
-        }
-
-        with InferenceProgressSpinner("Generating (Florence-2)"):
-            with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    num_beams=1,  # Use greedy decoding - beam search has cache issues with newer transformers
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                )
-
-        return self.processor.batch_decode(outputs, skip_special_tokens=True)[0]
-
-    def _generate_moondream2(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
-        """Generate with Moondream2."""
-        import torch
-
-        # DynamicCache compatibility fix for transformers 4.49+
-        self._patch_dynamic_cache_compat()
-
-        if images:
-            # Moondream has built-in image encoding
-            enc_image = self.model.encode_image(images[0])
-            with InferenceProgressSpinner("Generating (Moondream2)"):
-                with torch.inference_mode():
-                    response = self.model.answer_question(enc_image, prompt.strip(), self.tokenizer)
-            return response
-        else:
-            return "No image provided"
-
-    def _generate_smolvlm(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
-        """Generate with SmolVLM."""
-        import torch
-
-        # DynamicCache compatibility fix for transformers 4.49+
-        self._patch_dynamic_cache_compat()
-
-        messages = [{"role": "user", "content": []}]
-        if images:
-            messages[0]["content"].append({"type": "image"})
-        messages[0]["content"].append({"type": "text", "text": prompt.strip()})
-
-        text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-
-        inputs = self.processor(
-            text=text,
-            images=images if images else None,
-            return_tensors="pt"
-        )
-
-        device = next(self.model.parameters()).device
-        inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in inputs.items()}
-
-        # Get input length to extract only generated tokens later
-        input_len = inputs["input_ids"].shape[1]
-
-        with InferenceProgressSpinner("Generating (SmolVLM)"):
-            with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                )
-
-        # Only decode the NEW tokens (exclude the input prompt)
-        generated_tokens = outputs[0][input_len:]
-        return self.processor.decode(generated_tokens, skip_special_tokens=True)
-
-    def _patch_dynamic_cache_compat(self):
-        """
-        Holistic compatibility fix for DynamicCache in newer transformers versions (4.49+).
-
-        Phi-3.5-Vision's custom modeling code expects deprecated/removed DynamicCache methods.
-        This patches the DynamicCache class to add compatibility shims for:
-        - seen_tokens property (deprecated in favor of cache_position tracking)
-        - get_max_length() method (removed in v4.49)
-        - get_usable_length(new_seq_length, layer_idx) method (removed in v4.49)
-
-        See: https://github.com/huggingface/transformers/issues/36071
-        """
-        try:
-            from transformers import DynamicCache
-
-            # Only patch if the methods are missing (avoid double-patching)
-            needs_patching = False
-
-            # Check if seen_tokens property exists
-            if not hasattr(DynamicCache, 'seen_tokens'):
-                needs_patching = True
-
-                @property
-                def seen_tokens_compat(self):
-                    """Compatibility shim for deprecated seen_tokens property."""
-                    if hasattr(self, '_seen_tokens'):
-                        return self._seen_tokens
-                    # Try get_seq_length method (newer transformers)
-                    if hasattr(self, 'get_seq_length'):
-                        try:
-                            return self.get_seq_length(0)
-                        except (IndexError, TypeError):
-                            pass
-                    # Calculate from key_cache (older transformers)
-                    if hasattr(self, 'key_cache') and self.key_cache and len(self.key_cache) > 0:
-                        if self.key_cache[0] is not None:
-                            return self.key_cache[0].shape[-2]
-                    return 0
-
-                DynamicCache.seen_tokens = seen_tokens_compat
-
-            # Check if get_max_length method exists
-            if not hasattr(DynamicCache, 'get_max_length'):
-                needs_patching = True
-
-                def get_max_length_compat(self):
-                    """Compatibility shim for removed get_max_length method."""
-                    return None  # DynamicCache has no max length limit
-
-                DynamicCache.get_max_length = get_max_length_compat
-
-            # Check if get_usable_length method exists
-            if not hasattr(DynamicCache, 'get_usable_length'):
-                needs_patching = True
-
-                def get_usable_length_compat(self, new_seq_length: int = 0, layer_idx: int = 0):
-                    """
-                    Compatibility shim for removed get_usable_length method.
-
-                    Args:
-                        new_seq_length: The new sequence length being added
-                        layer_idx: The layer index (not used, but required for signature)
-
-                    Returns:
-                        The current sequence length in the cache
-                    """
-                    # Try get_seq_length method (newer transformers)
-                    if hasattr(self, 'get_seq_length'):
-                        try:
-                            return self.get_seq_length(layer_idx)
-                        except (IndexError, TypeError):
-                            pass
-                    # Return the current cache length for the specified layer (older transformers)
-                    if hasattr(self, 'key_cache') and self.key_cache and len(self.key_cache) > layer_idx:
-                        if self.key_cache[layer_idx] is not None:
-                            return self.key_cache[layer_idx].shape[-2]
-                    return 0
-
-                DynamicCache.get_usable_length = get_usable_length_compat
-
-            if needs_patching:
-                print("[LocalModelClient] DynamicCache compatibility patches applied for transformers 4.49+")
-
-        except ImportError:
-            # transformers not installed or DynamicCache not available
-            pass
-        except Exception as e:
-            print(f"[LocalModelClient] Warning: DynamicCache patching failed: {e}")
-
-    def _generate_phi35_vision(self, images: List, prompt: str, max_tokens: int, temperature: float) -> str:
-        """Generate with Phi-3.5-Vision."""
-        import torch
-
-        # Holistic compatibility fix for newer transformers versions (4.49+)
-        # Phi-3.5-Vision's custom code expects deprecated/removed DynamicCache methods
-        # See: https://github.com/huggingface/transformers/issues/36071
-        self._patch_dynamic_cache_compat()
-
-        messages = [{"role": "user", "content": ""}]
-        if images:
-            messages[0]["content"] = f"<|image_1|>\n{prompt.strip()}"
-        else:
-            messages[0]["content"] = prompt.strip()
-
-        inputs = self.processor(
-            text=self.processor.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True),
-            images=images if images else None,
-            return_tensors="pt"
-        )
-
-        device = next(self.model.parameters()).device
-        inputs = {k: v.to(device) if torch.is_tensor(v) else v for k, v in inputs.items()}
-
-        # Get input length to extract only generated tokens later
-        input_len = inputs["input_ids"].shape[1]
-
-        with InferenceProgressSpinner("Generating (Phi-3.5-Vision)"):
-            with torch.inference_mode():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=max_tokens,
-                    do_sample=temperature > 0,
-                    temperature=temperature if temperature > 0 else None,
-                    eos_token_id=self.processor.tokenizer.eos_token_id,
-                )
-
-        # Only decode the NEW tokens (exclude the input prompt)
-        generated_tokens = outputs[0][input_len:]
-        return self.processor.decode(generated_tokens, skip_special_tokens=True)
-
     def _generate_qwenvl(self, messages: List, images: List, max_tokens: int, temperature: float) -> str:
         """Generate with QwenVL."""
         import torch
@@ -1317,111 +856,7 @@ class LocalModelClient:
 
         input_len = model_inputs["input_ids"].shape[1]
         response_ids = outputs[0][input_len:]
-        raw_output = self.tokenizer.decode(response_ids, skip_special_tokens=True)
-
-        # Clean thinking output for Thinking models
-        if self.model_info.is_thinking:
-            return self._clean_thinking_output(raw_output)
-        return raw_output
-
-    def _clean_thinking_output(self, text: str) -> str:
-        """
-        Clean output from Thinking models by removing chain-of-thought reasoning.
-
-        Qwen3-VL-*-Thinking models output their reasoning before the actual answer.
-        This can be wrapped in <think>...</think> tags or appear as plain text.
-        """
-        import re
-
-        if not text:
-            return text
-
-        original_text = text
-
-        # Method 1: Check for <think>...</think> pattern
-        # First try to get content AFTER </think> tag
-        think_end_match = re.search(r'</think>\s*(.+)', text, re.DOTALL | re.IGNORECASE)
-        if think_end_match:
-            after_think = think_end_match.group(1).strip()
-            if after_think and len(after_think) > 20:
-                text = after_think
-            else:
-                # If nothing useful after </think>, extract from inside the tags
-                think_content_match = re.search(r'<think>([\s\S]*?)</think>', text, re.IGNORECASE)
-                if think_content_match:
-                    text = think_content_match.group(1).strip()
-        else:
-            # No </think> tag - just remove any <think> tags if present
-            text = re.sub(r'</?think>', '', text, flags=re.IGNORECASE).strip()
-
-        # If we still have no text, return original
-        if not text.strip():
-            return original_text
-
-        # Common reasoning patterns to skip
-        reasoning_markers = [
-            r'^(?:Let me|Let\'s|We are given|First,|Step \d|Steps:)',
-            r'^(?:I need to|I\'ll|I will|Now,|So,|Therefore|However)',
-            r'^(?:Looking at|Analyzing|Checking|Based on)',
-            r'^(?:The user|The original|The prompt|Given)',
-            r'^(?:Alright|Okay|OK,)',
-        ]
-
-        # Check if output still looks like reasoning
-        first_100_chars = text[:100].strip()
-        is_reasoning = any(re.match(pattern, first_100_chars, re.IGNORECASE) for pattern in reasoning_markers)
-
-        if is_reasoning:
-            # Try to find the actual answer after reasoning
-
-            # Look for JSON block (common in agentic mode)
-            json_match = re.search(r'```(?:json)?\s*(\{[\s\S]*?\})\s*```', text)
-            if json_match:
-                return json_match.group(1)
-
-            # Look for raw JSON object with prompt_description
-            json_match = re.search(r'(\{[\s\S]*"prompt_description"[\s\S]*?\})', text)
-            if json_match:
-                return json_match.group(1)
-
-            # Look for any JSON object
-            json_match = re.search(r'(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})', text)
-            if json_match:
-                try:
-                    import json
-                    json.loads(json_match.group(1))  # Validate it's valid JSON
-                    return json_match.group(1)
-                except:
-                    pass
-
-            # Look for text after common delimiters
-            delimiters = [
-                r'(?:Output|Result|Answer|Modified prompt|Final prompt)[:\s]*\n?(.+)',
-                r'(?:Here is|Here\'s)[^:]*:\s*\n?(.+)',
-                r'(?:The final|Final)[^:]*:\s*\n?(.+)',
-            ]
-            for delimiter in delimiters:
-                match = re.search(delimiter, text, re.IGNORECASE | re.DOTALL)
-                if match:
-                    result = match.group(1).strip()
-                    # Make sure we got something meaningful (not just more reasoning)
-                    if len(result) > 50 and not any(re.match(p, result[:50], re.IGNORECASE) for p in reasoning_markers):
-                        return result
-
-            # Last resort: Take the last substantial paragraph
-            # Split by double newlines and take the last non-empty block
-            paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
-            if paragraphs:
-                for para in reversed(paragraphs):
-                    # Skip short paragraphs (likely conclusions like "Done." or "That's it.")
-                    if len(para) > 100:
-                        return para
-
-            # If nothing worked, return the cleaned text as-is (better than nothing)
-            return text.strip()
-
-        # If not reasoning pattern, return cleaned text
-        return text.strip() if text.strip() else original_text
+        return self.tokenizer.decode(response_ids, skip_special_tokens=True)
 
 
 class LocalModelResponse:
@@ -1450,14 +885,13 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
     """
     Local Vision Language Model Provider.
 
-    Supports multiple model families:
-    - Florence-2: Ultra-fast captioning (0.2-0.8B)
-    - Moondream2: Efficient VLM (1.8B)
-    - SmolVLM: Tiny models (0.25-2B)
-    - Phi-3.5-Vision: High quality (4.2B)
-    - QwenVL: Full-featured VLM (2-8B)
+    Qwen VLM models with automatic VRAM management:
+    - Qwen3-VL (2B, 4B, 8B) - Latest, best quality
+    - Qwen2.5-VL (3B, 7B) - Stable
+    - Qwen2-VL (2B, 7B) - Legacy
 
-    No API needed, runs locally with automatic VRAM management.
+    Abliterated (uncensored) versions available for unrestricted captioning.
+    No API needed, runs locally.
     """
 
     PROVIDER_NAME = "local"
@@ -1468,7 +902,7 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
 
     @classmethod
     def get_default_model(cls) -> str:
-        return "Qwen3-VL-2B-Instruct"
+        return "Qwen3-VL-4B-Abliterated"
 
     @classmethod
     def get_default_url(cls) -> str:
@@ -1480,8 +914,8 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
 
     @classmethod
     def supports_reasoning(cls, model: str) -> bool:
-        model_info = LOCAL_MODELS.get(model)
-        return model_info.is_thinking if model_info else False
+        # Reasoning not supported for local models
+        return False
 
     @classmethod
     def define_schema(cls) -> comfy_io.Schema:
@@ -1595,6 +1029,12 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     display_name="Use Torch Compile",
                     tooltip="Enable torch.compile for faster inference (CUDA + Torch 2.1+ only, first run slower)"
                 ),
+                comfy_io.String.Input(
+                    "hf_token",
+                    default="",
+                    display_name="HuggingFace Token",
+                    tooltip="Optional: HuggingFace token for gated models (leave empty for public models)"
+                ),
             ],
             outputs=[
                 LLM_MODEL_Type.Output(
@@ -1619,6 +1059,7 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
         repetition_penalty: float,
         top_p: float,
         use_torch_compile: bool,
+        hf_token: str,
     ) -> comfy_io.NodeOutput:
         """Create and return the LLM model configuration."""
         try:
@@ -1691,11 +1132,10 @@ class SID_LLM_Local(comfy_io.ComfyNode, BaseLLMProvider):
                     "keep_model_loaded": keep_model_loaded,
                     "repo_id": model_info.repo_id,
                     "family": model_info.family.value,
-                    "is_thinking": model_info.is_thinking,
-                    "enable_reasoning": reasoning_enabled,
                     "repetition_penalty": repetition_penalty,
                     "top_p": top_p,
                     "use_torch_compile": use_torch_compile,
+                    "hf_token": hf_token if hf_token else None,
                 },
             )
 

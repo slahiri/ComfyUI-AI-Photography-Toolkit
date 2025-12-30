@@ -1,0 +1,655 @@
+# Prompt Templates for SID_PromptGenerator
+# Templates are selected based on detected subject type
+# Sections are activated based on tag decisions
+
+templates:
+  # ===========================================================================
+  # WOMAN SUBJECT
+  # ===========================================================================
+  woman:
+    trigger_tags: ["1girl", "woman", "female", "lady", "female_focus"]
+
+    base_prompt: |
+      Describe this woman in detail for AI image generation.
+      Write as a single flowing paragraph. Be specific and detailed.
+
+    sections:
+      appearance:
+        trigger: always
+        prompt: |
+          Describe her appearance: ethnicity, approximate age impression,
+          skin tone and texture, any distinctive features.
+
+      hair:
+        trigger: always
+        prompt: |
+          Describe her hair in detail: arrangement/style (updo, ponytail,
+          loose, etc.), color (including highlights), texture (straight,
+          wavy, curly), and length.
+
+      face:
+        trigger: always
+        prompt: |
+          Describe her face: shape, features, expression, and gaze direction.
+
+      eyes:
+        trigger: always
+        prompt: |
+          Describe her eyes: color, shape, expression, and any makeup.
+
+      body:
+        trigger_conditions:
+          shot_type: ["MS", "MFS", "FS", "MLS", "LS"]
+          nsfw_level: ["SUGGESTIVE", "EXPLICIT"]
+        prompt: |
+          Describe her visible body and figure: build, proportions,
+          and any notable physical features visible in the image.
+
+      clothing:
+        trigger_tags: ["dress", "shirt", "outfit", "wearing", "clothed", "clothes"]
+        prompt: |
+          Describe her clothing in detail: garment types, colors,
+          fabrics/materials, patterns, fit, and style.
+
+      pose:
+        trigger_conditions:
+          shot_type: ["MCU", "MS", "MFS", "FS", "MLS", "LS"]
+        prompt: |
+          Describe her pose: body position, arm and hand placement,
+          leg position if visible, weight distribution, overall stance.
+
+      expression:
+        trigger: always
+        prompt: |
+          Describe her expression and mood: facial expression,
+          emotion conveyed, eye contact direction.
+
+      environment:
+        trigger_conditions:
+          scene_confidence: "> 0.5"
+          not_tags: ["simple_background", "white_background", "plain_background"]
+        prompt: |
+          Describe the environment and setting: location type,
+          background elements, atmosphere, time of day if visible.
+
+      landmark:
+        trigger_conditions:
+          landmark_detected: true
+        prompt: |
+          Describe the landmark or famous location visible: identify it,
+          describe its architectural features and historical significance.
+
+      sky:
+        trigger_conditions:
+          sky_visible: true
+        prompt: |
+          Describe the sky: cloud formations, color gradients,
+          sun/moon position if visible.
+
+      lighting:
+        trigger: always
+        prompt: |
+          Describe the lighting: quality (soft/harsh), direction,
+          color temperature (warm/cool), shadows, and mood created.
+
+      golden_hour:
+        trigger_conditions:
+          is_golden_hour: true
+        prompt: |
+          Describe the golden hour lighting: warm tones, soft shadows,
+          rim lighting effects, and the magical quality of the light.
+
+      dramatic_lighting:
+        trigger_conditions:
+          is_dramatic_lighting: true
+        prompt: |
+          Describe the dramatic lighting: strong shadows, contrast,
+          chiaroscuro effects, and the mood created by the lighting.
+
+      composition:
+        trigger: always
+        prompt: |
+          Describe the framing and composition: shot type (close-up,
+          medium, full body), camera angle, subject placement.
+
+      camera_details:
+        trigger_conditions:
+          camera_angle: true
+        prompt: |
+          Describe the camera perspective: angle (high/low/eye-level),
+          depth of field (shallow/deep), and any lens effects.
+
+    assembly_order:
+      - appearance
+      - hair
+      - face
+      - eyes
+      - body
+      - clothing
+      - pose
+      - expression
+      - environment
+      - landmark
+      - sky
+      - lighting
+      - golden_hour
+      - dramatic_lighting
+      - composition
+      - camera_details
+
+  # ===========================================================================
+  # MAN SUBJECT
+  # ===========================================================================
+  man:
+    trigger_tags: ["1boy", "man", "male", "gentleman", "male_focus"]
+
+    base_prompt: |
+      Describe this man in detail for AI image generation.
+      Write as a single flowing paragraph. Be specific and detailed.
+
+    sections:
+      appearance:
+        trigger: always
+        prompt: |
+          Describe his appearance: ethnicity, approximate age impression,
+          skin tone, facial hair if any, distinctive features.
+
+      hair:
+        trigger: always
+        prompt: |
+          Describe his hair: style, color, texture, length.
+
+      face:
+        trigger: always
+        prompt: |
+          Describe his face: shape, features, expression, gaze direction.
+
+      body:
+        trigger_conditions:
+          shot_type: ["MS", "MFS", "FS", "MLS", "LS"]
+        prompt: |
+          Describe his visible body: build, physique, proportions.
+
+      clothing:
+        trigger_tags: ["shirt", "suit", "jacket", "outfit", "wearing"]
+        prompt: |
+          Describe his clothing: garments, colors, materials, style.
+
+      pose:
+        trigger_conditions:
+          shot_type: ["MCU", "MS", "MFS", "FS", "MLS", "LS"]
+        prompt: |
+          Describe his pose: body position, stance, gesture.
+
+      expression:
+        trigger: always
+        prompt: |
+          Describe his expression and demeanor.
+
+      environment:
+        trigger_conditions:
+          scene_confidence: "> 0.5"
+        prompt: |
+          Describe the environment and setting.
+
+      landmark:
+        trigger_conditions:
+          landmark_detected: true
+        prompt: |
+          Describe the landmark or famous location visible.
+
+      sky:
+        trigger_conditions:
+          sky_visible: true
+        prompt: |
+          Describe the sky conditions and atmosphere.
+
+      lighting:
+        trigger: always
+        prompt: |
+          Describe the lighting conditions and mood.
+
+      golden_hour:
+        trigger_conditions:
+          is_golden_hour: true
+        prompt: |
+          Describe the golden hour lighting and warm tones.
+
+      dramatic_lighting:
+        trigger_conditions:
+          is_dramatic_lighting: true
+        prompt: |
+          Describe the dramatic lighting and shadow effects.
+
+      composition:
+        trigger: always
+        prompt: |
+          Describe the framing and composition.
+
+      camera_details:
+        trigger_conditions:
+          camera_angle: true
+        prompt: |
+          Describe the camera angle and depth of field.
+
+    assembly_order:
+      - appearance
+      - hair
+      - face
+      - body
+      - clothing
+      - pose
+      - expression
+      - environment
+      - landmark
+      - sky
+      - lighting
+      - golden_hour
+      - dramatic_lighting
+      - composition
+      - camera_details
+
+  # ===========================================================================
+  # LANDSCAPE SUBJECT
+  # ===========================================================================
+  landscape:
+    trigger_tags: ["no_humans", "scenery", "landscape", "nature"]
+    trigger_conditions:
+      places365_category: ["outdoor", "nature", "beach", "mountain", "forest"]
+
+    base_prompt: |
+      Describe this landscape/scenery in detail for AI image generation.
+      Write as a single flowing paragraph capturing the natural beauty.
+
+    sections:
+      terrain:
+        trigger: always
+        prompt: |
+          Describe the terrain: type of landscape, geological features,
+          vegetation, water bodies if present.
+
+      landmark:
+        trigger_conditions:
+          landmark_detected: true
+        prompt: |
+          Describe the landmark: identify the famous location,
+          its architectural or natural features, and significance.
+
+      sky:
+        trigger_conditions:
+          sky_visible: true
+        prompt: |
+          Describe the sky in detail: cloud formations and types,
+          sun/moon position, color gradients.
+
+      weather:
+        trigger_conditions:
+          weather_condition: true
+        prompt: |
+          Describe the weather conditions: precipitation, visibility,
+          atmospheric effects like fog, mist, or haze.
+
+      time_of_day:
+        trigger: always
+        prompt: |
+          Describe the time of day and its lighting effects.
+
+      golden_hour:
+        trigger_conditions:
+          is_golden_hour: true
+        prompt: |
+          Describe the golden hour: warm orange and pink tones,
+          long shadows, soft diffused light, rim lighting on edges.
+
+      dramatic_lighting:
+        trigger_conditions:
+          is_dramatic_lighting: true
+        prompt: |
+          Describe the dramatic lighting: storm clouds, god rays,
+          strong contrast between light and shadow.
+
+      atmosphere:
+        trigger: always
+        prompt: |
+          Describe the overall atmosphere and mood of the scene.
+
+      composition:
+        trigger: always
+        prompt: |
+          Describe the composition: foreground, midground, background
+          elements, focal point, depth and perspective.
+
+      camera_details:
+        trigger_conditions:
+          camera_angle: true
+        prompt: |
+          Describe the camera perspective and depth of field effects.
+
+      colors:
+        trigger: always
+        prompt: |
+          Describe the color palette: dominant colors, color harmony,
+          saturation and contrast.
+
+    assembly_order:
+      - terrain
+      - landmark
+      - sky
+      - weather
+      - time_of_day
+      - golden_hour
+      - dramatic_lighting
+      - atmosphere
+      - composition
+      - camera_details
+      - colors
+
+  # ===========================================================================
+  # ANIMAL SUBJECT
+  # ===========================================================================
+  animal:
+    trigger_conditions:
+      wildlife_detected: true
+
+    base_prompt: |
+      Describe this animal in detail for AI image generation.
+      Write as a single flowing paragraph.
+
+    sections:
+      species:
+        trigger: always
+        prompt: |
+          Identify the animal: species, breed if applicable,
+          common name and any distinctive subspecies features.
+
+      appearance:
+        trigger: always
+        prompt: |
+          Describe appearance: fur/feather/scale color, patterns,
+          markings, texture, and any distinctive physical features.
+
+      pose:
+        trigger: always
+        prompt: |
+          Describe the pose: position, activity, movement,
+          body language and behavior.
+
+      expression:
+        trigger: always
+        prompt: |
+          Describe the animal's expression, gaze, and demeanor.
+
+      environment:
+        trigger: always
+        prompt: |
+          Describe the natural habitat or setting.
+
+      sky:
+        trigger_conditions:
+          sky_visible: true
+        prompt: |
+          Describe the sky and atmospheric conditions.
+
+      lighting:
+        trigger: always
+        prompt: |
+          Describe the lighting conditions.
+
+      golden_hour:
+        trigger_conditions:
+          is_golden_hour: true
+        prompt: |
+          Describe the golden hour lighting and warm tones.
+
+      dramatic_lighting:
+        trigger_conditions:
+          is_dramatic_lighting: true
+        prompt: |
+          Describe the dramatic lighting effects.
+
+      composition:
+        trigger: always
+        prompt: |
+          Describe the framing and composition.
+
+      camera_details:
+        trigger_conditions:
+          camera_angle: true
+        prompt: |
+          Describe the camera angle and depth of field.
+
+    assembly_order:
+      - species
+      - appearance
+      - pose
+      - expression
+      - environment
+      - sky
+      - lighting
+      - golden_hour
+      - dramatic_lighting
+      - composition
+      - camera_details
+
+  # ===========================================================================
+  # VEHICLE SUBJECT
+  # ===========================================================================
+  vehicle:
+    trigger_tags: ["car", "motorcycle", "vehicle", "automobile", "bike"]
+
+    base_prompt: |
+      Describe this vehicle in detail for AI image generation.
+      Write as a single flowing paragraph.
+
+    sections:
+      type:
+        trigger: always
+        prompt: |
+          Identify the vehicle: type, make/model if recognizable,
+          year or era if apparent.
+
+      appearance:
+        trigger: always
+        prompt: |
+          Describe appearance: color, paint finish, condition,
+          notable features, modifications, and details.
+
+      angle:
+        trigger: always
+        prompt: |
+          Describe the viewing angle and framing.
+
+      environment:
+        trigger: always
+        prompt: |
+          Describe the setting and background.
+
+      landmark:
+        trigger_conditions:
+          landmark_detected: true
+        prompt: |
+          Describe the landmark or location in the background.
+
+      sky:
+        trigger_conditions:
+          sky_visible: true
+        prompt: |
+          Describe the sky and atmospheric conditions.
+
+      lighting:
+        trigger: always
+        prompt: |
+          Describe the lighting conditions and reflections.
+
+      golden_hour:
+        trigger_conditions:
+          is_golden_hour: true
+        prompt: |
+          Describe the golden hour lighting and warm reflections.
+
+      dramatic_lighting:
+        trigger_conditions:
+          is_dramatic_lighting: true
+        prompt: |
+          Describe the dramatic lighting and shadow effects.
+
+      camera_details:
+        trigger_conditions:
+          camera_angle: true
+        prompt: |
+          Describe the camera perspective and depth of field.
+
+    assembly_order:
+      - type
+      - appearance
+      - angle
+      - environment
+      - landmark
+      - sky
+      - lighting
+      - golden_hour
+      - dramatic_lighting
+      - camera_details
+
+  # ===========================================================================
+  # PRODUCT SUBJECT
+  # ===========================================================================
+  product:
+    trigger_tags: ["product", "object", "item", "merchandise"]
+
+    base_prompt: |
+      Describe this product/object in detail for AI image generation.
+      Write as a single flowing paragraph.
+
+    sections:
+      type:
+        trigger: always
+        prompt: |
+          Identify the product: type, brand if visible, purpose.
+
+      appearance:
+        trigger: always
+        prompt: |
+          Describe appearance: color, material, texture, condition,
+          surface finish, and any visible details.
+
+      styling:
+        trigger: always
+        prompt: |
+          Describe the product photography style and arrangement.
+
+      background:
+        trigger: always
+        prompt: |
+          Describe the background and setting.
+
+      lighting:
+        trigger: always
+        prompt: |
+          Describe the lighting style: direction, quality,
+          reflections, and highlights.
+
+      dramatic_lighting:
+        trigger_conditions:
+          is_dramatic_lighting: true
+        prompt: |
+          Describe the dramatic lighting and shadow effects.
+
+      composition:
+        trigger: always
+        prompt: |
+          Describe the framing and composition.
+
+      camera_details:
+        trigger_conditions:
+          camera_angle: true
+        prompt: |
+          Describe the camera angle and depth of field effects.
+
+    assembly_order:
+      - type
+      - appearance
+      - styling
+      - background
+      - lighting
+      - dramatic_lighting
+      - composition
+      - camera_details
+
+  # ===========================================================================
+  # GENERIC FALLBACK
+  # ===========================================================================
+  generic:
+    trigger: fallback
+
+    base_prompt: |
+      Describe this image in detail for AI image generation.
+      Write as a single flowing paragraph.
+
+    sections:
+      subject:
+        trigger: always
+        prompt: |
+          Describe the main subject of the image.
+
+      details:
+        trigger: always
+        prompt: |
+          Describe notable details and features.
+
+      environment:
+        trigger: always
+        prompt: |
+          Describe the setting and background.
+
+      landmark:
+        trigger_conditions:
+          landmark_detected: true
+        prompt: |
+          Describe the landmark or famous location visible.
+
+      sky:
+        trigger_conditions:
+          sky_visible: true
+        prompt: |
+          Describe the sky and atmospheric conditions.
+
+      lighting:
+        trigger: always
+        prompt: |
+          Describe the lighting conditions.
+
+      golden_hour:
+        trigger_conditions:
+          is_golden_hour: true
+        prompt: |
+          Describe the golden hour lighting and warm tones.
+
+      dramatic_lighting:
+        trigger_conditions:
+          is_dramatic_lighting: true
+        prompt: |
+          Describe the dramatic lighting and shadow effects.
+
+      composition:
+        trigger: always
+        prompt: |
+          Describe the framing and composition.
+
+      camera_details:
+        trigger_conditions:
+          camera_angle: true
+        prompt: |
+          Describe the camera perspective and depth of field.
+
+    assembly_order:
+      - subject
+      - details
+      - environment
+      - landmark
+      - sky
+      - lighting
+      - golden_hour
+      - dramatic_lighting
+      - composition
+      - camera_details

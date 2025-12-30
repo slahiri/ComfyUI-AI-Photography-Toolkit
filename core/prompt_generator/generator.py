@@ -1,0 +1,342 @@
+"""
+SID_PromptGenerator - Main generator node.
+
+This is the primary ComfyUI node for prompt generation with automatic
+mode selection based on inputs.
+
+Inputs:
+    - image (IMAGE): Required - image to analyze
+    - llm_model (LLM_MODEL): Optional - LLM configuration
+    - user_prompt (USER_PROMPT): Optional - custom system/user prompts from SID User Prompt
+
+Outputs:
+    - prompt (STRING): Generated prompt for image generation
+    - prompt_metadata (STRING/JSON): Detailed metadata about generation
+
+Mode Selection:
+    1. No llm_model -> Florence mode (VLM description)
+    2. llm_model + Quick -> Quick mode (single LLM, no tags)
+    3. llm_model + Standard -> Standard mode (tags + template + LLM)
+    4. llm_model + Detailed -> Detailed mode (tags + multi-pass LLM)
+    5. llm_model + Extreme -> Extreme mode (tags + component LLM)
+"""
+
+import json
+import time
+from typing import Any, Dict, Optional, Tuple
+
+from .types import AnalysisMode, GeneratorResult, Decisions, TaggerResults
+from .modes.base import BaseMode
+
+# Available Florence models for fallback VLM mode
+FLORENCE_MODELS = [
+    # PromptGen models (best for prompt generation)
+    "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
+    "MiaoshouAI/Florence-2-base-PromptGen-v2.0",
+    "MiaoshouAI/Florence-2-large-PromptGen-v1.5",
+    "MiaoshouAI/Florence-2-base-PromptGen-v1.5",
+    # CogFlorence (enhanced variants)
+    "thwri/CogFlorence-2.2-Large",
+    "thwri/CogFlorence-2.1-Large",
+    # Microsoft base models
+    "microsoft/Florence-2-large-ft",
+    "microsoft/Florence-2-base-ft",
+    "microsoft/Florence-2-large",
+    "microsoft/Florence-2-base",
+]
+
+
+class SID_PromptGenerator:
+    """
+    Unified prompt generator with automatic mode selection.
+
+    Generates image prompts using multiple strategies based on
+    available inputs and selected analysis mode.
+    """
+
+    # ComfyUI node configuration
+    CATEGORY = "SID Photography Toolkit"
+    RETURN_TYPES = ("STRING", "STRING")
+    RETURN_NAMES = ("prompt", "prompt_metadata")
+    FUNCTION = "generate"
+
+    def __init__(self):
+        """Initialize the generator with mode implementations."""
+        self._modes: Dict[str, BaseMode] = {}
+        self._load_modes()
+
+    def _load_modes(self):
+        """Lazy-load mode implementations."""
+        # Modes will be loaded on first use
+        # This avoids import issues during ComfyUI startup
+        pass
+
+    def _get_mode(self, mode_name: str) -> Optional[BaseMode]:
+        """Get a mode implementation by name."""
+        if mode_name not in self._modes:
+            self._load_mode(mode_name)
+        return self._modes.get(mode_name)
+
+    def _load_mode(self, mode_name: str):
+        """Load a specific mode implementation."""
+        try:
+            if mode_name == "florence":
+                from .modes.florence import FlorenceMode
+                self._modes["florence"] = FlorenceMode()
+            elif mode_name == "quick":
+                from .modes.quick import QuickMode
+                self._modes["quick"] = QuickMode()
+            elif mode_name == "standard":
+                from .modes.standard import StandardMode
+                self._modes["standard"] = StandardMode()
+            elif mode_name == "detailed":
+                from .modes.detailed import DetailedMode
+                self._modes["detailed"] = DetailedMode()
+            elif mode_name == "extreme":
+                from .modes.extreme import ExtremeMode
+                self._modes["extreme"] = ExtremeMode()
+        except ImportError as e:
+            print(f"[SID_PromptGenerator] Warning: Could not load {mode_name} mode: {e}")
+
+    @classmethod
+    def INPUT_TYPES(cls) -> Dict[str, Any]:
+        """Define ComfyUI input types."""
+        return {
+            "required": {
+                "image": ("IMAGE",),
+            },
+            "optional": {
+                "llm_model": ("LLM_MODEL",),
+                "user_prompt": ("USER_PROMPT", {"tooltip": "Custom system/user prompts from SID User Prompt node"}),
+                "analysis_mode": (["Quick", "Standard", "Detailed", "Extreme"], {"default": "Standard"}),
+                "tag_threshold": ("FLOAT", {"default": 0.65, "min": 0.1, "max": 1.0, "step": 0.05, "tooltip": "Minimum confidence threshold for tags (0.65 = 65%)"}),
+                "florence_model": (FLORENCE_MODELS, {"default": FLORENCE_MODELS[0], "tooltip": "Florence model for fallback VLM mode (when no LLM connected)"}),
+                "hf_token": ("STRING", {"default": "", "tooltip": "HuggingFace token for gated models (Florence, etc.)"}),
+                "release_vram": ("BOOLEAN", {"default": False, "tooltip": "Unload Florence model from VRAM after use"}),
+            },
+        }
+
+    def generate(
+        self,
+        image: Any,
+        llm_model: Any = None,
+        user_prompt: Optional[Dict[str, str]] = None,
+        analysis_mode: str = "Standard",
+        tag_threshold: float = 0.65,
+        florence_model: str = "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
+        hf_token: str = "",
+        release_vram: bool = False,
+    ) -> Tuple[str, str]:
+        """
+        Generate prompt from image with automatic mode selection.
+
+        Args:
+            image: Image tensor from ComfyUI
+            llm_model: Optional LLMModelConfig from SID_LLM_API or SID_LLM_Local
+            user_prompt: Optional custom system/user prompts from SID_UserPrompt node
+            analysis_mode: Analysis depth (Quick/Standard/Detailed/Extreme)
+            tag_threshold: Minimum confidence threshold for tags (0.65 = 65%)
+            florence_model: Florence model to use for fallback VLM mode
+            hf_token: HuggingFace token for gated models (Florence, etc.)
+            release_vram: Unload Florence model from VRAM after use
+
+        Returns:
+            Tuple of (prompt, metadata_json)
+        """
+        start_time = time.time()
+
+        # Build base metadata
+        metadata = {
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "analysis_mode_requested": analysis_mode,
+            "tag_threshold": tag_threshold,
+        }
+
+        try:
+            result = self._execute_mode(
+                image=image,
+                llm_model=llm_model,
+                user_prompt=user_prompt,
+                analysis_mode=analysis_mode,
+                tag_threshold=tag_threshold,
+                florence_model=florence_model,
+                hf_token=hf_token,
+            )
+
+            # Merge result metadata with base metadata
+            metadata.update(result.metadata)
+            metadata["timing"] = {
+                "total_ms": int((time.time() - start_time) * 1000)
+            }
+
+            # Release VRAM if requested
+            if release_vram:
+                self._release_vram()
+
+            return (result.prompt, json.dumps(metadata, indent=2))
+
+        except Exception as e:
+            error_msg = str(e)
+            print(f"[SID_PromptGenerator] Error: {error_msg}")
+            import traceback
+            traceback.print_exc()
+
+            metadata["error"] = error_msg
+            metadata["mode"] = "error"
+
+            return ("", json.dumps(metadata, indent=2))
+
+    def _execute_mode(
+        self,
+        image: Any,
+        llm_model: Any,
+        user_prompt: Optional[Dict[str, str]],
+        analysis_mode: str,
+        tag_threshold: float = 0.65,
+        florence_model: str = "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
+        hf_token: str = "",
+    ) -> GeneratorResult:
+        """
+        Determine and execute the appropriate mode.
+
+        Mode selection priority:
+        1. Florence (no llm_model)
+        2. LLM mode based on analysis_mode
+        """
+        # Priority 1: Florence mode - no LLM model
+        if llm_model is None:
+            return self._execute_florence(image, florence_model=florence_model, hf_token=hf_token)
+
+        # Priority 2: LLM modes based on analysis_mode
+        mode_key = analysis_mode.lower()
+
+        # Check if Detailed/Extreme modes are available
+        if mode_key in ["detailed", "extreme"]:
+            supports_reasoning = getattr(llm_model, 'supports_reasoning', False)
+            if not supports_reasoning:
+                print(f"[SID_PromptGenerator] {analysis_mode} mode requires reasoning capability, falling back to Standard")
+                mode_key = "standard"
+
+        return self._execute_llm_mode(image, llm_model, mode_key, user_prompt, tag_threshold)
+
+    def _execute_florence(self, image: Any, florence_model: str = "MiaoshouAI/Florence-2-large-PromptGen-v2.0", hf_token: str = "") -> GeneratorResult:
+        """Execute Florence mode - VLM description."""
+        mode = self._get_mode("florence")
+        if mode:
+            return mode.execute(image=image, model_id=florence_model, hf_token=hf_token)
+
+        # Fallback if mode not loaded
+        return GeneratorResult(
+            prompt="[Florence mode not available - please install Florence model]",
+            metadata={
+                "mode": "florence",
+                "source": "florence_description",
+                "error": "Florence mode not loaded",
+                "processing": {
+                    "taggers_executed": False,
+                    "florence_executed": False,
+                    "llm_executed": False,
+                }
+            }
+        )
+
+    def _execute_llm_mode(
+        self,
+        image: Any,
+        llm_model: Any,
+        mode_key: str,
+        user_prompt: Optional[Dict[str, str]] = None,
+        tag_threshold: float = 0.65,
+    ) -> GeneratorResult:
+        """Execute an LLM-based mode."""
+        mode = self._get_mode(mode_key)
+
+        if not mode:
+            # Fallback to quick mode
+            print(f"[SID_PromptGenerator] {mode_key} mode not available, using quick mode")
+            mode = self._get_mode("quick")
+
+        if not mode:
+            return GeneratorResult(
+                prompt="[LLM mode not available]",
+                metadata={
+                    "mode": mode_key,
+                    "error": f"{mode_key} mode not loaded",
+                }
+            )
+
+        # For Standard/Detailed/Extreme, run taggers first
+        tagger_results = None
+        decisions = None
+
+        if mode.requires_taggers:
+            tagger_results, decisions = self._run_taggers(image, tag_threshold)
+
+        return mode.execute(
+            image=image,
+            llm_model=llm_model,
+            tagger_results=tagger_results,
+            decisions=decisions,
+            prompt_config=user_prompt,
+        )
+
+    def _run_taggers(self, image: Any, tag_threshold: float = 0.65) -> Tuple[TaggerResults, Decisions]:
+        """
+        Run all taggers and make decisions based on results.
+
+        Args:
+            image: Image tensor from ComfyUI
+            tag_threshold: Minimum confidence threshold for tags
+
+        Returns:
+            Tuple of (TaggerResults, Decisions)
+        """
+        from .taggers import get_runner
+        from .decisions import get_engine
+
+        # Run taggers with threshold
+        runner = get_runner()
+        tagger_results = runner.run_standard(image, threshold=tag_threshold)
+
+        # Unload tagger models to free VRAM for VLM/LLM
+        runner.unload_all()
+        self._clear_vram()
+
+        # Make decisions based on tagger results
+        engine = get_engine()
+        decisions = engine.make_decisions(tagger_results)
+
+        return tagger_results, decisions
+
+    def _clear_vram(self):
+        """Clear VRAM by running garbage collection and emptying CUDA cache."""
+        import gc
+        gc.collect()
+
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+                print("[SID_PromptGenerator] VRAM cleared for VLM/LLM execution")
+        except ImportError:
+            pass
+
+    def _release_vram(self):
+        """Release VRAM by unloading Florence and other cached models."""
+        # Unload Florence models
+        florence_mode = self._modes.get("florence")
+        if florence_mode:
+            from .modes.florence import FlorenceMode
+            FlorenceMode.unload_model()
+            print("[SID_PromptGenerator] Released Florence VRAM")
+
+
+# ComfyUI node registration
+NODE_CLASS_MAPPINGS = {
+    "SID_PromptGenerator": SID_PromptGenerator,
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "SID_PromptGenerator": "SID Prompt Generator",
+}
