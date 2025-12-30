@@ -77,6 +77,8 @@ class DetailedMode(BaseMode):
         tagger_results: Optional[TaggerResults] = None,
         decisions: Optional[Decisions] = None,
         prompt_config: Optional[Dict[str, Any]] = None,
+        tag_threshold: float = 0.5,
+        max_injected_tags: int = 30,
         **kwargs
     ) -> GeneratorResult:
         """
@@ -116,7 +118,6 @@ class DetailedMode(BaseMode):
         timing = {}
         pass_outputs = {}
         pass_details = {}
-        tag_threshold = kwargs.get("tag_threshold", 0.5)
 
         try:
             # Step 1: Run taggers if not provided
@@ -145,7 +146,7 @@ class DetailedMode(BaseMode):
             detected_tags = get_unmapped_tags(
                 tagger_results,
                 threshold=tag_threshold,
-                max_tags=20,  # More tags for detailed mode
+                max_tags=max_injected_tags,
             )
             tags_str = format_tags_for_prompt(detected_tags, show_confidence=True) if detected_tags else ""
 
@@ -482,7 +483,7 @@ Write as flowing descriptive prose suitable for AI image generation."""
             if enhancement:
                 enhancements.append(enhancement)
 
-        return " ".join(enhancements[:3])  # Limit to 3 enhancements per section
+        return " ".join(enhancements)  # Use all matching enhancements
 
     def _get_clothing_enhancements(
         self,
@@ -501,7 +502,7 @@ Write as flowing descriptive prose suitable for AI image generation."""
             if clothing_prompt:
                 clothing_items.append(f"- {tag_lower}: {clothing_prompt}")
 
-        return "\n".join(clothing_items[:5])  # Limit to 5 clothing items
+        return "\n".join(clothing_items)  # Use all detected clothing items
 
     def _image_to_base64(self, image_tensor: Any, llm_model: Any) -> str:
         """Convert image tensor to base64 string."""
@@ -552,8 +553,8 @@ Focus on observable details. Do not include meta-commentary about the image itse
             # Anthropic API with thinking enabled
             response = client.messages.create(
                 model=llm_model.model,
-                max_tokens=8000,
-                thinking={"type": "enabled", "budget_tokens": 4000},
+                max_tokens=llm_model.max_tokens,
+                thinking={"type": "enabled", "budget_tokens": min(4000, llm_model.max_tokens // 2)},
                 system=system_prompt,
                 messages=[{
                     "role": "user",
@@ -579,7 +580,7 @@ Focus on observable details. Do not include meta-commentary about the image itse
             # OpenAI-compatible API
             response = client.chat.completions.create(
                 model=llm_model.model,
-                max_tokens=4000,
+                max_tokens=llm_model.max_tokens,
                 temperature=llm_model.temperature,
                 messages=[
                     {"role": "system", "content": system_prompt},

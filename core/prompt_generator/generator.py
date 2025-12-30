@@ -17,8 +17,7 @@ Mode Selection:
     1. No llm_model -> Florence mode (VLM description)
     2. llm_model + Quick -> Quick mode (single LLM, no tags)
     3. llm_model + Standard -> Standard mode (tags + template + LLM)
-    4. llm_model + Detailed -> Detailed mode (tags + multi-pass LLM)
-    5. llm_model + Extreme -> Extreme mode (tags + component LLM)
+    4. llm_model + Detailed -> Detailed mode (tags + multi-pass LLM, API with reasoning only)
 """
 
 import json
@@ -92,9 +91,6 @@ class SID_PromptGenerator:
             elif mode_name == "detailed":
                 from .modes.detailed import DetailedMode
                 self._modes["detailed"] = DetailedMode()
-            elif mode_name == "extreme":
-                from .modes.extreme import ExtremeMode
-                self._modes["extreme"] = ExtremeMode()
         except ImportError as e:
             print(f"[SID_PromptGenerator] Warning: Could not load {mode_name} mode: {e}")
 
@@ -108,8 +104,9 @@ class SID_PromptGenerator:
             "optional": {
                 "llm_model": ("LLM_MODEL",),
                 "user_prompt": ("USER_PROMPT", {"tooltip": "Custom system/user prompts from SID User Prompt node"}),
-                "analysis_mode": (["Quick", "Standard", "Detailed", "Extreme"], {"default": "Standard"}),
+                "analysis_mode": (["Quick", "Standard", "Detailed"], {"default": "Standard"}),
                 "tag_threshold": ("FLOAT", {"default": 0.65, "min": 0.1, "max": 1.0, "step": 0.05, "tooltip": "Minimum confidence threshold for tags (0.65 = 65%)"}),
+                "max_injected_tags": ("INT", {"default": 30, "min": 5, "max": 100, "step": 5, "tooltip": "Maximum number of detected tags to inject into LLM prompt"}),
                 "florence_model": (FLORENCE_MODELS, {"default": FLORENCE_MODELS[0], "tooltip": "Florence model for fallback VLM mode (when no LLM connected)"}),
                 "hf_token": ("STRING", {"default": "", "tooltip": "HuggingFace token for gated models (Florence, etc.)"}),
                 "release_vram": ("BOOLEAN", {"default": False, "tooltip": "Unload Florence model from VRAM after use"}),
@@ -123,6 +120,7 @@ class SID_PromptGenerator:
         user_prompt: Optional[Dict[str, str]] = None,
         analysis_mode: str = "Standard",
         tag_threshold: float = 0.65,
+        max_injected_tags: int = 30,
         florence_model: str = "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
         hf_token: str = "",
         release_vram: bool = False,
@@ -136,6 +134,7 @@ class SID_PromptGenerator:
             user_prompt: Optional custom system/user prompts from SID_UserPrompt node
             analysis_mode: Analysis depth (Quick/Standard/Detailed/Extreme)
             tag_threshold: Minimum confidence threshold for tags (0.65 = 65%)
+            max_injected_tags: Maximum number of tags to inject into LLM prompt
             florence_model: Florence model to use for fallback VLM mode
             hf_token: HuggingFace token for gated models (Florence, etc.)
             release_vram: Unload Florence model from VRAM after use
@@ -150,6 +149,7 @@ class SID_PromptGenerator:
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
             "analysis_mode_requested": analysis_mode,
             "tag_threshold": tag_threshold,
+            "max_injected_tags": max_injected_tags,
         }
 
         try:
@@ -159,6 +159,7 @@ class SID_PromptGenerator:
                 user_prompt=user_prompt,
                 analysis_mode=analysis_mode,
                 tag_threshold=tag_threshold,
+                max_injected_tags=max_injected_tags,
                 florence_model=florence_model,
                 hf_token=hf_token,
             )
@@ -193,6 +194,7 @@ class SID_PromptGenerator:
         user_prompt: Optional[Dict[str, str]],
         analysis_mode: str,
         tag_threshold: float = 0.65,
+        max_injected_tags: int = 30,
         florence_model: str = "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
         hf_token: str = "",
     ) -> GeneratorResult:
@@ -210,14 +212,14 @@ class SID_PromptGenerator:
         # Priority 2: LLM modes based on analysis_mode
         mode_key = analysis_mode.lower()
 
-        # Check if Detailed/Extreme modes are available
-        if mode_key in ["detailed", "extreme"]:
+        # Check if Detailed mode is available (requires reasoning)
+        if mode_key == "detailed":
             supports_reasoning = getattr(llm_model, 'supports_reasoning', False)
             if not supports_reasoning:
-                print(f"[SID_PromptGenerator] {analysis_mode} mode requires reasoning capability, falling back to Standard")
+                print(f"[SID_PromptGenerator] Detailed mode requires reasoning capability, falling back to Standard")
                 mode_key = "standard"
 
-        return self._execute_llm_mode(image, llm_model, mode_key, user_prompt, tag_threshold)
+        return self._execute_llm_mode(image, llm_model, mode_key, user_prompt, tag_threshold, max_injected_tags)
 
     def _execute_florence(self, image: Any, florence_model: str = "MiaoshouAI/Florence-2-large-PromptGen-v2.0", hf_token: str = "") -> GeneratorResult:
         """Execute Florence mode - VLM description."""
@@ -247,6 +249,7 @@ class SID_PromptGenerator:
         mode_key: str,
         user_prompt: Optional[Dict[str, str]] = None,
         tag_threshold: float = 0.65,
+        max_injected_tags: int = 30,
     ) -> GeneratorResult:
         """Execute an LLM-based mode."""
         mode = self._get_mode(mode_key)
@@ -278,6 +281,8 @@ class SID_PromptGenerator:
             tagger_results=tagger_results,
             decisions=decisions,
             prompt_config=user_prompt,
+            tag_threshold=tag_threshold,
+            max_injected_tags=max_injected_tags,
         )
 
     def _run_taggers(self, image: Any, tag_threshold: float = 0.65) -> Tuple[TaggerResults, Decisions]:

@@ -34,6 +34,7 @@ class PromptBuilder:
         decisions: Optional[Decisions] = None,
         tagger_results: Optional[TaggerResults] = None,
         tag_threshold: float = 0.5,
+        max_tags: int = 30,
     ) -> str:
         """
         Build the LLM prompt from template and active sections.
@@ -44,6 +45,7 @@ class PromptBuilder:
             decisions: Optional decisions for context
             tagger_results: Optional tagger results for tag injection
             tag_threshold: Confidence threshold for tag injection
+            max_tags: Maximum number of tags to inject
 
         Returns:
             Complete LLM prompt string
@@ -59,7 +61,7 @@ class PromptBuilder:
             detected_tags = get_unmapped_tags(
                 tagger_results,
                 threshold=tag_threshold,
-                max_tags=15,
+                max_tags=max_tags,
             )
             if detected_tags:
                 tags_str = format_tags_for_prompt(detected_tags, show_confidence=True)

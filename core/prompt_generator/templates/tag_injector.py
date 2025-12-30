@@ -61,7 +61,7 @@ EXCLUDED_TAGS: Set[str] = {
 def get_unmapped_tags(
     tagger_results: TaggerResults,
     threshold: float = 0.5,
-    max_tags: int = 15,
+    max_tags: int = 30,
 ) -> List[Tuple[str, float]]:
     """
     Extract high-confidence tags not covered by decision engine.
@@ -365,6 +365,7 @@ def categorize_tags(
 def get_debug_info(
     tagger_results: TaggerResults,
     threshold: float = 0.5,
+    max_tags: int = 30,
 ) -> Dict[str, Any]:
     """
     Get detailed debug info about tag extraction and filtering.
@@ -372,6 +373,7 @@ def get_debug_info(
     Args:
         tagger_results: Combined tagger/analyzer outputs
         threshold: Minimum confidence threshold
+        max_tags: Maximum number of tags to inject
 
     Returns:
         Dict with debug info for metadata
@@ -392,7 +394,7 @@ def get_debug_info(
     analyzer_tags = _extract_analyzer_tags(tagger_results, threshold)
 
     # Get filtered (injected) tags
-    injected = get_unmapped_tags(tagger_results, threshold, max_tags=15)
+    injected = get_unmapped_tags(tagger_results, threshold, max_tags=max_tags)
 
     # Determine which tags were filtered out
     all_tags = {**all_tagger_tags}
@@ -420,6 +422,7 @@ def get_debug_info(
 
     return {
         "threshold": threshold,
+        "max_tags": max_tags,
         "tagger_tags_count": len(all_tagger_tags),
         "analyzer_tags_count": len(analyzer_tags),
         "injected_count": len(injected),

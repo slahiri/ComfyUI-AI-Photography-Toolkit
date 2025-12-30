@@ -48,6 +48,8 @@ class StandardMode(BaseMode):
         tagger_results: Optional[TaggerResults] = None,
         decisions: Optional[Decisions] = None,
         prompt_config: Optional[Dict[str, Any]] = None,
+        tag_threshold: float = 0.5,
+        max_injected_tags: int = 30,
         **kwargs
     ) -> GeneratorResult:
         """
@@ -104,7 +106,6 @@ class StandardMode(BaseMode):
             )
 
             # Step 5: Build LLM prompt from template (with detected tags + enhancements)
-            tag_threshold = kwargs.get("tag_threshold", 0.5)
             builder = get_builder()
             llm_prompt = builder.build_llm_prompt(
                 template,
@@ -112,13 +113,14 @@ class StandardMode(BaseMode):
                 decisions,
                 tagger_results=tagger_results,
                 tag_threshold=tag_threshold,
+                max_tags=max_injected_tags,
             )
             prompt_enhancements = builder.get_last_enhancements()
 
             # Get debug info for metadata
             from ..templates.tag_injector import get_debug_info
             from ..templates.scene_prompts import get_scene_group, format_scene_prompt
-            tag_debug_info = get_debug_info(tagger_results, tag_threshold)
+            tag_debug_info = get_debug_info(tagger_results, tag_threshold, max_injected_tags)
 
             # Get scene info for metadata
             scene_type = decisions.scene_type
