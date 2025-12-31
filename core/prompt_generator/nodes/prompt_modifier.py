@@ -146,11 +146,11 @@ class SID_PromptModifier:
         """Define ComfyUI input types."""
         return {
             "required": {
-                "prompt": ("STRING", {"forceInput": True, "tooltip": "Input prompt to modify (connect from SID_PromptGenerator)"}),
+                "prompt": ("STRING", {"forceInput": True, "tooltip": "Input prompt - can be basic text (for Expand mode) or detailed prompt (for Modify modes)"}),
                 "llm_model": ("LLM_MODEL",),
             },
             "optional": {
-                "processing_mode": (["Single Pass", "Section by Section"], {"default": "Single Pass", "tooltip": "Single Pass: one LLM call. Section by Section: separate call per section"}),
+                "processing_mode": (["Expand", "Single Pass", "Section by Section"], {"default": "Single Pass", "tooltip": "Expand: generate detailed prompt from basic text. Single Pass/Section by Section: modify existing detailed prompt"}),
                 # Photography presets
                 "photography_template": (list(cls.PHOTOGRAPHY_TEMPLATES.keys()), {"default": "None", "tooltip": "Apply a photography style template"}),
                 "photography_effect": (list(cls.PHOTOGRAPHY_EFFECTS.keys()), {"default": "None", "tooltip": "Apply a visual effect"}),
@@ -258,8 +258,17 @@ class SID_PromptModifier:
                 preset_names.append(f"Style: {photographer_style}")
             print(f"[SID_PromptModifier] Applying: {', '.join(preset_names)}")
 
-        # Modify prompt based on processing mode
-        if processing_mode == "Single Pass":
+        # Process based on mode
+        if processing_mode == "Expand":
+            # Expand basic text into detailed prompt, then apply modifications
+            print(f"[SID_PromptModifier] Expanding basic text into detailed prompt...")
+            expanded_prompt = self._expand_prompt(prompt, llm_model, temperature, presets)
+            # Apply any section modifications to the expanded prompt
+            if active_instructions:
+                modified_prompt = self._single_pass_modify(expanded_prompt, llm_model, active_instructions, temperature, {})
+            else:
+                modified_prompt = expanded_prompt
+        elif processing_mode == "Single Pass":
             modified_prompt = self._single_pass_modify(prompt, llm_model, active_instructions, temperature, presets)
         else:
             modified_prompt = self._section_by_section_modify(prompt, llm_model, active_instructions, temperature, presets)
@@ -438,6 +447,73 @@ Modify ONLY the {section_name} section according to the instruction. Keep everyt
                 # Continue with current prompt
 
         return modified_prompt
+
+    def _expand_prompt(
+        self,
+        basic_text: str,
+        llm_model: Any,
+        temperature: float,
+        presets: Dict[str, str] = None,
+    ) -> str:
+        """Expand basic text into a detailed image generation prompt."""
+        presets = presets or {}
+
+        # Build preset instructions
+        preset_text = ""
+        if presets.get("template"):
+            preset_text += f"- **Photography Template**: {presets['template']}\n"
+        if presets.get("effect"):
+            preset_text += f"- **Visual Effect**: {presets['effect']}\n"
+        if presets.get("photographer"):
+            preset_text += f"- **Photographer Style**: {presets['photographer']}\n"
+
+        system_prompt = """You are an expert prompt engineer for AI image generation (Stable Diffusion, Flux, Midjourney).
+
+Your task is to expand a basic concept or short description into a comprehensive, detailed image generation prompt.
+
+STRUCTURE YOUR OUTPUT WITH THESE SECTIONS (write as flowing prose, not bullet points):
+
+1. **Subject**: Detailed description of the main subject - physical features, age, ethnicity, body type, facial features, hair style/color/texture, skin tone and texture
+
+2. **Clothing & Accessories**: Complete outfit description - garments, fabrics, colors, fit, style, jewelry, accessories
+
+3. **Pose & Expression**: Body position, stance, gesture, facial expression, eye direction, mood conveyed
+
+4. **Environment**: Setting, location, background elements, props, atmosphere, time of day
+
+5. **Lighting**: Light quality (soft/hard), direction, color temperature, shadows, highlights, mood
+
+6. **Camera**: Shot type (close-up, full body, etc.), angle, framing, depth of field, focus
+
+RULES:
+1. Be specific and visual - describe what can be SEEN, not abstract concepts
+2. Use concrete descriptors (not "beautiful" but "high cheekbones, full lips, almond-shaped eyes")
+3. Include colors, textures, materials whenever possible
+4. Write as a single flowing paragraph or connected paragraphs
+5. Output ONLY the expanded prompt - no explanations, headers, or meta-commentary
+6. Aim for 200-400 words of rich, detailed description"""
+
+        user_prompt = f"""BASIC CONCEPT:
+{basic_text}
+"""
+        if preset_text:
+            user_prompt += f"""
+STYLE REQUIREMENTS TO INCORPORATE:
+{preset_text}
+"""
+        user_prompt += """
+Expand this concept into a detailed, comprehensive image generation prompt. Include all visual details for subject, clothing, pose, environment, lighting, and camera. Output only the expanded prompt."""
+
+        try:
+            client = self._get_client(llm_model)
+            response = self._call_llm(client, llm_model, system_prompt, user_prompt, temperature, basic_text)
+            expanded = self._clean_response(response)
+            word_count = len(expanded.split())
+            print(f"[SID_PromptModifier] Expanded to {word_count} words")
+            return expanded
+        except Exception as e:
+            print(f"[SID_PromptModifier] Error expanding prompt: {e}")
+            return basic_text
 
     def _generate_caption(self, llm_model: Any, prompt: str, temperature: float) -> str:
         """Generate Instagram caption from prompt."""
