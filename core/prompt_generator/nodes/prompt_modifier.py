@@ -157,6 +157,7 @@ class SID_PromptModifier:
                 "lighting_instruction": ("STRING", {"multiline": True, "default": "", "tooltip": "How to modify lighting (e.g., 'Golden hour, warm tones')"}),
                 "camera_instruction": ("STRING", {"multiline": True, "default": "", "tooltip": "How to modify camera (e.g., 'Close-up portrait, shallow DOF')"}),
                 "generate_caption": ("BOOLEAN", {"default": False, "tooltip": "Generate Instagram caption from modified prompt"}),
+                "release_vram": ("BOOLEAN", {"default": True, "tooltip": "Release VRAM after execution (recommended)"}),
             },
         }
 
@@ -175,6 +176,7 @@ class SID_PromptModifier:
         lighting_instruction: str = "",
         camera_instruction: str = "",
         generate_caption: bool = False,
+        release_vram: bool = True,
     ) -> Tuple[str, str]:
         """
         Modify prompt based on section instructions and photography presets.
@@ -193,6 +195,7 @@ class SID_PromptModifier:
             lighting_instruction: Modification for lighting section
             camera_instruction: Modification for camera section
             generate_caption: Whether to generate Instagram caption
+            release_vram: Release VRAM after execution
 
         Returns:
             Tuple of (modified_prompt, caption)
@@ -253,6 +256,10 @@ class SID_PromptModifier:
         caption = ""
         if generate_caption:
             caption = self._generate_caption(llm_model, modified_prompt, temperature)
+
+        # Release VRAM if requested
+        if release_vram:
+            self._release_vram()
 
         elapsed = int((time.time() - start_time) * 1000)
         print(f"[SID_PromptModifier] Completed in {elapsed}ms (mode: {processing_mode}, temp: {temperature})")
@@ -558,6 +565,21 @@ Generate Poetic, Technical, and Personal caption styles following the exact form
         text = re.sub(r'\s+', ' ', text)
 
         return text.strip()
+
+    def _release_vram(self):
+        """Release VRAM by clearing GPU memory and running garbage collection."""
+        import gc
+
+        gc.collect()
+
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+                print("[SID_PromptModifier] VRAM released")
+        except ImportError:
+            pass
 
 
 # Node registration
