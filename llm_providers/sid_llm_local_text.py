@@ -483,13 +483,6 @@ class LocalTextModelClient:
                                 print(f"[LocalTextModelClient] Truncated phrase repetition at word {word_pos}")
                                 break
 
-        # 3. Hard limit on word count (safety net) - generous limit for prompt modification
-        max_words = 800
-        words = text.split()
-        if len(words) > max_words:
-            text = ' '.join(words[:max_words])
-            print(f"[LocalTextModelClient] Truncated to {max_words} words (safety limit)")
-
         return text
 
     def _cleanup(self):

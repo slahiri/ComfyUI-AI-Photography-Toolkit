@@ -535,11 +535,12 @@ Generate Poetic, Technical, and Personal caption styles following the exact form
         calculated_tokens = int(estimated_input_tokens * buffer_multiplier)
 
         # Set minimum (for short prompts) and maximum bounds
-        min_tokens = 800  # Generous minimum for prompt modification
-        max_tokens = getattr(llm_model, 'max_tokens', 4000)
+        min_tokens = 1500  # Generous minimum for detailed prompt modification
+        max_tokens = getattr(llm_model, 'max_tokens', 6000)
 
         # Clamp to bounds
         result = max(min_tokens, min(calculated_tokens, max_tokens))
+        print(f"[SID_PromptModifier] Token calculation: input ~{estimated_input_tokens} tokens, allocated {result} max tokens")
         return result
 
     def _call_llm(
