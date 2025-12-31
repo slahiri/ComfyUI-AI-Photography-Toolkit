@@ -138,8 +138,8 @@ class PromptBuilder:
                 parts.append(f"{i}. {formatted}")
 
         # Add output instructions
-        parts.append("\nWrite as a single flowing paragraph suitable for AI image generation.")
-        parts.append("Be specific and detailed. Do not include meta-commentary.")
+        parts.append("\nWrite using technical, concrete visual terms. Avoid poetic language.")
+        parts.append("Be specific and literal. Focus on what is visible, not interpretation.")
 
         return "\n".join(parts)
 
@@ -170,7 +170,7 @@ class PromptBuilder:
         if context:
             parts.insert(0, f"Context from previous analysis:\n{context}\n\n")
 
-        parts.append("\nBe specific and detailed. Write in natural flowing prose.")
+        parts.append("\nBe specific and literal. Use technical, concrete visual terms.")
 
         return "\n".join(parts)
 

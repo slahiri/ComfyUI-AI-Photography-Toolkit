@@ -330,8 +330,8 @@ Include these naturally in your description where relevant."""
 
         pass1_prompt += """
 
-Write as flowing descriptive prose suitable for AI image generation.
-Be specific and detailed. Only describe what is actually visible."""
+Use technical, concrete visual terms. Avoid poetic or abstract language.
+Be specific and literal. Only describe what is actually visible."""
 
         passes.append({
             "name": "subject_appearance",
@@ -400,7 +400,8 @@ Reference these where applicable."""
 
         pass2_prompt += """
 
-Write as flowing descriptive prose. Only describe what is actually visible."""
+Use technical, concrete visual terms. Avoid poetic language.
+Only describe what is actually visible."""
 
         passes.append({
             "name": "body_clothing_pose",
@@ -452,7 +453,8 @@ Overall mood, feeling, and visual impact of the image."""
 
         pass3_prompt += """
 
-Write as flowing descriptive prose suitable for AI image generation."""
+Use technical, concrete visual terms (f-stops, color temps, angles).
+Avoid poetic or abstract language. Be specific and literal."""
 
         passes.append({
             "name": "environment_lighting_composition",

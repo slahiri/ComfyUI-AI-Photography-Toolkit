@@ -10,8 +10,9 @@ templates:
     trigger_tags: ["1girl", "woman", "female", "lady", "female_focus"]
 
     base_prompt: |
-      Describe this woman in detail for AI image generation.
-      Write as a single flowing paragraph. Be specific and detailed.
+      Describe this woman for AI image generation using technical, concrete terms.
+      Focus on visible details: features, colors, textures, materials, lighting, composition.
+      Avoid poetic or abstract language. Be specific and literal.
 
     sections:
       appearance:
@@ -144,8 +145,9 @@ templates:
     trigger_tags: ["1boy", "man", "male", "gentleman", "male_focus"]
 
     base_prompt: |
-      Describe this man in detail for AI image generation.
-      Write as a single flowing paragraph. Be specific and detailed.
+      Describe this man for AI image generation using technical, concrete terms.
+      Focus on visible details: features, colors, textures, materials, lighting, composition.
+      Avoid poetic or abstract language. Be specific and literal.
 
     sections:
       appearance:
@@ -258,8 +260,9 @@ templates:
       places365_category: ["outdoor", "nature", "beach", "mountain", "forest"]
 
     base_prompt: |
-      Describe this landscape/scenery in detail for AI image generation.
-      Write as a single flowing paragraph capturing the natural beauty.
+      Describe this landscape for AI image generation using technical, concrete terms.
+      Focus on terrain, colors, textures, lighting conditions, atmospheric effects.
+      Avoid poetic or abstract language. Be specific and literal.
 
     sections:
       terrain:
@@ -352,8 +355,9 @@ templates:
       wildlife_detected: true
 
     base_prompt: |
-      Describe this animal in detail for AI image generation.
-      Write as a single flowing paragraph.
+      Describe this animal for AI image generation using technical, concrete terms.
+      Focus on species, physical features, coloring, pose, environment.
+      Avoid poetic or abstract language. Be specific and literal.
 
     sections:
       species:
@@ -438,8 +442,9 @@ templates:
     trigger_tags: ["car", "motorcycle", "vehicle", "automobile", "bike"]
 
     base_prompt: |
-      Describe this vehicle in detail for AI image generation.
-      Write as a single flowing paragraph.
+      Describe this vehicle for AI image generation using technical, concrete terms.
+      Focus on make/model, colors, materials, condition, angle, environment.
+      Avoid poetic or abstract language. Be specific and literal.
 
     sections:
       type:
@@ -518,8 +523,9 @@ templates:
     trigger_tags: ["product", "object", "item", "merchandise"]
 
     base_prompt: |
-      Describe this product/object in detail for AI image generation.
-      Write as a single flowing paragraph.
+      Describe this product for AI image generation using technical, concrete terms.
+      Focus on type, materials, colors, textures, styling, lighting setup.
+      Avoid poetic or abstract language. Be specific and literal.
 
     sections:
       type:
@@ -583,8 +589,9 @@ templates:
     trigger: fallback
 
     base_prompt: |
-      Describe this image in detail for AI image generation.
-      Write as a single flowing paragraph.
+      Describe this image for AI image generation using technical, concrete terms.
+      Focus on subject, colors, textures, materials, lighting, composition.
+      Avoid poetic or abstract language. Be specific and literal.
 
     sections:
       subject:
