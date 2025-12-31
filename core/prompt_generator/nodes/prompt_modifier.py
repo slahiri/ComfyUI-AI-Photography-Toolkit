@@ -1020,6 +1020,113 @@ class SID_PromptModifier:
         "Bulb": "bulb mode, extended exposure, night photography",
     }
 
+    # NSFW Modifiers - Adult content descriptors
+    NSFW_MODIFIERS = {
+        "None": "",
+        # Full Nudity
+        "Nude": "nude, fully naked, no clothing",
+        "Full Frontal Nude": "full frontal nude, completely naked, exposed",
+        "Full Body Nude": "full body nude, entirely unclothed",
+        "Naked": "naked, bare skin, unclothed",
+        "Stripped": "stripped naked, clothing removed",
+        "Undressed": "undressed, without clothes",
+        "Birthday Suit": "in birthday suit, completely nude",
+        "Au Naturel": "au naturel, naturally nude",
+        "Bare": "bare body, no garments",
+        "Unclad": "unclad, without covering",
+        # Topless
+        "Topless": "topless, bare chest, no top",
+        "Topless Front": "topless front view, exposed chest",
+        "Topless Back": "topless from behind, bare back",
+        "Shirtless": "shirtless, no shirt, bare torso",
+        "Braless": "braless, no bra, natural chest",
+        "Bare Chested": "bare chested, exposed upper body",
+        "Open Shirt": "open shirt, unbuttoned, chest exposed",
+        "Shirt Removed": "shirt removed, taking off top",
+        "Lifted Top": "lifted top, shirt pulled up",
+        "Dropped Straps": "dropped straps, falling top",
+        # Bottomless
+        "Bottomless": "bottomless, no pants, lower body exposed",
+        "Pantsless": "pantsless, no bottoms",
+        "No Underwear": "no underwear, commando",
+        "Skirt Lifted": "skirt lifted, exposed underneath",
+        "Pants Down": "pants pulled down, lowered",
+        "Shorts Removed": "shorts removed, bare legs",
+        # Partial Exposure - Chest
+        "Sideboob": "sideboob, side breast visible",
+        "Underboob": "underboob, lower breast visible",
+        "Deep Cleavage": "deep cleavage, low neckline",
+        "Extreme Cleavage": "extreme cleavage, barely contained",
+        "Cleavage Window": "cleavage window, keyhole opening",
+        "Nipple Visible": "visible nipples, see-through",
+        "Nipple Pokies": "nipple pokies, erect through fabric",
+        "Areola Peek": "areola visible, partial exposure",
+        "One Breast Out": "one breast exposed, asymmetric",
+        "Breast Slip": "breast slip, accidental exposure",
+        # Partial Exposure - Lower
+        "Hip Bones": "visible hip bones, low-rise",
+        "Pubic Area": "pubic area visible, very low",
+        "Ass Visible": "buttocks visible, exposed rear",
+        "Ass Cleavage": "butt cleavage, low pants",
+        "Cheeks Out": "cheeks out, revealing bottom",
+        "Thong Visible": "thong visible, minimal coverage",
+        "G-String": "g-string, string bikini",
+        "High Cut": "high cut, leg exposure",
+        "Crotch Visible": "crotch area visible",
+        # Sheer/Transparent
+        "See-Through Top": "see-through top, transparent fabric",
+        "See-Through Dress": "see-through dress, sheer material",
+        "Sheer Fabric": "sheer fabric, body visible through",
+        "Transparent Lingerie": "transparent lingerie, see-through",
+        "Wet T-Shirt": "wet t-shirt, clinging transparent",
+        "Wet Dress": "wet dress, fabric clinging, visible body",
+        "Mesh Top": "mesh top, net fabric, visible skin",
+        "Lace Revealing": "revealing lace, semi-transparent",
+        "Thin White Fabric": "thin white fabric, visible underneath",
+        # Lingerie/Underwear
+        "Lingerie Only": "wearing only lingerie",
+        "Bra and Panties": "bra and panties only",
+        "Underwear Only": "underwear only, minimal",
+        "Bikini": "bikini, two-piece swimwear",
+        "Micro Bikini": "micro bikini, minimal coverage",
+        "String Bikini": "string bikini, tiny triangles",
+        "Thong Bikini": "thong bikini, exposed rear",
+        "Monokini": "monokini, one-piece revealing",
+        "Slingshot Bikini": "slingshot bikini, extreme minimal",
+        "Pasties Only": "pasties only, nipple covers",
+        # Artistic Nude
+        "Artistic Nude": "artistic nude, fine art style",
+        "Classical Nude": "classical nude, renaissance style",
+        "Figure Study": "nude figure study, anatomical",
+        "Life Drawing Pose": "life drawing pose, nude model",
+        "Sculptural Nude": "sculptural nude, statue-like",
+        "Boudoir Nude": "boudoir nude, intimate setting",
+        "Implied Nude": "implied nude, suggestive pose",
+        "Covered Nude": "strategically covered nude",
+        "Silhouette Nude": "nude silhouette, backlit",
+        "Abstract Nude": "abstract nude, partial body",
+        # Covering/Partially Covered
+        "Hand Bra": "hand bra, hands covering breasts",
+        "Arm Covering": "arms covering, strategic placement",
+        "Hair Covering": "long hair covering, natural veil",
+        "Sheet Wrap": "wrapped in sheet, toga style",
+        "Towel Only": "towel only, just showered",
+        "Blanket Wrap": "wrapped in blanket, cozy nude",
+        "Pillow Cover": "pillow covering, in bed",
+        "Flower Petals": "flower petals covering, artistic",
+        "Body Paint Only": "body paint only, painted nude",
+        "Bubbles Covering": "bubbles covering, bath scene",
+        # Undressing Actions
+        "Removing Bra": "removing bra, unclasping",
+        "Taking Off Shirt": "taking off shirt, mid-removal",
+        "Pulling Down Pants": "pulling down pants, undressing",
+        "Unzipping Dress": "unzipping dress, back exposed",
+        "Stepping Out Of": "stepping out of clothes",
+        "Clothes Falling": "clothes falling off, slipping",
+        "Unbuttoning": "unbuttoning, revealing gradually",
+        "Stripping": "stripping, removing clothing",
+    }
+
     # Conflicting preset combinations to warn about
     PRESET_CONFLICTS = {
         # Creative effects conflicts
@@ -1114,6 +1221,8 @@ class SID_PromptModifier:
                 "shutter_speed": (list(cls.SHUTTER_SPEEDS.keys()), {"default": "None", "tooltip": "Shutter speed for motion control"}),
                 "iso": (list(cls.ISO_VALUES.keys()), {"default": "None", "tooltip": "ISO sensitivity and grain level"}),
                 "camera_instruction": ("STRING", {"multiline": True, "default": "", "tooltip": "How to modify camera (e.g., 'Close-up portrait, shallow DOF')"}),
+                # NSFW modifier
+                "nsfw_modifier": (list(cls.NSFW_MODIFIERS.keys()), {"default": "None", "tooltip": "NSFW/adult content modifier (nudity, exposure levels)"}),
                 "generate_caption": ("BOOLEAN", {"default": False, "tooltip": "Generate Instagram caption from modified prompt"}),
                 "release_vram": ("BOOLEAN", {"default": True, "tooltip": "Release VRAM after execution (recommended)"}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "tooltip": "Random seed for reproducibility (change to force re-generation)"}),
@@ -1155,6 +1264,8 @@ class SID_PromptModifier:
         shutter_speed: str = "None",
         iso: str = "None",
         camera_instruction: str = "",
+        # NSFW modifier
+        nsfw_modifier: str = "None",
         generate_caption: bool = False,
         release_vram: bool = True,
         seed: int = 0,
@@ -1298,6 +1409,9 @@ class SID_PromptModifier:
             presets["shutter_speed"] = self.SHUTTER_SPEEDS.get(shutter_speed, "")
         if iso != "None":
             presets["iso"] = self.ISO_VALUES.get(iso, "")
+        # NSFW modifier
+        if nsfw_modifier != "None":
+            presets["nsfw"] = self.NSFW_MODIFIERS.get(nsfw_modifier, "")
 
         # If no instructions or presets, return original prompt
         if not active_instructions and not presets:
@@ -1351,6 +1465,8 @@ class SID_PromptModifier:
                 preset_names.append(f"Shutter: {shutter_speed}")
             if iso != "None":
                 preset_names.append(f"ISO: {iso}")
+            if nsfw_modifier != "None":
+                preset_names.append(f"NSFW: {nsfw_modifier}")
             print(f"[SID_PromptModifier] Applying: {', '.join(preset_names)}")
 
             # Check for conflicting presets
@@ -1481,6 +1597,9 @@ class SID_PromptModifier:
             camera_specs.append(presets['iso'])
         if camera_specs:
             preset_text += f"- **Camera Technical**: {', '.join(camera_specs)}\n"
+        # NSFW modifier
+        if presets.get("nsfw"):
+            preset_text += f"- **Body/Clothing State**: {presets['nsfw']}\n"
 
         system_prompt = """You are an expert prompt engineer for AI image generation (Stable Diffusion, Flux, Z-Image).
 
@@ -1585,6 +1704,9 @@ RULES:
                 camera_specs.append(presets['iso'])
             if camera_specs:
                 preset_text += f"- **Camera Technical**: {', '.join(camera_specs)}\n"
+            # NSFW modifier
+            if presets.get("nsfw"):
+                preset_text += f"- **Body/Clothing State**: {presets['nsfw']}\n"
 
             preset_system = """You are an expert prompt engineer for AI image generation.
 
@@ -1700,10 +1822,11 @@ Use concrete visual terms only. No poetic language.""",
 Describe with technical precision (2-3 sentences max):
 - Each garment: type, color, material/fabric, fit
 - Style: casual, formal, streetwear, elegant, etc.
+- State of dress/undress if specified
 - Accessories: jewelry, bags, glasses, hats, shoes
 
 Use concrete visual terms only. No poetic language.""",
-                "presets": ["clothing", "fashion"],
+                "presets": ["clothing", "fashion", "nsfw"],
             },
             {
                 "name": "Pose & Expression",
@@ -1859,6 +1982,9 @@ RULES:
             camera_specs.append(presets['iso'])
         if camera_specs:
             context += f"- **Camera Technical**: {', '.join(camera_specs)}\n"
+        # NSFW modifier
+        if presets.get("nsfw"):
+            context += f"- **Body/Clothing State**: {presets['nsfw']}\n"
         return context
 
     def _call_llm_short(
@@ -1953,6 +2079,9 @@ RULES:
             camera_specs.append(presets['iso'])
         if camera_specs:
             preset_text += f"- **Camera Technical**: {', '.join(camera_specs)}\n"
+        # NSFW modifier
+        if presets.get("nsfw"):
+            preset_text += f"- **Body/Clothing State**: {presets['nsfw']}\n"
 
         system_prompt = """You are an expert prompt engineer for AI image generation (Stable Diffusion, Flux, Z-Image).
 
