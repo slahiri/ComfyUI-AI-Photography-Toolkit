@@ -59,6 +59,10 @@ models/
 
 # Prompt cache
 cache/
+.cache/
+
+# Claude Code
+.claude/
 
 # Test output directories
 improvement_sessions/

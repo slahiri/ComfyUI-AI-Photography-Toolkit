@@ -72,12 +72,11 @@ class SID_PromptModifier:
         """Define ComfyUI input types."""
         return {
             "required": {
-                "prompt": ("STRING", {"multiline": True, "default": "", "tooltip": "Input prompt to modify"}),
+                "prompt": ("STRING", {"forceInput": True, "tooltip": "Input prompt to modify (connect from SID_PromptGenerator)"}),
                 "llm_model": ("LLM_MODEL",),
             },
             "optional": {
                 "processing_mode": (["Single Pass", "Section by Section"], {"default": "Single Pass", "tooltip": "Single Pass: one LLM call. Section by Section: separate call per section"}),
-                "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 2.0, "step": 0.1, "tooltip": "LLM temperature (higher = more creative)"}),
                 "subject_instruction": ("STRING", {"multiline": True, "default": "", "tooltip": "How to modify subject (e.g., 'Make younger, add freckles')"}),
                 "clothing_instruction": ("STRING", {"multiline": True, "default": "", "tooltip": "How to modify clothing (e.g., 'Change to elegant red dress')"}),
                 "pose_instruction": ("STRING", {"multiline": True, "default": "", "tooltip": "How to modify pose (e.g., 'More confident stance, hands on hips')"}),
@@ -93,7 +92,6 @@ class SID_PromptModifier:
         prompt: str,
         llm_model: Any,
         processing_mode: str = "Single Pass",
-        temperature: float = 0.7,
         subject_instruction: str = "",
         clothing_instruction: str = "",
         pose_instruction: str = "",
@@ -107,9 +105,8 @@ class SID_PromptModifier:
 
         Args:
             prompt: Input prompt to modify
-            llm_model: LLM configuration
+            llm_model: LLM configuration (temperature and other params from LLM node)
             processing_mode: "Single Pass" or "Section by Section"
-            temperature: LLM temperature
             subject_instruction: Modification for subject section
             clothing_instruction: Modification for clothing section
             pose_instruction: Modification for pose section
@@ -122,6 +119,9 @@ class SID_PromptModifier:
             Tuple of (modified_prompt, caption)
         """
         start_time = time.time()
+
+        # Get temperature from LLM model config
+        temperature = getattr(llm_model, 'temperature', 0.7)
 
         # Collect instructions
         instructions = {
@@ -156,7 +156,7 @@ class SID_PromptModifier:
             caption = self._generate_caption(llm_model, modified_prompt, temperature)
 
         elapsed = int((time.time() - start_time) * 1000)
-        print(f"[SID_PromptModifier] Completed in {elapsed}ms (mode: {processing_mode})")
+        print(f"[SID_PromptModifier] Completed in {elapsed}ms (mode: {processing_mode}, temp: {temperature})")
 
         return (modified_prompt, caption)
 
