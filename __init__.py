@@ -458,10 +458,14 @@ def print_welcome_message():
 # Import User Prompt node
 from .core.prompt_generator.nodes.user_prompt import SID_UserPrompt
 
+# Import Prompt Modifier node
+from .core.prompt_generator.nodes.prompt_modifier import SID_PromptModifier
+
 # V1-style node exports (always available, works with all ComfyUI versions)
 NODE_CLASS_MAPPINGS = {
     "SID_PromptGenerator": SID_PromptGenerator,
     "SID_UserPrompt": SID_UserPrompt,
+    "SID_PromptModifier": SID_PromptModifier,
     "SID_LLM_API": SID_LLM_API_V1,
     "SID_LLM_Local": SID_LLM_Local_V1,
 }
@@ -469,6 +473,7 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "SID_PromptGenerator": "SID Prompt Generator",
     "SID_UserPrompt": "SID User Prompt",
+    "SID_PromptModifier": "SID Prompt Modifier",
     "SID_LLM_API": "SID LLM API",
     "SID_LLM_Local": "SID LLM Local",
 }
