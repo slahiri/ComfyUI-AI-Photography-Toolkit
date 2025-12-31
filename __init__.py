@@ -397,6 +397,102 @@ class SID_LLM_Local_V1:
         return (config,)
 
 
+class SID_LLM_Local_Text_V1:
+    """
+    V1-style wrapper for SID_LLM_Local_Text.
+    Local text-only models for prompt modification (no vision).
+    Optimized for text generation tasks like prompt rewriting.
+    """
+
+    CATEGORY = "SID Photography Toolkit/LLM Providers"
+    RETURN_TYPES = ("LLM_MODEL",)
+    RETURN_NAMES = ("llm_model",)
+    FUNCTION = "execute"
+
+    # Text-only Qwen models (smaller, faster for text tasks)
+    LOCAL_MODELS = [
+        # Qwen2.5 Text Models
+        "Qwen2.5-1.5B-Instruct",
+        "Qwen2.5-3B-Instruct",
+        "Qwen2.5-7B-Instruct",
+        "Qwen2.5-14B-Instruct",
+        # Qwen3 Text Models
+        "Qwen3-1.7B",
+        "Qwen3-4B",
+        "Qwen3-8B",
+        # Abliterated variants (uncensored)
+        "Qwen2.5-7B-Abliterated",
+        "Qwen2.5-14B-Abliterated",
+    ]
+
+    MODEL_REPOS = {
+        # Qwen2.5 Text
+        "Qwen2.5-1.5B-Instruct": "Qwen/Qwen2.5-1.5B-Instruct",
+        "Qwen2.5-3B-Instruct": "Qwen/Qwen2.5-3B-Instruct",
+        "Qwen2.5-7B-Instruct": "Qwen/Qwen2.5-7B-Instruct",
+        "Qwen2.5-14B-Instruct": "Qwen/Qwen2.5-14B-Instruct",
+        # Qwen3 Text
+        "Qwen3-1.7B": "Qwen/Qwen3-1.7B",
+        "Qwen3-4B": "Qwen/Qwen3-4B",
+        "Qwen3-8B": "Qwen/Qwen3-8B",
+        # Abliterated
+        "Qwen2.5-7B-Abliterated": "huihui-ai/Qwen2.5-7B-Instruct-abliterated",
+        "Qwen2.5-14B-Abliterated": "huihui-ai/Qwen2.5-14B-Instruct-abliterated",
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "model": (cls.LOCAL_MODELS, {"default": "Qwen2.5-3B-Instruct"}),
+            },
+            "optional": {
+                "quantization": (["Auto", "4-bit", "8-bit", "FP16"], {"default": "Auto"}),
+                "device": (["auto", "cuda", "cpu"], {"default": "auto"}),
+                "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 2.0, "step": 0.1}),
+                "max_tokens": ("INT", {"default": 2048, "min": 128, "max": 8192}),
+                "keep_model_loaded": ("BOOLEAN", {"default": True}),
+                "hf_token": ("STRING", {"default": "", "tooltip": "HuggingFace token for gated models"}),
+            },
+        }
+
+    def execute(self, model, quantization="Auto", device="auto", temperature=0.7,
+                max_tokens=2048, keep_model_loaded=True, hf_token=""):
+
+        # Map quantization
+        quant_map = {"Auto": "4-bit", "4-bit": "4-bit", "8-bit": "8-bit", "FP16": "None (FP16)"}
+        quant = quant_map.get(quantization, "4-bit")
+
+        repo_id = self.MODEL_REPOS.get(model, "")
+
+        config = LLMModelConfig(
+            provider="local_text",
+            model=model,
+            api_key="",
+            api_url="",
+            max_tokens=max_tokens,
+            temperature=temperature,
+            supports_vision=False,  # Text-only model
+            supports_system_prompt=True,
+            supports_reasoning=False,
+            extra_params={
+                "quantization": quant,
+                "device": device,
+                "attention_mode": "auto",
+                "keep_model_loaded": keep_model_loaded,
+                "repo_id": repo_id,
+                "family": "qwen",
+                "repetition_penalty": 1.1,
+                "top_p": 0.9,
+                "use_torch_compile": False,
+                "hf_token": hf_token if hf_token else None,
+            },
+        )
+
+        print(f"[SID_LLM_Local_Text] Configured: {model} ({quant})")
+        return (config,)
+
+
 def print_welcome_message():
     """
     Print welcome message with dependency status and available nodes.
@@ -468,6 +564,7 @@ NODE_CLASS_MAPPINGS = {
     "SID_PromptModifier": SID_PromptModifier,
     "SID_LLM_API": SID_LLM_API_V1,
     "SID_LLM_Local": SID_LLM_Local_V1,
+    "SID_LLM_Local_Text": SID_LLM_Local_Text_V1,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -476,6 +573,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "SID_PromptModifier": "SID Prompt Modifier",
     "SID_LLM_API": "SID LLM API",
     "SID_LLM_Local": "SID LLM Local",
+    "SID_LLM_Local_Text": "SID LLM Local Text",
 }
 
 # Web directory for JavaScript extensions (node colors, widget control)

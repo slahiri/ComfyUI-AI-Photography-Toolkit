@@ -303,8 +303,21 @@ Generate Poetic, Technical, and Personal caption styles following the exact form
             timeout = httpx.Timeout(timeout=120.0, connect=30.0)
             return anthropic.Anthropic(api_key=llm_model.api_key, timeout=timeout)
 
+        elif provider == "local_text":
+            # Local text-only models (Qwen text)
+            from ....llm_providers.sid_llm_local_text import LocalTextModelClient
+            extra = llm_model.extra_params or {}
+            return LocalTextModelClient(
+                model_name=llm_model.model,
+                quantization=extra.get("quantization", "4-bit"),
+                device=extra.get("device", "auto"),
+                keep_model_loaded=extra.get("keep_model_loaded", True),
+                repo_id=extra.get("repo_id", ""),
+                hf_token=extra.get("hf_token"),
+            )
+
         elif provider == "local":
-            # For Phase 2 - local text models
+            # Local vision models - fallback to OpenAI-compatible
             from openai import OpenAI
             return OpenAI(
                 api_key="not-needed",
