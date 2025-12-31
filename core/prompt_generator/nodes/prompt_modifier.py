@@ -145,900 +145,519 @@ class SID_PromptModifier:
         "Nadav Kander": "Nadav Kander style - contemplative portraits, muted color palette, psychological depth, understated power, fine art approach",
     }
 
-    # Creative Effects - Motion, Blur, Color, Lighting, Texture, Digital, Artistic, Surreal
+    # Creative Effects - Concise technical terms (3-5 max per effect)
     CREATIVE_EFFECTS = {
         "None": "",
         # Motion & Blur
-        "Ghost Motion Blur": "ghost motion blur, long exposure portrait, motion trail effect, ethereal double, teal and orange color grading, translucent echo, cinematic movement",
-        "Dreamy Soft Focus": "dreamy soft focus, gaussian blur, romantic haze, light bloom, soft diffusion, pastel tones, vaseline lens effect, ethereal portrait",
-        "Tilt Shift Miniature": "tilt shift photography, miniature effect, selective focus, shallow depth of field, diorama style, toy-like, Lensbaby effect",
-        "Bokeh Lights": "bokeh lights, circular blur, out of focus highlights, fairy lights background, dreamy bokeh, light orbs, f/1.4 aperture",
-        "Light Trail Long Exposure": "long exposure light trails, light painting, streaking lights, night photography, motion blur lights, car light trails",
-        "Radial Zoom Blur": "radial zoom blur, tunnel vision effect, zoom burst, speed blur, vortex motion, dynamic energy",
-        "Freeze Frame Burst": "freeze frame burst, stroboscopic effect, motion sequence, multiple exposure movement, action freeze",
+        "Ghost Motion Blur": "long exposure motion trail, translucent motion echo, 1/4 second shutter",
+        "Soft Focus": "soft focus lens, f/2.8 diffusion, slight gaussian blur",
+        "Tilt Shift": "tilt shift lens, selective focus plane, miniature effect",
+        "Bokeh Background": "f/1.4 aperture, circular bokeh, blurred background lights",
+        "Light Trails": "long exposure light trails, 30 second shutter, light streaks",
+        "Zoom Blur": "zoom burst effect, radial motion blur, center focus",
+        "Stroboscopic": "stroboscopic flash, multiple exposure freeze, motion sequence",
         # Color & Tone
-        "Chromatic Aberration": "chromatic aberration, RGB split, color fringing, lens distortion, color channel separation, prismatic edge effect, glitch photography",
-        "Duotone": "duotone effect, two-color palette, gradient map, Spotify aesthetic, bold color contrast, graphic poster style",
-        "Prism Rainbow Split": "prism effect, rainbow light dispersion, spectral split, Pink Floyd prism, light refraction, ROYGBIV spectrum",
-        "Infrared Photography": "infrared photography, false color IR, pink foliage, surreal landscape, 720nm filter, Aerochrome film, magenta trees",
-        "Thermal Vision": "thermal imaging, heat map vision, infrared thermal, FLIR camera, temperature gradient, heat signature, predator vision",
-        "Cross Process": "cross processed film, E6 in C41, color shift, high contrast, saturated colors, green shadows, magenta highlights",
-        "Solarization": "solarization effect, Sabattier effect, tone reversal, Man Ray style, partially inverted, psychedelic tones",
-        "Negative Inversion": "negative film effect, inverted colors, color negative, complementary inversion, reversed tones",
-        "Posterize": "posterized effect, limited color palette, color banding, pop art poster, flat color zones, Andy Warhol style",
-        "Split Complementary Light": "split complementary lighting, orange teal, magenta green, complementary gel lighting, color contrast",
+        "Chromatic Aberration": "RGB color split, chromatic aberration, color fringing edges",
+        "Duotone": "duotone color grade, two-color palette, high contrast",
+        "Prism Split": "prism light refraction, rainbow spectrum split, light dispersion",
+        "Infrared": "infrared photography, false color, 720nm filter look",
+        "Thermal": "thermal imaging colors, heat map gradient, FLIR style",
+        "Cross Process": "cross processed film, shifted colors, green shadows magenta highlights",
+        "Solarization": "solarization effect, partial tone inversion, Sabattier effect",
+        "Posterize": "posterized colors, limited color palette, flat color zones",
+        "Teal Orange": "teal and orange color grade, complementary split toning",
         # Lighting
-        "Neon Glow": "neon glow, fluorescent lighting, electric colors, light bloom, cyberpunk neon, glowing edges, synthwave glow",
-        "Silhouette Rim Light": "silhouette, rim lighting, backlit portrait, golden hour backlight, edge glow, contre-jour, halo effect",
-        "Split Lighting": "split lighting, half-face shadow, chiaroscuro, dramatic side light, Rembrandt lighting, film noir lighting",
-        "Backlit Haze": "backlit haze, atmospheric fog, lens flare, golden haze, dusty atmosphere, god rays, volumetric light",
-        "Anamorphic Lens Flare": "anamorphic lens flare, horizontal streak, JJ Abrams flare, cinema lens, blue streak flare, oval bokeh",
-        "Ethereal Glow": "ethereal glow, angelic radiance, supernatural light, divine illumination, heavenly aura, soft luminescence",
-        "UV Blacklight": "UV blacklight, fluorescent glow, ultraviolet lighting, rave aesthetic, neon paint glow, phosphorescent",
-        "Bioluminescent": "bioluminescent glow, organic inner light, glowing organism, avatar style, living light, natural fluorescence",
+        "Neon Glow": "neon lighting, electric glow, saturated color cast",
+        "Rim Light Silhouette": "backlit rim lighting, silhouette, edge glow",
+        "Split Lighting": "split lighting, half-face shadow, dramatic side light",
+        "Backlit Haze": "backlit with haze, lens flare, volumetric light rays",
+        "Anamorphic Flare": "anamorphic lens flare, horizontal blue streak, oval bokeh",
+        "Soft Glow": "soft diffused glow, bloom lighting, gentle luminosity",
+        "UV Blacklight": "UV blacklight, fluorescent glow, neon reactive",
+        "Bioluminescent": "bioluminescent glow, inner light emission, organic luminescence",
         # Texture & Film
-        "Heavy Film Grain": "heavy film grain, analog texture, ISO 3200, grainy photograph, 35mm film grain, noisy film aesthetic",
-        "Halftone Dots": "halftone dots, Ben-Day dots, comic book print, newspaper print effect, CMYK halftone, Lichtenstein style",
-        "VHS Retro": "VHS effect, scan lines, tape distortion, retro video, color bleeding, tracking errors, 80s camcorder",
-        "Scratched Film": "scratched film, dust particles, aged film stock, vintage scratches, film damage, old movie reel",
-        "Static Noise": "TV static noise, signal interference, white noise texture, analog static, dead channel, broadcast noise",
+        "Film Grain": "heavy film grain, ISO 3200 noise, analog texture",
+        "Halftone": "halftone dot pattern, CMYK print texture, Ben-Day dots",
+        "VHS": "VHS scan lines, tape distortion, color bleeding",
+        "Aged Film": "scratched film, dust particles, vintage film damage",
+        "Static Noise": "TV static noise, signal interference texture",
         # Digital & Glitch
-        "Data Glitch": "glitch art, data corruption, pixel sorting, digital artifacts, databending, corrupted image, broken data",
-        "Pixel Sort": "pixel sorting, algorithmic art, data manipulation, sorted pixels, Kim Asendorf style, digital distortion",
-        "Holographic": "holographic effect, iridescent, rainbow shimmer, spectrum shift, pearlescent, oil slick colors, CD reflection",
-        "Wireframe Mesh": "wireframe mesh, 3D polygons, digital blueprint, CAD rendering, Tron aesthetic, grid overlay, vector lines",
-        "Anaglyph 3D": "anaglyph 3D, red-cyan stereoscopic, retro 3D glasses, depth offset, chromatic 3D, stereoscopy",
-        "CRT Scanlines": "CRT scanlines, retro monitor, cathode ray tube, arcade screen, old TV effect, phosphor glow",
-        # Artistic & Painterly
-        "Oil Painting": "oil painting effect, impasto texture, visible brushstrokes, painterly style, canvas texture, classical painting",
-        "Watercolor": "watercolor effect, soft bleeding edges, color wash, wet-on-wet technique, translucent layers, aquarelle style",
-        "Charcoal Sketch": "charcoal sketch, rough strokes, smudged shadows, graphite drawing, pencil texture, monochrome sketch",
-        "Stained Glass": "stained glass effect, geometric segments, lead lines, colored glass, cathedral window, Tiffany style",
-        "Kaleidoscope": "kaleidoscope effect, radial symmetry, mirrored pattern, mandala style, rotational symmetry, prismatic reflection",
-        "Pop Art": "pop art style, bold flat colors, high contrast, Andy Warhol style, screen print, graphic art, comic colors",
-        # Surreal & Conceptual
-        "Double Exposure": "double exposure, multiple exposure, blended images, portrait nature blend, silhouette fill, composite photography",
-        "Disintegration": "disintegration effect, particle scatter, dissolving, dust particles, Thanos snap, breaking apart",
-        "Levitation": "levitation photography, floating, suspended in air, gravity defying, weightless, magical floating",
-        "Mirror Reflection": "mirror reflection, water reflection, perfect symmetry, reflected image, still water mirror",
-        "Portal Dimensional": "portal effect, dimensional gateway, reality warp, interdimensional, wormhole, cosmic doorway",
-        "Liquid Melt": "melting effect, liquid drip, wax melt, surreal melting, Dali style, flowing forms",
+        "Glitch": "digital glitch, data corruption, pixel artifacts",
+        "Pixel Sort": "pixel sorting effect, vertical data streaks",
+        "Holographic": "holographic iridescent, rainbow shimmer, pearlescent",
+        "Wireframe": "wireframe mesh overlay, 3D polygon lines, digital grid",
+        "Anaglyph 3D": "anaglyph 3D, red-cyan offset, stereoscopic",
+        "CRT Scanlines": "CRT scanlines, retro monitor lines, phosphor glow",
+        # Artistic
+        "Oil Paint": "oil painting texture, visible brushstrokes, impasto",
+        "Watercolor": "watercolor effect, soft bleeding edges, color wash",
+        "Charcoal": "charcoal sketch, rough strokes, monochrome graphite",
+        "Stained Glass": "stained glass segments, colored glass panels, lead lines",
+        "Kaleidoscope": "kaleidoscope symmetry, radial mirror pattern",
+        "Pop Art": "pop art style, bold flat colors, screen print look",
+        # Surreal
+        "Double Exposure": "double exposure blend, overlaid images, composite",
+        "Disintegration": "particle disintegration, scatter dissolve effect",
+        "Levitation": "levitation, floating suspended, no ground contact",
+        "Mirror Reflection": "mirror reflection, perfect water symmetry",
+        "Portal": "dimensional portal effect, circular gateway, reality warp",
+        "Liquid Melt": "melting effect, dripping liquid distortion",
         # Environmental
-        "Underwater Caustics": "underwater photography, submerged, caustic light patterns, aquatic atmosphere, deep sea blue",
-        "Fog Diffusion": "fog diffusion, heavy mist, atmospheric haze, foggy isolation, mysterious fog, dense atmosphere",
-        "Dust Motes": "dust motes, floating particles, light beam dust, atmospheric particles, magical dust, sunbeam particles",
-        "Rain Atmosphere": "rain photography, falling rain, wet reflections, rainy atmosphere, water droplets, storm mood",
-        "Frozen Ice": "frozen effect, ice crystals, frost covered, glacial blue, crystalline texture, cryogenic, winter frozen",
-        "Fire Ember": "fire effect, burning embers, flame glow, heat distortion, molten, volcanic glow, inferno light",
+        "Underwater": "underwater photography, caustic light patterns, aquatic",
+        "Fog": "dense fog, atmospheric haze, low visibility",
+        "Dust Particles": "visible dust motes, particles in light beam",
+        "Rain": "falling rain, wet surfaces, water droplets visible",
+        "Frost": "frost covered, ice crystals, frozen texture",
+        "Fire Glow": "fire light, orange ember glow, heat distortion",
     }
 
-    # Cinematic Styles - Movie and Director aesthetics
+    # Cinematic Styles - Concise movie/director visual references
     CINEMATIC_STYLES = {
         "None": "",
         # Tarantino
-        "Kill Bill Yellow": "Kill Bill style, high saturation yellow, black stripe, revenge aesthetic, Tarantino visual style, bold primary colors",
-        "Kill Bill Anime": "Kill Bill anime sequence, stylized blood splatter, Japanese animation style, manga action, O-Ren Ishii style",
-        "Pulp Fiction Glow": "Pulp Fiction style, mysterious golden glow, divine briefcase light, warm heavenly illumination, Tarantino aesthetic",
-        "Grindhouse Damaged": "grindhouse film damage, exploitation cinema, scratched print, missing frames, 70s sleaze aesthetic, drive-in movie",
+        "Kill Bill Yellow": "high saturation yellow, bold primary colors, black stripe accent",
+        "Kill Bill Anime": "anime cell shading, stylized action, manga aesthetic",
+        "Pulp Fiction Glow": "warm golden glow, divine light source, amber tones",
+        "Grindhouse": "film scratches, missing frames, 70s exploitation print damage",
         # Sci-Fi
-        "Tron Grid": "Tron Legacy style, glowing neon circuit lines, digital grid, neon blue orange, light cycle trails, digital frontier",
-        "Tron Derezz": "Tron derezzing effect, digital disintegration, pixel scatter, fragmenting cubes, digital death, data dissolution",
-        "Matrix Green Code": "Matrix code rain, green digital cascade, falling characters, simulation code, digital rain, green tint",
-        "Matrix Bullet Time": "bullet time effect, frozen action, time slice, rotating freeze frame, Neo dodge, 360 degree freeze",
-        "Star Wars Hologram": "Star Wars hologram, blue holographic projection, R2D2 message, flickering transmission, sci-fi hologram",
-        "Hyperspace Jump": "hyperspace tunnel, star streak, light speed jump, warp drive effect, stretched starfield, FTL travel",
-        "Lightsaber Glow": "lightsaber glow, plasma blade light, colored energy sword, ambient blade glow, Jedi weapon, Force energy",
-        "Blade Runner Rain": "Blade Runner style, neon rain reflections, dystopian downpour, replicant noir, cyberpunk rain, Ridley Scott",
-        "Blade Runner Orange": "Blade Runner 2049, apocalyptic orange sky, nuclear sunset, wasteland haze, Las Vegas dust, Villeneuve style",
+        "Tron Neon Grid": "neon blue circuit lines, black background, digital grid glow",
+        "Matrix Green": "green tinted, digital rain overlay, dark cyber aesthetic",
+        "Matrix Bullet Time": "frozen mid-action, 360 degree angle, time slice effect",
+        "Star Wars Hologram": "blue holographic projection, flickering scanlines, translucent",
+        "Hyperspace": "stretched star trails, motion blur tunnel, light speed streaks",
+        "Lightsaber Glow": "colored light source glow, plasma ambient light, blade reflection",
+        "Blade Runner Neon Rain": "neon reflections, rain, dark cyberpunk, wet streets",
+        "Blade Runner 2049 Orange": "orange atmospheric haze, dust particles, apocalyptic sky",
         # Zack Snyder
-        "300 Bronze": "300 movie style, desaturated bronze, Spartan aesthetic, Frank Miller, crushed blacks, sepia combat, epic battle",
-        "300 Speed Ramp": "300 speed ramping, variable speed combat, slow motion action, Snyder speed ramp, dramatic slow-mo",
-        "Sin City Noir": "Sin City style, high contrast black and white, selective color, Frank Miller noir, neo-noir comic, graphic novel",
-        "Snyder Desaturated": "Zack Snyder style, desaturated dramatic, dark superhero aesthetic, DCEU look, grim tones, epic scale",
+        "300 Bronze": "desaturated bronze tones, crushed blacks, high contrast sepia",
+        "300 Speed Ramp": "motion blur trails, slow motion freeze, dynamic action",
+        "Sin City": "high contrast black and white, single selective color accent",
+        "Snyder Desaturated": "desaturated color grade, dark tones, dramatic shadows",
         # Wes Anderson
-        "Anderson Symmetry": "Wes Anderson symmetry, centered composition, pastel colors, symmetrical framing, quirky aesthetic, storybook",
-        "Grand Budapest Pink": "Grand Budapest Hotel style, signature pink, whimsical miniature, Mendl's aesthetic, Anderson pastel",
-        "Moonrise Kingdom": "Moonrise Kingdom style, yellow khaki tones, 60s nostalgia, scouting aesthetic, vintage Americana",
-        "Anderson Diorama": "Wes Anderson diorama, cross-section view, dollhouse staging, theatrical set design, miniature world",
+        "Anderson Symmetry": "perfect center composition, pastel colors, symmetrical framing",
+        "Grand Budapest Pink": "pastel pink palette, whimsical staging, vintage texture",
+        "Moonrise Kingdom": "yellow-khaki tones, 60s vintage color grade, warm nostalgic",
+        "Anderson Diorama": "cross-section framing, dollhouse miniature staging, flat lighting",
         # Christopher Nolan
-        "Inception Paradox": "Inception style, impossible architecture, folding reality, Penrose stairs, dream architecture, gravity paradox",
-        "Interstellar Cosmic": "Interstellar style, wormhole visualization, tesseract dimensions, Gargantua black hole, cosmic scale",
-        "Oppenheimer Stark": "Oppenheimer style, IMAX black and white, stark contrast, dramatic monochrome, Trinity test, historical epic",
+        "Inception": "impossible geometry, folding architecture, surreal perspective",
+        "Interstellar": "cosmic scale, IMAX wide angle, space vastness, black hole lighting",
+        "Oppenheimer": "IMAX black and white, stark contrast, dramatic monochrome",
         # Denis Villeneuve
-        "Dune Desert Scale": "Dune Arrakis style, vast orange desert, massive scale, sandworm territory, epic desert, Villeneuve scale",
-        "Dune Spice Vision": "Dune spice eyes, blue within blue, prescient vision, Kwisatz Haderach, spice trance, prophetic",
-        "Arrival Atmospheric": "Arrival style, grey fog atmosphere, mysterious alien contact, heptapod aesthetic, linguistic sci-fi",
+        "Dune Desert": "vast orange desert, massive scale, epic wide shot, dust haze",
+        "Dune Spice": "blue-within-blue eyes, teal eye color, prescient gaze",
+        "Arrival": "grey fog atmosphere, muted colors, overcast diffused light",
         # Other Directors
-        "Kubrick Symmetry": "Stanley Kubrick symmetry, one-point perspective, centered framing, unsettling symmetry, precise composition",
-        "Kubrick Stare": "Kubrick stare, tilted head eyes up, menacing gaze, psychotic look, A Clockwork Orange, intense stare",
-        "Spielberg Wonder": "Spielberg wonder, awe-struck face, light from above, amazement expression, E.T. lighting, magical wonder",
-        "Fincher Dark": "David Fincher style, sickly green-yellow tint, oppressive shadow, Se7en aesthetic, Fight Club darkness",
-        "Ari Aster Daylight": "Midsommar style, bright daylight horror, floral nightmare, Ari Aster, Swedish horror, sunny dread",
-        "Jordan Peele Duality": "Get Out style, Jordan Peele aesthetic, sunken place, social horror, duality theme, psychological horror",
-        "Michael Bay Explosion": "Michael Bay style, orange explosions, dramatic low angle, action explosion, blockbuster pyrotechnics",
-        "Edgar Wright Kinetic": "Edgar Wright style, quick cuts, whip pan transitions, comedic timing, Scott Pilgrim energy, visual comedy",
+        "Kubrick Symmetry": "one-point perspective, centered frame, symmetrical composition",
+        "Kubrick Stare": "head tilted down, eyes looking up, intense direct gaze",
+        "Spielberg Light": "strong backlight from above, silhouette rim, wonder lighting",
+        "Fincher Dark": "green-yellow tint, underexposed shadows, dark moody",
+        "Midsommar Daylight": "bright overexposed daylight, floral setting, sunny horror",
+        "Michael Bay": "orange explosion light, low angle hero shot, action dynamic",
     }
 
-    # Anime Styles - Japanese animation aesthetics
+    # Anime Styles - Concise anime visual references
     ANIME_STYLES = {
         "None": "",
         # Dragon Ball
-        "Super Saiyan Aura": "Super Saiyan aura, golden ki flame, power up glow, DBZ energy, spiked golden hair, blazing aura",
-        "Kamehameha Beam": "Kamehameha wave, blue ki blast, energy beam attack, charging power, DBZ blast, energy wave",
-        "Ultra Instinct": "Ultra Instinct form, silver white aura, divine ki, godly power, autonomous movement, silver hair glow",
-        "DBZ Power Up": "DBZ power up, ground cracking, floating debris, energy explosion, power level rising, screaming power",
-        "DBZ Speed Lines": "anime speed lines, DBZ action lines, impact frame, motion blur lines, manga action, dynamic movement",
+        "Super Saiyan Aura": "golden energy aura, spiked blonde hair, DBZ style",
+        "Kamehameha Beam": "blue energy beam, ki blast, charging pose",
+        "Ultra Instinct": "silver white aura, glowing silver hair, divine energy",
+        "DBZ Power Up": "energy aura, cracking ground, floating debris",
+        "Anime Speed Lines": "radial speed lines, motion blur, impact frame",
         # Naruto
-        "Chakra Aura": "chakra aura, blue spiritual energy, ninja power, Naruto chakra, energy emanation, shinobi power",
-        "Sharingan Eye": "Sharingan eye, red iris tomoe pattern, Uchiha dojutsu, spinning eye pattern, kekkei genkai",
-        "Rasengan": "Rasengan sphere, blue spinning energy ball, palm technique, wind chakra, spiral sphere, jutsu effect",
-        "Nine Tails Cloak": "Nine-Tails chakra cloak, orange demon energy, Kurama mode, jinchuriki power, fox aura, bijuu chakra",
-        "Susanoo": "Susanoo projection, ethereal giant warrior, chakra avatar, spectral armor, purple energy giant, Uchiha ultimate",
+        "Chakra Aura": "blue energy aura, ninja style, spiritual energy",
+        "Sharingan Eye": "red iris with tomoe pattern, glowing red eyes",
+        "Rasengan": "blue spinning energy sphere, hand-held orb",
+        "Nine Tails Cloak": "orange energy cloak, fox-like aura, fiery outline",
+        "Susanoo": "giant spectral armor, ethereal purple warrior projection",
         # Demon Slayer
-        "Water Breathing": "Water Breathing technique, Tanjiro style, flowing water slash, blue water effects, wave pattern sword",
-        "Flame Breathing": "Flame Breathing technique, Rengoku fire, ember trails, blazing sword, fire kata, flame effects",
-        "Thunder Breathing": "Thunder Breathing, Zenitsu lightning, yellow electric, thunderclap flash, lightning speed, electric aura",
-        "Demon Slayer Sky": "Demon Slayer sky, Ufotable quality, gorgeous gradient sunset, anime background, beautiful clouds",
+        "Water Breathing": "flowing water effects, blue wave patterns, sword trails",
+        "Flame Breathing": "fire sword trails, ember particles, orange flames",
+        "Thunder Breathing": "yellow lightning effects, electric aura, speed blur",
+        "Ufotable Sky": "gradient sunset sky, detailed clouds, anime background",
         # Attack on Titan
-        "Titan Steam": "Titan transformation steam, steaming giant, AOT steam effect, regenerating titan, hot mist, colossal emergence",
-        "ODM Gear Trails": "ODM gear wire trails, vertical maneuvering, Scout Regiment, acrobatic movement, grappling lines",
-        "Founding Titan Paths": "Paths dimension, coordinate realm, sand world, Founding Titan realm, memory dimension, Ymir paths",
+        "Titan Steam": "heavy steam emission, hot mist, giant form",
+        "ODM Gear": "cable wire trails, aerial acrobatic pose",
         # Studio Ghibli
-        "Ghibli Clouds": "Studio Ghibli clouds, fluffy cumulus, Miyazaki sky, wonder atmosphere, beautiful cloud formations",
-        "Spirited Away Magic": "Spirited Away style, spirit world, bathhouse magic, Ghibli supernatural, Japanese spirits, No-Face",
-        "Totoro Forest": "Totoro forest style, magical woodland, Ghibli nature, forest spirits, enchanted woods, gentle magic",
-        "Howl's Castle": "Howl's Moving Castle style, Ghibli steampunk, magical machinery, fantasy contraption, whimsical mechanical",
-        "Mononoke Forest": "Princess Mononoke style, ancient forest spirits, nature god, kodama spirits, Ghibli environmental",
+        "Ghibli Clouds": "fluffy detailed clouds, soft lighting, Miyazaki sky",
+        "Ghibli Forest": "magical woodland, soft dappled light, nature spirits",
+        "Ghibli Steampunk": "whimsical machinery, brass gears, fantasy mechanical",
         # Cyberpunk Anime
-        "Akira Red": "Akira style, iconic red, Neo-Tokyo, Kaneda bike, red cape, cyberpunk motorcycle, Otomo aesthetic",
-        "Akira Psychic": "Akira psychic power, Tetsuo awakening, telekinetic destruction, psychic energy, mental explosion",
-        "Ghost in Shell": "Ghost in the Shell style, cybernetic body, digital consciousness, cyborg aesthetic, Kusanagi style",
-        "Cowboy Bebop": "Cowboy Bebop style, space jazz noir, bounty hunter aesthetic, Spike Spiegel, retro future, jazz western",
-        "Evangelion": "Neon Genesis Evangelion style, mecha psychological, Eva unit, angel battle, existential anime, NERV",
+        "Akira": "red color accent, Neo-Tokyo neon, cyberpunk anime",
+        "Ghost in Shell": "cybernetic aesthetic, digital overlay, cyborg chrome",
+        "Cowboy Bebop": "noir lighting, jazz mood, retro-future anime",
+        "Evangelion": "mecha aesthetic, existential mood, NERV style",
         # Modern Anime
-        "Jujutsu Kaisen Curse": "Jujutsu Kaisen style, cursed energy, domain expansion, dark sorcery, Sukuna, curse technique",
-        "My Hero Academia": "My Hero Academia style, quirk activation, hero costume, Plus Ultra, superpower manifestation",
-        "One Punch Impact": "One Punch Man style, serious punch impact, devastating blow, impact frame, Saitama power",
-        "Mob Psycho Aura": "Mob Psycho 100 style, psychic percentage, esper aura, emotional explosion, ???% power",
-        "Chainsaw Devil": "Chainsaw Man style, devil power, brutal action, Fujimoto aesthetic, dark energy, hybrid form",
-        "Makoto Shinkai": "Makoto Shinkai style, Your Name aesthetic, beautiful light rays, detailed clouds, romantic atmosphere",
+        "Jujutsu Kaisen": "dark cursed energy, black-purple aura, domain effect",
+        "One Punch Impact": "impact shockwave, devastating force, speed lines",
+        "Makoto Shinkai": "beautiful light rays, detailed clouds, lens flare bokeh",
     }
 
-    # Gaming & TV Styles
+    # Gaming & TV Styles - Concise visual references
     GAMING_STYLES = {
         "None": "",
         # Retro Gaming
-        "8-Bit Pixel": "8-bit pixel art, NES style graphics, retro pixels, limited color palette, chiptune era, classic gaming",
-        "16-Bit Sprite": "16-bit sprite art, SNES Genesis style, detailed pixels, retro gaming graphics, classic console",
-        "Arcade CRT": "arcade CRT monitor, scanlines, curved screen glow, retro arcade, phosphor display, cabinet screen",
+        "8-Bit Pixel": "8-bit pixel art style, limited color palette, blocky pixels",
+        "16-Bit Sprite": "16-bit sprite art, SNES graphics style, detailed pixels",
+        "Arcade CRT": "CRT scanlines, curved screen glow, phosphor colors",
         # Modern Gaming
-        "GTA Loading Screen": "GTA art style, loading screen portrait, Rockstar aesthetic, crime game art, stylized character",
-        "Cyberpunk 2077": "Cyberpunk 2077 style, Night City neon, chrome implants, V aesthetic, corpo punk, futuristic dystopia",
-        "Dark Souls Bonfire": "Dark Souls style, bonfire rest, dark fantasy, Souls-like atmosphere, ember glow, gothic dark",
-        "Elden Ring Golden": "Elden Ring style, golden grace, Erdtree light, FromSoftware aesthetic, dark fantasy gold",
-        "Borderlands Cell": "Borderlands style, heavy cell shading, thick outlines, comic book game, stylized shooter",
-        "Bioshock Art Deco": "Bioshock Rapture style, art deco dystopia, underwater city, 1920s futurism, retro-futuristic",
+        "GTA Art Style": "stylized character portrait, bold outlines, loading screen art",
+        "Cyberpunk 2077": "neon city lights, chrome implants, cyberpunk aesthetic",
+        "Dark Souls": "dark fantasy, bonfire lighting, gothic atmosphere",
+        "Elden Ring": "golden grace light, dark fantasy, ethereal glow",
+        "Borderlands Cell Shade": "heavy cell shading, thick black outlines, comic style",
+        "Bioshock Art Deco": "art deco style, 1920s futurism, golden ornate",
         # Nintendo
-        "Zelda Fairy": "Zelda fairy glow, Navi light, magical companion, Hyrule magic, fairy trail, Nintendo fantasy",
-        "Pokemon Evolution": "Pokemon evolution glow, transformation light, type energy, leveling up effect, creature evolution",
+        "Zelda Fairy": "magical fairy glow, sparkle trail, fantasy light",
+        "Pokemon Evolution": "transformation glow, energy burst, type-colored light",
         # TV Series
-        "Stranger Things 80s": "Stranger Things style, Christmas lights, Upside Down, 80s horror nostalgia, Hawkins aesthetic",
-        "Squid Game": "Squid Game style, pink guard green player, geometric shapes, deadly game, Korean thriller, contrast",
-        "Euphoria Glitter": "Euphoria style, glitter makeup, neon party, Gen Z aesthetic, dramatic teen, sparkle tears",
-        "Wednesday Gothic": "Wednesday Addams style, gothic desaturated, Nevermore aesthetic, Tim Burton gothic, dark academia",
-        "Last of Us Overgrown": "Last of Us style, post-apocalyptic overgrowth, cordyceps aesthetic, nature reclaiming, fungal horror",
-        "Breaking Bad Yellow": "Breaking Bad style, New Mexico yellow tint, desert aesthetic, Albuquerque, meth blue accent",
-        "True Detective Decay": "True Detective style, southern gothic, Louisiana decay, rust aesthetic, Carcosa, yellow king",
-        "Twin Peaks Surreal": "Twin Peaks style, red room aesthetic, Black Lodge, David Lynch surreal, zigzag floor, surrealist TV",
+        "Stranger Things": "80s aesthetic, Christmas lights, dark supernatural",
+        "Squid Game": "pink and green contrast, geometric shapes, stark lighting",
+        "Euphoria": "glitter makeup, neon party lighting, dramatic color",
+        "Wednesday Gothic": "gothic desaturated, dark academia, Tim Burton style",
+        "Last of Us": "post-apocalyptic overgrowth, nature reclaiming, decay",
+        "Breaking Bad": "yellow desert tint, New Mexico lighting, stark contrast",
+        "True Detective": "southern gothic, decay aesthetic, rust tones",
+        "Twin Peaks": "surreal red room, zigzag pattern, Lynch aesthetic",
         # Comic & Superhero
-        "Spider-Verse Halftone": "Spider-Verse style, halftone dots, comic print texture, frame stutter, Miles Morales, animated comic",
-        "Spider-Verse Glitch": "Spider-Verse glitch, dimension break, multiverse tear, chromatic comic, reality fracture",
-        "Marvel Kirby Cosmic": "Jack Kirby cosmic style, Kirby crackle, cosmic energy dots, Marvel cosmic, divine power",
-        "Batman Noir": "Batman noir style, Gotham shadows, dark knight aesthetic, gothic superhero, DC noir, cape shadow",
-        "Watchmen Gritty": "Watchmen style, gritty 80s superhero, Dr Manhattan blue glow, deconstructed hero, Alan Moore",
+        "Spider-Verse": "halftone dots, comic print texture, chromatic offset",
+        "Kirby Cosmic": "cosmic energy dots, Kirby crackle pattern, space power",
+        "Batman Noir": "high contrast shadows, noir lighting, dark silhouette",
     }
 
-    # Poses - Model, Studio, Fashion, Yoga, Influencer poses
+    # Poses - Concise pose descriptions
     POSES = {
         "None": "",
-        # Standing Poses - Basic
-        "Standing Straight": "standing straight, upright posture, feet together, arms at sides, formal stance",
-        "Standing Relaxed": "standing relaxed, casual stance, weight on one leg, natural posture",
-        "Standing Confident": "standing confident, shoulders back, chin up, powerful stance, assertive posture",
-        "Standing Elegant": "standing elegant, graceful posture, elongated neck, refined stance",
-        "Standing Hip Pop": "standing with hip popped to side, weight shifted, casual fashion pose",
-        "Standing Crossed Legs": "standing with legs crossed at ankle, elegant stance, fashion pose",
-        "Standing Wide Stance": "standing with wide stance, feet apart, powerful grounded pose",
-        "Standing Contrapposto": "contrapposto stance, classical pose, weight on one leg, twisted torso",
-        # Standing Poses - Arms
-        "Hands on Hips": "hands on hips, confident pose, elbows out, assertive stance",
-        "Arms Crossed": "arms crossed over chest, confident, thoughtful pose",
-        "Hand on Hip": "one hand on hip, other arm relaxed, casual confident pose",
-        "Arms Behind Back": "arms behind back, hands clasped, formal professional pose",
-        "Arms Raised": "arms raised above head, celebratory pose, joyful expression",
-        "One Arm Up": "one arm raised, touching hair or head, casual elegant pose",
-        "Arms Outstretched": "arms outstretched to sides, open welcoming pose, freedom",
-        "Hand on Face": "hand gently touching face, thoughtful contemplative pose",
-        "Hand Under Chin": "hand under chin, thinking pose, intellectual expression",
-        "Hands in Pockets": "hands in pockets, casual relaxed stance, effortless cool",
-        "Hand on Chest": "hand placed on chest, sincere emotional pose",
-        "Hands Clasped Front": "hands clasped in front, modest professional pose",
+        # Standing
+        "Standing Straight": "standing upright, feet together, arms at sides",
+        "Standing Relaxed": "casual stance, weight on one leg",
+        "Standing Confident": "shoulders back, chin up, powerful stance",
+        "Hip Pop": "hip popped to side, weight shifted, S-curve",
+        "Contrapposto": "contrapposto, weight on one leg, twisted torso",
+        "Hands on Hips": "hands on hips, elbows out",
+        "Arms Crossed": "arms crossed over chest",
+        "Arms Behind Back": "hands clasped behind back",
+        "Hand on Face": "hand touching face or chin",
+        "Hands in Pockets": "hands in pockets, casual stance",
         # Walking & Movement
-        "Walking Towards Camera": "walking towards camera, mid-stride, confident approach",
-        "Walking Away": "walking away from camera, looking back over shoulder",
-        "Walking Side Profile": "walking in profile view, elegant stride, fashion walk",
-        "Runway Walk": "runway model walk, elongated stride, fierce expression, catwalk pose",
-        "Casual Stroll": "casual strolling pose, relaxed walking, natural movement",
-        "Power Walk": "power walking pose, determined stride, businesslike",
-        "Dancing Movement": "mid-dance movement, dynamic pose, flowing motion",
-        "Twirling": "twirling pose, dress or hair in motion, spinning elegantly",
-        "Jumping": "jumping pose, feet off ground, joyful leap, dynamic",
-        "Mid-Step": "caught mid-step, one foot forward, transitional pose",
-        # Sitting Poses
-        "Sitting Straight": "sitting straight, good posture, formal seated pose",
-        "Sitting Relaxed": "sitting relaxed, casual posture, comfortable pose",
-        "Sitting Cross-Legged": "sitting cross-legged, meditation style, floor seated",
-        "Sitting Legs Crossed": "sitting with legs crossed, elegant seated pose",
-        "Sitting Sideways": "sitting sideways on chair, profile seated pose",
-        "Sitting on Edge": "sitting on edge of seat, leaning forward, engaged pose",
-        "Sitting Reclined": "sitting reclined, leaning back, relaxed lounging",
-        "Sitting on Floor": "sitting on floor, casual grounded pose",
-        "Sitting Knees Up": "sitting with knees pulled up, casual intimate pose",
-        "Sitting Legs Extended": "sitting with legs extended forward, relaxed pose",
-        "Perched Sitting": "perched on edge, one leg dangling, casual seated",
-        # Leaning Poses
-        "Leaning on Wall": "leaning against wall, casual cool pose, relaxed",
-        "Leaning Forward": "leaning forward, engaged interested pose",
-        "Leaning Back": "leaning back, relaxed confident pose",
-        "Leaning on Elbow": "leaning on elbow, thoughtful casual pose",
-        "Leaning Sideways": "leaning to one side, casual asymmetric pose",
-        "Leaning on Object": "leaning on furniture or prop, supported pose",
-        # Lying Poses
-        "Lying on Back": "lying on back, supine pose, looking up",
-        "Lying on Side": "lying on side, propped on elbow, relaxed pose",
-        "Lying on Stomach": "lying on stomach, prone pose, chin on hands",
-        "Lying Curled": "lying in curled fetal position, intimate vulnerable pose",
-        "Lying Stretched": "lying fully stretched out, relaxed extended pose",
-        # Fashion & Editorial Poses
-        "High Fashion Stance": "high fashion editorial stance, dramatic angles, editorial pose",
-        "Editorial Lean": "editorial leaning pose, angular body, fashion photography",
-        "Fashion Forward": "fashion forward pose, one leg in front, dynamic stance",
-        "Model S-Curve": "S-curve pose, curved body line, feminine silhouette",
-        "Editorial Crouch": "crouching editorial pose, low angle, fashion forward",
-        "Fashion Kneel": "kneeling fashion pose, elegant floor pose",
-        "Editorial Twist": "twisted torso editorial pose, dynamic angles",
-        "High Fashion Recline": "high fashion reclining pose, dramatic lounging",
-        "Vogue Pose": "classic Vogue magazine pose, elegant dramatic",
-        "Fashion Jump": "fashion jumping pose, dynamic mid-air, editorial",
-        # Portrait Poses
-        "Classic Portrait": "classic portrait pose, three-quarter turn, traditional",
-        "Headshot Pose": "professional headshot pose, shoulders angled, face to camera",
-        "Profile Portrait": "profile portrait pose, side view of face",
-        "Three-Quarter View": "three-quarter view, body angled 45 degrees to camera",
-        "Looking Over Shoulder": "looking over shoulder, mysterious glance back",
-        "Chin Down": "chin tilted down, eyes up, intense gaze",
-        "Chin Up": "chin tilted up, confident regal pose",
-        "Head Tilt": "gentle head tilt, approachable friendly pose",
-        "Looking Away": "looking away from camera, candid thoughtful",
-        "Looking Down": "looking downward, contemplative introspective pose",
-        # Yoga Poses
-        "Mountain Pose": "Tadasana mountain pose, standing tall, grounded",
-        "Tree Pose": "Vrikshasana tree pose, one foot on inner thigh, arms up",
-        "Warrior I": "Virabhadrasana I warrior one pose, lunge with arms raised",
-        "Warrior II": "Virabhadrasana II warrior two pose, arms extended sides",
-        "Warrior III": "Virabhadrasana III warrior three, balancing on one leg, body horizontal",
-        "Downward Dog": "Adho Mukha Svanasana downward facing dog, inverted V shape",
-        "Cobra Pose": "Bhujangasana cobra pose, chest lifted, back bend",
-        "Child's Pose": "Balasana child's pose, kneeling forward fold, restful",
-        "Lotus Pose": "Padmasana lotus pose, seated meditation, crossed legs",
-        "Dancer Pose": "Natarajasana dancer pose, standing backbend, graceful balance",
-        "Crow Pose": "Bakasana crow pose, arm balance, advanced yoga",
-        "Headstand": "Sirsasana headstand, inverted pose, balanced on head",
-        "Shoulder Stand": "Sarvangasana shoulder stand, inverted on shoulders",
-        "Bridge Pose": "Setu Bandhasana bridge pose, back arch, hips lifted",
-        "Pigeon Pose": "Eka Pada Rajakapotasana pigeon pose, hip opener",
-        "Seated Forward Fold": "Paschimottanasana seated forward fold, stretching",
-        "Triangle Pose": "Trikonasana triangle pose, side stretch, extended",
-        "Half Moon Pose": "Ardha Chandrasana half moon pose, balancing side stretch",
-        "Camel Pose": "Ustrasana camel pose, kneeling backbend",
-        "Bow Pose": "Dhanurasana bow pose, lying backbend, holding feet",
-        # Influencer & Social Media Poses
-        "Selfie Pose": "selfie pose, phone held up, casual self-portrait angle",
-        "Mirror Selfie": "mirror selfie pose, phone visible, reflection shot",
-        "OOTD Pose": "outfit of the day pose, full body fashion display",
-        "Peace Sign": "peace sign pose, fingers in V, playful casual",
-        "Blowing Kiss": "blowing kiss pose, playful flirty expression",
-        "Hair Flip": "hair flip pose, tossing hair, dynamic movement",
-        "Looking Up at Camera": "looking up at camera, doe eyes, flattering angle",
-        "Candid Laugh": "candid laughing pose, genuine joy, unstaged feel",
-        "Coffee Cup Pose": "holding coffee cup, lifestyle aesthetic, cozy",
-        "Phone in Hand": "casually holding phone, modern lifestyle pose",
-        "Beach Pose": "beach vacation pose, relaxed summer aesthetic",
-        "Travel Pose": "travel influencer pose, scenic background, wanderlust",
-        "Fitness Pose": "fitness influencer pose, athletic strong stance",
-        "Food Pose": "holding or presenting food, foodie aesthetic",
-        "Reading Pose": "reading book pose, intellectual cozy aesthetic",
-        # Couple & Group Poses
-        "Embrace": "embracing pose, arms wrapped around, intimate",
-        "Hand Holding": "holding hands, connected romantic pose",
-        "Back to Back": "standing back to back, connected but independent",
-        "Forehead Touch": "foreheads touching, intimate romantic moment",
-        "Piggyback": "piggyback pose, playful fun couple pose",
-        "Dip Pose": "dance dip pose, romantic dramatic lean",
-        # Action & Dynamic Poses
-        "Running": "running pose, mid-stride, athletic motion",
-        "Stretching": "stretching pose, athletic warm-up, flexible",
-        "Reaching Up": "reaching upward, stretching towards sky",
-        "Kicking": "kicking pose, leg extended, dynamic action",
-        "Punching": "punching pose, fist forward, powerful action",
-        "Spinning": "spinning motion pose, rotational movement blur",
+        "Walking Forward": "walking towards camera, mid-stride",
+        "Looking Back": "walking away, looking over shoulder",
+        "Runway Walk": "runway stride, one foot in front",
+        "Twirling": "twirling, hair or dress in motion",
+        "Jumping": "mid-jump, feet off ground",
+        # Sitting
+        "Sitting Straight": "sitting upright, good posture",
+        "Sitting Relaxed": "sitting casual, relaxed posture",
+        "Cross-Legged Floor": "sitting cross-legged on floor",
+        "Legs Crossed Chair": "seated, legs crossed elegantly",
+        "Sitting Reclined": "reclined, leaning back",
+        # Leaning
+        "Leaning Wall": "leaning against wall",
+        "Leaning Forward": "leaning forward, engaged",
+        # Lying
+        "Lying Back": "lying on back, supine",
+        "Lying Side": "lying on side, propped on elbow",
+        "Lying Stomach": "lying prone, chin on hands",
+        # Fashion
+        "Editorial Pose": "high fashion angular pose",
+        "S-Curve": "S-curve body line, feminine",
+        "Fashion Crouch": "crouching, low angle fashion",
+        "Fashion Kneel": "kneeling elegantly",
+        # Portrait
+        "Three-Quarter": "body angled 45 degrees to camera",
+        "Profile": "side profile view",
+        "Over Shoulder": "looking over shoulder",
+        "Chin Down Eyes Up": "chin down, eyes looking up",
+        "Head Tilt": "gentle head tilt",
+        # Yoga
+        "Tree Pose": "one foot on inner thigh, arms raised",
+        "Warrior Pose": "lunge stance, arms extended",
+        "Downward Dog": "inverted V position",
+        "Cobra": "chest lifted, back arch",
+        "Lotus": "seated cross-legged meditation",
+        "Dancer Pose": "standing backbend, one leg raised",
+        # Influencer
+        "Selfie Angle": "phone held up, selfie angle",
+        "Peace Sign": "peace sign hand gesture",
+        "Hair Flip": "tossing hair, movement",
+        "Candid Laugh": "natural laughing, candid",
+        # Action
+        "Running": "mid-stride running",
+        "Stretching": "athletic stretch pose",
+        "Reaching Up": "arms reaching upward",
     }
 
-    # Facial Expressions
+    # Facial Expressions - Concise emotion descriptors
     FACIAL_EXPRESSIONS = {
         "None": "",
-        # Happy & Positive
-        "Genuine Smile": "genuine warm smile, Duchenne smile, eyes crinkled, authentic joy",
-        "Soft Smile": "soft gentle smile, subtle upturn of lips, serene",
-        "Beaming": "beaming bright smile, radiant joy, teeth showing",
-        "Grinning": "wide grin, playful happy expression, ear to ear smile",
-        "Smirk": "slight smirk, one corner of mouth raised, knowing expression",
-        "Laughing": "laughing expression, mouth open, genuine mirth, joyful",
-        "Giggling": "giggling expression, suppressed laughter, playful",
-        "Chuckling": "chuckling expression, amused, warm humor",
-        "Ecstatic": "ecstatic expression, overwhelming joy, elated",
-        "Blissful": "blissful expression, peaceful happiness, content",
-        "Delighted": "delighted expression, pleasantly surprised, happy",
-        "Cheerful": "cheerful expression, bright optimistic, upbeat",
-        "Playful": "playful expression, mischievous glint, fun-loving",
-        "Amused": "amused expression, entertained, light humor",
-        "Satisfied": "satisfied expression, content accomplishment, pleased",
-        # Serious & Neutral
-        "Neutral": "neutral expression, relaxed face, no particular emotion",
-        "Serious": "serious expression, focused intense, no smile",
-        "Stoic": "stoic expression, emotionless calm, controlled",
-        "Stern": "stern expression, firm disapproving, strict",
-        "Determined": "determined expression, resolute focused, strong will",
-        "Focused": "focused expression, concentrated attention, engaged",
-        "Contemplative": "contemplative expression, deep in thought, reflective",
-        "Pensive": "pensive expression, thoughtfully sad, melancholic thinking",
-        "Thoughtful": "thoughtful expression, considering, intellectual",
-        "Brooding": "brooding expression, dark contemplation, moody",
-        "Composed": "composed expression, calm collected, poised",
-        "Dignified": "dignified expression, noble bearing, proud",
-        # Confident & Powerful
-        "Confident": "confident expression, self-assured, bold",
-        "Fierce": "fierce expression, intense powerful, commanding",
-        "Defiant": "defiant expression, rebellious challenging, bold",
-        "Proud": "proud expression, accomplished dignified, head high",
-        "Smoldering": "smoldering expression, intense sultry, magnetic gaze",
-        "Intense": "intense expression, piercing focused, powerful",
-        "Commanding": "commanding expression, authoritative, leader presence",
-        "Assertive": "assertive expression, confident direct, self-assured",
-        "Bold": "bold expression, daring fearless, striking",
-        "Powerful": "powerful expression, strong dominant, commanding",
-        # Sad & Melancholic
-        "Sad": "sad expression, downturned mouth, sorrowful eyes",
-        "Melancholic": "melancholic expression, wistful sadness, bittersweet",
-        "Tearful": "tearful expression, eyes glistening, about to cry",
-        "Crying": "crying expression, tears streaming, emotional",
-        "Grieving": "grieving expression, deep sorrow, loss",
-        "Disappointed": "disappointed expression, let down, deflated",
-        "Heartbroken": "heartbroken expression, devastated, emotional pain",
-        "Wistful": "wistful expression, longing nostalgia, yearning",
-        "Forlorn": "forlorn expression, hopeless lonely, abandoned",
-        "Dejected": "dejected expression, disheartened, low spirits",
-        # Angry & Frustrated
-        "Angry": "angry expression, furrowed brow, tight lips, rage",
-        "Furious": "furious expression, intense anger, livid",
-        "Annoyed": "annoyed expression, irritated, mild frustration",
-        "Frustrated": "frustrated expression, exasperated, fed up",
-        "Scowling": "scowling expression, deep frown, disapproval",
-        "Glaring": "glaring expression, intense stare, hostile",
-        "Enraged": "enraged expression, uncontrolled anger, fury",
-        "Resentful": "resentful expression, bitter grudge, simmering anger",
-        "Irritated": "irritated expression, bothered, impatient",
-        "Displeased": "displeased expression, unhappy, dissatisfied",
-        # Surprised & Shocked
-        "Surprised": "surprised expression, raised eyebrows, wide eyes, open mouth",
-        "Shocked": "shocked expression, stunned, jaw dropped",
-        "Astonished": "astonished expression, amazed wonder, disbelief",
-        "Startled": "startled expression, caught off guard, alert",
-        "Amazed": "amazed expression, wonder awe, impressed",
-        "Bewildered": "bewildered expression, confused surprised, lost",
-        "Stunned": "stunned expression, frozen surprise, speechless",
-        "Awestruck": "awestruck expression, overwhelming wonder, amazement",
-        "Flabbergasted": "flabbergasted expression, completely shocked, dumbfounded",
-        # Fear & Anxiety
-        "Afraid": "afraid expression, fearful eyes, scared",
-        "Terrified": "terrified expression, extreme fear, horror",
-        "Anxious": "anxious expression, worried nervous, uneasy",
-        "Nervous": "nervous expression, apprehensive, jittery",
-        "Worried": "worried expression, concerned frown, troubled",
-        "Fearful": "fearful expression, frightened, scared eyes",
-        "Panicked": "panicked expression, terror, flight response",
-        "Apprehensive": "apprehensive expression, cautious worried, uncertain",
-        "Uneasy": "uneasy expression, uncomfortable, on edge",
-        "Horrified": "horrified expression, extreme shock and fear, disturbed",
-        # Romantic & Sensual
-        "Seductive": "seductive expression, alluring sultry, bedroom eyes",
-        "Flirty": "flirty expression, playful romantic, coy smile",
-        "Romantic": "romantic expression, loving tender, affectionate",
-        "Longing": "longing expression, yearning desire, passionate want",
-        "Loving": "loving expression, warm affection, tender care",
-        "Adoring": "adoring expression, deep love, devoted gaze",
-        "Passionate": "passionate expression, intense desire, fervent",
-        "Sultry": "sultry expression, sensual smoldering, alluring",
-        "Coy": "coy expression, shy flirtatious, demure",
-        "Dreamy": "dreamy expression, romantic daze, starry-eyed",
-        # Confused & Uncertain
-        "Confused": "confused expression, furrowed brow, questioning",
-        "Puzzled": "puzzled expression, trying to understand, perplexed",
-        "Skeptical": "skeptical expression, doubtful, raised eyebrow",
-        "Doubtful": "doubtful expression, uncertain, questioning",
-        "Perplexed": "perplexed expression, deeply confused, bewildered",
-        "Questioning": "questioning expression, curious inquiry, wondering",
-        "Uncertain": "uncertain expression, unsure, hesitant",
-        "Suspicious": "suspicious expression, distrustful, wary",
-        # Disgust & Disapproval
-        "Disgusted": "disgusted expression, nose wrinkled, repulsed",
-        "Disapproving": "disapproving expression, judgmental frown",
-        "Contemptuous": "contemptuous expression, disdain, superior",
-        "Sneering": "sneering expression, mocking disdain, cruel",
-        "Revolted": "revolted expression, extreme disgust, nauseated",
-        "Unimpressed": "unimpressed expression, bored disapproval, jaded",
-        # Other Expressions
-        "Bored": "bored expression, disinterested, unenthused",
-        "Tired": "tired expression, fatigued, weary eyes",
-        "Sleepy": "sleepy expression, drooping eyelids, drowsy",
-        "Exhausted": "exhausted expression, deeply fatigued, drained",
-        "Curious": "curious expression, interested, inquisitive",
-        "Innocent": "innocent expression, pure naive, childlike",
-        "Mischievous": "mischievous expression, playfully naughty, impish",
-        "Shy": "shy expression, bashful, avoiding eye contact",
-        "Embarrassed": "embarrassed expression, blushing, flustered",
-        "Hopeful": "hopeful expression, optimistic anticipation, bright eyes",
-        "Relieved": "relieved expression, tension released, grateful",
-        "Grateful": "grateful expression, thankful, appreciative",
-        "Peaceful": "peaceful expression, serene calm, tranquil",
-        "Ethereal": "ethereal expression, otherworldly, angelic",
-        "Mysterious": "mysterious expression, enigmatic, secretive",
-        "Vacant": "vacant expression, empty distant, thousand-yard stare",
-        "Blank": "blank expression, emotionless, void",
+        # Happy
+        "Smile": "genuine smile, eyes crinkled",
+        "Soft Smile": "soft subtle smile, lips slightly upturned",
+        "Grin": "wide grin, teeth showing",
+        "Smirk": "slight smirk, one corner raised",
+        "Laughing": "laughing, mouth open, joyful",
+        "Playful": "playful expression, mischievous glint",
+        # Serious
+        "Neutral": "neutral expression, relaxed face",
+        "Serious": "serious expression, no smile",
+        "Stoic": "stoic, emotionless calm",
+        "Determined": "determined expression, resolute",
+        "Focused": "focused, concentrated gaze",
+        "Contemplative": "contemplative, deep in thought",
+        "Pensive": "pensive, thoughtful",
+        # Confident
+        "Confident": "confident expression, self-assured",
+        "Fierce": "fierce, intense powerful gaze",
+        "Defiant": "defiant expression, challenging",
+        "Smoldering": "smoldering, intense sultry gaze",
+        "Intense": "intense, piercing stare",
+        # Sad
+        "Sad": "sad expression, downturned mouth",
+        "Melancholic": "melancholic, wistful",
+        "Tearful": "tearful, eyes glistening",
+        "Crying": "crying, tears streaming",
+        # Angry
+        "Angry": "angry, furrowed brow",
+        "Annoyed": "annoyed, irritated",
+        "Scowling": "scowling, deep frown",
+        "Glaring": "glaring, hostile stare",
+        # Surprised
+        "Surprised": "surprised, wide eyes, raised eyebrows",
+        "Shocked": "shocked, jaw dropped",
+        "Amazed": "amazed, wonder expression",
+        # Fear
+        "Afraid": "afraid, fearful eyes",
+        "Anxious": "anxious, worried expression",
+        "Nervous": "nervous, apprehensive",
+        # Romantic
+        "Seductive": "seductive, alluring gaze",
+        "Flirty": "flirty, playful coy",
+        "Romantic": "romantic, tender loving",
+        "Longing": "longing, yearning gaze",
+        "Dreamy": "dreamy, dazed romantic",
+        # Other
+        "Confused": "confused, furrowed brow",
+        "Skeptical": "skeptical, raised eyebrow",
+        "Curious": "curious, interested",
+        "Shy": "shy, avoiding eye contact",
+        "Peaceful": "peaceful, serene calm",
+        "Mysterious": "mysterious, enigmatic",
+        "Blank": "blank expression, vacant",
     }
 
-    # Hair Styles
+    # Hair Styles - Concise hair descriptors
     HAIR_STYLES = {
         "None": "",
-        # Length
-        "Pixie Cut": "pixie cut, very short cropped hair, elfin style",
-        "Bob Cut": "bob cut, chin-length hair, blunt ends",
-        "Lob": "lob haircut, long bob, shoulder-length",
-        "Medium Length": "medium length hair, past shoulders",
-        "Long Hair": "long flowing hair, past shoulders, lengthy",
-        "Very Long Hair": "very long hair, waist length or longer",
-        "Buzz Cut": "buzz cut, very short clipper cut, military style",
-        "Crew Cut": "crew cut, short sides, slightly longer top",
-        "Undercut": "undercut hairstyle, shaved sides, longer top",
-        "Asymmetric Cut": "asymmetric haircut, uneven lengths, edgy style",
-        # Straight Styles
-        "Straight Sleek": "straight sleek hair, smooth glossy, polished",
-        "Straight Blunt": "straight blunt cut, sharp even ends",
-        "Straight Layered": "straight layered hair, face-framing layers",
-        "Straight Center Part": "straight hair with center part, symmetrical",
-        "Straight Side Part": "straight hair with side part, classic style",
-        "Straight Feathered": "straight feathered hair, soft wispy ends",
-        # Wavy Styles
-        "Beach Waves": "beach waves, tousled wavy hair, effortless texture",
-        "Soft Waves": "soft waves, gentle undulating hair, romantic",
-        "Hollywood Waves": "Hollywood glamour waves, vintage finger waves",
-        "Loose Waves": "loose waves, relaxed wavy texture",
-        "Body Wave": "body wave hair, voluminous waves, bouncy",
-        "S-Waves": "S-wave hair pattern, defined wave shape",
-        # Curly Styles
-        "Tight Curls": "tight curls, springy coiled hair, defined curls",
-        "Loose Curls": "loose curls, relaxed spiral curls, bouncy",
-        "Ringlets": "ringlet curls, spiral corkscrew curls, defined",
-        "Natural Curls": "natural curly hair, textured curls, authentic",
-        "Spiral Curls": "spiral curls, twisted coils, defined pattern",
-        "Afro": "afro hairstyle, natural voluminous curls, rounded shape",
-        "Afro Puffs": "afro puffs, gathered natural hair, cute style",
-        "Coils": "coiled hair texture, tight natural coils, kinky",
-        "Twist Out": "twist out style, defined stretched curls",
-        "Wash and Go": "wash and go curls, natural curl pattern defined",
+        # Length & Cut
+        "Pixie Cut": "pixie cut, very short cropped",
+        "Bob": "bob cut, chin-length",
+        "Lob": "long bob, shoulder-length",
+        "Long Hair": "long hair, past shoulders",
+        "Very Long": "very long hair, waist-length",
+        "Buzz Cut": "buzz cut, very short",
+        "Undercut": "undercut, shaved sides, longer top",
+        # Texture
+        "Straight Sleek": "straight sleek hair, smooth",
+        "Beach Waves": "beach waves, tousled texture",
+        "Soft Waves": "soft waves, gentle undulation",
+        "Hollywood Waves": "Hollywood waves, glamour curls",
+        "Tight Curls": "tight curls, springy coils",
+        "Loose Curls": "loose curls, bouncy spirals",
+        "Afro": "afro, natural voluminous curls",
+        "Natural Curls": "natural textured curls",
         # Updos
-        "High Bun": "high bun, hair gathered on top of head, sleek or messy",
-        "Low Bun": "low bun, hair gathered at nape, elegant",
-        "Messy Bun": "messy bun, casual undone updo, relaxed",
-        "Sleek Bun": "sleek bun, smooth polished updo, refined",
-        "Chignon": "chignon, elegant low twisted bun, formal",
-        "French Twist": "French twist updo, rolled sophisticated style",
-        "Top Knot": "top knot, high gathered bun, casual chic",
-        "Ballerina Bun": "ballerina bun, tight smooth high bun, dancer style",
-        "Gibson Tuck": "Gibson tuck, vintage rolled updo, elegant",
-        "Beehive": "beehive updo, voluminous height, retro 60s style",
+        "High Bun": "high bun, top of head",
+        "Low Bun": "low bun, nape of neck",
+        "Messy Bun": "messy bun, casual undone",
+        "Sleek Bun": "sleek polished bun",
+        "Chignon": "chignon, elegant twisted bun",
+        "French Twist": "French twist updo",
         # Ponytails
-        "High Ponytail": "high ponytail, hair gathered high on head, youthful",
-        "Low Ponytail": "low ponytail, hair gathered at nape, sleek",
-        "Side Ponytail": "side ponytail, asymmetric gathered style",
-        "Sleek Ponytail": "sleek ponytail, smooth polished, refined",
-        "Bubble Ponytail": "bubble ponytail, segmented with elastics, fun",
-        "Curly Ponytail": "curly ponytail, textured gathered curls",
-        "Braided Ponytail": "braided ponytail, braid incorporated, detailed",
-        "Wrapped Ponytail": "wrapped ponytail, hair wrapped around elastic, polished",
+        "High Ponytail": "high ponytail",
+        "Low Ponytail": "low ponytail, sleek",
+        "Side Ponytail": "side ponytail, asymmetric",
         # Braids
-        "French Braid": "French braid, woven from crown, classic",
-        "Dutch Braid": "Dutch braid, inverted French braid, raised pattern",
-        "Fishtail Braid": "fishtail braid, intricate woven pattern",
-        "Box Braids": "box braids, sectioned protective style, geometric",
-        "Cornrows": "cornrows, tight braids along scalp, patterns",
-        "Crown Braid": "crown braid, braided around head, halo style",
-        "Side Braid": "side braid, single braid to one side",
-        "Double Braids": "double braids, two braids, pigtail style",
-        "Milkmaid Braids": "milkmaid braids, wrapped around head, folk style",
-        "Waterfall Braid": "waterfall braid, cascading woven style",
-        "Goddess Braids": "goddess braids, large cornrows, regal style",
-        "Knotless Braids": "knotless braids, feed-in technique, seamless",
-        "Micro Braids": "micro braids, tiny thin braids, intricate",
-        "Twist Braids": "twist braids, two-strand twisted style",
-        "Locs": "locs hairstyle, matured dreadlocks, natural",
-        "Faux Locs": "faux locs, temporary loc style, protective",
-        # Bangs & Fringe
-        "Blunt Bangs": "blunt straight bangs, thick fringe, bold",
-        "Side Swept Bangs": "side swept bangs, angled fringe, soft",
-        "Curtain Bangs": "curtain bangs, parted fringe, 70s style, face framing",
-        "Wispy Bangs": "wispy bangs, thin soft fringe, delicate",
-        "Micro Bangs": "micro bangs, very short baby bangs, edgy",
-        "Long Bangs": "long bangs, eye-covering fringe, mysterious",
-        "Bottleneck Bangs": "bottleneck bangs, shorter center longer sides",
-        "Birkin Bangs": "Birkin bangs, full slightly parted, French style",
-        # Textured & Specialty
-        "Shag Haircut": "shag haircut, layered choppy, 70s rock style",
-        "Wolf Cut": "wolf cut, shaggy mullet hybrid, edgy layers",
-        "Mullet": "mullet hairstyle, short front long back, retro",
-        "Mohawk": "mohawk, shaved sides, center strip of hair",
-        "Faux Hawk": "faux hawk, styled mohawk look, less extreme",
-        "Textured Crop": "textured crop, short with texture, modern",
-        "Curtained Hair": "curtained hair, middle part, face framing",
-        "Feathered Layers": "feathered layers, Farrah Fawcett style, flipped",
-        "Razor Cut": "razor cut, textured choppy ends, edgy",
-        "Blowout": "blowout style, voluminous bouncy, salon fresh",
-        # Vintage Styles
-        "Victory Rolls": "victory rolls, 1940s pin-up style, rolled sections",
-        "Finger Waves": "finger waves, 1920s marcel waves, gatsby style",
-        "Pin Curls": "pin curl set, vintage curled style, retro",
-        "Bouffant": "bouffant style, teased volume, 60s glamour",
-        "Flip Hairstyle": "flip hairstyle, ends flipped outward, 60s style",
-        "Pageboy": "pageboy cut, smooth with inward curved ends",
-        # Hair Accessories
-        "Hair with Headband": "hair with headband accessory, styled with band",
-        "Hair with Bow": "hair with bow accessory, ribbon or bow detail",
-        "Hair with Clips": "hair with decorative clips, barrettes, pins",
-        "Hair with Flowers": "hair adorned with flowers, floral accessory",
-        "Hair with Tiara": "hair with tiara, crown accessory, regal",
-        "Hair with Scarf": "hair wrapped with scarf, bohemian style",
+        "French Braid": "French braid",
+        "Dutch Braid": "Dutch braid, raised pattern",
+        "Fishtail Braid": "fishtail braid",
+        "Box Braids": "box braids, sectioned",
+        "Cornrows": "cornrows, braided along scalp",
+        "Double Braids": "double braids, pigtails",
+        "Locs": "locs, dreadlocks",
+        # Bangs
+        "Blunt Bangs": "blunt straight bangs",
+        "Side Bangs": "side swept bangs",
+        "Curtain Bangs": "curtain bangs, parted fringe",
+        "Wispy Bangs": "wispy thin bangs",
+        "Long Bangs": "long bangs, eye-covering",
+        # Special
+        "Shag": "shag haircut, layered choppy",
+        "Wolf Cut": "wolf cut, shaggy layers",
+        "Mohawk": "mohawk, shaved sides center strip",
+        # Vintage
+        "Victory Rolls": "victory rolls, 1940s style",
+        "Finger Waves": "finger waves, 1920s style",
+        "Bouffant": "bouffant, teased volume",
     }
 
-    # Clothing Styles
+    # Clothing Styles - Concise clothing descriptors
     CLOTHING_STYLES = {
         "None": "",
         # Dresses
-        "Evening Gown": "elegant evening gown, floor-length formal dress, glamorous",
-        "Cocktail Dress": "cocktail dress, knee-length party dress, sophisticated",
-        "Little Black Dress": "little black dress, LBD, classic elegant, timeless",
-        "Maxi Dress": "maxi dress, floor-length casual dress, flowing",
-        "Mini Dress": "mini dress, short hemline, youthful playful",
-        "Midi Dress": "midi dress, mid-calf length, elegant modern",
-        "Bodycon Dress": "bodycon dress, form-fitting, figure-hugging",
-        "A-Line Dress": "A-line dress, fitted bodice, flared skirt",
-        "Wrap Dress": "wrap dress, crossover front, flattering silhouette",
-        "Slip Dress": "slip dress, minimalist satin, delicate straps",
-        "Shirt Dress": "shirt dress, button-front, casual elegant",
-        "Sundress": "sundress, light summer dress, casual cheerful",
-        "Ball Gown": "ball gown, full dramatic skirt, princess style",
-        "Mermaid Dress": "mermaid dress, fitted to knee then flared, dramatic",
-        "Sheath Dress": "sheath dress, straight fitted silhouette, professional",
+        "Evening Gown": "evening gown, floor-length formal",
+        "Cocktail Dress": "cocktail dress, knee-length",
+        "Little Black Dress": "little black dress, LBD",
+        "Maxi Dress": "maxi dress, floor-length flowing",
+        "Mini Dress": "mini dress, short hemline",
+        "Bodycon": "bodycon dress, form-fitting",
+        "Wrap Dress": "wrap dress, crossover front",
+        "Slip Dress": "slip dress, satin straps",
+        "Sundress": "sundress, light summer",
+        "Ball Gown": "ball gown, full skirt",
         # Tops
-        "Blouse": "elegant blouse, dressy top, feminine",
-        "Button-Up Shirt": "button-up shirt, collared, classic",
-        "T-Shirt": "casual t-shirt, basic tee, relaxed",
-        "Tank Top": "tank top, sleeveless, casual summer",
-        "Crop Top": "crop top, midriff-baring, trendy",
-        "Turtleneck": "turtleneck sweater, high neck, sophisticated",
-        "Off-Shoulder Top": "off-shoulder top, exposed shoulders, romantic",
-        "Halter Top": "halter top, neck-tied, open back",
-        "Camisole": "camisole, delicate straps, layering piece",
-        "Bodysuit": "bodysuit, fitted one-piece top, sleek",
-        "Corset Top": "corset top, structured boning, dramatic",
-        "Bustier": "bustier top, strapless structured, evening",
-        "Peasant Blouse": "peasant blouse, bohemian, gathered details",
-        "Peplum Top": "peplum top, flared waist detail, feminine",
+        "Blouse": "elegant blouse, dressy",
+        "Button-Up": "button-up shirt, collared",
+        "T-Shirt": "casual t-shirt",
+        "Tank Top": "tank top, sleeveless",
+        "Crop Top": "crop top, midriff-baring",
+        "Turtleneck": "turtleneck, high neck",
+        "Off-Shoulder": "off-shoulder top",
+        "Halter Top": "halter top, neck-tied",
+        "Corset Top": "corset top, structured",
         # Bottoms
-        "Skinny Jeans": "skinny jeans, tight-fitting denim, modern",
-        "Wide-Leg Pants": "wide-leg pants, flowing silhouette, elegant",
-        "High-Waisted Pants": "high-waisted pants, elongating, retro-modern",
-        "Palazzo Pants": "palazzo pants, extremely wide leg, dramatic",
-        "Culottes": "culottes, wide cropped pants, fashion-forward",
-        "Pencil Skirt": "pencil skirt, fitted knee-length, professional",
-        "Mini Skirt": "mini skirt, short hemline, youthful",
-        "Maxi Skirt": "maxi skirt, floor-length, flowing",
-        "Pleated Skirt": "pleated skirt, accordion pleats, feminine",
-        "A-Line Skirt": "A-line skirt, fitted waist flared hem",
-        "Leather Pants": "leather pants, edgy sleek, rock style",
-        "Cargo Pants": "cargo pants, utilitarian pockets, casual",
-        "Shorts": "shorts, casual short pants, summer",
-        "Hot Pants": "hot pants, very short shorts, daring",
+        "Skinny Jeans": "skinny jeans, fitted denim",
+        "Wide-Leg Pants": "wide-leg pants, flowing",
+        "High-Waisted": "high-waisted pants",
+        "Pencil Skirt": "pencil skirt, fitted",
+        "Mini Skirt": "mini skirt, short",
+        "Maxi Skirt": "maxi skirt, floor-length",
+        "Pleated Skirt": "pleated skirt",
+        "Leather Pants": "leather pants, edgy",
+        "Shorts": "shorts, casual",
         # Suits & Formal
-        "Pantsuit": "tailored pantsuit, professional matching set",
-        "Skirt Suit": "skirt suit, professional matching set, feminine",
-        "Blazer": "structured blazer, professional jacket, sharp",
-        "Tuxedo": "women's tuxedo, formal masculine-inspired, elegant",
-        "Power Suit": "power suit, bold shoulders, commanding",
+        "Pantsuit": "tailored pantsuit",
+        "Blazer": "structured blazer",
+        "Power Suit": "power suit, bold shoulders",
         # Outerwear
-        "Leather Jacket": "leather jacket, edgy biker style, cool",
-        "Denim Jacket": "denim jacket, casual classic, versatile",
-        "Trench Coat": "trench coat, classic belted, sophisticated",
-        "Blazer Jacket": "blazer jacket, structured tailored, professional",
-        "Cardigan": "cardigan sweater, cozy layering, casual",
-        "Fur Coat": "fur coat, luxurious dramatic, glamorous",
-        "Faux Fur": "faux fur coat, ethical glamour, plush",
-        "Cape": "cape outerwear, dramatic flowing, statement",
-        "Bomber Jacket": "bomber jacket, sporty casual, trendy",
-        "Puffer Jacket": "puffer jacket, quilted warm, casual",
+        "Leather Jacket": "leather jacket, biker",
+        "Denim Jacket": "denim jacket",
+        "Trench Coat": "trench coat, belted",
+        "Cardigan": "cardigan sweater",
+        "Fur Coat": "fur coat, luxurious",
+        "Bomber Jacket": "bomber jacket, sporty",
         # Swimwear
-        "Bikini": "bikini swimsuit, two-piece, beach style",
-        "One-Piece Swimsuit": "one-piece swimsuit, classic swimming, elegant",
-        "High-Waisted Bikini": "high-waisted bikini, retro style, flattering",
-        "String Bikini": "string bikini, minimal coverage, daring",
-        "Tankini": "tankini, tank top style swimwear, modest",
-        "Monokini": "monokini, cutout one-piece, dramatic",
-        # Lingerie & Intimate
-        "Lace Lingerie": "delicate lace lingerie, feminine intimate, romantic",
-        "Silk Robe": "silk robe, luxurious loungewear, elegant",
-        "Bodysuit Lingerie": "bodysuit lingerie, one-piece intimate, sleek",
-        "Bralette": "bralette, soft unstructured bra, comfortable",
-        "Corset Lingerie": "corset lingerie, structured boning, dramatic",
-        # Athleisure & Casual
-        "Yoga Outfit": "yoga outfit, stretchy athletic wear, comfortable",
-        "Sports Bra": "sports bra, athletic support top, fitness",
-        "Leggings": "leggings, fitted stretch pants, versatile",
-        "Hoodie": "hoodie sweatshirt, casual comfortable, relaxed",
-        "Sweatpants": "sweatpants, comfortable casual, loungewear",
-        "Athleisure Set": "matching athleisure set, sporty chic, coordinated",
-        # Cultural & Traditional
-        "Kimono": "Japanese kimono, traditional wrapped garment, elegant",
-        "Sari": "Indian sari, draped fabric, traditional elegant",
-        "Cheongsam": "Chinese cheongsam, fitted traditional dress, elegant",
-        "Hanbok": "Korean hanbok, traditional dress, colorful elegant",
-        "Dirndl": "German dirndl, traditional dress, folk style",
-        "Flamenco Dress": "flamenco dress, ruffled dramatic, Spanish style",
-        # Vintage Eras
-        "1920s Flapper": "1920s flapper dress, beaded fringe, gatsby era",
-        "1950s Pin-Up": "1950s pin-up style, full skirt, cinched waist",
-        "1960s Mod": "1960s mod fashion, geometric, bold patterns",
-        "1970s Bohemian": "1970s bohemian style, flowing fabrics, earthy",
-        "1980s Power": "1980s power dressing, bold shoulders, dramatic",
-        "1990s Grunge": "1990s grunge style, flannel, distressed",
-        # Fantasy & Costume
-        "Ball Gown Princess": "princess ball gown, fairy tale dress, magical",
-        "Medieval Gown": "medieval gown, historical dress, renaissance",
-        "Goddess Dress": "goddess dress, draped Grecian style, ethereal",
-        "Fairy Costume": "fairy costume, whimsical wings, magical",
-        "Witch Costume": "witch costume, dark dramatic, mystical",
+        "Bikini": "bikini, two-piece",
+        "One-Piece": "one-piece swimsuit",
+        "High-Waisted Bikini": "high-waisted bikini, retro",
+        # Lingerie
+        "Lace Lingerie": "lace lingerie, delicate",
+        "Silk Robe": "silk robe, loungewear",
+        "Bralette": "bralette, soft",
+        # Athleisure
+        "Yoga Outfit": "yoga outfit, athletic",
+        "Sports Bra": "sports bra, athletic",
+        "Leggings": "leggings, fitted stretch",
+        "Hoodie": "hoodie, casual",
+        # Cultural
+        "Kimono": "Japanese kimono, wrapped",
+        "Sari": "Indian sari, draped",
+        "Cheongsam": "Chinese cheongsam, fitted",
+        # Vintage
+        "1920s Flapper": "1920s flapper, beaded fringe",
+        "1950s Pin-Up": "1950s style, full skirt",
+        "1970s Bohemian": "1970s bohemian, flowing",
         # Bridal
-        "Wedding Dress": "wedding dress, bridal gown, white elegant",
-        "Bridal Gown": "formal bridal gown, traditional wedding, elaborate",
-        "Wedding Jumpsuit": "bridal jumpsuit, modern wedding, chic",
+        "Wedding Dress": "wedding dress, white gown",
     }
 
-    # Eye Styles
+    # Eye Styles - Concise eye descriptors
     EYE_STYLES = {
         "None": "",
-        # Eye Colors
-        "Blue Eyes": "bright blue eyes, clear azure iris, striking",
-        "Green Eyes": "green eyes, emerald iris, captivating",
-        "Brown Eyes": "warm brown eyes, chocolate iris, deep",
-        "Hazel Eyes": "hazel eyes, mixed brown green gold, changeable",
-        "Amber Eyes": "amber eyes, golden honey iris, warm",
-        "Gray Eyes": "gray eyes, cool silver iris, mysterious",
-        "Black Eyes": "dark black eyes, deep onyx iris, intense",
-        "Violet Eyes": "violet eyes, purple iris, rare exotic",
-        "Heterochromia": "heterochromia, two different colored eyes, unique",
-        "Ice Blue Eyes": "ice blue eyes, pale icy blue, piercing",
-        "Steel Gray Eyes": "steel gray eyes, metallic cool, intense",
-        "Honey Eyes": "honey colored eyes, golden brown, warm",
-        "Olive Eyes": "olive green eyes, earthy green tone",
-        "Teal Eyes": "teal eyes, blue-green mix, oceanic",
-        "Golden Eyes": "golden eyes, yellow-gold iris, striking",
-        # Eye Shapes
-        "Almond Eyes": "almond shaped eyes, tapered ends, elegant",
-        "Round Eyes": "round eyes, circular shape, youthful innocent",
-        "Hooded Eyes": "hooded eyes, heavy lid, mysterious",
-        "Monolid Eyes": "monolid eyes, no crease, smooth lid",
-        "Upturned Eyes": "upturned eyes, outer corners lifted, cat-like",
-        "Downturned Eyes": "downturned eyes, outer corners down, soft",
-        "Deep-Set Eyes": "deep-set eyes, set back in socket, intense",
-        "Protruding Eyes": "protruding eyes, prominent, expressive",
-        "Close-Set Eyes": "close-set eyes, near bridge of nose",
-        "Wide-Set Eyes": "wide-set eyes, far apart, open face",
-        "Large Eyes": "large expressive eyes, doe eyes, striking",
-        "Small Eyes": "small delicate eyes, refined, subtle",
-        "Cat Eyes": "cat-like eyes, feline shape, exotic",
-        "Doe Eyes": "doe eyes, large innocent, Bambi-like",
-        "Bedroom Eyes": "bedroom eyes, heavy-lidded, sultry",
-        # Eye Makeup Styles
-        "Natural Makeup": "natural eye makeup, subtle enhancement, fresh",
-        "Smoky Eye": "smoky eye makeup, dramatic blended shadow, sultry",
-        "Cat Eye Liner": "cat eye liner, winged eyeliner, feline flick",
-        "Cut Crease": "cut crease eye makeup, defined crease, dramatic",
-        "Glitter Eyes": "glitter eye makeup, sparkly shimmer, festive",
-        "Graphic Liner": "graphic eyeliner, artistic lines, bold",
-        "No Makeup Look": "no makeup look, bare natural, fresh-faced",
-        "Soft Glam": "soft glam eye makeup, subtle glamour, elegant",
-        "Bold Color": "bold colorful eye makeup, vivid pigments, artistic",
-        "Nude Eye": "nude eye makeup, neutral tones, subtle",
-        "Bronze Eye": "bronze eye makeup, warm metallic, sun-kissed",
-        "Blue Eyeshadow": "blue eyeshadow, cool toned, striking",
-        "Green Eyeshadow": "green eyeshadow, earthy or vibrant, unique",
-        "Purple Eyeshadow": "purple eyeshadow, dramatic romantic, rich",
-        "Red Eyeshadow": "red eyeshadow, bold daring, editorial",
-        "Gold Eyeshadow": "gold eyeshadow, metallic warm, luxurious",
-        "Silver Eyeshadow": "silver eyeshadow, cool metallic, futuristic",
-        "Black Eyeshadow": "black eyeshadow, dramatic gothic, intense",
-        "Pink Eyeshadow": "pink eyeshadow, soft feminine, romantic",
-        # Eyeliner Styles
-        "Thin Liner": "thin eyeliner, subtle definition, natural",
-        "Thick Liner": "thick eyeliner, bold dramatic, statement",
-        "Winged Liner": "winged eyeliner, classic flick, elegant",
-        "Double Wing": "double winged liner, graphic modern, edgy",
-        "Smudged Liner": "smudged eyeliner, soft smoky, rock style",
-        "White Liner": "white eyeliner, brightening, modern",
-        "Colored Liner": "colored eyeliner, bold hue, playful",
-        "Floating Liner": "floating crease liner, graphic trend, artistic",
-        "Tight Line": "tightlined eyes, waterline liner, subtle definition",
-        "No Liner": "no eyeliner, soft natural, bare",
-        # Eyelashes
-        "Natural Lashes": "natural eyelashes, subtle length, understated",
-        "Long Lashes": "long eyelashes, extended length, dramatic",
-        "Thick Lashes": "thick lashes, full volume, bold",
-        "False Lashes": "false eyelashes, glamorous volume, dramatic",
-        "Wispy Lashes": "wispy lashes, feathery natural, soft",
-        "Cat Eye Lashes": "cat eye lashes, longer outer corner, feline",
-        "Doll Lashes": "doll lashes, rounded full, innocent",
-        "Spiky Lashes": "spiky lashes, separated defined, modern",
-        "Bottom Lashes": "emphasized bottom lashes, doe-eyed, 60s style",
-        "Colored Lashes": "colored lashes, bold hue, artistic",
-        "Feather Lashes": "feather lashes, dramatic costume, avant-garde",
-        # Eyebrows
-        "Natural Brows": "natural eyebrows, untamed shape, authentic",
-        "Thick Brows": "thick bold eyebrows, full bushy, statement",
-        "Thin Brows": "thin eyebrows, shaped refined, vintage",
-        "Arched Brows": "arched eyebrows, high arch, dramatic",
-        "Straight Brows": "straight eyebrows, horizontal shape, youthful",
-        "Feathered Brows": "feathered eyebrows, brushed up, natural",
-        "Laminated Brows": "laminated brows, slicked up, trendy",
-        "Ombre Brows": "ombre brows, gradient fill, soft defined",
-        "Bleached Brows": "bleached eyebrows, pale blonde, editorial",
-        "Colored Brows": "colored eyebrows, bold hue, artistic",
-        # Eye Expressions
-        "Wide Open Eyes": "wide open eyes, alert surprised, expressive",
-        "Half-Closed Eyes": "half-closed eyes, dreamy sultry, relaxed",
-        "Squinting Eyes": "squinting eyes, narrowed, suspicious or smiling",
-        "Winking": "winking, one eye closed, playful",
-        "Looking Up": "eyes looking upward, hopeful dreamy",
-        "Looking Down": "eyes looking downward, demure thoughtful",
-        "Side Glance": "side glance, looking to side, coy",
-        "Direct Gaze": "direct eye contact, confident engaging, bold",
-        "Distant Gaze": "distant gaze, looking far away, contemplative",
-        "Teary Eyes": "teary eyes, glistening emotional, vulnerable",
-        "Sparkling Eyes": "sparkling eyes, bright joyful, alive",
-        "Intense Stare": "intense staring eyes, piercing focused, powerful",
-        "Soft Gaze": "soft gentle gaze, warm welcoming, kind",
+        # Colors
+        "Blue Eyes": "blue eyes, clear iris",
+        "Green Eyes": "green eyes, emerald iris",
+        "Brown Eyes": "brown eyes, warm",
+        "Hazel Eyes": "hazel eyes, mixed tones",
+        "Amber Eyes": "amber eyes, golden",
+        "Gray Eyes": "gray eyes, cool silver",
+        "Heterochromia": "heterochromia, different colored eyes",
+        # Shapes
+        "Almond Eyes": "almond shaped eyes",
+        "Round Eyes": "round eyes, large",
+        "Hooded Eyes": "hooded eyes, heavy lid",
+        "Monolid": "monolid eyes, no crease",
+        "Upturned": "upturned eyes, cat-like",
+        "Doe Eyes": "doe eyes, large innocent",
+        # Makeup
+        "Natural Eye": "natural eye makeup, subtle",
+        "Smoky Eye": "smoky eye, blended dark shadow",
+        "Cat Eye": "cat eye liner, winged",
+        "Glitter Eye": "glitter eye makeup, sparkle",
+        "No Makeup": "no eye makeup, bare",
+        "Bold Shadow": "bold colorful eyeshadow",
+        # Liner
+        "Winged Liner": "winged eyeliner",
+        "Thick Liner": "thick eyeliner, bold",
+        "No Liner": "no eyeliner, natural",
+        # Lashes
+        "Natural Lashes": "natural eyelashes",
+        "Long Lashes": "long eyelashes, dramatic",
+        "False Lashes": "false lashes, voluminous",
+        # Brows
+        "Natural Brows": "natural eyebrows",
+        "Thick Brows": "thick bold eyebrows",
+        "Arched Brows": "arched eyebrows",
+        "Straight Brows": "straight eyebrows",
+        # Gaze
+        "Direct Gaze": "direct eye contact",
+        "Side Glance": "side glance, looking away",
+        "Looking Down": "eyes looking downward",
+        "Intense Stare": "intense stare, piercing",
     }
 
-    # Fashion Styles
+    # Fashion Styles - Concise style descriptors
     FASHION_STYLES = {
         "None": "",
-        # Classic Styles
-        "Classic Elegant": "classic elegant fashion, timeless refined style, sophisticated",
-        "Preppy": "preppy style, collegiate clean-cut, polished traditional",
-        "Business Professional": "business professional attire, corporate formal, executive",
-        "Business Casual": "business casual style, smart relaxed, office appropriate",
-        "Smart Casual": "smart casual fashion, polished yet relaxed, versatile",
-        "Old Money": "old money aesthetic, quiet luxury, understated wealth",
-        "Quiet Luxury": "quiet luxury fashion, subtle expensive, no logos",
-        "Minimalist": "minimalist fashion, simple clean lines, understated",
-        "Monochromatic": "monochromatic outfit, single color scheme, cohesive",
-        "Neutral Palette": "neutral palette fashion, beige tan cream, sophisticated",
-        # Trendy & Modern
-        "Streetwear": "streetwear fashion, urban casual, trendy comfortable",
-        "Athleisure": "athleisure style, sporty casual, gym-to-street",
-        "Y2K": "Y2K fashion, early 2000s style, nostalgic trendy",
-        "Cottagecore": "cottagecore aesthetic, rural romantic, pastoral",
-        "Dark Academia": "dark academia style, scholarly vintage, literary",
-        "Light Academia": "light academia fashion, scholarly bright, classic",
-        "Coastal Grandmother": "coastal grandmother style, relaxed elegant, Nancy Meyers",
-        "Clean Girl": "clean girl aesthetic, minimal fresh, effortless",
-        "Barbiecore": "Barbiecore fashion, hot pink, playful feminine",
-        "Balletcore": "balletcore style, ballet-inspired, soft feminine",
-        "Mob Wife": "mob wife aesthetic, leopard print, gold, dramatic",
-        # Edgy & Alternative
-        "Grunge": "grunge fashion, distressed layers, 90s alternative",
-        "Punk": "punk style, rebellious DIY, safety pins chains",
-        "Goth": "gothic fashion, all black, dark romantic",
-        "Emo": "emo style, dark emotional, band tees skinny jeans",
-        "Rock Chic": "rock chic fashion, leather edgy, concert style",
-        "Biker": "biker style, leather motorcycle, tough cool",
-        "Edgy Modern": "edgy modern fashion, avant-garde, boundary-pushing",
-        "Industrial": "industrial fashion, utilitarian dark, hardware details",
-        "Cyber Goth": "cyber goth style, neon black, futuristic dark",
-        "Soft Grunge": "soft grunge fashion, pastel dark mix, Tumblr era",
-        # Bohemian & Free Spirit
-        "Bohemian": "bohemian fashion, free-spirited eclectic, flowing fabrics",
-        "Boho Chic": "boho chic style, refined bohemian, festival elegant",
-        "Hippie": "hippie style, 60s-70s peace love, tie-dye fringe",
-        "Festival Fashion": "festival fashion, Coachella style, bold fun",
-        "Gypsy": "gypsy style, traveling bohemian, layered jewelry",
-        "Earthy": "earthy fashion, natural tones, organic materials",
-        "Free Spirit": "free spirit fashion, unconventional, expressive",
-        # Glamorous & Luxe
-        "Hollywood Glamour": "Hollywood glamour, red carpet style, dramatic elegant",
-        "Old Hollywood": "old Hollywood fashion, vintage glamour, golden age",
-        "Haute Couture": "haute couture fashion, high fashion, designer runway",
-        "Luxury Fashion": "luxury fashion, designer labels, expensive refined",
-        "Red Carpet": "red carpet fashion, celebrity gala, show-stopping",
-        "Evening Glamour": "evening glamour style, formal elegant, sophisticated",
-        "Disco Glam": "disco glamour, 70s sparkle, Studio 54 style",
-        "Showgirl": "showgirl fashion, Vegas glamour, sequins feathers",
-        # Romantic & Feminine
-        "Romantic": "romantic fashion, soft feminine, ruffles lace",
-        "Feminine": "feminine fashion, girly pretty, soft details",
-        "Victorian": "Victorian fashion, historical romantic, modest elaborate",
-        "Fairycore": "fairycore aesthetic, whimsical magical, nature-inspired",
-        "Princesscore": "princesscore fashion, regal feminine, pretty pink",
-        "Regencycore": "Regencycore fashion, Bridgerton-inspired, empire waist",
-        "Coquette": "coquette style, flirty feminine, bows ribbons",
-        "Dollette": "dollette fashion, doll-like, porcelain pretty",
-        # Sporty & Active
-        "Sporty": "sporty fashion, athletic casual, active lifestyle",
-        "Athletic": "athletic wear, performance clothing, gym style",
-        "Tenniscore": "tenniscore fashion, tennis-inspired, preppy sporty",
-        "Gorpcore": "gorpcore style, outdoor hiking, technical fashion",
-        "Surf Style": "surf style fashion, beach casual, coastal cool",
-        "Skater": "skater fashion, skateboard culture, casual cool",
-        # Cultural & Global
-        "Japanese Street": "Japanese street fashion, Harajuku style, creative bold",
-        "Korean Fashion": "Korean fashion, K-fashion, trendy modern",
-        "Parisian Chic": "Parisian chic, French style, effortless elegant",
-        "Italian Style": "Italian fashion, la bella figura, luxurious",
-        "Scandinavian": "Scandinavian fashion, Nordic minimalist, functional",
-        "British Style": "British fashion, tailored classic, heritage",
-        "American Classic": "American classic fashion, all-American, timeless",
-        # Vintage Decades
-        "1920s Fashion": "1920s fashion, flapper era, art deco glamour",
-        "1930s Fashion": "1930s fashion, Hollywood golden age, elegant bias-cut",
-        "1940s Fashion": "1940s fashion, wartime elegance, tailored utility",
-        "1950s Fashion": "1950s fashion, full skirts, Dior New Look",
-        "1960s Fashion": "1960s fashion, mod mini, youthquake style",
-        "1970s Fashion": "1970s fashion, bohemian disco, eclectic",
-        "1980s Fashion": "1980s fashion, power shoulders, bold colors",
-        "1990s Fashion": "1990s fashion, minimalist grunge, slip dress",
-        "2000s Fashion": "2000s fashion, low-rise Y2K, Paris Hilton era",
-        # Occasion-Based
-        "Resort Wear": "resort wear, vacation fashion, tropical elegant",
-        "Beach Style": "beach style fashion, coastal casual, swimwear cover-ups",
-        "Cocktail Attire": "cocktail attire, semi-formal, party dress",
-        "Black Tie": "black tie fashion, formal evening, gala appropriate",
-        "Garden Party": "garden party attire, floral feminine, outdoor elegant",
-        "Brunch Style": "brunch style fashion, casual chic, weekend wear",
-        # Unique & Niche
-        "Avant-Garde": "avant-garde fashion, experimental artistic, unconventional",
-        "Deconstructed": "deconstructed fashion, raw edges, asymmetric",
-        "Gender Fluid": "gender fluid fashion, unisex androgynous, non-binary",
-        "Maximalist": "maximalist fashion, more is more, bold layers",
-        "Eclectic": "eclectic fashion, mixed styles, personal unique",
-        "Normcore": "normcore fashion, deliberately ordinary, anti-fashion",
-        "Ugly Chic": "ugly chic fashion, intentionally unfashionable, ironic",
+        # Classic
+        "Classic Elegant": "classic elegant, timeless refined",
+        "Preppy": "preppy, collegiate polished",
+        "Business": "business professional, formal corporate",
+        "Minimalist": "minimalist, clean simple lines",
+        "Old Money": "old money aesthetic, quiet luxury",
+        # Trendy
+        "Streetwear": "streetwear, urban casual",
+        "Athleisure": "athleisure, sporty casual",
+        "Y2K": "Y2K style, early 2000s",
+        "Dark Academia": "dark academia, scholarly vintage",
+        "Cottagecore": "cottagecore, rural romantic",
+        # Edgy
+        "Grunge": "grunge, distressed 90s",
+        "Punk": "punk style, rebellious",
+        "Goth": "gothic, all black dark",
+        "Rock Chic": "rock chic, leather edgy",
+        # Bohemian
+        "Bohemian": "bohemian, flowing eclectic",
+        "Boho Chic": "boho chic, refined bohemian",
+        "Hippie": "hippie style, 70s free spirit",
+        # Glamorous
+        "Hollywood Glamour": "Hollywood glamour, red carpet",
+        "Haute Couture": "haute couture, high fashion",
+        "Evening Glamour": "evening glamour, formal elegant",
+        # Romantic
+        "Romantic": "romantic fashion, soft feminine",
+        "Victorian": "Victorian, historical romantic",
+        "Fairycore": "fairycore, whimsical magical",
+        # Sporty
+        "Sporty": "sporty, athletic casual",
+        "Surf Style": "surf style, beach casual",
+        # Cultural
+        "Japanese Street": "Japanese street, Harajuku",
+        "Korean Fashion": "Korean fashion, K-style",
+        "Parisian Chic": "Parisian chic, French elegant",
+        # Vintage
+        "1950s Style": "1950s style, full skirts",
+        "1970s Style": "1970s style, bohemian disco",
+        "1980s Style": "1980s style, bold power shoulders",
     }
 
     # Ethnicity
@@ -1278,6 +897,58 @@ class SID_PromptModifier:
         "Bare Skin": "bare skin, no makeup, natural beauty",
         "Minimal Makeup": "minimal makeup skin, enhanced natural, fresh",
     }
+
+    # Conflicting preset combinations to warn about
+    PRESET_CONFLICTS = {
+        # Creative effects conflicts
+        ("Soft Focus", "High Contrast"): "Soft focus typically reduces contrast",
+        ("Soft Focus", "HDR"): "Soft focus conflicts with HDR sharpness",
+        ("Black and White", "Rich Colors"): "Black and white has no color",
+        ("Black and White", "Teal Orange"): "Black and white has no color",
+        ("Black and White", "Cross Process"): "Black and white has no color",
+        ("Black and White", "Golden Hour"): "Black and white has no color tint",
+        ("Golden Hour", "Blue Hour"): "Conflicting warm vs cool color temperatures",
+        ("High Contrast", "Matte Finish"): "Matte finish reduces contrast",
+        ("High Contrast", "Faded Film"): "Faded film reduces contrast",
+        # Lighting conflicts
+        ("High Key", "Low Key"): "Opposite lighting approaches",
+        ("Split Lighting", "High Key"): "Split lighting creates shadows incompatible with high key",
+        # Skin/makeup conflicts
+        ("Full Glam", "Bare Skin"): "Contradictory makeup levels",
+        ("Full Glam", "Minimal Makeup"): "Contradictory makeup levels",
+        ("Bare Skin", "Glitter Eye"): "Bare skin implies no makeup",
+        ("Bare Skin", "Smoky Eye"): "Bare skin implies no makeup",
+        # Expression conflicts
+        ("Smile", "Angry"): "Contradictory expressions",
+        ("Smile", "Sad"): "Contradictory expressions",
+        ("Laughing", "Crying"): "Contradictory expressions",
+        ("Neutral", "Intense"): "Conflicting emotional intensity",
+    }
+
+    @classmethod
+    def _check_preset_conflicts(cls, presets: dict) -> list:
+        """Check for conflicting preset combinations and return warnings."""
+        warnings = []
+        # Get all selected preset names
+        selected = []
+        for key, value in presets.items():
+            if value:
+                # Find the preset name by matching the value
+                for dict_name in ['CREATIVE_EFFECTS', 'PHOTOGRAPHY_EFFECTS', 'PHOTOGRAPHY_TEMPLATES',
+                                  'CINEMATIC_STYLES', 'ANIME_STYLES', 'GAMING_STYLES',
+                                  'FACIAL_EXPRESSIONS', 'SKIN_STYLES', 'EYE_STYLES']:
+                    preset_dict = getattr(cls, dict_name, {})
+                    for name, desc in preset_dict.items():
+                        if desc == value:
+                            selected.append(name)
+                            break
+
+        # Check for conflicts
+        for (preset1, preset2), reason in cls.PRESET_CONFLICTS.items():
+            if preset1 in selected and preset2 in selected:
+                warnings.append(f"⚠️ Conflict: '{preset1}' + '{preset2}' - {reason}")
+
+        return warnings
 
     @classmethod
     def INPUT_TYPES(cls) -> Dict[str, Any]:
@@ -1526,6 +1197,11 @@ class SID_PromptModifier:
                 preset_names.append(f"Pose: {pose_preset}")
             print(f"[SID_PromptModifier] Applying: {', '.join(preset_names)}")
 
+            # Check for conflicting presets
+            conflicts = self._check_preset_conflicts(presets)
+            for warning in conflicts:
+                print(f"[SID_PromptModifier] {warning}")
+
         # Process based on mode
         if processing_mode == "Expand":
             # Expand basic text into detailed prompt, then apply modifications
@@ -1636,14 +1312,20 @@ class SID_PromptModifier:
 
 Your task is to modify an existing image prompt based on specific instructions and style presets.
 
+CAMERA THINKING - Write like setting camera parameters:
+- Use technical, concrete terms (not poetic/literary language)
+- "f/1.8, shallow depth of field, subject sharp, background blur" NOT "dreamy ethereal softness"
+- "golden hour, warm 3200K, low angle sun" NOT "bathed in the warm embrace of sunset"
+
 RULES:
-1. PRESERVE the overall structure and flow of the original prompt
-2. Apply section modifications as specified
-3. Integrate photography templates, effects, and photographer styles naturally
-4. Keep unmentioned sections UNCHANGED
-5. Maintain concrete, visual, descriptive writing style
-6. Output ONLY the modified prompt - no explanations or commentary
-7. Write as a single flowing paragraph"""
+1. PRESERVE the overall structure, sections, and formatting of the original prompt exactly
+2. KEEP all original details unless explicitly changed by a preset
+3. Apply modifications by ADDING or REPLACING relevant phrases only
+4. Keep unmentioned sections COMPLETELY UNCHANGED - copy them verbatim
+5. Limit each section to 3-5 key visual concepts - avoid overloading
+6. NO contradictory terms (soft focus + sharp focus, warm + cool lighting)
+7. Output ONLY the modified prompt - no explanations or commentary
+8. The output length should be similar to or longer than the input - NEVER shorten or condense"""
 
         # Build user prompt with all modifications
         user_prompt = f"""ORIGINAL PROMPT:
@@ -1720,12 +1402,19 @@ RULES:
 
 Your task is to integrate photography style presets into an existing prompt.
 
+CAMERA THINKING - Write like setting camera parameters:
+- Use technical, concrete terms (not poetic/literary language)
+- "f/1.8, shallow depth of field" NOT "dreamy ethereal softness"
+- "golden hour, warm 3200K" NOT "bathed in warm embrace of sunset"
+
 RULES:
-1. Integrate the style presets naturally into the prompt
-2. Preserve the subject and core content of the original prompt
-3. Enhance lighting, camera, and mood to match the styles
-4. Output ONLY the modified prompt - no explanations
-5. Write as a single flowing paragraph"""
+1. PRESERVE the overall structure and formatting of the original prompt exactly
+2. KEEP all original details unless explicitly changed by a preset
+3. Integrate presets by ADDING phrases to appropriate sections, not by rewriting
+4. Limit each section to 3-5 key visual concepts - avoid overloading
+5. NO contradictory terms (soft focus + sharp focus, warm + cool lighting)
+6. Output ONLY the modified prompt - no explanations
+7. The output length should be similar to or longer than the input - NEVER shorten"""
 
             preset_user = f"""CURRENT PROMPT:
 {modified_prompt}
@@ -1748,12 +1437,19 @@ Integrate these style presets into the prompt. Output only the modified prompt."
 
 Your task is to modify ONLY ONE specific section of an image prompt based on the instruction.
 
+CAMERA THINKING - Write like setting camera parameters:
+- Use technical, concrete terms (not poetic/literary language)
+- "f/1.8, shallow depth of field" NOT "dreamy softness"
+- "golden hour, warm 3200K" NOT "warm embrace of sunset"
+
 RULES:
-1. ONLY modify the specified section
-2. Keep ALL other parts of the prompt EXACTLY the same
-3. Maintain the same writing style
-4. Output ONLY the complete modified prompt - no explanations
-5. Write as a single flowing paragraph"""
+1. ONLY modify the specified section - add or replace relevant phrases
+2. Keep ALL other parts of the prompt EXACTLY the same - copy them verbatim
+3. PRESERVE the overall structure and formatting of the original prompt
+4. Limit modified section to 3-5 key visual concepts - avoid overloading
+5. NO contradictory terms within the same section
+6. Output ONLY the complete modified prompt - no explanations
+7. The output length should be similar to or longer than the input - NEVER shorten"""
 
         for section_key, instruction in instructions.items():
             section_info = self.SECTIONS[section_key]
@@ -1824,31 +1520,33 @@ Modify ONLY the {section_name} section according to the instruction. Keep everyt
         if presets.get("pose"):
             preset_text += f"- **Pose**: {presets['pose']}\n"
 
-        system_prompt = """You are an expert prompt engineer for AI image generation (Stable Diffusion, Flux, Midjourney).
+        system_prompt = """You are an expert prompt engineer for AI image generation (Stable Diffusion, Flux, Z-Image).
 
-Your task is to expand a basic concept or short description into a comprehensive, detailed image generation prompt.
+Your task is to expand a basic concept into a detailed image generation prompt.
 
-STRUCTURE YOUR OUTPUT WITH THESE SECTIONS (write as flowing prose, not bullet points):
+CAMERA THINKING - Write like setting camera parameters, not prose:
+- Technical terms: "f/1.8, shallow DOF, subject sharp, background blur"
+- Lighting specs: "golden hour, warm 3200K, low angle sun, soft shadows"
+- NOT poetic: Avoid "dreamy ethereal", "bathed in warmth", "whispers of light"
 
-1. **Subject**: Detailed description of the main subject - physical features, age, ethnicity, body type, facial features, hair style/color/texture, skin tone and texture
+6-PART STRUCTURE (3-5 concepts per section max):
 
-2. **Clothing & Accessories**: Complete outfit description - garments, fabrics, colors, fit, style, jewelry, accessories
-
-3. **Pose & Expression**: Body position, stance, gesture, facial expression, eye direction, mood conveyed
-
-4. **Environment**: Setting, location, background elements, props, atmosphere, time of day
-
-5. **Lighting**: Light quality (soft/hard), direction, color temperature, shadows, highlights, mood
-
-6. **Camera**: Shot type (close-up, full body, etc.), angle, framing, depth of field, focus
+1. **Subject**: age, build, ethnicity, facial features, hair, skin tone
+2. **Clothing**: garments, fabrics, colors, fit, accessories
+3. **Pose & Expression**: body position, gesture, facial expression, gaze
+4. **Scene**: setting, background, props, atmosphere
+5. **Lighting**: quality, direction, color temp, shadows
+6. **Camera**: shot type, angle, framing, depth of field, lens
 
 RULES:
-1. Be specific and visual - describe what can be SEEN, not abstract concepts
-2. Use concrete descriptors (not "beautiful" but "high cheekbones, full lips, almond-shaped eyes")
-3. Include colors, textures, materials whenever possible
-4. Write as a single flowing paragraph or connected paragraphs
-5. Output ONLY the expanded prompt - no explanations, headers, or meta-commentary
-6. Aim for 200-400 words of rich, detailed description"""
+1. Be specific and visual - describe what can be SEEN
+2. Use concrete descriptors: "high cheekbones, full lips" NOT "beautiful"
+3. Include colors, textures, materials
+4. 3-5 key concepts per section - avoid overloading
+5. NO contradictory terms (soft focus + sharp, warm + cool)
+6. Write as connected prose (not bullet points)
+7. Output ONLY the prompt - no headers, no explanations
+8. Aim for 150-300 words of focused, technical description"""
 
         user_prompt = f"""BASIC CONCEPT:
 {basic_text}
@@ -1962,14 +1660,14 @@ Generate Poetic, Technical, and Personal caption styles following the exact form
         input_chars = len(input_prompt)
         estimated_input_tokens = input_chars // 4
 
-        # Output should be at least as long as input, plus 50% buffer for modifications
-        # This ensures we don't truncate prompts during modification
-        buffer_multiplier = 1.5
+        # Output should be at least as long as input, plus 100% buffer for modifications
+        # This ensures we don't truncate prompts during modification (presets add significant content)
+        buffer_multiplier = 2.0
         calculated_tokens = int(estimated_input_tokens * buffer_multiplier)
 
         # Set minimum (for short prompts) and maximum bounds
-        min_tokens = 1500  # Generous minimum for detailed prompt modification
-        max_tokens = getattr(llm_model, 'max_tokens', 6000)
+        min_tokens = 2000  # Generous minimum for detailed prompt modification
+        max_tokens = getattr(llm_model, 'max_tokens', 8000)
 
         # Clamp to bounds
         result = max(min_tokens, min(calculated_tokens, max_tokens))
