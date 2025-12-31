@@ -32,9 +32,15 @@ from enum import Enum
 
 from comfy_api.latest import io as comfy_io
 import folder_paths
+import comfy.model_management
 
 from .llm_model_type import LLMModelConfig
 from .base_llm_provider import BaseLLMProvider
+
+
+def check_interrupt():
+    """Check if execution was interrupted and raise exception if so."""
+    comfy.model_management.throw_exception_if_processing_interrupted()
 
 # Create custom LLM_MODEL type for ComfyUI
 LLM_MODEL_Type = comfy_io.Custom("LLM_MODEL")
@@ -696,8 +702,14 @@ class LocalModelClient:
         import base64
         import io
 
+        # Check for interrupt before starting
+        check_interrupt()
+
         if self.model is None:
             self._load_model()
+
+        # Check for interrupt after model load
+        check_interrupt()
 
         start_time = time.time()
 
@@ -729,6 +741,9 @@ class LocalModelClient:
         current_temp = temperature
 
         while retry_count <= max_retries:
+            # Check for interrupt before each attempt
+            check_interrupt()
+
             gen_start = time.time()
 
             # Generate (only QwenVL family supported)
@@ -817,8 +832,8 @@ class LocalModelClient:
                                 print(f"[LocalModelClient] Truncated phrase repetition at word {word_pos}")
                                 break
 
-        # 3. Hard limit on word count (safety net)
-        max_words = 500
+        # 3. Hard limit on word count (safety net) - generous for detailed prompts
+        max_words = 800
         words = text.split()
         if len(words) > max_words:
             text = ' '.join(words[:max_words])

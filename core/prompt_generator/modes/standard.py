@@ -489,8 +489,8 @@ Write as a single flowing paragraph. Be precise and literal."""
                                 print(f"[Standard] Truncated runaway phrase repetition at word {word_pos}")
                                 break
 
-        # 3. Hard limit on word count for local models (safety net)
-        max_words = 500
+        # 3. Hard limit on word count for local models (safety net) - generous for detailed prompts
+        max_words = 800
         words = text.split()
         if len(words) > max_words:
             text = ' '.join(words[:max_words])

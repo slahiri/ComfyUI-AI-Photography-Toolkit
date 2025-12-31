@@ -45,6 +45,7 @@ api_keys.txt
 
 # Logs
 *.log
+logs/
 
 # Testing
 .pytest_cache/

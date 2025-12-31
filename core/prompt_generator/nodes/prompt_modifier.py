@@ -21,6 +21,12 @@ from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 from PIL import Image
+import comfy.model_management
+
+
+def check_interrupt():
+    """Check if execution was interrupted and raise exception if so."""
+    comfy.model_management.throw_exception_if_processing_interrupted()
 
 
 class SID_PromptModifier:
@@ -205,6 +211,9 @@ class SID_PromptModifier:
         """
         start_time = time.time()
 
+        # Check for interrupt before starting
+        check_interrupt()
+
         # Get temperature from LLM model config
         temperature = getattr(llm_model, 'temperature', 0.7)
 
@@ -255,10 +264,22 @@ class SID_PromptModifier:
         else:
             modified_prompt = self._section_by_section_modify(prompt, llm_model, active_instructions, temperature, presets)
 
+        # Check for interrupt after modification
+        check_interrupt()
+
         # Generate caption if requested
         caption = ""
         if generate_caption:
+            check_interrupt()
             caption = self._generate_caption(llm_model, modified_prompt, temperature)
+
+        # Print analysis report
+        self._print_analysis_report(
+            original_prompt=prompt,
+            modified_prompt=modified_prompt,
+            instructions=active_instructions,
+            presets=presets,
+        )
 
         # Release VRAM if requested
         if release_vram:
@@ -503,18 +524,19 @@ Generate Poetic, Technical, and Personal caption styles following the exact form
             )
 
     def _calculate_max_tokens(self, input_prompt: str, llm_model: Any) -> int:
-        """Calculate max tokens based on input size + 30% buffer."""
+        """Calculate max tokens based on input size + buffer for modifications."""
         # Estimate tokens from input (roughly 1 token per 4 characters)
         input_chars = len(input_prompt)
         estimated_input_tokens = input_chars // 4
 
-        # Add 30% buffer for modifications
-        buffer_multiplier = 1.3
+        # Output should be at least as long as input, plus 50% buffer for modifications
+        # This ensures we don't truncate prompts during modification
+        buffer_multiplier = 1.5
         calculated_tokens = int(estimated_input_tokens * buffer_multiplier)
 
-        # Set minimum and maximum bounds
-        min_tokens = 500
-        max_tokens = getattr(llm_model, 'max_tokens', 2000)
+        # Set minimum (for short prompts) and maximum bounds
+        min_tokens = 800  # Generous minimum for prompt modification
+        max_tokens = getattr(llm_model, 'max_tokens', 4000)
 
         # Clamp to bounds
         result = max(min_tokens, min(calculated_tokens, max_tokens))
@@ -605,6 +627,75 @@ Generate Poetic, Technical, and Personal caption styles following the exact form
         text = re.sub(r'\s+', ' ', text)
 
         return text.strip()
+
+    def _print_analysis_report(
+        self,
+        original_prompt: str,
+        modified_prompt: str,
+        instructions: Dict[str, str],
+        presets: Dict[str, str],
+    ) -> None:
+        """Print a console report analyzing the prompt modification."""
+        print("\n" + "=" * 70)
+        print("PROMPT MODIFICATION ANALYSIS REPORT")
+        print("=" * 70)
+
+        # Word count comparison
+        orig_words = len(original_prompt.split())
+        mod_words = len(modified_prompt.split())
+        word_diff = mod_words - orig_words
+        word_pct = ((mod_words / orig_words) - 1) * 100 if orig_words > 0 else 0
+
+        print(f"\n📊 LENGTH ANALYSIS:")
+        print(f"   Original: {orig_words} words")
+        print(f"   Modified: {mod_words} words")
+        print(f"   Change:   {word_diff:+d} words ({word_pct:+.1f}%)")
+
+        # Find added and removed words
+        orig_word_set = set(original_prompt.lower().split())
+        mod_word_set = set(modified_prompt.lower().split())
+
+        added_words = mod_word_set - orig_word_set
+        removed_words = orig_word_set - mod_word_set
+
+        print(f"\n📝 SEMANTIC CHANGES:")
+        if added_words:
+            # Show up to 15 most significant added words (filter common words)
+            common_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'her', 'his', 'its', 'their', 'this', 'that', 'these', 'those', 'as', 'if', 'then', 'so', 'than', 'too', 'very', 'just', 'also', 'now', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'not', 'only', 'own', 'same', 'she', 'he', 'it', 'we', 'they', 'you', 'who', 'which', 'what'}
+            significant_added = [w for w in added_words if w not in common_words and len(w) > 2][:15]
+            if significant_added:
+                print(f"   ✅ Added:   {', '.join(sorted(significant_added))}")
+        if removed_words:
+            common_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'her', 'his', 'its', 'their', 'this', 'that', 'these', 'those', 'as', 'if', 'then', 'so', 'than', 'too', 'very', 'just', 'also', 'now', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'not', 'only', 'own', 'same', 'she', 'he', 'it', 'we', 'they', 'you', 'who', 'which', 'what'}
+            significant_removed = [w for w in removed_words if w not in common_words and len(w) > 2][:15]
+            if significant_removed:
+                print(f"   ❌ Removed: {', '.join(sorted(significant_removed))}")
+
+        # Check if requested changes were applied
+        print(f"\n🎯 MODIFICATION VERIFICATION:")
+
+        # Check presets
+        if presets:
+            for preset_type, preset_value in presets.items():
+                # Extract key terms from preset
+                preset_keywords = [w.lower() for w in preset_value.split() if len(w) > 4][:5]
+                found = sum(1 for kw in preset_keywords if kw in modified_prompt.lower())
+                match_pct = (found / len(preset_keywords)) * 100 if preset_keywords else 0
+                status = "✅" if match_pct >= 40 else "⚠️" if match_pct >= 20 else "❌"
+                print(f"   {status} {preset_type.title()}: {match_pct:.0f}% keywords detected")
+
+        # Check section instructions
+        if instructions:
+            for section, instruction in instructions.items():
+                # Extract key terms from instruction
+                instruction_keywords = [w.lower() for w in instruction.split() if len(w) > 3][:5]
+                found = sum(1 for kw in instruction_keywords if kw in modified_prompt.lower())
+                match_pct = (found / len(instruction_keywords)) * 100 if instruction_keywords else 0
+                status = "✅" if match_pct >= 40 else "⚠️" if match_pct >= 20 else "❌"
+                section_name = self.SECTIONS[section]["name"]
+                print(f"   {status} {section_name}: {match_pct:.0f}% instruction keywords found")
+
+        print("=" * 70 + "\n")
 
     def _release_vram(self):
         """Release VRAM by clearing GPU memory and running garbage collection."""

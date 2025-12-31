@@ -25,6 +25,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import folder_paths
+import comfy.model_management
+
+
+def check_interrupt():
+    """Check if execution was interrupted and raise exception if so."""
+    comfy.model_management.throw_exception_if_processing_interrupted()
 
 
 # =============================================================================
@@ -366,8 +372,14 @@ class LocalTextModelClient:
         """Create a chat completion (OpenAI-compatible)."""
         import torch
 
+        # Check for interrupt before starting
+        check_interrupt()
+
         if self.model is None:
             self._load_model()
+
+        # Check for interrupt after model load
+        check_interrupt()
 
         # Build conversation
         conversation = []
@@ -471,8 +483,8 @@ class LocalTextModelClient:
                                 print(f"[LocalTextModelClient] Truncated phrase repetition at word {word_pos}")
                                 break
 
-        # 3. Hard limit on word count (safety net)
-        max_words = 400
+        # 3. Hard limit on word count (safety net) - generous limit for prompt modification
+        max_words = 800
         words = text.split()
         if len(words) > max_words:
             text = ' '.join(words[:max_words])

@@ -24,8 +24,15 @@ import json
 import time
 from typing import Any, Dict, Optional, Tuple
 
+import comfy.model_management
+
 from .types import AnalysisMode, GeneratorResult, Decisions, TaggerResults
 from .modes.base import BaseMode
+
+
+def check_interrupt():
+    """Check if execution was interrupted and raise exception if so."""
+    comfy.model_management.throw_exception_if_processing_interrupted()
 
 # Available Florence models for fallback VLM mode
 FLORENCE_MODELS = [
@@ -55,8 +62,8 @@ class SID_PromptGenerator:
 
     # ComfyUI node configuration
     CATEGORY = "SID Photography Toolkit"
-    RETURN_TYPES = ("STRING", "STRING", "STRING")
-    RETURN_NAMES = ("prompt", "caption", "prompt_metadata")
+    RETURN_TYPES = ("STRING", "STRING")
+    RETURN_NAMES = ("prompt", "caption")
     FUNCTION = "generate"
 
     def __init__(self):
@@ -128,7 +135,7 @@ class SID_PromptGenerator:
         release_vram: bool = False,
         generate_caption: bool = False,
         seed: int = 0,
-    ) -> Tuple[str, str, str]:
+    ) -> Tuple[str, str]:
         """
         Generate prompt from image with automatic mode selection.
 
@@ -146,7 +153,7 @@ class SID_PromptGenerator:
             seed: Random seed for reproducibility
 
         Returns:
-            Tuple of (prompt, caption, metadata_json)
+            Tuple of (prompt, caption)
         """
         start_time = time.time()
 
@@ -159,6 +166,9 @@ class SID_PromptGenerator:
         }
 
         try:
+            # Check for interrupt before starting
+            check_interrupt()
+
             result = self._execute_mode(
                 image=image,
                 llm_model=llm_model,
@@ -170,12 +180,16 @@ class SID_PromptGenerator:
                 hf_token=hf_token,
             )
 
+            # Check for interrupt after mode execution
+            check_interrupt()
+
             # Merge result metadata with base metadata
             metadata.update(result.metadata)
 
             # Generate caption if requested and LLM is available
             caption = ""
             if generate_caption and llm_model is not None:
+                check_interrupt()  # Check before caption generation
                 caption_start = time.time()
                 caption = self._generate_caption(image, llm_model, result.prompt)
                 metadata["caption_generated"] = True
@@ -192,7 +206,10 @@ class SID_PromptGenerator:
             if release_vram:
                 self._release_vram()
 
-            return (result.prompt, caption, json.dumps(metadata, indent=2))
+            # Save metadata to logs folder
+            self._save_metadata(metadata)
+
+            return (result.prompt, caption)
 
         except Exception as e:
             error_msg = str(e)
@@ -203,7 +220,10 @@ class SID_PromptGenerator:
             metadata["error"] = error_msg
             metadata["mode"] = "error"
 
-            return ("", "", json.dumps(metadata, indent=2))
+            # Save error metadata
+            self._save_metadata(metadata)
+
+            return ("", "")
 
     def _execute_mode(
         self,
@@ -346,6 +366,29 @@ class SID_PromptGenerator:
             from .modes.florence import FlorenceMode
             FlorenceMode.unload_model()
             print("[SID_PromptGenerator] Released Florence VRAM")
+
+    def _save_metadata(self, metadata: Dict[str, Any]) -> None:
+        """Save metadata to logs folder."""
+        import os
+        from datetime import datetime
+
+        # Create logs folder in the package directory
+        package_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        logs_dir = os.path.join(package_dir, "logs", "prompt_generator")
+        os.makedirs(logs_dir, exist_ok=True)
+
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        mode = metadata.get("mode", "unknown")
+        filename = f"{timestamp}_{mode}.json"
+        filepath = os.path.join(logs_dir, filename)
+
+        try:
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(metadata, f, indent=2, ensure_ascii=False)
+            print(f"[SID_PromptGenerator] Metadata saved to: logs/prompt_generator/{filename}")
+        except Exception as e:
+            print(f"[SID_PromptGenerator] Failed to save metadata: {e}")
 
     def _generate_caption(self, image: Any, llm_model: Any, prompt: str) -> str:
         """
