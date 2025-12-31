@@ -579,10 +579,10 @@ Write as a single flowing paragraph. Be precise and literal."""
                         return block.text
                 return ""
             else:
-                # Without thinking
+                # Without thinking - use 450 max per pass for focused output
                 response = client.messages.create(
                     model=llm_model.model,
-                    max_tokens=llm_model.max_tokens,
+                    max_tokens=min(450, llm_model.max_tokens),
                     temperature=llm_model.temperature,
                     system=system_prompt,
                     messages=[{
@@ -602,10 +602,10 @@ Write as a single flowing paragraph. Be precise and literal."""
                 )
                 return response.content[0].text
         else:
-            # OpenAI-compatible API (including local models)
+            # OpenAI-compatible API (including local models) - 450 max per pass
             response = client.chat.completions.create(
                 model=llm_model.model,
-                max_tokens=llm_model.max_tokens,
+                max_tokens=min(450, llm_model.max_tokens),
                 temperature=llm_model.temperature,
                 messages=[
                     {"role": "system", "content": system_prompt},

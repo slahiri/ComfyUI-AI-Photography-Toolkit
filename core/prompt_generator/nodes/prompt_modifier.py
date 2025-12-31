@@ -959,7 +959,7 @@ class SID_PromptModifier:
                 "llm_model": ("LLM_MODEL",),
             },
             "optional": {
-                "processing_mode": (["Expand", "Single Pass", "Section by Section"], {"default": "Single Pass", "tooltip": "Expand: generate detailed prompt from basic text. Single Pass/Section by Section: modify existing detailed prompt"}),
+                "processing_mode": (["Expand", "Single Pass", "Section by Section", "6-Section Generate"], {"default": "Single Pass", "tooltip": "Expand: generate from basic text. Single Pass/Section: modify existing prompt. 6-Section Generate: create each section independently (6 LLM passes)"}),
                 # Photography presets
                 "photography_template": (list(cls.PHOTOGRAPHY_TEMPLATES.keys()), {"default": "None", "tooltip": "Apply a photography style template"}),
                 "photography_effect": (list(cls.PHOTOGRAPHY_EFFECTS.keys()), {"default": "None", "tooltip": "Apply a visual effect"}),
@@ -1214,6 +1214,10 @@ class SID_PromptModifier:
                 modified_prompt = expanded_prompt
         elif processing_mode == "Single Pass":
             modified_prompt = self._single_pass_modify(prompt, llm_model, active_instructions, temperature, presets)
+        elif processing_mode == "6-Section Generate":
+            # Generate each section independently with 6 focused LLM passes
+            print(f"[SID_PromptModifier] Generating 6 sections independently...")
+            modified_prompt = self._six_section_generate(prompt, llm_model, temperature, presets, active_instructions)
         else:
             modified_prompt = self._section_by_section_modify(prompt, llm_model, active_instructions, temperature, presets)
 
@@ -1475,6 +1479,219 @@ Modify ONLY the {section_name} section according to the instruction. Keep everyt
                 # Continue with current prompt
 
         return modified_prompt
+
+    def _six_section_generate(
+        self,
+        basic_text: str,
+        llm_model: Any,
+        temperature: float,
+        presets: Dict[str, str] = None,
+        instructions: Dict[str, str] = None,
+    ) -> str:
+        """Generate each of 6 sections independently with focused LLM passes."""
+        presets = presets or {}
+        instructions = instructions or {}
+
+        # Build preset context for each section
+        preset_context = self._build_preset_context(presets)
+
+        # Define the 6 sections with focused prompts
+        sections = [
+            {
+                "name": "Subject",
+                "prompt": """Analyze the subject description and generate ONLY the SUBJECT section.
+
+Describe with technical precision (2-3 sentences max):
+- Gender, apparent age range, ethnicity/racial features
+- Face shape, skin tone, hair color/length/texture/style
+- Distinctive facial features (cheekbones, lips, jaw, etc.)
+
+Use concrete visual terms only. No poetic language.""",
+                "presets": ["ethnicity", "skin", "hair"],
+            },
+            {
+                "name": "Clothing",
+                "prompt": """Analyze the description and generate ONLY the CLOTHING section.
+
+Describe with technical precision (2-3 sentences max):
+- Each garment: type, color, material/fabric, fit
+- Style: casual, formal, streetwear, elegant, etc.
+- Accessories: jewelry, bags, glasses, hats, shoes
+
+Use concrete visual terms only. No poetic language.""",
+                "presets": ["clothing", "fashion"],
+            },
+            {
+                "name": "Pose & Expression",
+                "prompt": """Analyze the description and generate ONLY the POSE & EXPRESSION section.
+
+Describe with technical precision (2-3 sentences max):
+POSE: body orientation, posture, arm/hand position, weight distribution
+EXPRESSION: facial expression, eye direction, mouth, mood conveyed
+
+Use concrete visual terms only. No poetic language.""",
+                "presets": ["pose", "expression"],
+            },
+            {
+                "name": "Scene",
+                "prompt": """Analyze the description and generate ONLY the SCENE section.
+
+Describe with technical precision (2-3 sentences max):
+- Location type: studio, outdoor, indoor, urban, nature
+- Background elements and props
+- Atmosphere and environmental details
+
+Use concrete visual terms only. No poetic language.""",
+                "presets": [],
+            },
+            {
+                "name": "Lighting",
+                "prompt": """Analyze the description and generate ONLY the LIGHTING section.
+
+Describe with technical precision (2-3 sentences max):
+- Light quality: soft/diffused vs hard/direct
+- Direction: front, side, back, overhead
+- Color temperature: warm (3200K) vs cool (5600K+)
+- Shadow characteristics and highlights
+
+Use camera terminology (color temps, ratios). No poetic language.""",
+                "presets": ["creative", "effect"],
+            },
+            {
+                "name": "Camera",
+                "prompt": """Analyze the description and generate ONLY the CAMERA section.
+
+Describe with technical precision (2-3 sentences max):
+- Shot type: CU, MCU, MS, MFS, FS, LS
+- Camera angle: eye-level, high, low
+- Depth of field: shallow (f/1.4-2.8), medium (f/4-5.6), deep (f/8+)
+- Framing and composition
+
+Use camera terminology (f-stops, focal lengths). No poetic language.""",
+                "presets": ["template"],
+            },
+        ]
+
+        # System prompt for focused section generation
+        system_prompt = """You are an expert prompt engineer for AI image generation.
+
+Your task is to generate ONLY ONE specific section of an image prompt.
+
+RULES:
+1. Generate ONLY the section requested - nothing else
+2. Use technical, concrete visual terms only
+3. NO poetic, philosophical, or emotional language
+4. Keep output to 2-3 focused sentences (40-60 words max)
+5. Apply any provided presets naturally
+6. Output ONLY the section content - no labels or headers"""
+
+        section_outputs = []
+
+        for section in sections:
+            # Build section-specific user prompt
+            user_prompt = f"""CONCEPT TO DESCRIBE:
+{basic_text}
+
+"""
+            # Add relevant presets for this section
+            section_presets = ""
+            for preset_key in section["presets"]:
+                if presets.get(preset_key):
+                    section_presets += f"- {preset_key}: {presets[preset_key]}\n"
+
+            if section_presets:
+                user_prompt += f"""STYLE REQUIREMENTS:
+{section_presets}
+"""
+            # Add any manual instructions for related sections
+            section_instructions = ""
+            for inst_key, inst_value in instructions.items():
+                if inst_key.lower() in section["name"].lower() or section["name"].lower() in inst_key.lower():
+                    section_instructions += f"- {inst_value}\n"
+
+            if section_instructions:
+                user_prompt += f"""ADDITIONAL INSTRUCTIONS:
+{section_instructions}
+"""
+
+            user_prompt += section["prompt"]
+
+            try:
+                client = self._get_client(llm_model)
+                response = self._call_llm_short(client, llm_model, system_prompt, user_prompt, temperature, max_tokens=200)
+                cleaned = self._clean_response(response)
+                section_outputs.append(cleaned)
+                print(f"[SID_PromptModifier] Generated section: {section['name']} ({len(cleaned.split())} words)")
+            except Exception as e:
+                print(f"[SID_PromptModifier] Error generating {section['name']}: {e}")
+                section_outputs.append("")
+
+        # Assemble final prompt from all sections
+        final_prompt = " ".join([s for s in section_outputs if s])
+        word_count = len(final_prompt.split())
+        print(f"[SID_PromptModifier] 6-Section generation complete: {word_count} total words")
+
+        return final_prompt
+
+    def _build_preset_context(self, presets: Dict[str, str]) -> str:
+        """Build preset context string for prompts."""
+        context = ""
+        preset_names = {
+            "template": "Photography Template",
+            "effect": "Visual Effect",
+            "photographer": "Photographer Style",
+            "creative": "Creative Effect",
+            "cinematic": "Cinematic Style",
+            "anime": "Anime Style",
+            "gaming": "Gaming/TV Style",
+            "ethnicity": "Ethnicity",
+            "skin": "Skin",
+            "hair": "Hair Style",
+            "eye": "Eye Style",
+            "expression": "Expression",
+            "fashion": "Fashion Style",
+            "clothing": "Clothing",
+            "pose": "Pose",
+        }
+        for key, name in preset_names.items():
+            if presets.get(key):
+                context += f"- **{name}**: {presets[key]}\n"
+        return context
+
+    def _call_llm_short(
+        self,
+        client: Any,
+        llm_model: Any,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float,
+        max_tokens: int = 200,
+    ) -> str:
+        """Make LLM call with short token limit for focused output."""
+        if hasattr(client, 'messages'):
+            # Anthropic API
+            response = client.messages.create(
+                model=llm_model.model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_prompt}]
+            )
+            return response.content[0].text
+        else:
+            # OpenAI-compatible API
+            response = client.chat.completions.create(
+                model=llm_model.model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ]
+            )
+            if response and response.choices and response.choices[0].message:
+                return response.choices[0].message.content
+            return ""
 
     def _expand_prompt(
         self,

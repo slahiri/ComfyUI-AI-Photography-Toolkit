@@ -539,7 +539,7 @@ CRITICAL RULES:
             # Anthropic API
             response = client.messages.create(
                 model=llm_model.model,
-                max_tokens=500,  # Shorter for focused passes
+                max_tokens=200,  # Short focused output per section
                 temperature=llm_model.temperature,
                 system=system_prompt,
                 messages=[{
@@ -562,7 +562,7 @@ CRITICAL RULES:
             # OpenAI-compatible API
             response = client.chat.completions.create(
                 model=llm_model.model,
-                max_tokens=500,
+                max_tokens=200,  # Short focused output per section
                 temperature=llm_model.temperature,
                 messages=[
                     {"role": "system", "content": system_prompt},
