@@ -1614,6 +1614,23 @@ class SID_PromptModifier:
             preset_text += f"- **Anime Style**: {presets['anime']}\n"
         if presets.get("gaming"):
             preset_text += f"- **Gaming/TV Style**: {presets['gaming']}\n"
+        # Character presets
+        if presets.get("ethnicity"):
+            preset_text += f"- **Ethnicity**: {presets['ethnicity']}\n"
+        if presets.get("skin"):
+            preset_text += f"- **Skin**: {presets['skin']}\n"
+        if presets.get("hair"):
+            preset_text += f"- **Hair Style**: {presets['hair']}\n"
+        if presets.get("eye"):
+            preset_text += f"- **Eye Style**: {presets['eye']}\n"
+        if presets.get("expression"):
+            preset_text += f"- **Expression**: {presets['expression']}\n"
+        if presets.get("fashion"):
+            preset_text += f"- **Fashion Style**: {presets['fashion']}\n"
+        if presets.get("clothing"):
+            preset_text += f"- **Clothing**: {presets['clothing']}\n"
+        if presets.get("pose"):
+            preset_text += f"- **Pose**: {presets['pose']}\n"
 
         system_prompt = """You are an expert prompt engineer for AI image generation (Stable Diffusion, Flux, Z-Image).
 
@@ -1681,6 +1698,23 @@ RULES:
                 preset_text += f"- **Anime Style**: {presets['anime']}\n"
             if presets.get("gaming"):
                 preset_text += f"- **Gaming/TV Style**: {presets['gaming']}\n"
+            # Character presets
+            if presets.get("ethnicity"):
+                preset_text += f"- **Ethnicity**: {presets['ethnicity']}\n"
+            if presets.get("skin"):
+                preset_text += f"- **Skin**: {presets['skin']}\n"
+            if presets.get("hair"):
+                preset_text += f"- **Hair Style**: {presets['hair']}\n"
+            if presets.get("eye"):
+                preset_text += f"- **Eye Style**: {presets['eye']}\n"
+            if presets.get("expression"):
+                preset_text += f"- **Expression**: {presets['expression']}\n"
+            if presets.get("fashion"):
+                preset_text += f"- **Fashion Style**: {presets['fashion']}\n"
+            if presets.get("clothing"):
+                preset_text += f"- **Clothing**: {presets['clothing']}\n"
+            if presets.get("pose"):
+                preset_text += f"- **Pose**: {presets['pose']}\n"
 
             preset_system = """You are an expert prompt engineer for AI image generation.
 
@@ -1772,6 +1806,23 @@ Modify ONLY the {section_name} section according to the instruction. Keep everyt
             preset_text += f"- **Anime Style**: {presets['anime']}\n"
         if presets.get("gaming"):
             preset_text += f"- **Gaming/TV Style**: {presets['gaming']}\n"
+        # Character presets
+        if presets.get("ethnicity"):
+            preset_text += f"- **Ethnicity**: {presets['ethnicity']}\n"
+        if presets.get("skin"):
+            preset_text += f"- **Skin**: {presets['skin']}\n"
+        if presets.get("hair"):
+            preset_text += f"- **Hair Style**: {presets['hair']}\n"
+        if presets.get("eye"):
+            preset_text += f"- **Eye Style**: {presets['eye']}\n"
+        if presets.get("expression"):
+            preset_text += f"- **Expression**: {presets['expression']}\n"
+        if presets.get("fashion"):
+            preset_text += f"- **Fashion Style**: {presets['fashion']}\n"
+        if presets.get("clothing"):
+            preset_text += f"- **Clothing**: {presets['clothing']}\n"
+        if presets.get("pose"):
+            preset_text += f"- **Pose**: {presets['pose']}\n"
 
         system_prompt = """You are an expert prompt engineer for AI image generation (Stable Diffusion, Flux, Midjourney).
 
