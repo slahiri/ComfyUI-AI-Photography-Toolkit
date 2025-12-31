@@ -898,6 +898,115 @@ class SID_PromptModifier:
         "Minimal Makeup": "minimal makeup skin, enhanced natural, fresh",
     }
 
+    # Camera technical specifications
+    CAMERAS = {
+        "None": "",
+        # Professional DSLRs
+        "Canon EOS R5": "shot on Canon EOS R5, 45MP full-frame",
+        "Canon EOS 5D Mark IV": "shot on Canon EOS 5D Mark IV, full-frame DSLR",
+        "Nikon Z9": "shot on Nikon Z9, 45.7MP full-frame mirrorless",
+        "Nikon D850": "shot on Nikon D850, 45.7MP full-frame",
+        "Sony A7R V": "shot on Sony A7R V, 61MP full-frame",
+        "Sony A7 IV": "shot on Sony A7 IV, 33MP full-frame",
+        "Sony A1": "shot on Sony A1, 50.1MP full-frame flagship",
+        # Medium Format
+        "Hasselblad X2D": "shot on Hasselblad X2D 100C, 100MP medium format",
+        "Fujifilm GFX 100S": "shot on Fujifilm GFX 100S, 102MP medium format",
+        "Phase One IQ4": "shot on Phase One IQ4, 150MP medium format",
+        # Mirrorless
+        "Fujifilm X-T5": "shot on Fujifilm X-T5, APS-C mirrorless",
+        "Leica M11": "shot on Leica M11, 60MP rangefinder",
+        "Leica SL2": "shot on Leica SL2, 47MP full-frame",
+        # Cinema
+        "RED V-Raptor": "shot on RED V-Raptor, 8K cinema camera",
+        "ARRI Alexa Mini": "shot on ARRI Alexa Mini, cinema camera",
+        "Blackmagic URSA": "shot on Blackmagic URSA, cinema camera",
+        # Vintage/Film
+        "Mamiya RZ67": "shot on Mamiya RZ67, medium format film",
+        "Contax 645": "shot on Contax 645, medium format film",
+        "Rolleiflex": "shot on Rolleiflex, twin-lens reflex",
+    }
+
+    LENSES = {
+        "None": "",
+        # Prime lenses
+        "24mm f/1.4": "24mm f/1.4 wide-angle prime",
+        "35mm f/1.4": "35mm f/1.4 prime lens",
+        "50mm f/1.2": "50mm f/1.2 standard prime, classic rendering",
+        "50mm f/1.4": "50mm f/1.4 standard prime",
+        "85mm f/1.2": "85mm f/1.2 portrait lens, creamy bokeh",
+        "85mm f/1.4": "85mm f/1.4 portrait prime",
+        "105mm f/1.4": "105mm f/1.4 portrait prime, subject isolation",
+        "135mm f/1.8": "135mm f/1.8 telephoto prime",
+        # Zoom lenses
+        "24-70mm f/2.8": "24-70mm f/2.8 professional zoom",
+        "70-200mm f/2.8": "70-200mm f/2.8 telephoto zoom",
+        "16-35mm f/2.8": "16-35mm f/2.8 wide-angle zoom",
+        # Specialty
+        "100mm Macro": "100mm f/2.8 macro lens, sharp detail",
+        "Tilt-Shift 24mm": "24mm tilt-shift lens, selective focus",
+        "Tilt-Shift 45mm": "45mm tilt-shift lens, perspective control",
+        "Fisheye 15mm": "15mm fisheye lens, 180° field of view",
+        # Vintage
+        "Helios 44-2": "Helios 44-2 58mm, swirly bokeh vintage",
+        "Zeiss Planar 50mm": "Zeiss Planar 50mm f/1.4, classic rendering",
+        "Leica Summilux 50mm": "Leica Summilux 50mm f/1.4, legendary sharpness",
+    }
+
+    ISO_VALUES = {
+        "None": "",
+        "ISO 50": "ISO 50, ultra-low noise, maximum detail",
+        "ISO 100": "ISO 100, native sensitivity, clean image",
+        "ISO 200": "ISO 200, low noise",
+        "ISO 400": "ISO 400, slight grain",
+        "ISO 800": "ISO 800, visible grain, good low-light",
+        "ISO 1600": "ISO 1600, moderate grain",
+        "ISO 3200": "ISO 3200, noticeable grain, low-light",
+        "ISO 6400": "ISO 6400, high grain, very low-light",
+        "ISO 12800": "ISO 12800, heavy grain, extreme low-light",
+        "ISO 25600": "ISO 25600, extreme grain, artistic noise",
+    }
+
+    APERTURES = {
+        "None": "",
+        "f/1.2": "f/1.2, extremely shallow depth of field, razor-thin focus",
+        "f/1.4": "f/1.4, very shallow DOF, strong background blur",
+        "f/1.8": "f/1.8, shallow DOF, creamy bokeh",
+        "f/2.0": "f/2.0, shallow depth of field",
+        "f/2.8": "f/2.8, moderate DOF, professional standard",
+        "f/4.0": "f/4.0, balanced DOF, sharp across frame",
+        "f/5.6": "f/5.6, moderate depth of field",
+        "f/8.0": "f/8, deep DOF, sharp throughout",
+        "f/11": "f/11, deep focus, landscape standard",
+        "f/16": "f/16, maximum depth of field",
+        "f/22": "f/22, extreme DOF, potential diffraction",
+    }
+
+    SHUTTER_SPEEDS = {
+        "None": "",
+        # Fast - freeze motion
+        "1/8000s": "1/8000s shutter, freeze fast action, sharp motion",
+        "1/4000s": "1/4000s shutter, freeze motion",
+        "1/2000s": "1/2000s shutter, freeze movement",
+        "1/1000s": "1/1000s shutter, stop action",
+        "1/500s": "1/500s shutter, freeze moderate motion",
+        "1/250s": "1/250s shutter, standard handheld",
+        "1/125s": "1/125s shutter, general photography",
+        # Medium
+        "1/60s": "1/60s shutter, slight motion blur possible",
+        "1/30s": "1/30s shutter, tripod recommended",
+        # Slow - motion blur
+        "1/15s": "1/15s shutter, intentional motion blur",
+        "1/8s": "1/8s shutter, motion trails",
+        "1/4s": "1/4s shutter, long exposure, motion blur",
+        "1/2s": "1/2s shutter, light trails, water blur",
+        "1s": "1 second exposure, smooth water, light streaks",
+        "2s": "2 second exposure, silky water, car trails",
+        "5s": "5 second exposure, cloud movement, light painting",
+        "30s": "30 second exposure, star trails, long light trails",
+        "Bulb": "bulb mode, extended exposure, night photography",
+    }
+
     # Conflicting preset combinations to warn about
     PRESET_CONFLICTS = {
         # Creative effects conflicts
@@ -985,6 +1094,12 @@ class SID_PromptModifier:
                 "pose_instruction": ("STRING", {"multiline": True, "default": "", "tooltip": "How to modify pose (e.g., 'More confident stance, hands on hips')"}),
                 "environment_instruction": ("STRING", {"multiline": True, "default": "", "tooltip": "How to modify environment (e.g., 'Move to beach at sunset')"}),
                 "lighting_instruction": ("STRING", {"multiline": True, "default": "", "tooltip": "How to modify lighting (e.g., 'Golden hour, warm tones')"}),
+                # Camera technical presets
+                "camera_body": (list(cls.CAMERAS.keys()), {"default": "None", "tooltip": "Camera body/model for technical metadata"}),
+                "lens": (list(cls.LENSES.keys()), {"default": "None", "tooltip": "Lens type and focal length"}),
+                "aperture": (list(cls.APERTURES.keys()), {"default": "None", "tooltip": "Aperture/f-stop for depth of field"}),
+                "shutter_speed": (list(cls.SHUTTER_SPEEDS.keys()), {"default": "None", "tooltip": "Shutter speed for motion control"}),
+                "iso": (list(cls.ISO_VALUES.keys()), {"default": "None", "tooltip": "ISO sensitivity and grain level"}),
                 "camera_instruction": ("STRING", {"multiline": True, "default": "", "tooltip": "How to modify camera (e.g., 'Close-up portrait, shallow DOF')"}),
                 "generate_caption": ("BOOLEAN", {"default": False, "tooltip": "Generate Instagram caption from modified prompt"}),
                 "release_vram": ("BOOLEAN", {"default": True, "tooltip": "Release VRAM after execution (recommended)"}),
@@ -1020,6 +1135,12 @@ class SID_PromptModifier:
         pose_instruction: str = "",
         environment_instruction: str = "",
         lighting_instruction: str = "",
+        # Camera technical presets
+        camera_body: str = "None",
+        lens: str = "None",
+        aperture: str = "None",
+        shutter_speed: str = "None",
+        iso: str = "None",
         camera_instruction: str = "",
         generate_caption: bool = False,
         release_vram: bool = True,
@@ -1153,6 +1274,17 @@ class SID_PromptModifier:
         # Pose preset
         if pose_preset != "None":
             presets["pose"] = self.POSES.get(pose_preset, "")
+        # Camera technical presets
+        if camera_body != "None":
+            presets["camera_body"] = self.CAMERAS.get(camera_body, "")
+        if lens != "None":
+            presets["lens"] = self.LENSES.get(lens, "")
+        if aperture != "None":
+            presets["aperture"] = self.APERTURES.get(aperture, "")
+        if shutter_speed != "None":
+            presets["shutter_speed"] = self.SHUTTER_SPEEDS.get(shutter_speed, "")
+        if iso != "None":
+            presets["iso"] = self.ISO_VALUES.get(iso, "")
 
         # If no instructions or presets, return original prompt
         if not active_instructions and not presets:
@@ -1195,6 +1327,17 @@ class SID_PromptModifier:
                 preset_names.append(f"Clothing: {clothing_preset}")
             if pose_preset != "None":
                 preset_names.append(f"Pose: {pose_preset}")
+            # Camera technical specs
+            if camera_body != "None":
+                preset_names.append(f"Camera: {camera_body}")
+            if lens != "None":
+                preset_names.append(f"Lens: {lens}")
+            if aperture != "None":
+                preset_names.append(f"Aperture: {aperture}")
+            if shutter_speed != "None":
+                preset_names.append(f"Shutter: {shutter_speed}")
+            if iso != "None":
+                preset_names.append(f"ISO: {iso}")
             print(f"[SID_PromptModifier] Applying: {', '.join(preset_names)}")
 
             # Check for conflicting presets
@@ -1311,6 +1454,20 @@ class SID_PromptModifier:
             preset_text += f"- **Clothing**: {presets['clothing']}\n"
         if presets.get("pose"):
             preset_text += f"- **Pose**: {presets['pose']}\n"
+        # Camera technical specs - add to Camera section
+        camera_specs = []
+        if presets.get("camera_body"):
+            camera_specs.append(presets['camera_body'])
+        if presets.get("lens"):
+            camera_specs.append(presets['lens'])
+        if presets.get("aperture"):
+            camera_specs.append(presets['aperture'])
+        if presets.get("shutter_speed"):
+            camera_specs.append(presets['shutter_speed'])
+        if presets.get("iso"):
+            camera_specs.append(presets['iso'])
+        if camera_specs:
+            preset_text += f"- **Camera Technical**: {', '.join(camera_specs)}\n"
 
         system_prompt = """You are an expert prompt engineer for AI image generation (Stable Diffusion, Flux, Z-Image).
 
@@ -1401,6 +1558,20 @@ RULES:
                 preset_text += f"- **Clothing**: {presets['clothing']}\n"
             if presets.get("pose"):
                 preset_text += f"- **Pose**: {presets['pose']}\n"
+            # Camera technical specs
+            camera_specs = []
+            if presets.get("camera_body"):
+                camera_specs.append(presets['camera_body'])
+            if presets.get("lens"):
+                camera_specs.append(presets['lens'])
+            if presets.get("aperture"):
+                camera_specs.append(presets['aperture'])
+            if presets.get("shutter_speed"):
+                camera_specs.append(presets['shutter_speed'])
+            if presets.get("iso"):
+                camera_specs.append(presets['iso'])
+            if camera_specs:
+                preset_text += f"- **Camera Technical**: {', '.join(camera_specs)}\n"
 
             preset_system = """You are an expert prompt engineer for AI image generation.
 
@@ -1566,9 +1737,10 @@ Describe with technical precision (2-3 sentences max):
 - Camera angle: eye-level, high, low
 - Depth of field: shallow (f/1.4-2.8), medium (f/4-5.6), deep (f/8+)
 - Framing and composition
+- Camera body, lens, aperture, shutter speed, ISO if specified
 
 Use camera terminology (f-stops, focal lengths). No poetic language.""",
-                "presets": ["template"],
+                "presets": ["template", "camera_body", "lens", "aperture", "shutter_speed", "iso"],
             },
         ]
 
@@ -1660,6 +1832,20 @@ RULES:
         for key, name in preset_names.items():
             if presets.get(key):
                 context += f"- **{name}**: {presets[key]}\n"
+        # Camera technical specs
+        camera_specs = []
+        if presets.get("camera_body"):
+            camera_specs.append(presets['camera_body'])
+        if presets.get("lens"):
+            camera_specs.append(presets['lens'])
+        if presets.get("aperture"):
+            camera_specs.append(presets['aperture'])
+        if presets.get("shutter_speed"):
+            camera_specs.append(presets['shutter_speed'])
+        if presets.get("iso"):
+            camera_specs.append(presets['iso'])
+        if camera_specs:
+            context += f"- **Camera Technical**: {', '.join(camera_specs)}\n"
         return context
 
     def _call_llm_short(
@@ -1740,6 +1926,20 @@ RULES:
             preset_text += f"- **Clothing**: {presets['clothing']}\n"
         if presets.get("pose"):
             preset_text += f"- **Pose**: {presets['pose']}\n"
+        # Camera technical specs
+        camera_specs = []
+        if presets.get("camera_body"):
+            camera_specs.append(presets['camera_body'])
+        if presets.get("lens"):
+            camera_specs.append(presets['lens'])
+        if presets.get("aperture"):
+            camera_specs.append(presets['aperture'])
+        if presets.get("shutter_speed"):
+            camera_specs.append(presets['shutter_speed'])
+        if presets.get("iso"):
+            camera_specs.append(presets['iso'])
+        if camera_specs:
+            preset_text += f"- **Camera Technical**: {', '.join(camera_specs)}\n"
 
         system_prompt = """You are an expert prompt engineer for AI image generation (Stable Diffusion, Flux, Z-Image).
 
