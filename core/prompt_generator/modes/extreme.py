@@ -535,11 +535,15 @@ CRITICAL RULES:
         if prompt_config and prompt_config.get("system_prompt"):
             system_prompt = prompt_config["system_prompt"]
 
+        # Determine max tokens: 256 for local, user-specified for API
+        is_local = llm_model.provider.lower() == "local"
+        max_tokens = 256 if is_local else llm_model.max_tokens
+
         if hasattr(client, 'messages'):
-            # Anthropic API
+            # Anthropic API - uses user-specified tokens
             response = client.messages.create(
                 model=llm_model.model,
-                max_tokens=200,  # Short focused output per section
+                max_tokens=llm_model.max_tokens,
                 temperature=llm_model.temperature,
                 system=system_prompt,
                 messages=[{
@@ -559,10 +563,10 @@ CRITICAL RULES:
             )
             return response.content[0].text
         else:
-            # OpenAI-compatible API
+            # OpenAI-compatible API - local uses 256 fixed, API uses user-specified
             response = client.chat.completions.create(
                 model=llm_model.model,
-                max_tokens=200,  # Short focused output per section
+                max_tokens=max_tokens,
                 temperature=llm_model.temperature,
                 messages=[
                     {"role": "system", "content": system_prompt},

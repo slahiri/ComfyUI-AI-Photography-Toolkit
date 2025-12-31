@@ -1585,6 +1585,10 @@ RULES:
 5. Apply any provided presets naturally
 6. Output ONLY the section content - no labels or headers"""
 
+        # Determine max tokens: 512 for local LLM, user-specified for API
+        is_local = llm_model.provider.lower() == "local"
+        section_max_tokens = 512 if is_local else llm_model.max_tokens
+
         section_outputs = []
 
         for section in sections:
@@ -1618,7 +1622,7 @@ RULES:
 
             try:
                 client = self._get_client(llm_model)
-                response = self._call_llm_short(client, llm_model, system_prompt, user_prompt, temperature, max_tokens=200)
+                response = self._call_llm_short(client, llm_model, system_prompt, user_prompt, temperature, max_tokens=section_max_tokens)
                 cleaned = self._clean_response(response)
                 section_outputs.append(cleaned)
                 print(f"[SID_PromptModifier] Generated section: {section['name']} ({len(cleaned.split())} words)")
