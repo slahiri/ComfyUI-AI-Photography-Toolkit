@@ -14,6 +14,7 @@ Sections (Z-Image structure):
 """
 
 import base64
+import hashlib
 import io
 import json
 import time
@@ -38,6 +39,9 @@ class SID_PromptModifier:
     RETURN_TYPES = ("STRING", "STRING")
     RETURN_NAMES = ("prompt", "caption")
     FUNCTION = "modify"
+
+    # Class-level cache for prompt/caption results
+    _cache: Dict[str, Tuple[str, str]] = {}
 
     # Section definitions for Z-Image prompt structure
     SECTIONS = {
@@ -211,6 +215,30 @@ class SID_PromptModifier:
         """
         start_time = time.time()
 
+        # Build cache key from all inputs
+        cache_key = self._build_cache_key(
+            prompt=prompt,
+            seed=seed,
+            processing_mode=processing_mode,
+            photography_template=photography_template,
+            photography_effect=photography_effect,
+            photographer_style=photographer_style,
+            subject_instruction=subject_instruction,
+            clothing_instruction=clothing_instruction,
+            pose_instruction=pose_instruction,
+            environment_instruction=environment_instruction,
+            lighting_instruction=lighting_instruction,
+            camera_instruction=camera_instruction,
+            generate_caption=generate_caption,
+            model=llm_model.model if llm_model else "",
+        )
+
+        # Check cache
+        if cache_key in SID_PromptModifier._cache:
+            cached_prompt, cached_caption = SID_PromptModifier._cache[cache_key]
+            print(f"[SID_PromptModifier] Cache hit - returning cached result (seed: {seed})")
+            return (cached_prompt, cached_caption)
+
         # Check for interrupt before starting
         check_interrupt()
 
@@ -297,7 +325,21 @@ class SID_PromptModifier:
         elapsed = int((time.time() - start_time) * 1000)
         print(f"[SID_PromptModifier] Completed in {elapsed}ms (mode: {processing_mode}, temp: {temperature})")
 
+        # Store in cache
+        SID_PromptModifier._cache[cache_key] = (modified_prompt, caption)
+        print(f"[SID_PromptModifier] Result cached (seed: {seed})")
+
         return (modified_prompt, caption)
+
+    def _build_cache_key(self, **kwargs) -> str:
+        """Build a cache key from all input parameters."""
+        # Create a stable string representation of all inputs
+        key_parts = []
+        for k, v in sorted(kwargs.items()):
+            key_parts.append(f"{k}={v}")
+        key_string = "|".join(key_parts)
+        # Hash it for a compact key
+        return hashlib.md5(key_string.encode()).hexdigest()
 
     def _single_pass_modify(
         self,
