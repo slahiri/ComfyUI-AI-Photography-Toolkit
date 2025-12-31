@@ -113,8 +113,11 @@ class SID_PromptGenerator:
         image: Any,
         seed: int,
         llm_model: Any,
+        llm_model_text: Any,
         user_prompt: Optional[Dict[str, str]],
         analysis_mode: str,
+        output_language: str,
+        tokens_per_pass: str,
         tag_threshold: float,
         max_injected_tags: int,
         florence_model: str,
@@ -139,7 +142,10 @@ class SID_PromptGenerator:
             f"img={hashlib.md5(img_hash_data.encode()).hexdigest()[:16]}",
             f"model={llm_model.model if llm_model else 'florence'}",
             f"provider={llm_model.provider if llm_model else 'none'}",
+            f"llm_model_text={llm_model_text.model if llm_model_text else 'none'}",
             f"mode={analysis_mode}",
+            f"lang={output_language}",
+            f"tokens={tokens_per_pass}",
             f"threshold={tag_threshold}",
             f"max_tags={max_injected_tags}",
             f"florence={florence_model}",
@@ -162,14 +168,18 @@ class SID_PromptGenerator:
             },
             "optional": {
                 "llm_model": ("LLM_MODEL",),
+                "llm_model_text": ("LLM_MODEL", {"tooltip": "Optional text-only LLM for optimization pass (Detailed/Extreme modes). If not provided, uses main llm_model."}),
                 "user_prompt": ("USER_PROMPT", {"tooltip": "Custom system/user prompts from SID User Prompt node"}),
                 "analysis_mode": (["Quick", "Standard", "Detailed", "Extreme"], {"default": "Standard"}),
+                "output_language": (["English", "Chinese"], {"default": "English", "tooltip": "Output language for generated prompts"}),
+                "tokens_per_pass": (["64", "128", "256", "512"], {"default": "256", "tooltip": "Max tokens per LLM pass for multi-pass modes (Detailed/Extreme)"}),
                 "tag_threshold": ("FLOAT", {"default": 0.65, "min": 0.1, "max": 1.0, "step": 0.05, "tooltip": "Minimum confidence threshold for tags (0.65 = 65%)"}),
                 "max_injected_tags": ("INT", {"default": 30, "min": 5, "max": 100, "step": 5, "tooltip": "Maximum number of detected tags to inject into LLM prompt"}),
                 "florence_model": (FLORENCE_MODELS, {"default": FLORENCE_MODELS[0], "tooltip": "Florence model for fallback VLM mode (when no LLM connected)"}),
                 "hf_token": ("STRING", {"default": "", "tooltip": "HuggingFace token for gated models (Florence, etc.)"}),
                 "release_vram": ("BOOLEAN", {"default": False, "tooltip": "Unload Florence model from VRAM after use"}),
                 "generate_caption": ("BOOLEAN", {"default": False, "tooltip": "Generate Instagram captions (3 styles: Poetic, Technical, Personal)"}),
+                "clear_cache": ("BOOLEAN", {"default": False, "tooltip": "Clear internal prompt cache before generation (forces fresh LLM call)"}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "tooltip": "Random seed for reproducibility (change to force re-generation)"}),
             },
         }
@@ -178,14 +188,18 @@ class SID_PromptGenerator:
         self,
         image: Any,
         llm_model: Any = None,
+        llm_model_text: Any = None,
         user_prompt: Optional[Dict[str, str]] = None,
         analysis_mode: str = "Standard",
+        output_language: str = "English",
+        tokens_per_pass: str = "256",
         tag_threshold: float = 0.65,
         max_injected_tags: int = 30,
         florence_model: str = "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
         hf_token: str = "",
         release_vram: bool = False,
         generate_caption: bool = False,
+        clear_cache: bool = False,
         seed: int = 0,
     ) -> Tuple[str, str]:
         """
@@ -194,14 +208,18 @@ class SID_PromptGenerator:
         Args:
             image: Image tensor from ComfyUI
             llm_model: Optional LLMModelConfig from SID_LLM_API or SID_LLM_Local
+            llm_model_text: Optional text-only LLM for optimization pass (if not provided, uses llm_model)
             user_prompt: Optional custom system/user prompts from SID_UserPrompt node
             analysis_mode: Analysis depth (Quick/Standard/Detailed/Extreme)
+            output_language: Output language for generated prompts (English/Chinese)
+            tokens_per_pass: Max tokens per LLM pass for multi-pass modes (64/128/256/512)
             tag_threshold: Minimum confidence threshold for tags (0.65 = 65%)
             max_injected_tags: Maximum number of tags to inject into LLM prompt
             florence_model: Florence model to use for fallback VLM mode
             hf_token: HuggingFace token for gated models (Florence, etc.)
             release_vram: Unload Florence model from VRAM after use
             generate_caption: Generate Instagram captions (3 styles)
+            clear_cache: Clear internal cache before generation (forces fresh LLM call)
             seed: Random seed for reproducibility
 
         Returns:
@@ -209,13 +227,21 @@ class SID_PromptGenerator:
         """
         start_time = time.time()
 
+        # Clear cache if requested
+        if clear_cache:
+            SID_PromptGenerator._cache.clear()
+            print("[SID_PromptGenerator] Cache cleared")
+
         # Build cache key from all inputs
         cache_key = self._build_cache_key(
             image=image,
             seed=seed,
             llm_model=llm_model,
+            llm_model_text=llm_model_text,
             user_prompt=user_prompt,
             analysis_mode=analysis_mode,
+            output_language=output_language,
+            tokens_per_pass=tokens_per_pass,
             tag_threshold=tag_threshold,
             max_injected_tags=max_injected_tags,
             florence_model=florence_model,
@@ -243,8 +269,11 @@ class SID_PromptGenerator:
             result = self._execute_mode(
                 image=image,
                 llm_model=llm_model,
+                llm_model_text=llm_model_text,
                 user_prompt=user_prompt,
                 analysis_mode=analysis_mode,
+                output_language=output_language,
+                tokens_per_pass=int(tokens_per_pass),
                 tag_threshold=tag_threshold,
                 max_injected_tags=max_injected_tags,
                 florence_model=florence_model,
@@ -304,8 +333,11 @@ class SID_PromptGenerator:
         self,
         image: Any,
         llm_model: Any,
+        llm_model_text: Any,
         user_prompt: Optional[Dict[str, str]],
         analysis_mode: str,
+        output_language: str = "English",
+        tokens_per_pass: int = 256,
         tag_threshold: float = 0.65,
         max_injected_tags: int = 30,
         florence_model: str = "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
@@ -325,7 +357,7 @@ class SID_PromptGenerator:
         # Priority 2: LLM modes based on analysis_mode
         mode_key = analysis_mode.lower()
 
-        return self._execute_llm_mode(image, llm_model, mode_key, user_prompt, tag_threshold, max_injected_tags)
+        return self._execute_llm_mode(image, llm_model, llm_model_text, mode_key, user_prompt, output_language, tokens_per_pass, tag_threshold, max_injected_tags)
 
     def _execute_florence(self, image: Any, florence_model: str = "MiaoshouAI/Florence-2-large-PromptGen-v2.0", hf_token: str = "") -> GeneratorResult:
         """Execute Florence mode - VLM description."""
@@ -352,8 +384,11 @@ class SID_PromptGenerator:
         self,
         image: Any,
         llm_model: Any,
+        llm_model_text: Any,
         mode_key: str,
         user_prompt: Optional[Dict[str, str]] = None,
+        output_language: str = "English",
+        tokens_per_pass: int = 256,
         tag_threshold: float = 0.65,
         max_injected_tags: int = 30,
     ) -> GeneratorResult:
@@ -384,9 +419,12 @@ class SID_PromptGenerator:
         return mode.execute(
             image=image,
             llm_model=llm_model,
+            llm_model_text=llm_model_text,
             tagger_results=tagger_results,
             decisions=decisions,
             prompt_config=user_prompt,
+            output_language=output_language,
+            tokens_per_pass=tokens_per_pass,
             tag_threshold=tag_threshold,
             max_injected_tags=max_injected_tags,
         )

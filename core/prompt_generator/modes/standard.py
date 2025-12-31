@@ -268,26 +268,25 @@ class StandardMode(BaseMode):
         client = self._get_client(llm_model)
 
         # Default system prompt optimized for Z-Image/Flux generation
-        default_system = """You are an expert visual analyst creating prompts for AI image generation (Z-Image/Flux).
+        default_system = """You are an expert visual analyst creating comprehensive prompts for AI image generation.
 
-CRITICAL RULES:
-- Use CONCRETE, SPECIFIC, VISUAL descriptions only
-- Describe what you SEE, not what you interpret or feel
-- NO poetic, philosophical, abstract, or emotional language
-- NO metaphors, symbolism, or artistic interpretation
-- NO phrases like "captures the essence", "evokes a sense of", "speaks to"
-- NO commentary about meaning, mood interpretation, or artistic intent
-- Focus on: subject details, colors, textures, lighting, composition, materials
+LANGUAGE RULES:
+- Use SIMPLE, COMMON visual terms (NOT medical/anatomical jargon)
+- Say "back of head" not "occipital bone", "finger" not "phalanx", "lower back" not "lumbar region"
+- Use photography and fashion terminology
+- NO poetic, philosophical, or emotional language
+- NO speculative words (possibly, perhaps, appears to, seems to, suggesting, implying)
 
-STRUCTURE your description:
-1. Main subject with specific attributes (age, ethnicity, build, features)
-2. Clothing/accessories with materials, colors, fit
-3. Pose, expression, body position
-4. Environment/background with concrete details
-5. Lighting quality, direction, color temperature
-6. Camera angle, framing, depth of field
+REQUIRED SECTIONS - You MUST cover ALL six:
+1. SUBJECT: age range, ethnicity, body type, face shape, skin tone, hair color/length/style, distinctive features
+2. CLOTHING: every garment with color, fabric type, fit, style; all accessories with materials
+3. POSE: body orientation (facing/profile/back), posture, arm positions, hand positions, weight distribution
+4. EXPRESSION: facial expression, eye direction, mouth, overall mood conveyed
+5. ENVIRONMENT: setting type, background elements, props, weather/atmosphere
+6. LIGHTING & CAMERA: light direction, quality, color temp, shadows; shot type, angle, depth of field
 
-Write as a single flowing paragraph. Be precise and literal."""
+IMPORTANT: Continue writing until you have described ALL six sections. Do not stop early.
+Output as a single detailed flowing paragraph."""
 
         # Use custom prompts if provided
         if prompt_config:

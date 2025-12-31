@@ -28,6 +28,13 @@ class QuickMode(BaseMode):
     # System prompt optimized for Z-Image/Flux generation
     SYSTEM_PROMPT = """You are an expert visual analyst creating prompts for AI image generation (Z-Image/Flux).
 
+LANGUAGE RULES:
+- Use SIMPLE, COMMON visual terms (NOT medical/anatomical jargon)
+- Say "back of head" not "occipital bone", "finger" not "phalanx", "lower back" not "lumbar region"
+- Say "upper back" not "thoracic", "shoulder blades" not "scapular", "sides" not "ribcage"
+- Use photography and fashion terminology, not clinical/medical terms
+- NO speculative language (possibly, perhaps, appears to, seems to, suggesting, implying, likely, probably)
+
 CRITICAL RULES:
 - Use CONCRETE, SPECIFIC, VISUAL descriptions only
 - Describe what you SEE, not what you interpret or feel

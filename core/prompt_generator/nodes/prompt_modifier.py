@@ -1188,7 +1188,10 @@ class SID_PromptModifier:
                 "llm_model": ("LLM_MODEL",),
             },
             "optional": {
+                "modifier_enabled": ("BOOLEAN", {"default": True, "tooltip": "Enable prompt modification. If disabled, input prompt passes through unchanged."}),
                 "processing_mode": (["Expand", "Single Pass", "Section by Section", "6-Section Generate"], {"default": "Single Pass", "tooltip": "Expand: generate from basic text. Single Pass/Section: modify existing prompt. 6-Section Generate: create each section independently (6 LLM passes)"}),
+                "output_language": (["English", "Chinese"], {"default": "English", "tooltip": "Output language for generated/modified prompts"}),
+                "tokens_per_pass": (["64", "128", "256", "512"], {"default": "256", "tooltip": "Max tokens per LLM pass for 6-Section Generate mode"}),
                 # Photography presets
                 "photography_template": (list(cls.PHOTOGRAPHY_TEMPLATES.keys()), {"default": "None", "tooltip": "Apply a photography style template"}),
                 "photography_effect": (list(cls.PHOTOGRAPHY_EFFECTS.keys()), {"default": "None", "tooltip": "Apply a visual effect"}),
@@ -1225,6 +1228,7 @@ class SID_PromptModifier:
                 "nsfw_modifier": (list(cls.NSFW_MODIFIERS.keys()), {"default": "None", "tooltip": "NSFW/adult content modifier (nudity, exposure levels)"}),
                 "generate_caption": ("BOOLEAN", {"default": False, "tooltip": "Generate Instagram caption from modified prompt"}),
                 "release_vram": ("BOOLEAN", {"default": True, "tooltip": "Release VRAM after execution (recommended)"}),
+                "clear_cache": ("BOOLEAN", {"default": False, "tooltip": "Clear internal prompt cache before modification (forces fresh LLM call)"}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "tooltip": "Random seed for reproducibility (change to force re-generation)"}),
             },
         }
@@ -1233,7 +1237,10 @@ class SID_PromptModifier:
         self,
         prompt: str,
         llm_model: Any,
+        modifier_enabled: bool = True,
         processing_mode: str = "Single Pass",
+        output_language: str = "English",
+        tokens_per_pass: str = "256",
         photography_template: str = "None",
         photography_effect: str = "None",
         photographer_style: str = "None",
@@ -1268,6 +1275,7 @@ class SID_PromptModifier:
         nsfw_modifier: str = "None",
         generate_caption: bool = False,
         release_vram: bool = True,
+        clear_cache: bool = False,
         seed: int = 0,
     ) -> Tuple[str, str]:
         """
@@ -1276,6 +1284,7 @@ class SID_PromptModifier:
         Args:
             prompt: Input prompt to modify
             llm_model: LLM configuration (temperature and other params from LLM node)
+            modifier_enabled: If False, bypass all modification and return input prompt unchanged
             processing_mode: "Single Pass" or "Section by Section"
             photography_template: Photography style template to apply
             photography_effect: Visual effect to apply
@@ -1300,11 +1309,22 @@ class SID_PromptModifier:
             camera_instruction: Modification for camera section
             generate_caption: Whether to generate Instagram caption
             release_vram: Release VRAM after execution
+            clear_cache: Clear internal cache before modification (forces fresh LLM call)
             seed: Random seed for reproducibility (change to force re-generation)
 
         Returns:
             Tuple of (modified_prompt, caption)
         """
+        # Clear cache if requested
+        if clear_cache:
+            SID_PromptModifier._cache.clear()
+            print("[SID_PromptModifier] Cache cleared")
+
+        # Bypass if modifier is disabled
+        if not modifier_enabled:
+            print("[SID_PromptModifier] Modifier disabled - passing through input prompt unchanged")
+            return (prompt, "")
+
         start_time = time.time()
 
         # Build cache key from all inputs
@@ -1489,7 +1509,7 @@ class SID_PromptModifier:
         elif processing_mode == "6-Section Generate":
             # Generate each section independently with 6 focused LLM passes
             print(f"[SID_PromptModifier] Generating 6 sections independently...")
-            modified_prompt = self._six_section_generate(prompt, llm_model, temperature, presets, active_instructions)
+            modified_prompt = self._six_section_generate(prompt, llm_model, temperature, presets, active_instructions, output_language, int(tokens_per_pass))
         else:
             modified_prompt = self._section_by_section_modify(prompt, llm_model, active_instructions, temperature, presets)
 
@@ -1604,6 +1624,13 @@ class SID_PromptModifier:
         system_prompt = """You are an expert prompt engineer for AI image generation (Stable Diffusion, Flux, Z-Image).
 
 Your task is to modify an existing image prompt based on specific instructions and style presets.
+
+LANGUAGE RULES:
+- Use SIMPLE, COMMON visual terms (NOT medical/anatomical jargon)
+- Say "back of head" not "occipital bone", "finger" not "phalanx", "lower back" not "lumbar region"
+- Say "upper back" not "thoracic", "shoulder blades" not "scapular", "sides" not "ribcage"
+- Use photography and fashion terminology, not clinical/medical terms
+- NO speculative language (possibly, perhaps, appears to, seems to, suggesting, implying, likely, probably)
 
 CAMERA THINKING - Write like setting camera parameters:
 - Use technical, concrete terms (not poetic/literary language)
@@ -1793,6 +1820,8 @@ Modify ONLY the {section_name} section according to the instruction. Keep everyt
         temperature: float,
         presets: Dict[str, str] = None,
         instructions: Dict[str, str] = None,
+        output_language: str = "English",
+        tokens_per_pass: int = 256,
     ) -> str:
         """Generate each of 6 sections independently with focused LLM passes."""
         presets = presets or {}
@@ -1885,6 +1914,13 @@ Use camera terminology (f-stops, focal lengths). No poetic language.""",
 
 Your task is to generate ONLY ONE specific section of an image prompt.
 
+LANGUAGE RULES:
+- Use SIMPLE, COMMON visual terms (NOT medical/anatomical jargon)
+- Say "back of head" not "occipital bone", "finger" not "phalanx", "lower back" not "lumbar region"
+- Say "upper back" not "thoracic", "shoulder blades" not "scapular", "sides" not "ribcage"
+- Use photography and fashion terminology, not clinical/medical terms
+- NO speculative language (possibly, perhaps, appears to, seems to, suggesting, implying, likely, probably)
+
 RULES:
 1. Generate ONLY the section requested - nothing else
 2. Use technical, concrete visual terms only
@@ -1893,9 +1929,9 @@ RULES:
 5. Apply any provided presets naturally
 6. Output ONLY the section content - no labels or headers"""
 
-        # Determine max tokens: 512 for local LLM, user-specified for API
+        # Determine max tokens: tokens_per_pass for local LLM, user-specified for API
         is_local = llm_model.provider.lower() == "local"
-        section_max_tokens = 512 if is_local else llm_model.max_tokens
+        section_max_tokens = tokens_per_pass if is_local else llm_model.max_tokens
 
         section_outputs = []
 
@@ -1938,10 +1974,52 @@ RULES:
                 print(f"[SID_PromptModifier] Error generating {section['name']}: {e}")
                 section_outputs.append("")
 
-        # Assemble final prompt from all sections
-        final_prompt = " ".join([s for s in section_outputs if s])
-        word_count = len(final_prompt.split())
-        print(f"[SID_PromptModifier] 6-Section generation complete: {word_count} total words")
+        # Assemble sections 1-6
+        assembled = " ".join([s for s in section_outputs if s])
+        word_count = len(assembled.split())
+        print(f"[SID_PromptModifier] 6-Section assembly complete: {word_count} words")
+
+        # PASS 7: Optimization - remove redundancy and speculative language
+        # Language-specific output instruction
+        lang_instruction = "Output in Chinese (中文)" if output_language == "Chinese" else "Output in English"
+
+        optimization_prompt = f"""You are a prompt optimization expert. Clean up this AI image generation prompt.
+
+INPUT PROMPT:
+{assembled}
+
+OPTIMIZATION RULES:
+1. REMOVE all redundant/repeated descriptions (keep first occurrence, remove duplicates)
+2. REMOVE any speculative language (suggesting, implying, indicating, possibly, perhaps, appears to, seems to, likely, probably)
+3. REMOVE phrases like "captures", "evokes", "conveys", "speaks to", "reflects"
+4. CONSOLIDATE similar descriptions into single concise phrases
+5. KEEP all concrete visual details (colors, materials, positions, lighting terms)
+6. MAINTAIN technical camera/photography terminology
+7. OUTPUT as a single flowing paragraph
+8. {lang_instruction}
+
+Return ONLY the cleaned prompt, no explanations or commentary."""
+
+        optimization_system = "You are a prompt optimization expert. Follow instructions precisely and return only the requested output."
+
+        try:
+            client = self._get_client(llm_model)
+            optimized = self._call_llm_short(
+                client, llm_model, optimization_system, optimization_prompt,
+                temperature=0.3,  # Lower temp for consistent cleanup
+                max_tokens=section_max_tokens
+            )
+            cleaned_optimized = self._clean_response(optimized)
+
+            if cleaned_optimized and len(cleaned_optimized) > 50:
+                final_prompt = cleaned_optimized
+                print(f"[SID_PromptModifier] Optimization pass complete ({output_language}): {len(final_prompt.split())} words")
+            else:
+                final_prompt = assembled
+                print("[SID_PromptModifier] Optimization returned invalid result, using assembled output")
+        except Exception as e:
+            print(f"[SID_PromptModifier] Optimization error: {e}, using assembled output")
+            final_prompt = assembled
 
         return final_prompt
 
@@ -2086,6 +2164,13 @@ RULES:
         system_prompt = """You are an expert prompt engineer for AI image generation (Stable Diffusion, Flux, Z-Image).
 
 Your task is to expand a basic concept into a detailed image generation prompt.
+
+LANGUAGE RULES:
+- Use SIMPLE, COMMON visual terms (NOT medical/anatomical jargon)
+- Say "back of head" not "occipital bone", "finger" not "phalanx", "lower back" not "lumbar region"
+- Say "upper back" not "thoracic", "shoulder blades" not "scapular", "sides" not "ribcage"
+- Use photography and fashion terminology, not clinical/medical terms
+- NO speculative language (possibly, perhaps, appears to, seems to, suggesting, implying, likely, probably)
 
 CAMERA THINKING - Write like setting camera parameters, not prose:
 - Technical terms: "f/1.8, shallow DOF, subject sharp, background blur"

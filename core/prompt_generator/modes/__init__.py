@@ -6,8 +6,8 @@ Each mode implements a different strategy for generating prompts:
 - Florence: VLM-based description
 - Quick: Single-shot LLM (no taggers)
 - Standard: Tag-driven template LLM (single pass)
-- Detailed: Multi-pass LLM with full enhancements (3 passes)
-- Extreme: 6-pass LLM with maximum detail (one pass per section)
+- Detailed: Multi-pass LLM with full enhancements (4 passes: 3 content + 1 optimization)
+- Extreme: 7-pass LLM with maximum detail (6 section passes + 1 optimization)
 """
 
 from .base import BaseMode

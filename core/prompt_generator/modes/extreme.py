@@ -1,13 +1,15 @@
 """
-Extreme mode - 6-pass LLM prompt generation with maximum detail.
+Extreme mode - 7-pass LLM prompt generation with maximum detail.
 
-Each pass focuses on a single aspect of the 6-part Z-Image structure:
+Each pass focuses on a single aspect of the 6-part Z-Image structure,
+plus an optimization pass:
 1. Subject - physical features, age, ethnicity, build, hair, skin
 2. Clothing - garments, fabrics, colors, fit, accessories
 3. Pose & Expression - body position, gesture, facial expression, gaze
 4. Scene - setting, background, props, atmosphere
 5. Lighting - quality, direction, color temperature, shadows
 6. Camera - shot type, angle, framing, depth of field, lens
+7. Optimization - removes redundancy, speculative language
 
 Works with any LLM (local or API).
 """
@@ -32,7 +34,7 @@ from ..taggers import get_runner
 
 class ExtremeMode(BaseMode):
     """
-    Extreme mode with 6 focused LLM passes.
+    Extreme mode with 7 focused LLM passes.
 
     Each pass generates detailed content for a single section:
     1. Subject (physical features)
@@ -41,6 +43,7 @@ class ExtremeMode(BaseMode):
     4. Scene (environment, background)
     5. Lighting
     6. Camera (framing, composition)
+    7. Optimization (removes redundancy, speculative language)
 
     Falls back to Standard mode on error.
     """
@@ -61,9 +64,12 @@ class ExtremeMode(BaseMode):
         self,
         image: Any = None,
         llm_model: Any = None,
+        llm_model_text: Any = None,
         tagger_results: Optional[TaggerResults] = None,
         decisions: Optional[Decisions] = None,
         prompt_config: Optional[Dict[str, Any]] = None,
+        output_language: str = "English",
+        tokens_per_pass: int = 256,
         tag_threshold: float = 0.5,
         max_injected_tags: int = 30,
         **kwargs
@@ -142,7 +148,8 @@ class ExtremeMode(BaseMode):
 
             # Step 7: Build and execute 6 passes
             llm_start = time.time()
-            passes = self._get_passes(decisions, tagger_results, tags_str, scene_prompt, tag_threshold)
+            is_local = llm_model.provider.lower() == "local"
+            passes = self._get_passes(decisions, tagger_results, tags_str, scene_prompt, tag_threshold, is_local)
 
             for pass_config in passes:
                 pass_name = pass_config["name"]
@@ -153,6 +160,7 @@ class ExtremeMode(BaseMode):
                     base64_image=base64_image,
                     prompt=pass_prompt,
                     prompt_config=prompt_config,
+                    tokens_per_pass=tokens_per_pass,
                 )
 
                 cleaned = self._clean_response(response)
@@ -164,10 +172,58 @@ class ExtremeMode(BaseMode):
 
             timing["llm_ms"] = int((time.time() - llm_start) * 1000)
 
-            # Step 8: Assemble final prompt
-            prompt = self._assemble_passes(pass_outputs)
+            # Step 8: Assemble passes 1-6
+            assembled = self._assemble_passes(pass_outputs)
 
-            # Step 9: Analyze tag inclusion
+            # Step 9: PASS 7 - Optimization (text-only, no image)
+            optimization_start = time.time()
+
+            # Use llm_model_text if provided, otherwise use main llm_model
+            optimization_llm = llm_model_text if llm_model_text is not None else llm_model
+
+            # Language-specific output instruction
+            lang_instruction = "Output in Chinese (中文)" if output_language == "Chinese" else "Output in English"
+
+            optimization_prompt = f"""You are a prompt optimization expert. Clean up this AI image generation prompt.
+
+INPUT PROMPT:
+{assembled}
+
+OPTIMIZATION RULES:
+1. REMOVE all redundant/repeated descriptions (keep first occurrence, remove duplicates)
+2. REMOVE any speculative language (suggesting, implying, indicating, possibly, perhaps, appears to, seems to, likely, probably)
+3. REMOVE phrases like "captures", "evokes", "conveys", "speaks to", "reflects"
+4. CONSOLIDATE similar descriptions into single concise phrases
+5. KEEP all concrete visual details (colors, materials, positions, lighting terms)
+6. MAINTAIN technical camera/photography terminology
+7. OUTPUT as a single flowing paragraph
+8. {lang_instruction}
+
+Return ONLY the cleaned prompt, no explanations or commentary."""
+
+            optimized_response = self._call_llm_text_only(
+                llm_model=optimization_llm,
+                prompt=optimization_prompt,
+                tokens_per_pass=tokens_per_pass,
+            )
+            optimized = self._clean_response(optimized_response)
+
+            # Use optimized if valid, otherwise use assembled
+            if optimized and len(optimized) > 50:
+                prompt = optimized
+                pass_outputs["optimization"] = optimized
+                pass_details["optimization"] = {
+                    "section": "Optimization",
+                    "enhancements": [{"type": "redundancy_removal", "language": output_language}],
+                }
+                print(f"[Extreme] Optimization pass complete using {'llm_model_text' if llm_model_text else 'main llm'} ({output_language})")
+            else:
+                prompt = assembled
+                print("[Extreme] Optimization pass returned invalid result, using assembled output")
+
+            timing["optimization_ms"] = int((time.time() - optimization_start) * 1000)
+
+            # Step 10: Analyze tag inclusion
             inclusion_start = time.time()
             from ..validation import analyze_inclusion
             injected_tags = [
@@ -192,7 +248,7 @@ class ExtremeMode(BaseMode):
                         "taggers_executed": True,
                         "florence_executed": False,
                         "llm_executed": True,
-                        "llm_passes": 6,
+                        "llm_passes": 7,  # 6 section passes + 1 optimization
                     },
                     "decisions": decisions.to_dict(),
                     "passes": pass_details,
@@ -230,16 +286,20 @@ class ExtremeMode(BaseMode):
         tags_str: str,
         scene_prompt: Optional[str],
         tag_threshold: float,
+        is_local: bool = True,
     ) -> List[Dict[str, Any]]:
         """Build 6 focused pass configurations."""
         subject_type = decisions.subject_type.value
         passes = []
 
+        # Length constraint only for local models
+        length_hint = "\nOutput 2-3 sentences of specific physical description." if is_local else "\nProvide comprehensive physical description."
+
         # =====================================================================
         # PASS 1: SUBJECT - Physical features, identity
         # =====================================================================
         if subject_type in ["person", "woman", "man", "couple", "group"]:
-            pass1_prompt = """Analyze ONLY the subject's physical identity in this image.
+            pass1_prompt = f"""Analyze ONLY the subject's physical identity in this image.
 
 Describe with technical precision:
 - Gender and apparent age range (20s, 30s, etc.)
@@ -249,11 +309,11 @@ Describe with technical precision:
 - Hair: color, length, texture (straight/wavy/curly), style
 - Distinctive facial features (high cheekbones, full lips, strong jaw, etc.)
 
-Use concrete visual terms only. No poetic language.
-Output 2-3 sentences of specific physical description."""
+Use concrete visual terms only. No poetic language.{length_hint}"""
 
         elif subject_type == "animal":
             animal_type = decisions.wildlife_type or "animal"
+            animal_length = "\nOutput 2-3 sentences." if is_local else "\nProvide comprehensive description."
             pass1_prompt = f"""Analyze ONLY the {animal_type}'s physical identity.
 
 Describe with technical precision:
@@ -262,10 +322,11 @@ Describe with technical precision:
 - Fur/feather/scale coloring and patterns
 - Distinctive physical features
 
-Use concrete visual terms only. Output 2-3 sentences."""
+Use concrete visual terms only.{animal_length}"""
 
         else:
-            pass1_prompt = """Analyze ONLY the main subject's identity.
+            obj_length = "\nOutput 2-3 sentences." if is_local else "\nProvide comprehensive description."
+            pass1_prompt = f"""Analyze ONLY the main subject's identity.
 
 Describe with technical precision:
 - What is the primary subject
@@ -273,7 +334,7 @@ Describe with technical precision:
 - Materials and textures
 - Condition and notable features
 
-Use concrete visual terms only. Output 2-3 sentences."""
+Use concrete visual terms only.{obj_length}"""
 
         # Add relevant tags for subject
         if tags_str:
@@ -289,8 +350,10 @@ Use concrete visual terms only. Output 2-3 sentences."""
         # =====================================================================
         # PASS 2: CLOTHING - Garments, accessories
         # =====================================================================
+        clothing_length = "\nOutput 2-3 sentences focused on what is worn." if is_local else "\nProvide comprehensive clothing description."
+
         if subject_type in ["person", "woman", "man", "couple", "group"]:
-            pass2_prompt = """Analyze ONLY the clothing and accessories in this image.
+            pass2_prompt = f"""Analyze ONLY the clothing and accessories in this image.
 
 Describe with technical precision:
 - Each garment: type, color, material/fabric
@@ -299,8 +362,7 @@ Describe with technical precision:
 - Accessories: jewelry, bags, glasses, hats, shoes
 - Notable details: patterns, textures, brand elements
 
-Use concrete visual terms only. No poetic language.
-Output 2-3 sentences focused on what is worn."""
+Use concrete visual terms only. No poetic language.{clothing_length}"""
 
             # Add clothing-specific enhancements
             clothing_result = get_clothing_prompt(tagger_results, tag_threshold)
@@ -309,18 +371,20 @@ Output 2-3 sentences focused on what is worn."""
                 pass2_prompt += f"\n\nDetected clothing: {clothing_type}. {clothing_detail}"
 
         elif subject_type == "animal":
-            pass2_prompt = """Analyze any accessories or coverings on this animal.
+            animal_clothing_length = "\nOutput 1-2 sentences." if is_local else "\nProvide detailed description."
+            pass2_prompt = f"""Analyze any accessories or coverings on this animal.
 
 Describe: collar, harness, saddle, clothing, decorations if present.
 If no accessories, describe the animal's natural covering (fur pattern, markings).
 
-Use concrete visual terms only. Output 1-2 sentences."""
+Use concrete visual terms only.{animal_clothing_length}"""
 
         else:
-            pass2_prompt = """Analyze secondary elements and styling.
+            obj_clothing_length = "\nOutput 1-2 sentences." if is_local else "\nProvide detailed description."
+            pass2_prompt = f"""Analyze secondary elements and styling.
 
 Describe any accessories, decorations, or supporting elements.
-Use concrete visual terms only. Output 1-2 sentences."""
+Use concrete visual terms only.{obj_clothing_length}"""
 
         passes.append({
             "name": "clothing",
@@ -332,8 +396,10 @@ Use concrete visual terms only. Output 1-2 sentences."""
         # =====================================================================
         # PASS 3: POSE & EXPRESSION - Body position, emotion
         # =====================================================================
+        pose_length = "\nOutput 2-3 sentences." if is_local else "\nProvide comprehensive pose and expression description."
+
         if subject_type in ["person", "woman", "man", "couple", "group"]:
-            pass3_prompt = """Analyze ONLY the pose and expression in this image.
+            pass3_prompt = f"""Analyze ONLY the pose and expression in this image.
 
 POSE - describe with precision:
 - Body orientation (facing camera, 3/4 angle, profile, back)
@@ -348,10 +414,10 @@ EXPRESSION - describe:
 - Mouth (open, closed, smiling, parted)
 - Overall mood conveyed
 
-Use concrete visual terms only. Output 2-3 sentences."""
+Use concrete visual terms only.{pose_length}"""
 
         elif subject_type == "animal":
-            pass3_prompt = """Analyze ONLY the animal's pose and demeanor.
+            pass3_prompt = f"""Analyze ONLY the animal's pose and demeanor.
 
 Describe:
 - Body position (standing, sitting, lying, running)
@@ -359,13 +425,14 @@ Describe:
 - Eye expression and alertness
 - Overall demeanor (relaxed, alert, playful, curious)
 
-Use concrete visual terms only. Output 2-3 sentences."""
+Use concrete visual terms only.{pose_length}"""
 
         else:
-            pass3_prompt = """Analyze the arrangement and orientation.
+            obj_pose_length = "\nOutput 1-2 sentences." if is_local else "\nProvide detailed description."
+            pass3_prompt = f"""Analyze the arrangement and orientation.
 
 Describe how the subject is positioned and oriented.
-Use concrete visual terms only. Output 1-2 sentences."""
+Use concrete visual terms only.{obj_pose_length}"""
 
         passes.append({
             "name": "pose_expression",
@@ -377,6 +444,8 @@ Use concrete visual terms only. Output 1-2 sentences."""
         # =====================================================================
         # PASS 4: SCENE - Environment, background
         # =====================================================================
+        scene_length = "\nOutput 2-3 sentences about the environment." if is_local else "\nProvide comprehensive environment description."
+
         if scene_prompt:
             env_instruction = scene_prompt
         else:
@@ -396,8 +465,7 @@ Focus on:
 - Props or environmental elements
 - Atmospheric conditions (clear, hazy, foggy)
 
-Use concrete visual terms only. No poetic descriptions.
-Output 2-3 sentences about the environment."""
+Use concrete visual terms only. No poetic descriptions.{scene_length}"""
 
         # Add weather/landmark info
         enhancements = []
@@ -418,7 +486,9 @@ Output 2-3 sentences about the environment."""
         # =====================================================================
         # PASS 5: LIGHTING - Quality, direction, color
         # =====================================================================
-        pass5_prompt = """Analyze ONLY the lighting in this image.
+        lighting_length = "\nOutput 2-3 sentences about lighting only." if is_local else "\nProvide comprehensive lighting description."
+
+        pass5_prompt = f"""Analyze ONLY the lighting in this image.
 
 Describe with technical precision:
 - Light quality: soft/diffused vs hard/direct
@@ -430,8 +500,7 @@ Describe with technical precision:
 - Overall lighting mood: high-key, low-key, natural, dramatic
 
 Use camera/photography terms (e.g., "side lighting at 45 degrees",
-"warm 3200K color temperature", "soft diffused window light").
-Output 2-3 sentences about lighting only."""
+"warm 3200K color temperature", "soft diffused window light").{lighting_length}"""
 
         lighting_enhancements = []
         if decisions.is_golden_hour:
@@ -451,7 +520,9 @@ Output 2-3 sentences about lighting only."""
         # =====================================================================
         # PASS 6: CAMERA - Framing, angle, composition
         # =====================================================================
-        pass6_prompt = """Analyze ONLY the camera and composition in this image.
+        camera_length = "\nOutput 2-3 sentences about camera/composition only." if is_local else "\nProvide comprehensive camera and composition description."
+
+        pass6_prompt = f"""Analyze ONLY the camera and composition in this image.
 
 Describe with technical precision:
 - Shot type: ECU (extreme close-up), CU (close-up), MCU (medium close-up),
@@ -463,8 +534,7 @@ Describe with technical precision:
 - Subject placement in frame
 - Any lens effects: bokeh, distortion, compression
 
-Use camera terminology (f-stops, focal lengths, shot types).
-Output 2-3 sentences about camera/composition only."""
+Use camera terminology (f-stops, focal lengths, shot types).{camera_length}"""
 
         camera_enhancements = []
         if decisions.camera_angle:
@@ -516,12 +586,26 @@ Output 2-3 sentences about camera/composition only."""
         base64_image: str,
         prompt: str,
         prompt_config: Optional[Dict[str, Any]] = None,
+        tokens_per_pass: int = 256,
     ) -> str:
         """Make LLM call for a single pass."""
         client = self._get_client(llm_model)
 
+        # Determine if local model (affects length constraints)
+        is_local = llm_model.provider.lower() == "local"
+
+        # Length constraint only for local models
+        length_rule = "- Keep output focused and concise (2-3 sentences max)" if is_local else "- Provide comprehensive, detailed description for this section"
+
         # System prompt for focused single-section analysis
-        system_prompt = """You are an expert visual analyst creating prompts for AI image generation.
+        system_prompt = f"""You are an expert visual analyst creating prompts for AI image generation.
+
+LANGUAGE RULES:
+- Use SIMPLE, COMMON visual terms (NOT medical/anatomical jargon)
+- Say "back of head" not "occipital bone", "finger" not "phalanx", "lower back" not "lumbar region"
+- Say "upper back" not "thoracic", "shoulder blades" not "scapular", "sides" not "ribcage"
+- Use photography and fashion terminology, not clinical/medical terms
+- NO speculative language (possibly, perhaps, appears to, seems to, suggesting, implying, likely, probably)
 
 CRITICAL RULES:
 - Describe ONLY what is asked in the prompt - ignore other aspects
@@ -529,15 +613,14 @@ CRITICAL RULES:
 - NO poetic, philosophical, or emotional language
 - NO metaphors or artistic interpretation
 - Use technical photography/camera terms where applicable
-- Be precise and literal
-- Keep output focused and concise (2-3 sentences max)"""
+- Be precise and literal - describe what IS, not interpretations
+{length_rule}"""
 
         if prompt_config and prompt_config.get("system_prompt"):
             system_prompt = prompt_config["system_prompt"]
 
-        # Determine max tokens: 256 for local, user-specified for API
-        is_local = llm_model.provider.lower() == "local"
-        max_tokens = 256 if is_local else llm_model.max_tokens
+        # Determine max tokens: tokens_per_pass for local, user-specified for API
+        max_tokens = tokens_per_pass if is_local else llm_model.max_tokens
 
         if hasattr(client, 'messages'):
             # Anthropic API - uses user-specified tokens
@@ -580,6 +663,51 @@ CRITICAL RULES:
                             {"type": "text", "text": prompt}
                         ]
                     }
+                ]
+            )
+
+            if not response or not response.choices or not response.choices[0].message:
+                raise ValueError("LLM returned empty response")
+
+            return response.choices[0].message.content
+
+    def _call_llm_text_only(
+        self,
+        llm_model: Any,
+        prompt: str,
+        tokens_per_pass: int = 256,
+    ) -> str:
+        """Make text-only LLM call for optimization pass (no image)."""
+        client = self._get_client(llm_model)
+
+        system_prompt = "You are a prompt optimization expert. Follow instructions precisely and return only the requested output."
+
+        # Use tokens_per_pass for local, user-specified for API
+        is_local = llm_model.provider.lower() == "local"
+        max_tokens = tokens_per_pass if is_local else llm_model.max_tokens
+
+        if hasattr(client, 'messages'):
+            # Anthropic API
+            response = client.messages.create(
+                model=llm_model.model,
+                max_tokens=max_tokens,
+                temperature=0.3,  # Lower temp for consistent cleanup
+                system=system_prompt,
+                messages=[{
+                    "role": "user",
+                    "content": prompt
+                }]
+            )
+            return response.content[0].text
+        else:
+            # OpenAI-compatible API
+            response = client.chat.completions.create(
+                model=llm_model.model,
+                max_tokens=max_tokens,
+                temperature=0.3,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
                 ]
             )
 

@@ -1,9 +1,15 @@
 """
 Detailed mode - Multi-pass LLM prompt generation with full enhancements.
 
-Executes taggers, then uses 3 LLM passes to build comprehensive
+Executes taggers, then uses 4 LLM passes to build comprehensive
 descriptions with tag injection, scene-specific prompts, and detail
 enhancements for each component group.
+
+Passes:
+- Pass 1: Subject + Appearance (with tag-driven enhancements)
+- Pass 2: Clothing + Pose + Expression (with clothing-specific prompts)
+- Pass 3: Environment + Lighting + Composition (with scene-specific prompts)
+- Pass 4: Optimization (removes redundancy, speculative language)
 
 Works with any LLM (local or API). Uses extended thinking when
 available (Anthropic API) for improved quality.
@@ -38,10 +44,11 @@ class DetailedMode(BaseMode):
     """
     Detailed mode implementation with full enhancements.
 
-    Uses 3 LLM passes to build comprehensive descriptions:
+    Uses 4 LLM passes to build comprehensive descriptions:
     - Pass 1: Subject + Appearance (with tag-driven enhancements)
     - Pass 2: Clothing + Pose + Expression (with clothing-specific prompts)
     - Pass 3: Environment + Lighting + Composition (with scene-specific prompts)
+    - Pass 4: Optimization (removes redundancy, speculative language)
 
     Includes all Standard mode capabilities:
     - Tag injection in each pass
@@ -73,9 +80,12 @@ class DetailedMode(BaseMode):
         self,
         image: Any = None,
         llm_model: Any = None,
+        llm_model_text: Any = None,
         tagger_results: Optional[TaggerResults] = None,
         decisions: Optional[Decisions] = None,
         prompt_config: Optional[Dict[str, Any]] = None,
+        output_language: str = "English",
+        tokens_per_pass: int = 256,
         tag_threshold: float = 0.5,
         max_injected_tags: int = 30,
         **kwargs
@@ -170,6 +180,7 @@ class DetailedMode(BaseMode):
                     base64_image=base64_image,
                     prompt=pass_prompt,
                     prompt_config=prompt_config,
+                    tokens_per_pass=tokens_per_pass,
                 )
 
                 cleaned = self._clean_response(response)
@@ -182,10 +193,58 @@ class DetailedMode(BaseMode):
 
             timing["llm_ms"] = int((time.time() - llm_start) * 1000)
 
-            # Step 8: Assemble final prompt
-            prompt = self._assemble_passes(pass_outputs)
+            # Step 8: Assemble passes 1-3
+            assembled = self._assemble_passes(pass_outputs)
 
-            # Step 9: Analyze tag inclusion in output
+            # Step 9: PASS 4 - Optimization (text-only, no image)
+            optimization_start = time.time()
+
+            # Use llm_model_text if provided, otherwise use main llm_model
+            optimization_llm = llm_model_text if llm_model_text is not None else llm_model
+
+            # Language-specific output instruction
+            lang_instruction = "Output in Chinese (中文)" if output_language == "Chinese" else "Output in English"
+
+            optimization_prompt = f"""You are a prompt optimization expert. Clean up this AI image generation prompt.
+
+INPUT PROMPT:
+{assembled}
+
+OPTIMIZATION RULES:
+1. REMOVE all redundant/repeated descriptions (keep first occurrence, remove duplicates)
+2. REMOVE any speculative language (suggesting, implying, indicating, possibly, perhaps, appears to, seems to, likely, probably)
+3. REMOVE phrases like "captures", "evokes", "conveys", "speaks to", "reflects"
+4. CONSOLIDATE similar descriptions into single concise phrases
+5. KEEP all concrete visual details (colors, materials, positions, lighting terms)
+6. MAINTAIN technical camera/photography terminology
+7. OUTPUT as a single flowing paragraph
+8. {lang_instruction}
+
+Return ONLY the cleaned prompt, no explanations or commentary."""
+
+            optimized_response = self._call_llm_text_only(
+                llm_model=optimization_llm,
+                prompt=optimization_prompt,
+                tokens_per_pass=tokens_per_pass,
+            )
+            optimized = self._clean_response(optimized_response)
+
+            # Use optimized if it's valid, otherwise use assembled
+            if optimized and len(optimized) > 50:
+                prompt = optimized
+                pass_outputs["optimization"] = optimized
+                pass_details["optimization"] = {
+                    "sections": ["cleanup", "redundancy_removal"],
+                    "enhancements": [{"type": "optimization", "language": output_language}],
+                }
+                print(f"[Detailed] Optimization pass complete using {'llm_model_text' if llm_model_text else 'main llm'} ({output_language})")
+            else:
+                prompt = assembled
+                print("[Detailed] Optimization pass returned invalid result, using assembled output")
+
+            timing["optimization_ms"] = int((time.time() - optimization_start) * 1000)
+
+            # Step 10: Analyze tag inclusion in output
             inclusion_start = time.time()
             from ..validation import analyze_inclusion
             injected_tags = [
@@ -211,7 +270,7 @@ class DetailedMode(BaseMode):
                         "taggers_executed": True,
                         "florence_executed": False,
                         "llm_executed": True,
-                        "llm_passes": len(passes),
+                        "llm_passes": len(passes) + 1,  # +1 for optimization pass
                     },
                     "decisions": decisions.to_dict(),
                     "passes": pass_details,
@@ -526,12 +585,20 @@ Avoid poetic or abstract language. Be specific and literal."""
         base64_image: str,
         prompt: str,
         prompt_config: Optional[Dict[str, Any]] = None,
+        tokens_per_pass: int = 256,
     ) -> str:
         """Make LLM call. Uses extended thinking when available (Anthropic API)."""
         client = self._get_client(llm_model)
 
         # System prompt optimized for Z-Image/Flux generation
         system_prompt = """You are an expert visual analyst creating prompts for AI image generation (Z-Image/Flux).
+
+LANGUAGE RULES:
+- Use SIMPLE, COMMON visual terms (NOT medical/anatomical jargon)
+- Say "back of head" not "occipital bone", "finger" not "phalanx", "lower back" not "lumbar region"
+- Say "upper back" not "thoracic", "shoulder blades" not "scapular", "sides" not "ribcage"
+- Use photography and fashion terminology, not clinical/medical terms
+- NO speculative language (possibly, perhaps, appears to, seems to, suggesting, implying, likely, probably)
 
 CRITICAL RULES:
 - Use CONCRETE, SPECIFIC, VISUAL descriptions only
@@ -542,7 +609,7 @@ CRITICAL RULES:
 - NO commentary about meaning, mood interpretation, or artistic intent
 - Focus on: subject details, colors, textures, lighting, composition, materials
 
-Write as a single flowing paragraph. Be precise and literal."""
+Write as a single flowing paragraph. Be precise and literal - describe what IS, not interpretations."""
 
         if prompt_config and prompt_config.get("system_prompt"):
             system_prompt = prompt_config["system_prompt"]
@@ -602,9 +669,9 @@ Write as a single flowing paragraph. Be precise and literal."""
                 )
                 return response.content[0].text
         else:
-            # OpenAI-compatible API - local uses 512 fixed, API uses user-specified
+            # OpenAI-compatible API - local uses tokens_per_pass, API uses user-specified
             is_local = llm_model.provider.lower() == "local"
-            max_tokens = 512 if is_local else llm_model.max_tokens
+            max_tokens = tokens_per_pass if is_local else llm_model.max_tokens
             response = client.chat.completions.create(
                 model=llm_model.model,
                 max_tokens=max_tokens,
@@ -621,6 +688,51 @@ Write as a single flowing paragraph. Be precise and literal."""
                             {"type": "text", "text": prompt}
                         ]
                     }
+                ]
+            )
+
+            if not response or not response.choices or not response.choices[0].message:
+                raise ValueError("LLM returned empty response")
+
+            return response.choices[0].message.content
+
+    def _call_llm_text_only(
+        self,
+        llm_model: Any,
+        prompt: str,
+        tokens_per_pass: int = 256,
+    ) -> str:
+        """Make text-only LLM call for optimization pass (no image)."""
+        client = self._get_client(llm_model)
+
+        system_prompt = "You are a prompt optimization expert. Follow instructions precisely and return only the requested output."
+
+        # Use tokens_per_pass for local, user-specified for API
+        is_local = llm_model.provider.lower() == "local"
+        max_tokens = tokens_per_pass if is_local else llm_model.max_tokens
+
+        if hasattr(client, 'messages'):
+            # Anthropic API
+            response = client.messages.create(
+                model=llm_model.model,
+                max_tokens=max_tokens,
+                temperature=0.3,  # Lower temp for more consistent cleanup
+                system=system_prompt,
+                messages=[{
+                    "role": "user",
+                    "content": prompt
+                }]
+            )
+            return response.content[0].text
+        else:
+            # OpenAI-compatible API
+            response = client.chat.completions.create(
+                model=llm_model.model,
+                max_tokens=max_tokens,
+                temperature=0.3,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
                 ]
             )
 
