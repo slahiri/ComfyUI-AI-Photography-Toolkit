@@ -20,6 +20,7 @@ Mode Selection:
     4. llm_model + Detailed -> Detailed mode (tags + multi-pass LLM)
 """
 
+import hashlib
 import json
 import time
 from typing import Any, Dict, Optional, Tuple
@@ -66,6 +67,9 @@ class SID_PromptGenerator:
     RETURN_NAMES = ("prompt", "caption")
     FUNCTION = "generate"
 
+    # Class-level cache for prompt/caption results
+    _cache: Dict[str, Tuple[str, str]] = {}
+
     def __init__(self):
         """Initialize the generator with mode implementations."""
         self._modes: Dict[str, BaseMode] = {}
@@ -100,6 +104,51 @@ class SID_PromptGenerator:
                 self._modes["detailed"] = DetailedMode()
         except ImportError as e:
             print(f"[SID_PromptGenerator] Warning: Could not load {mode_name} mode: {e}")
+
+    def _build_cache_key(
+        self,
+        image: Any,
+        seed: int,
+        llm_model: Any,
+        user_prompt: Optional[Dict[str, str]],
+        analysis_mode: str,
+        tag_threshold: float,
+        max_injected_tags: int,
+        florence_model: str,
+        generate_caption: bool,
+    ) -> str:
+        """Build a cache key from all input parameters including image hash."""
+        import numpy as np
+
+        # Hash the image data
+        if hasattr(image, 'cpu'):
+            img_np = image[0].cpu().numpy()
+        else:
+            img_np = np.array(image[0])
+
+        # Use a sampling approach for faster hashing of large images
+        # Hash shape + sampled pixels for speed
+        img_hash_data = f"{img_np.shape}_{img_np.flatten()[::1000].tobytes().hex()}"
+
+        # Build key parts
+        key_parts = [
+            f"seed={seed}",
+            f"img={hashlib.md5(img_hash_data.encode()).hexdigest()[:16]}",
+            f"model={llm_model.model if llm_model else 'florence'}",
+            f"provider={llm_model.provider if llm_model else 'none'}",
+            f"mode={analysis_mode}",
+            f"threshold={tag_threshold}",
+            f"max_tags={max_injected_tags}",
+            f"florence={florence_model}",
+            f"caption={generate_caption}",
+        ]
+
+        # Add user_prompt if provided
+        if user_prompt:
+            key_parts.append(f"user_prompt={json.dumps(user_prompt, sort_keys=True)}")
+
+        key_string = "|".join(key_parts)
+        return hashlib.md5(key_string.encode()).hexdigest()
 
     @classmethod
     def INPUT_TYPES(cls) -> Dict[str, Any]:
@@ -157,6 +206,25 @@ class SID_PromptGenerator:
         """
         start_time = time.time()
 
+        # Build cache key from all inputs
+        cache_key = self._build_cache_key(
+            image=image,
+            seed=seed,
+            llm_model=llm_model,
+            user_prompt=user_prompt,
+            analysis_mode=analysis_mode,
+            tag_threshold=tag_threshold,
+            max_injected_tags=max_injected_tags,
+            florence_model=florence_model,
+            generate_caption=generate_caption,
+        )
+
+        # Check cache
+        if cache_key in SID_PromptGenerator._cache:
+            cached_prompt, cached_caption = SID_PromptGenerator._cache[cache_key]
+            print(f"[SID_PromptGenerator] Cache hit - returning cached result (seed: {seed})")
+            return (cached_prompt, cached_caption)
+
         # Build base metadata
         metadata = {
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -208,6 +276,10 @@ class SID_PromptGenerator:
 
             # Save metadata to logs folder
             self._save_metadata(metadata)
+
+            # Store in cache
+            SID_PromptGenerator._cache[cache_key] = (result.prompt, caption)
+            print(f"[SID_PromptGenerator] Result cached (seed: {seed})")
 
             return (result.prompt, caption)
 
