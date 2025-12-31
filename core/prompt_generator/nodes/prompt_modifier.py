@@ -158,6 +158,7 @@ class SID_PromptModifier:
                 "camera_instruction": ("STRING", {"multiline": True, "default": "", "tooltip": "How to modify camera (e.g., 'Close-up portrait, shallow DOF')"}),
                 "generate_caption": ("BOOLEAN", {"default": False, "tooltip": "Generate Instagram caption from modified prompt"}),
                 "release_vram": ("BOOLEAN", {"default": True, "tooltip": "Release VRAM after execution (recommended)"}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "tooltip": "Random seed for reproducibility (change to force re-generation)"}),
             },
         }
 
@@ -177,6 +178,7 @@ class SID_PromptModifier:
         camera_instruction: str = "",
         generate_caption: bool = False,
         release_vram: bool = True,
+        seed: int = 0,
     ) -> Tuple[str, str]:
         """
         Modify prompt based on section instructions and photography presets.
@@ -196,6 +198,7 @@ class SID_PromptModifier:
             camera_instruction: Modification for camera section
             generate_caption: Whether to generate Instagram caption
             release_vram: Release VRAM after execution
+            seed: Random seed for reproducibility (change to force re-generation)
 
         Returns:
             Tuple of (modified_prompt, caption)
@@ -322,7 +325,7 @@ RULES:
 
         try:
             client = self._get_client(llm_model)
-            response = self._call_llm(client, llm_model, system_prompt, user_prompt, temperature)
+            response = self._call_llm(client, llm_model, system_prompt, user_prompt, temperature, prompt)
             return self._clean_response(response)
         except Exception as e:
             print(f"[SID_PromptModifier] Error in single pass: {e}")
@@ -372,7 +375,7 @@ Integrate these style presets into the prompt. Output only the modified prompt."
 
             try:
                 client = self._get_client(llm_model)
-                response = self._call_llm(client, llm_model, preset_system, preset_user, temperature)
+                response = self._call_llm(client, llm_model, preset_system, preset_user, temperature, modified_prompt)
                 modified_prompt = self._clean_response(response)
                 print(f"[SID_PromptModifier] Applied style presets")
             except Exception as e:
@@ -406,7 +409,7 @@ Modify ONLY the {section_name} section according to the instruction. Keep everyt
 
             try:
                 client = self._get_client(llm_model)
-                response = self._call_llm(client, llm_model, section_system, user_prompt, temperature)
+                response = self._call_llm(client, llm_model, section_system, user_prompt, temperature, modified_prompt)
                 modified_prompt = self._clean_response(response)
                 print(f"[SID_PromptModifier] Modified section: {section_name}")
             except Exception as e:
@@ -452,7 +455,7 @@ Generate Poetic, Technical, and Personal caption styles following the exact form
 
         try:
             client = self._get_client(llm_model)
-            response = self._call_llm(client, llm_model, system_prompt, user_prompt, temperature)
+            response = self._call_llm(client, llm_model, system_prompt, user_prompt, temperature, prompt)
             return response
         except Exception as e:
             print(f"[SID_PromptModifier] Caption generation error: {e}")
@@ -499,6 +502,24 @@ Generate Poetic, Technical, and Personal caption styles following the exact form
                 base_url=llm_model.api_url if llm_model.api_url else None,
             )
 
+    def _calculate_max_tokens(self, input_prompt: str, llm_model: Any) -> int:
+        """Calculate max tokens based on input size + 30% buffer."""
+        # Estimate tokens from input (roughly 1 token per 4 characters)
+        input_chars = len(input_prompt)
+        estimated_input_tokens = input_chars // 4
+
+        # Add 30% buffer for modifications
+        buffer_multiplier = 1.3
+        calculated_tokens = int(estimated_input_tokens * buffer_multiplier)
+
+        # Set minimum and maximum bounds
+        min_tokens = 500
+        max_tokens = getattr(llm_model, 'max_tokens', 2000)
+
+        # Clamp to bounds
+        result = max(min_tokens, min(calculated_tokens, max_tokens))
+        return result
+
     def _call_llm(
         self,
         client: Any,
@@ -506,14 +527,17 @@ Generate Poetic, Technical, and Personal caption styles following the exact form
         system_prompt: str,
         user_prompt: str,
         temperature: float,
+        input_prompt: str = "",
     ) -> str:
         """Make LLM call (text-only, no image)."""
+        # Calculate max tokens based on input size + 30%
+        max_tokens = self._calculate_max_tokens(input_prompt or user_prompt, llm_model)
 
         if hasattr(client, 'messages'):
             # Anthropic API
             response = client.messages.create(
                 model=llm_model.model,
-                max_tokens=2000,
+                max_tokens=max_tokens,
                 temperature=temperature,
                 system=system_prompt,
                 messages=[{
@@ -526,7 +550,7 @@ Generate Poetic, Technical, and Personal caption styles following the exact form
             # OpenAI-compatible API
             response = client.chat.completions.create(
                 model=llm_model.model,
-                max_tokens=2000,
+                max_tokens=max_tokens,
                 temperature=temperature,
                 messages=[
                     {"role": "system", "content": system_prompt},

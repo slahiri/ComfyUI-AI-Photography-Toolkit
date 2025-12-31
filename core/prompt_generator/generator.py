@@ -111,6 +111,7 @@ class SID_PromptGenerator:
                 "hf_token": ("STRING", {"default": "", "tooltip": "HuggingFace token for gated models (Florence, etc.)"}),
                 "release_vram": ("BOOLEAN", {"default": False, "tooltip": "Unload Florence model from VRAM after use"}),
                 "generate_caption": ("BOOLEAN", {"default": False, "tooltip": "Generate Instagram captions (3 styles: Poetic, Technical, Personal)"}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff, "tooltip": "Random seed for reproducibility (change to force re-generation)"}),
             },
         }
 
@@ -126,6 +127,7 @@ class SID_PromptGenerator:
         hf_token: str = "",
         release_vram: bool = False,
         generate_caption: bool = False,
+        seed: int = 0,
     ) -> Tuple[str, str, str]:
         """
         Generate prompt from image with automatic mode selection.
@@ -141,6 +143,7 @@ class SID_PromptGenerator:
             hf_token: HuggingFace token for gated models (Florence, etc.)
             release_vram: Unload Florence model from VRAM after use
             generate_caption: Generate Instagram captions (3 styles)
+            seed: Random seed for reproducibility
 
         Returns:
             Tuple of (prompt, caption, metadata_json)
