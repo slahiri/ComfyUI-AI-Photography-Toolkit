@@ -102,6 +102,9 @@ class SID_PromptGenerator:
             elif mode_name == "detailed":
                 from .modes.detailed import DetailedMode
                 self._modes["detailed"] = DetailedMode()
+            elif mode_name == "extreme":
+                from .modes.extreme import ExtremeMode
+                self._modes["extreme"] = ExtremeMode()
         except ImportError as e:
             print(f"[SID_PromptGenerator] Warning: Could not load {mode_name} mode: {e}")
 
@@ -160,7 +163,7 @@ class SID_PromptGenerator:
             "optional": {
                 "llm_model": ("LLM_MODEL",),
                 "user_prompt": ("USER_PROMPT", {"tooltip": "Custom system/user prompts from SID User Prompt node"}),
-                "analysis_mode": (["Quick", "Standard", "Detailed"], {"default": "Standard"}),
+                "analysis_mode": (["Quick", "Standard", "Detailed", "Extreme"], {"default": "Standard"}),
                 "tag_threshold": ("FLOAT", {"default": 0.65, "min": 0.1, "max": 1.0, "step": 0.05, "tooltip": "Minimum confidence threshold for tags (0.65 = 65%)"}),
                 "max_injected_tags": ("INT", {"default": 30, "min": 5, "max": 100, "step": 5, "tooltip": "Maximum number of detected tags to inject into LLM prompt"}),
                 "florence_model": (FLORENCE_MODELS, {"default": FLORENCE_MODELS[0], "tooltip": "Florence model for fallback VLM mode (when no LLM connected)"}),

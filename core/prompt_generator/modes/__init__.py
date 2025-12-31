@@ -7,6 +7,7 @@ Each mode implements a different strategy for generating prompts:
 - Quick: Single-shot LLM (no taggers)
 - Standard: Tag-driven template LLM (single pass)
 - Detailed: Multi-pass LLM with full enhancements (3 passes)
+- Extreme: 6-pass LLM with maximum detail (one pass per section)
 """
 
 from .base import BaseMode
@@ -15,6 +16,7 @@ from .florence import FlorenceMode
 from .quick import QuickMode
 from .standard import StandardMode
 from .detailed import DetailedMode
+from .extreme import ExtremeMode
 
 __all__ = [
     "BaseMode",
@@ -23,4 +25,5 @@ __all__ = [
     "QuickMode",
     "StandardMode",
     "DetailedMode",
+    "ExtremeMode",
 ]
