@@ -473,6 +473,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "SID_LLM_Local": "SID LLM Local",
 }
 
+# Web directory for JavaScript extensions (node colors, widget control)
+WEB_DIRECTORY = "./web"
+
 
 # V3 entrypoint (only if V3 API available)
 if _v3_api_available:

@@ -55,8 +55,8 @@ class SID_PromptGenerator:
 
     # ComfyUI node configuration
     CATEGORY = "SID Photography Toolkit"
-    RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("prompt", "prompt_metadata")
+    RETURN_TYPES = ("STRING", "STRING", "STRING")
+    RETURN_NAMES = ("prompt", "caption", "prompt_metadata")
     FUNCTION = "generate"
 
     def __init__(self):
@@ -110,6 +110,7 @@ class SID_PromptGenerator:
                 "florence_model": (FLORENCE_MODELS, {"default": FLORENCE_MODELS[0], "tooltip": "Florence model for fallback VLM mode (when no LLM connected)"}),
                 "hf_token": ("STRING", {"default": "", "tooltip": "HuggingFace token for gated models (Florence, etc.)"}),
                 "release_vram": ("BOOLEAN", {"default": False, "tooltip": "Unload Florence model from VRAM after use"}),
+                "generate_caption": ("BOOLEAN", {"default": False, "tooltip": "Generate Instagram captions (3 styles: Poetic, Technical, Personal)"}),
             },
         }
 
@@ -124,7 +125,8 @@ class SID_PromptGenerator:
         florence_model: str = "MiaoshouAI/Florence-2-large-PromptGen-v2.0",
         hf_token: str = "",
         release_vram: bool = False,
-    ) -> Tuple[str, str]:
+        generate_caption: bool = False,
+    ) -> Tuple[str, str, str]:
         """
         Generate prompt from image with automatic mode selection.
 
@@ -138,9 +140,10 @@ class SID_PromptGenerator:
             florence_model: Florence model to use for fallback VLM mode
             hf_token: HuggingFace token for gated models (Florence, etc.)
             release_vram: Unload Florence model from VRAM after use
+            generate_caption: Generate Instagram captions (3 styles)
 
         Returns:
-            Tuple of (prompt, metadata_json)
+            Tuple of (prompt, caption, metadata_json)
         """
         start_time = time.time()
 
@@ -166,6 +169,18 @@ class SID_PromptGenerator:
 
             # Merge result metadata with base metadata
             metadata.update(result.metadata)
+
+            # Generate caption if requested and LLM is available
+            caption = ""
+            if generate_caption and llm_model is not None:
+                caption_start = time.time()
+                caption = self._generate_caption(image, llm_model, result.prompt)
+                metadata["caption_generated"] = True
+                metadata["caption_timing_ms"] = int((time.time() - caption_start) * 1000)
+            elif generate_caption and llm_model is None:
+                caption = "[Caption generation requires LLM model connection]"
+                metadata["caption_generated"] = False
+
             metadata["timing"] = {
                 "total_ms": int((time.time() - start_time) * 1000)
             }
@@ -174,7 +189,7 @@ class SID_PromptGenerator:
             if release_vram:
                 self._release_vram()
 
-            return (result.prompt, json.dumps(metadata, indent=2))
+            return (result.prompt, caption, json.dumps(metadata, indent=2))
 
         except Exception as e:
             error_msg = str(e)
@@ -185,7 +200,7 @@ class SID_PromptGenerator:
             metadata["error"] = error_msg
             metadata["mode"] = "error"
 
-            return ("", json.dumps(metadata, indent=2))
+            return ("", "", json.dumps(metadata, indent=2))
 
     def _execute_mode(
         self,
@@ -328,6 +343,161 @@ class SID_PromptGenerator:
             from .modes.florence import FlorenceMode
             FlorenceMode.unload_model()
             print("[SID_PromptGenerator] Released Florence VRAM")
+
+    def _generate_caption(self, image: Any, llm_model: Any, prompt: str) -> str:
+        """
+        Generate Instagram captions in 3 styles using the LLM.
+
+        Args:
+            image: Image tensor from ComfyUI
+            llm_model: LLMModelConfig with provider settings
+            prompt: Generated image prompt to use as context
+
+        Returns:
+            Markdown-formatted captions in 3 styles
+        """
+        import base64
+        import io
+        import numpy as np
+        from PIL import Image
+
+        # Convert image to base64
+        if hasattr(image, 'cpu'):
+            img_np = image[0].cpu().numpy()
+        else:
+            img_np = np.array(image[0])
+
+        if img_np.max() <= 1.0:
+            img_np = (img_np * 255).astype(np.uint8)
+        else:
+            img_np = img_np.astype(np.uint8)
+
+        pil_image = Image.fromarray(img_np)
+
+        # Resize for efficiency
+        max_pixels = 672 * 672
+        current_pixels = pil_image.width * pil_image.height
+        if current_pixels > max_pixels:
+            scale = (max_pixels / current_pixels) ** 0.5
+            new_width = max(64, (int(pil_image.width * scale) // 8) * 8)
+            new_height = max(64, (int(pil_image.height * scale) // 8) * 8)
+            pil_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+        buffer = io.BytesIO()
+        pil_image.save(buffer, format="JPEG", quality=90)
+        base64_image = base64.standard_b64encode(buffer.getvalue()).decode("utf-8")
+
+        # Caption generation system prompt
+        system_prompt = """You are a social media expert creating Instagram captions for photographers.
+
+Generate 3 different caption styles for this image. Each style should include:
+- A caption (1-2 engaging sentences)
+- A description (2-3 sentences expanding on the image)
+- 10-15 relevant hashtags
+
+FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
+
+## Poetic
+**Caption:** [Evocative, emotional, artistic caption]
+**Description:** [Lyrical description with metaphors and feeling]
+**Hashtags:** #hashtag1 #hashtag2 #hashtag3...
+
+## Technical
+**Caption:** [Professional, precise, photography-focused caption]
+**Description:** [Details about technique, equipment, settings, composition]
+**Hashtags:** #hashtag1 #hashtag2 #hashtag3...
+
+## Personal
+**Caption:** [Casual, relatable, storytelling caption]
+**Description:** [Behind-the-scenes, personal connection, authentic voice]
+**Hashtags:** #hashtag1 #hashtag2 #hashtag3...
+
+Keep each section concise. Use relevant photography and subject-specific hashtags."""
+
+        user_prompt = f"""Create 3 Instagram caption styles for this image.
+
+Context from image analysis:
+{prompt}
+
+Generate Poetic, Technical, and Personal caption styles following the exact format specified."""
+
+        # Get LLM client and make call
+        try:
+            client = self._get_caption_client(llm_model)
+
+            if hasattr(client, 'messages'):
+                # Anthropic API
+                response = client.messages.create(
+                    model=llm_model.model,
+                    max_tokens=1500,
+                    temperature=0.7,
+                    system=system_prompt,
+                    messages=[{
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "image/jpeg",
+                                    "data": base64_image,
+                                }
+                            },
+                            {"type": "text", "text": user_prompt}
+                        ]
+                    }]
+                )
+                return response.content[0].text
+            else:
+                # OpenAI-compatible API
+                response = client.chat.completions.create(
+                    model=llm_model.model,
+                    max_tokens=1500,
+                    temperature=0.7,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
+                                },
+                                {"type": "text", "text": user_prompt}
+                            ]
+                        }
+                    ]
+                )
+
+                if response and response.choices and response.choices[0].message:
+                    return response.choices[0].message.content
+                return "[Caption generation failed - empty response]"
+
+        except Exception as e:
+            print(f"[SID_PromptGenerator] Caption generation error: {e}")
+            return f"[Caption generation error: {str(e)}]"
+
+    def _get_caption_client(self, llm_model: Any) -> Any:
+        """Get LLM client for caption generation."""
+        provider = llm_model.provider.lower()
+
+        if provider == "anthropic":
+            import anthropic
+            import httpx
+            timeout = httpx.Timeout(timeout=120.0, connect=30.0)
+            return anthropic.Anthropic(api_key=llm_model.api_key, timeout=timeout)
+
+        elif provider == "local":
+            from .modes.standard import StandardMode
+            mode = StandardMode()
+            return mode._get_client(llm_model)
+
+        else:
+            from openai import OpenAI
+            return OpenAI(
+                api_key=llm_model.api_key or "not-needed",
+                base_url=llm_model.api_url if llm_model.api_url else None,
+            )
 
 
 # ComfyUI node registration
