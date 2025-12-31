@@ -569,6 +569,20 @@ Generate Poetic, Technical, and Personal caption styles following the exact form
         if not text:
             return ""
 
+        # Remove thinking blocks (<think>...</think>) - Qwen3 internal reasoning
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+        if '<think>' in text:
+            think_pos = text.find('<think>')
+            if think_pos > 0:
+                text = text[:think_pos].rstrip()
+                print(f"[SID_PromptModifier] Removed incomplete <think> block")
+            else:
+                text = ""
+                print(f"[SID_PromptModifier] Removed <think> block at start")
+
+        if not text:
+            return ""
+
         # Remove common preambles
         preambles = [
             r'^(?:Here is|Here\'s|This is|The modified prompt|Modified prompt)[:\s]*',

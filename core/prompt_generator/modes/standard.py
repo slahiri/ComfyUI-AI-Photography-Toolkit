@@ -447,6 +447,20 @@ Write as a single flowing paragraph. Be precise and literal."""
         """Detect and truncate runaway repetition in LLM output."""
         import re
 
+        # 0. Remove thinking blocks (<think>...</think>) - Qwen3 internal reasoning
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+        if '<think>' in text:
+            think_pos = text.find('<think>')
+            if think_pos > 0:
+                text = text[:think_pos].rstrip()
+                print(f"[Standard] Removed incomplete <think> block")
+            else:
+                text = ""
+                print(f"[Standard] Removed <think> block at start")
+
+        if not text:
+            return text
+
         # 1. Detect character repetition (e.g., "dddddddddd", "aaaaaaa")
         # If we find 10+ consecutive same characters, truncate before that
         char_repeat_match = re.search(r'(.)\1{9,}', text)

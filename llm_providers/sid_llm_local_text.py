@@ -432,6 +432,23 @@ class LocalTextModelClient:
         if not text:
             return text
 
+        # 0. Remove thinking blocks (<think>...</think>) - Qwen3 internal reasoning
+        # First try to remove complete blocks
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+        # Then remove incomplete/open think blocks (model didn't close it)
+        if '<think>' in text:
+            think_pos = text.find('<think>')
+            if think_pos > 0:
+                text = text[:think_pos].rstrip()
+                print(f"[LocalTextModelClient] Removed incomplete <think> block")
+            else:
+                # Think block at start - remove everything
+                text = ""
+                print(f"[LocalTextModelClient] Removed <think> block at start")
+
+        if not text:
+            return text
+
         # 1. Detect character repetition (e.g., "dddddddddd", "aaaaaaa")
         char_repeat_match = re.search(r'(.)\1{9,}', text)
         if char_repeat_match:
