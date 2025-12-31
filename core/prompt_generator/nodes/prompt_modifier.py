@@ -925,6 +925,19 @@ class SID_PromptModifier:
         "Mamiya RZ67": "shot on Mamiya RZ67, medium format film",
         "Contax 645": "shot on Contax 645, medium format film",
         "Rolleiflex": "shot on Rolleiflex, twin-lens reflex",
+        # Smartphone Cameras
+        "iPhone 15 Pro Max": "shot on iPhone 15 Pro Max, 48MP, computational photography",
+        "iPhone 15 Pro": "shot on iPhone 15 Pro, 48MP ProRAW",
+        "iPhone 14 Pro": "shot on iPhone 14 Pro, 48MP sensor",
+        "Samsung Galaxy S24 Ultra": "shot on Samsung Galaxy S24 Ultra, 200MP, AI enhanced",
+        "Samsung Galaxy S23 Ultra": "shot on Samsung Galaxy S23 Ultra, 200MP sensor",
+        "Google Pixel 8 Pro": "shot on Google Pixel 8 Pro, computational photography, AI",
+        "Google Pixel 7 Pro": "shot on Google Pixel 7 Pro, computational HDR",
+        "Xiaomi 14 Ultra": "shot on Xiaomi 14 Ultra, Leica optics, 1-inch sensor",
+        "Huawei P60 Pro": "shot on Huawei P60 Pro, XMAGE imaging",
+        "OnePlus 12": "shot on OnePlus 12, Hasselblad color science",
+        "Sony Xperia 1 V": "shot on Sony Xperia 1 V, Alpha camera tech",
+        "Vivo X100 Pro": "shot on Vivo X100 Pro, Zeiss optics",
     }
 
     LENSES = {
