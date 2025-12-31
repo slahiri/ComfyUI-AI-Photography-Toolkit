@@ -367,6 +367,8 @@ Write as a single flowing paragraph. Be precise and literal."""
                 device=extra.get("device", "auto"),
                 attention_mode=extra.get("attention_mode", "auto"),
                 keep_model_loaded=extra.get("keep_model_loaded", True),
+                repetition_penalty=extra.get("repetition_penalty", 1.2),
+                top_p=extra.get("top_p", 0.9),
                 hf_token=extra.get("hf_token"),
             )
 
@@ -414,11 +416,14 @@ Write as a single flowing paragraph. Be precise and literal."""
             print(f"  Missing: {missing_tags}")
 
     def _clean_response(self, text: str) -> str:
-        """Clean LLM response text."""
+        """Clean LLM response text and detect runaway generation."""
         import re
 
         if not text:
             return ""
+
+        # Detect and truncate runaway character repetition (e.g., "dddddddd...")
+        text = self._truncate_runaway(text)
 
         # Remove common preambles
         preambles = [
@@ -437,3 +442,44 @@ Write as a single flowing paragraph. Be precise and literal."""
         text = re.sub(r'\s+', ' ', text)
 
         return text.strip()
+
+    def _truncate_runaway(self, text: str) -> str:
+        """Detect and truncate runaway repetition in LLM output."""
+        import re
+
+        # 1. Detect character repetition (e.g., "dddddddddd", "aaaaaaa")
+        # If we find 10+ consecutive same characters, truncate before that
+        char_repeat_match = re.search(r'(.)\1{9,}', text)
+        if char_repeat_match:
+            truncate_pos = char_repeat_match.start()
+            if truncate_pos > 50:  # Keep at least 50 chars
+                text = text[:truncate_pos].rstrip()
+                print(f"[Standard] Truncated runaway character repetition at position {truncate_pos}")
+
+        # 2. Detect word/phrase repetition (e.g., same 3-word phrase repeating 5+ times)
+        words = text.split()
+        if len(words) > 50:
+            # Check for repeating 3-grams
+            for ngram_size in [3, 4, 5]:
+                ngrams = [' '.join(words[i:i+ngram_size]) for i in range(len(words) - ngram_size + 1)]
+                if len(ngrams) > 10:
+                    # Count consecutive repeats
+                    for i in range(len(ngrams) - 5):
+                        if ngrams[i] == ngrams[i+1] == ngrams[i+2] == ngrams[i+3] == ngrams[i+4]:
+                            # Found 5 consecutive repeating n-grams
+                            # Find word position and truncate
+                            word_pos = i
+                            char_pos = len(' '.join(words[:word_pos]))
+                            if char_pos > 100:  # Keep at least 100 chars
+                                text = ' '.join(words[:word_pos]).rstrip()
+                                print(f"[Standard] Truncated runaway phrase repetition at word {word_pos}")
+                                break
+
+        # 3. Hard limit on word count for local models (safety net)
+        max_words = 500
+        words = text.split()
+        if len(words) > max_words:
+            text = ' '.join(words[:max_words])
+            print(f"[Standard] Truncated to {max_words} words (safety limit)")
+
+        return text

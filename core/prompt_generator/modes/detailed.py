@@ -645,6 +645,8 @@ Write as a single flowing paragraph. Be precise and literal."""
                 device=extra.get("device", "auto"),
                 attention_mode=extra.get("attention_mode", "auto"),
                 keep_model_loaded=extra.get("keep_model_loaded", True),
+                repetition_penalty=extra.get("repetition_penalty", 1.2),
+                top_p=extra.get("top_p", 0.9),
                 hf_token=extra.get("hf_token"),
             )
 

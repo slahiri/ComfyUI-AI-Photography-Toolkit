@@ -762,11 +762,52 @@ class LocalModelClient:
         if retry_count > 0:
             print(f"  Retries: {retry_count}")
 
+        # Truncate runaway generation
+        response_text = self._truncate_runaway(response_text)
+
         # CRITICAL: Clean up GPU memory after generation to prevent VAE decode hangs
         # This ensures CUDA operations are complete and memory is freed for subsequent nodes
         self._cleanup_after_generation()
 
         return LocalModelResponse(response_text.strip())
+
+    def _truncate_runaway(self, text: str) -> str:
+        """Detect and truncate runaway repetition in LLM output."""
+        import re
+
+        if not text:
+            return text
+
+        # 1. Detect character repetition (e.g., "dddddddddd", "aaaaaaa")
+        char_repeat_match = re.search(r'(.)\1{9,}', text)
+        if char_repeat_match:
+            truncate_pos = char_repeat_match.start()
+            if truncate_pos > 50:
+                text = text[:truncate_pos].rstrip()
+                print(f"[LocalModelClient] Truncated character repetition at position {truncate_pos}")
+
+        # 2. Detect word/phrase repetition
+        words = text.split()
+        if len(words) > 50:
+            for ngram_size in [3, 4, 5]:
+                ngrams = [' '.join(words[i:i+ngram_size]) for i in range(len(words) - ngram_size + 1)]
+                if len(ngrams) > 10:
+                    for i in range(len(ngrams) - 5):
+                        if ngrams[i] == ngrams[i+1] == ngrams[i+2] == ngrams[i+3] == ngrams[i+4]:
+                            word_pos = i
+                            if word_pos > 20:
+                                text = ' '.join(words[:word_pos]).rstrip()
+                                print(f"[LocalModelClient] Truncated phrase repetition at word {word_pos}")
+                                break
+
+        # 3. Hard limit on word count (safety net)
+        max_words = 500
+        words = text.split()
+        if len(words) > max_words:
+            text = ' '.join(words[:max_words])
+            print(f"[LocalModelClient] Truncated to {max_words} words (safety limit)")
+
+        return text
 
     def _cleanup_after_generation(self):
         """

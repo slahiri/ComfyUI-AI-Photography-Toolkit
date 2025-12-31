@@ -479,6 +479,8 @@ Generate Poetic, Technical, and Personal caption styles following the exact form
                 keep_model_loaded=extra.get("keep_model_loaded", True),
                 repo_id=extra.get("repo_id", ""),
                 hf_token=extra.get("hf_token"),
+                repetition_penalty=extra.get("repetition_penalty", 1.3),
+                top_p=extra.get("top_p", 0.9),
             )
 
         elif provider == "local":
