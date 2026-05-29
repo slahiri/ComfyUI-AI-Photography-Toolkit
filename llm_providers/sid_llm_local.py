@@ -204,7 +204,7 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         vram_fp16=4.0, vram_8bit=2.5, vram_4bit=1.5,
         max_output_tokens=4096,
         description="Fast, good for 8GB GPUs",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForImageTextToText"
     ),
     "Qwen3-VL-4B-Instruct": LocalModelInfo(
         name="Qwen3-VL 4B | 4K tokens | 2GB VRAM (Recommended)",
@@ -213,7 +213,7 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         vram_fp16=6.0, vram_8bit=3.5, vram_4bit=2.0,
         max_output_tokens=4096,
         description="Best balance of speed and quality",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForImageTextToText"
     ),
     "Qwen3-VL-8B-Instruct": LocalModelInfo(
         name="Qwen3-VL 8B | 4K tokens | 4.5GB VRAM (Quality)",
@@ -222,7 +222,7 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         vram_fp16=12.0, vram_8bit=7.0, vram_4bit=4.5,
         max_output_tokens=4096,
         description="High quality, needs 12GB+ VRAM",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForImageTextToText"
     ),
     "Qwen3-VL-2B-Thinking": LocalModelInfo(
         name="Qwen3-VL 2B Thinking | 4K tokens | 1.5GB VRAM (Reasoning)",
@@ -232,7 +232,7 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         is_thinking=True,
         description="Fast reasoning model",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForImageTextToText"
     ),
     "Qwen3-VL-4B-Thinking": LocalModelInfo(
         name="Qwen3-VL 4B Thinking | 4K tokens | 2GB VRAM (Reasoning)",
@@ -242,7 +242,7 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         is_thinking=True,
         description="Balanced reasoning model",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForImageTextToText"
     ),
     "Qwen3-VL-8B-Thinking": LocalModelInfo(
         name="Qwen3-VL 8B Thinking | 4K tokens | 4.5GB VRAM (Best Reasoning)",
@@ -252,7 +252,7 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         max_output_tokens=4096,
         is_thinking=True,
         description="High quality reasoning, needs 12GB+ VRAM",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForImageTextToText"
     ),
     "Qwen2.5-VL-3B-Instruct": LocalModelInfo(
         name="Qwen2.5-VL 3B | 4K tokens | 2GB VRAM",
@@ -261,7 +261,7 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         vram_fp16=5.0, vram_8bit=3.0, vram_4bit=2.0,
         max_output_tokens=4096,
         description="Previous gen, compact model",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForImageTextToText"
     ),
     "Qwen2.5-VL-7B-Instruct": LocalModelInfo(
         name="Qwen2.5-VL 7B | 4K tokens | 4GB VRAM",
@@ -270,7 +270,7 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         vram_fp16=10.0, vram_8bit=6.0, vram_4bit=4.0,
         max_output_tokens=4096,
         description="Previous gen, stable quality",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForImageTextToText"
     ),
 
     # =========================================================================
@@ -336,7 +336,7 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         vram_fp16=0.8, vram_8bit=0.5, vram_4bit=0.3,
         max_output_tokens=1024,
         description="Tiniest VLM, edge/mobile ready",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForImageTextToText"
     ),
     "SmolVLM-500M": LocalModelInfo(
         name="SmolVLM 500M | 1K tokens | 0.6GB VRAM (Small)",
@@ -345,7 +345,7 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         vram_fp16=1.5, vram_8bit=1.0, vram_4bit=0.6,
         max_output_tokens=1024,
         description="Very small, good balance",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForImageTextToText"
     ),
     "SmolVLM-2B": LocalModelInfo(
         name="SmolVLM 2B | 2K tokens | 2GB VRAM",
@@ -354,7 +354,7 @@ LOCAL_MODELS: Dict[str, LocalModelInfo] = {
         vram_fp16=4.5, vram_8bit=3.0, vram_4bit=2.0,
         max_output_tokens=2048,
         description="Best SmolVLM quality",
-        model_class="AutoModelForVision2Seq"
+        model_class="AutoModelForImageTextToText"
     ),
 
     # =========================================================================
@@ -747,7 +747,7 @@ class LocalModelClient:
     def _load_smolvlm(self, model_path: str, device: str):
         """Load SmolVLM model with speed optimizations."""
         import torch
-        from transformers import AutoModelForVision2Seq, AutoProcessor
+        from transformers import AutoModelForImageTextToText, AutoProcessor
 
         quant_config, dtype = self._get_quantization_config(device)
 
@@ -778,7 +778,7 @@ class LocalModelClient:
             else:
                 load_kwargs["torch_dtype"] = dtype or torch.float16
 
-        self.model = AutoModelForVision2Seq.from_pretrained(model_path, **load_kwargs)
+        self.model = AutoModelForImageTextToText.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
 
         # Enable KV cache for faster generation
@@ -821,7 +821,7 @@ class LocalModelClient:
     def _load_qwenvl(self, model_path: str, device: str):
         """Load QwenVL model with speed optimizations."""
         import torch
-        from transformers import AutoModelForVision2Seq, AutoProcessor, AutoTokenizer
+        from transformers import AutoModelForImageTextToText, AutoProcessor, AutoTokenizer
 
         quant_config, dtype = self._get_quantization_config(device)
 
@@ -863,7 +863,7 @@ class LocalModelClient:
             else:
                 load_kwargs["torch_dtype"] = dtype or torch.float16
 
-        self.model = AutoModelForVision2Seq.from_pretrained(model_path, **load_kwargs)
+        self.model = AutoModelForImageTextToText.from_pretrained(model_path, **load_kwargs)
         self.model.eval()
 
         # Enable KV cache for faster generation
